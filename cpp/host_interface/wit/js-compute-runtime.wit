@@ -1,0 +1,20 @@
+package fastly:js-compute-runtime
+
+world fastly-world {
+
+  import fastly:compute-at-edge/async-io
+  import fastly:compute-at-edge/backend
+  import fastly:compute-at-edge/cache
+  import fastly:compute-at-edge/dictionary
+  import fastly:compute-at-edge/geo
+  import fastly:compute-at-edge/http-body
+  import fastly:compute-at-edge/http-req
+  import fastly:compute-at-edge/http-resp
+  import fastly:compute-at-edge/log
+  import fastly:compute-at-edge/object-store
+  import fastly:compute-at-edge/purge
+  import fastly:compute-at-edge/secret-store
+  import fastly:compute-at-edge/uap
+
+  export fastly:compute-at-edge/reactor
+}

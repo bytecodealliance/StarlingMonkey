@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "name": "sm-wasi",
+            "includePath": [
+                "/opt/wasi-sdk/share/wasi-sysroot/include/",
+                "${workspaceFolder}/deps/spidermonkey/debug/include",
+                "${workspaceFolder}/deps/spidermonkey/release/include",
+                "${workspaceFolder}/deps/include",
+                "${workspaceFolder}/crates",
+                "${workspaceFolder}/build/bindings",
+                "${workspaceFolder}/build/openssl-3.0.7/include",
+                "${workspaceFolder}/cpp"
+            ],
+            "defines": [
+                "__wasi__"
+            ],
+            "compilerPath": "/opt/wasi-sdk/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++20",
+            "intelliSenseMode": "clang-x86",
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "forcedInclude": [
+                "${workspaceFolder}/.vscode/vscode-preinclude.h"
+            ]
+        }
+    ],
+    "version": 4
+}
