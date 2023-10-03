@@ -4,6 +4,8 @@
 #include "builtins/builtin.h"
 
 namespace builtins {
+namespace web {
+namespace fetch {
 
 class Headers final : public BuiltinImpl<Headers> {
   static bool get(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -70,6 +72,8 @@ public:
                           JS::HandleObject owner);
 };
 
+} // namespace fetch
+} // namespace web
 } // namespace builtins
 
 #endif

@@ -3,11 +3,12 @@
 #include "core/encode.h"
 #include "core/sequence.hpp"
 #include "host_interface/host_api.h"
-#include "js-compute-builtins.h"
 
 #include "js/Conversions.h"
 
 namespace builtins {
+namespace web {
+namespace fetch {
 
 namespace {
 
@@ -818,4 +819,6 @@ JSObject *Headers::create(JSContext *cx, JS::HandleObject self, Headers::Mode mo
   return self;
 }
 
+} // namespace fetch
+} // namespace web
 } // namespace builtins

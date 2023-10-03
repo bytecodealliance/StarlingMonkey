@@ -8,6 +8,8 @@
 
 namespace core {
 
+using host_api::HostString;
+
 HostString encode(JSContext *cx, JS::HandleString str) {
   HostString res;
   res.ptr = JS_EncodeStringToUTF8(cx, str);

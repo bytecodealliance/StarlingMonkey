@@ -7,9 +7,8 @@
 
 #include "js/Stream.h"
 
-#include "builtin.h"
-#include "builtins/transform-stream-default-controller.h"
-#include "builtins/transform-stream.h"
+#include "transform-stream-default-controller.h"
+#include "transform-stream.h"
 
 /**
  * Implementation of the WHATWG TransformStream builtin.

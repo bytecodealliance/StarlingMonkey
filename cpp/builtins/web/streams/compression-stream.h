@@ -1,8 +1,7 @@
 #ifndef JS_COMPUTE_RUNTIME_COMPRESSION_STREAM_H
 #define JS_COMPUTE_RUNTIME_COMPRESSION_STREAM_H
 
-#include "builtin.h"
-#include "js-compute-builtins.h"
+#include "builtins/builtin.h"
 
 namespace builtins {
 

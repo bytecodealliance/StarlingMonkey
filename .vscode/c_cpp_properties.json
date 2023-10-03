@@ -24,7 +24,8 @@
             },
             "forcedInclude": [
                 "${workspaceFolder}/.vscode/vscode-preinclude.h"
-            ]
+            ],
+            "configurationProvider": "ms-vscode.makefile-tools"
         }
     ],
     "version": 4

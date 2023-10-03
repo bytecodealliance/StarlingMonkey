@@ -7,12 +7,10 @@
 
 #include "zlib.h"
 
-#include "builtin.h"
-#include "builtins/decompression-stream.h"
-#include "builtins/transform-stream-default-controller.h"
-#include "builtins/transform-stream.h"
+#include "decompression-stream.h"
+#include "transform-stream-default-controller.h"
+#include "transform-stream.h"
 #include "core/encode.h"
-#include "js-compute-builtins.h"
 
 namespace builtins {
 

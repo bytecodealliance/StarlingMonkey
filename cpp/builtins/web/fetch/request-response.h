@@ -1,11 +1,12 @@
 #ifndef BUILTIN_REQUEST_RESPONSE
 #define BUILTIN_REQUEST_RESPONSE
 
-// #include "builtin.h"
 #include "headers.h"
 #include "host_interface/host_api.h"
 
 namespace builtins {
+namespace web {
+namespace fetch {
 
 class RequestOrResponse final {
 public:
@@ -101,7 +102,6 @@ class Request final : public BuiltinImpl<Request> {
   static bool method_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool headers_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool url_get(JSContext *cx, unsigned argc, JS::Value *vp);
-  static bool version_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
   template <RequestOrResponse::BodyReadResult result_type>
   static bool bodyAll(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -109,8 +109,12 @@ class Request final : public BuiltinImpl<Request> {
   static bool body_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool bodyUsed_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
+#ifdef CAE
+  static bool version_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool setCacheOverride(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool setCacheKey(JSContext *cx, unsigned argc, JS::Value *vp);
+#endif
+
   static bool clone(JSContext *cx, unsigned argc, JS::Value *vp);
 
 public:
@@ -124,28 +128,35 @@ public:
     BodyUsed = static_cast<int>(RequestOrResponse::Slots::BodyUsed),
     Headers = static_cast<int>(RequestOrResponse::Slots::Headers),
     URL = static_cast<int>(RequestOrResponse::Slots::URL),
+#ifdef CAE
     Backend = static_cast<int>(RequestOrResponse::Slots::Count),
+#endif
     Method,
-    CacheOverride,
     PendingRequest,
     ResponsePromise,
     IsDownstream,
+#ifdef CAE
+    CacheOverride,
     AutoDecompressGzip,
+#endif
     Count,
   };
 
   static JSObject *response_promise(JSObject *obj);
   static JSString *method(JSContext *cx, JS::HandleObject obj);
+  static host_api::HttpReq request_handle(JSObject *obj);
+  static host_api::HttpPendingReq pending_handle(JSObject *obj);
+  static bool is_downstream(JSObject *obj);
+
+#ifdef CAE
   static bool set_cache_key(JSContext *cx, JS::HandleObject self, JS::HandleValue cache_key_val);
   static bool set_cache_override(JSContext *cx, JS::HandleObject self,
                                  JS::HandleValue cache_override_val);
   static bool apply_cache_override(JSContext *cx, JS::HandleObject self);
   static bool apply_auto_decompress_gzip(JSContext *cx, JS::HandleObject self);
-
-  static host_api::HttpReq request_handle(JSObject *obj);
-  static host_api::HttpPendingReq pending_handle(JSObject *obj);
-  static bool is_downstream(JSObject *obj);
   static JSString *backend(JSObject *obj);
+#endif
+
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
@@ -171,7 +182,6 @@ class Response final : public BuiltinImpl<Response> {
   static bool status_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool statusText_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool url_get(JSContext *cx, unsigned argc, JS::Value *vp);
-  static bool version_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool type_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool headers_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool redirected_get(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -183,6 +193,10 @@ class Response final : public BuiltinImpl<Response> {
 
   static bool redirect(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool json(JSContext *cx, unsigned argc, JS::Value *vp);
+
+#ifdef CAE
+  static bool version_get(JSContext *cx, unsigned argc, JS::Value *vp);
+#endif
 
 public:
   static constexpr const char *class_name = "Response";
@@ -198,8 +212,10 @@ public:
     Status,
     StatusMessage,
     Redirected,
+#ifdef CAE
     IsGripUpgrade,
     GripBackend,
+#endif
     Count,
   };
   static const JSFunctionSpec static_methods[];
@@ -214,17 +230,26 @@ public:
 
   static JSObject *create(JSContext *cx, JS::HandleObject response,
                           host_api::HttpResp response_handle, host_api::HttpBody body_handle,
-                          bool is_upstream, bool is_grip_upgrade, JS::UniqueChars backend);
+                          bool is_upstream
+#ifdef CAE
+                          , bool is_grip_upgrade, JS::UniqueChars backend
+#endif
+                          );
 
   static host_api::HttpResp response_handle(JSObject *obj);
   static bool is_upstream(JSObject *obj);
-  static bool is_grip_upgrade(JSObject *obj);
-  static const char *grip_backend(JSObject *obj);
   static uint16_t status(JSObject *obj);
   static JSString *status_message(JSObject *obj);
   static void set_status_message_from_code(JSContext *cx, JSObject *obj, uint16_t code);
+
+#ifdef CAE
+  static bool is_grip_upgrade(JSObject *obj);
+  static const char *grip_backend(JSObject *obj);
+#endif
 };
 
+} // namespace fetch
+} // namespace web
 } // namespace builtins
 
 #endif

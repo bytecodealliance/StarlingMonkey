@@ -1,5 +1,6 @@
 #include "event_loop.h"
 #include "bindings.h"
+#include "builtins/builtin.h"
 #include "host_interface/host_api.h"
 
 #include <chrono>
@@ -290,6 +291,7 @@ bool EventLoop::process_pending_async_tasks(JSContext *cx) {
   // TODO: WASI's poll_oneoff is infallible, so once legacy CAE support isn't
   // required anymore this should be simplified.
   auto res = host_api::AsyncHandle::select(handles, timeout);
+  DBG("2\n");
   if (auto *err = res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
@@ -307,9 +309,9 @@ bool EventLoop::process_pending_async_tasks(JSContext *cx) {
     // the timeout was non-zero and handles was empty, the timeout would expire
     // and we would exit through the path that runs the first timer.
     auto ready_index = ret.value();
-    auto ready_handle = handles[ready_index];
 
-  #ifdef DEBUG && CAE
+  #if defined(DEBUG) && defined(CAE)
+    auto ready_handle = handles[ready_index];
     auto is_ready = ready_handle.is_ready();
     MOZ_ASSERT(!is_ready.is_err());
     MOZ_ASSERT(is_ready.unwrap());

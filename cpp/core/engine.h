@@ -31,4 +31,11 @@ private:
 };
 } // namespace core
 
+bool dump_value(JSContext* cx, JS::Value val, FILE *fp);
+
+void dump_promise_rejection(JSContext *cx, JS::HandleValue reason,
+                            JS::HandleObject promise, FILE *fp);
+bool print_stack(JSContext *cx, FILE *fp);
+bool print_stack(JSContext *cx, JS::HandleObject stack, FILE *fp);
+
 #endif

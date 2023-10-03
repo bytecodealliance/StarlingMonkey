@@ -267,7 +267,7 @@ regenerate-world:
 	@exit 1
 else
 regenerate-world:
-	$Q $(WIT_BINDGEN) c --no-helpers \
+	$Q $(WIT_BINDGEN) c \
 	  --out-dir $(BINDINGS) \
 	  --world bindings \
 	  wit

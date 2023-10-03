@@ -31,3 +31,30 @@ value_to_buffer(JSContext *cx, JS::HandleValue val, const char *val_desc) {
 
   return std::span(data, len);
 }
+
+bool RejectPromiseWithPendingError(JSContext *cx, HandleObject promise) {
+  RootedValue exn(cx);
+  if (!JS_IsExceptionPending(cx) || !JS_GetPendingException(cx, &exn)) {
+    return false;
+  }
+  JS_ClearPendingException(cx);
+  return JS::RejectPromise(cx, promise, exn);
+}
+
+JSObject *PromiseRejectedWithPendingError(JSContext *cx) {
+  RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
+  if (!promise || !RejectPromiseWithPendingError(cx, promise)) {
+    return nullptr;
+  }
+  return promise;
+}
+
+enum class Mode { PreWizening, PostWizening };
+
+Mode execution_mode = Mode::PreWizening;
+
+bool hasWizeningFinished() { return execution_mode == Mode::PostWizening; }
+
+bool isWizening() { return execution_mode == Mode::PreWizening; }
+
+void markWizeningAsFinished() { execution_mode = Mode::PostWizening; }

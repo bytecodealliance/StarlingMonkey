@@ -8,11 +8,11 @@
 #include "js/Conversions.h"
 #include "js/Stream.h"
 
-#include "builtins/native-stream-sink.h"
-#include "builtins/native-stream-source.h"
-#include "builtins/request-response.h"
-#include "builtins/transform-stream-default-controller.h"
-#include "builtins/transform-stream.h"
+#include "native-stream-sink.h"
+#include "native-stream-source.h"
+#include "../fetch/request-response.h"
+#include "transform-stream-default-controller.h"
+#include "transform-stream.h"
 
 namespace ReadableStream_additions {
 static JS::PersistentRooted<JSObject *> proto_obj;
@@ -272,7 +272,7 @@ JSObject *TransformStream::owner(JSObject *self) {
 
 void TransformStream::set_owner(JSObject *self, JSObject *owner) {
   MOZ_ASSERT(is_instance(self));
-  MOZ_ASSERT(RequestOrResponse::is_instance(owner));
+  MOZ_ASSERT(web::fetch::RequestOrResponse::is_instance(owner));
   MOZ_ASSERT(JS::GetReservedSlot(self, TransformStream::Slots::Owner).isUndefined());
   JS::SetReservedSlot(self, TransformStream::Slots::Owner, JS::ObjectValue(*owner));
 }
