@@ -2,7 +2,7 @@
 #define BUILTINS_FETCH_EVENT_H
 
 #include "builtins/builtin.h"
-#include "core/engine.h"
+#include "engine.h"
 #include "host_interface/host_api.h"
 
 namespace builtins {

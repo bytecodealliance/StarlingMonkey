@@ -1,7 +1,7 @@
 #include "headers.h"
 #include "request-response.h"
-#include "core/encode.h"
-#include "core/sequence.hpp"
+#include "encode.h"
+#include "sequence.hpp"
 #include "host_interface/host_api.h"
 
 #include "js/Conversions.h"

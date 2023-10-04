@@ -1,5 +1,5 @@
 #include "text-decoder.h"
-#include "core/encode.h"
+#include "encode.h"
 #include "rust-encoding/rust-encoding.h"
 
 namespace builtins {

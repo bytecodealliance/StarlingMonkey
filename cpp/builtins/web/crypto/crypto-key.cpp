@@ -1,5 +1,5 @@
 #include "crypto-key.h"
-#include "core/encode.h"
+#include "encode.h"
 #include "crypto-algorithm.h"
 #include "openssl/rsa.h"
 #include <iostream>

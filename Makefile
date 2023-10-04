@@ -6,6 +6,7 @@
 ROOT := $(shell dirname "$(realpath $(firstword $(MAKEFILE_LIST)))")
 
 # The path to the //runtime directory.
+RT_SRC := $(ROOT)/runtime
 CPP_SRC := $(ROOT)/cpp
 
 # The name of the project
@@ -108,7 +109,8 @@ CFLAGS += -Wno-int-to-pointer-cast -m32
 CFLAGS += --sysroot=$(WASI_SDK)/share/wasi-sysroot
 
 # Includes for compiling c++
-INCLUDES := -I$(CPP_SRC)
+INCLUDES := -I$(RT_SRC)
+INCLUDES += -I$(CPP_SRC)
 INCLUDES += -I$(SM_SRC)/include
 INCLUDES += -I$(ROOT)/deps/include
 INCLUDES += -I$(ROOT)/deps/fmt/include
@@ -277,13 +279,9 @@ endif
 
 # Winter runtime shared build #################################################
 
-# CPP_FILES := $(wildcard $(CPP_SRC)/*.cpp)
-# CPP_FILES := $(wildcard $(CPP_SRC)/**/*.cpp)
-CPP_FILES := $(shell find $(CPP_SRC) -type f -name '*.cpp')
+CPP_FILES := $(wildcard $(RT_SRC)/*.cpp)
+CPP_FILES += $(shell find $(CPP_SRC) -type f -name '*.cpp')
 CPP_FILES += $(shell find $(CPP_SRC) -type f -name '*.cc')
-# CPP_FILES += $(wildcard $(CPP_SRC)/builtins/*.cpp)
-# CPP_FILES += $(wildcard $(CPP_SRC)/builtins/shared/*.cpp)
-# CPP_FILES += $(wildcard $(CPP_SRC)/core/*.cpp)
 CPP_FILES += $(ROOT)/deps/fmt/src/format.cc
 CPP_OBJ := $(call build_dest,$(call change_src_extension,$(CPP_FILES),o))
 

@@ -10,7 +10,7 @@
 #include <variant>
 #include <vector>
 
-#include "allocator.h"
+#include "core/allocator.h"
 #include "js/TypeDecls.h"
 
 #pragma clang diagnostic push
@@ -193,11 +193,8 @@ public:
   AsyncHandle() = default;
   explicit AsyncHandle(Handle handle) : handle{handle} {}
 
-// WASI pollables don't have a generic way to query readiness, and this is only used for debug asserts.
-#ifdef CAE
   /// Check to see if this handle is ready.
   Result<bool> is_ready() const;
-#endif
 
   /// Return the index in handles of the `AsyncHandle` that's ready. If the select call finishes
   /// successfully and returns `std::nullopt`, the timeout has expired.
@@ -209,7 +206,7 @@ public:
   /// If the timeout is non-zero, two behaviors are possible
   ///   * no handle becomes ready within timeout, and the successful `std::nullopt` is returned
   ///   * a handle becomes ready within the timeout, and its index is returned.
-  static Result<std::optional<uint32_t>> select(std::vector<AsyncHandle> &handles,
+  static Result<std::optional<uint32_t>> select(const std::vector<AsyncHandle> &handles,
                                                 uint32_t timeout_ms);
 };
 
@@ -287,10 +284,8 @@ public:
 
   virtual bool is_valid() const = 0;
 
-#ifdef CAE
   /// Get the http version used for this request.
   virtual Result<HttpVersion> get_version() const = 0;
-#endif
 
   virtual Result<std::vector<HostString>> get_header_names() = 0;
   virtual Result<std::optional<std::vector<HostString>>>
@@ -300,7 +295,6 @@ public:
   virtual Result<Void> remove_header(std::string_view name) = 0;
 };
 
-#ifdef CAE
 struct TlsVersion {
   uint8_t value = 0;
 
@@ -335,7 +329,7 @@ struct CacheOverrideTag final {
   void set_stale_while_revalidate();
   void set_pci();
 };
-#endif // CAE
+
 struct Request;
 
 class HttpReq final : public HttpBase {
@@ -350,7 +344,6 @@ public:
   explicit HttpReq(Handle handle) : handle{handle} {}
 
   static Result<HttpReq> make();
-#ifdef CAE
 
   static Result<Void> redirect_to_grip_proxy(std::string_view backend);
 
@@ -375,12 +368,6 @@ public:
 
   Result<Void> auto_decompress_gzip();
 
-  /// Configure cache-override settings.
-  Result<Void> cache_override(CacheOverrideTag tag, std::optional<uint32_t> ttl,
-                              std::optional<uint32_t> stale_while_revalidate,
-                              std::optional<std::string_view> surrogate_key);
-#endif // CAE
-
   /// Send this request synchronously, and wait for the response.
   Result<Response> send(HttpBody body, std::string_view backend);
 
@@ -404,11 +391,14 @@ public:
   /// Get the request uri.
   Result<HostString> get_uri() const;
 
+  /// Configure cache-override settings.
+  Result<Void> cache_override(CacheOverrideTag tag, std::optional<uint32_t> ttl,
+                              std::optional<uint32_t> stale_while_revalidate,
+                              std::optional<std::string_view> surrogate_key);
+
   bool is_valid() const override;
 
-#ifdef CAE
   Result<HttpVersion> get_version() const override;
-#endif
 
   Result<std::vector<HostString>> get_header_names() override;
   Result<std::optional<std::vector<HostString>>> get_header_values(std::string_view name) override;
@@ -441,9 +431,7 @@ public:
 
   bool is_valid() const override;
 
-#ifdef CAE
   Result<HttpVersion> get_version() const override;
-#endif
 
   Result<std::vector<HostString>> get_header_names() override;
   Result<std::optional<std::vector<HostString>>> get_header_values(std::string_view name) override;
@@ -470,14 +458,6 @@ struct Request {
   Request(HttpReq req, HttpBody body) : req{req}, body{body} {}
 };
 
-class Random final {
-public:
-  static Result<HostBytes> get_bytes(size_t num_bytes);
-
-  static Result<uint32_t> get_u32();
-};
-
-#ifdef CAE
 class GeoIp final {
   ~GeoIp() = delete;
 
@@ -554,6 +534,13 @@ public:
   static Result<SecretStore> open(std::string_view name);
 
   Result<std::optional<Secret>> get(std::string_view name);
+};
+
+class Random final {
+public:
+  static Result<HostBytes> get_bytes(size_t num_bytes);
+
+  static Result<uint32_t> get_u32();
 };
 
 struct CacheLookupOptions final {
@@ -637,7 +624,7 @@ public:
   /// Purge the given surrogate key.
   static Result<std::optional<HostString>> purge_surrogate_key(std::string_view key);
 };
-#endif // CAE
+
 } // namespace host_api
 
 #endif

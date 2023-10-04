@@ -1,8 +1,8 @@
 #include "js/Array.h"
 
 #include "url.h"
-#include "core/encode.h"
-#include "core/sequence.hpp"
+#include "encode.h"
+#include "sequence.hpp"
 #include "rust-url/rust-url.h"
 
 constexpr int ITERTYPE_ENTRIES = 0;

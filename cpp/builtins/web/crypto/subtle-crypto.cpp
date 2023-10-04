@@ -1,7 +1,7 @@
 #include "subtle-crypto.h"
 #include "builtins/builtin.h"
 #include "../dom-exception.h"
-#include "core/encode.h"
+#include "encode.h"
 
 namespace builtins {
 namespace web {

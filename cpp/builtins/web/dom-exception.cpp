@@ -1,6 +1,6 @@
 #include "dom-exception.h"
 #include "builtins/builtin.h"
-#include "core/encode.h"
+#include "encode.h"
 #include "js/Context.h"
 
 namespace builtins {

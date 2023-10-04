@@ -14,7 +14,7 @@
 
 #include "builtins/builtin.h"
 #include "json-web-key.h"
-#include "core/encode.h"
+#include "encode.h"
 
 namespace builtins {
 namespace web {

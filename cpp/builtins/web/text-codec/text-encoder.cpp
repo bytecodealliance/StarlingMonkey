@@ -1,5 +1,5 @@
 #include "text-encoder.h"
-#include "core/encode.h"
+#include "encode.h"
 #include <iostream>
 #include <tuple>
 

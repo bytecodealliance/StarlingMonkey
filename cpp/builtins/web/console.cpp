@@ -1,5 +1,5 @@
 #include "console.h"
-#include "core/encode.h"
+#include "encode.h"
 #include <chrono>
 #include <map>
 

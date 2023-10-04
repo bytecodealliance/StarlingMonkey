@@ -1,5 +1,5 @@
 #include "timers.h"
-#include "core/event_loop.h"
+#include "event_loop.h"
 
 namespace builtins {
 namespace web {

@@ -10,7 +10,7 @@
 #include "compression-stream.h"
 #include "transform-stream-default-controller.h"
 #include "transform-stream.h"
-#include "core/encode.h"
+#include "encode.h"
 
 namespace builtins {
 

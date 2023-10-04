@@ -8,7 +8,7 @@
 
 #include "../dom-exception.h"
 #include "../base64.h"
-#include "core/encode.h"
+#include "encode.h"
 #include "crypto-algorithm.h"
 #include "crypto-key-ec-components.h"
 #include "crypto-key-rsa-components.h"

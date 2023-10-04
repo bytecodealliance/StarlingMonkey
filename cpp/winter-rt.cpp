@@ -23,8 +23,8 @@
 #pragma clang diagnostic pop
 
 #include "builtins/web/web_builtins.h"
-#include "core/engine.h"
-#include "core/event_loop.h"
+#include "engine.h"
+#include "event_loop.h"
 // #include "wizer.h"
 
 // bool WIZENED = false;

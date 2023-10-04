@@ -9,9 +9,9 @@
 
 #include "../streams/native-stream-source.h"
 #include "../streams/transform-stream.h"
-#include "core/encode.h"
-#include "core/engine.h"
-#include "core/event_loop.h"
+#include "encode.h"
+#include "engine.h"
+#include "event_loop.h"
 #include "fetch-event.h"
 #include "host_interface/host_api.h"
 #include "../url.h"
