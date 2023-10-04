@@ -1,7 +1,7 @@
 #ifndef JS_COMPUTE_RUNTIME_CRYPTO_KEY_H
 #define JS_COMPUTE_RUNTIME_CRYPTO_KEY_H
 
-#include "builtin.h"
+#include "builtins/builtin.h"
 
 #include "crypto-key-ec-components.h"
 #include "crypto-key-rsa-components.h"

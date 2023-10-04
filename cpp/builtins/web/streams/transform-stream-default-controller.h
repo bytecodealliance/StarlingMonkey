@@ -2,7 +2,6 @@
 #define JS_COMPUTE_RUNTIME_TRANSFORM_STREAM_DEFAULT_CONTROLLER_H
 
 #include "builtins/builtin.h"
-// #include "js-compute-builtins.h"
 
 namespace builtins {
 

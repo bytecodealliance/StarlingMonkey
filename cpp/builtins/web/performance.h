@@ -1,9 +1,11 @@
 #ifndef JS_COMPUTE_RUNTIME_BUILTIN_PERFORMANCE_H
 #define JS_COMPUTE_RUNTIME_BUILTIN_PERFORMANCE_H
 
-#include "builtin.h"
+#include "builtins/builtin.h"
 
 namespace builtins {
+namespace web {
+namespace performance {
 
 class Performance : public BuiltinImpl<Performance> {
 private:
@@ -25,6 +27,10 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
 };
 
+bool add_to_global(JSContext *cx, JS::HandleObject global);
+
+} // namespace performance
+} // namespace web
 } // namespace builtins
 
 #endif

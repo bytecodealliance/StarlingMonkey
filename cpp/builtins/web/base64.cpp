@@ -1,5 +1,9 @@
 #include "base64.h"
 
+namespace builtins {
+namespace web {
+namespace base64 {
+
 JS::Result<std::string> convertJSValueToByteString(JSContext *cx,
                                                    JS::Handle<JS::Value> v) {
   JS::RootedString s(cx);
@@ -77,6 +81,25 @@ const uint8_t base64DecodeTable[128] = {
   /* 24 */   nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet,
   /* 32 */   nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet,
   /* 40 */   nonAlphabet, nonAlphabet, nonAlphabet,          62, nonAlphabet, nonAlphabet, nonAlphabet,          63,
+  /* 48 */            52,          53,          54,          55,          56,          57,          58,          59,
+  /* 56 */            60,          61, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet,
+  /* 64 */   nonAlphabet,           0,           1,           2,           3,           4,           5,           6,
+  /* 72 */             7,           8,           9,          10,          11,          12,          13,          14,
+  /* 80 */            15,          16,          17,          18,          19,          20,          21,          22,
+  /* 88 */            23,          24,          25, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet,          63,
+  /* 96 */   nonAlphabet,          26,          27,          28,          29,          30,          31,          32,
+  /* 104 */           33,          34,          35,          36,          37,          38,          39,          40,
+  /* 112 */           41,          42,          43,          44,          45,          46,          47,          48,
+  /* 120 */           49,          50,          51, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet
+};
+
+const uint8_t base64URLDecodeTable[128] = {
+  /* 0 */    nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet,
+  /* 8 */    nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet,
+  /* 16 */   nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet,
+  /* 24 */   nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet,
+  /* 32 */   nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet,
+  /* 40 */   nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet,          62, nonAlphabet, nonAlphabet,
   /* 48 */            52,          53,          54,          55,          56,          57,          58,          59,
   /* 56 */            60,          61, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet,
   /* 64 */   nonAlphabet,           0,           1,           2,           3,           4,           5,           6,
@@ -425,7 +448,10 @@ const JSFunctionSpec methods[] = {JS_FN("atob", atob, 1, JSPROP_ENUMERATE),
                                   JS_FN("btoa", btoa, 1, JSPROP_ENUMERATE),
                                   JS_FS_END};
 
-bool builtins::web::base64::add_to_global(JSContext *cx,
-                                          JS::HandleObject global) {
+bool add_to_global(JSContext *cx, JS::HandleObject global) {
   return JS_DefineFunctions(cx, global, methods);
 }
+
+} // namespace base64
+} // namespace web
+} // namespace builtins

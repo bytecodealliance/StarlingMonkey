@@ -43,7 +43,7 @@ static_assert(std::is_same_v<wasi_http_types_incoming_response_t,
 
 #endif
 
-    namespace host_api {
+namespace host_api {
 
 namespace {
 

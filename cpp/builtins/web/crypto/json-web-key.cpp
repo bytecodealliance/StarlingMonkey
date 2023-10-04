@@ -12,9 +12,9 @@
 #include "jsfriendapi.h"
 #pragma clang diagnostic pop
 
-#include "builtins/json-web-key.h"
+#include "builtins/builtin.h"
+#include "json-web-key.h"
 #include "core/encode.h"
-#include "js-compute-builtins.h"
 
 namespace builtins {
 namespace web {

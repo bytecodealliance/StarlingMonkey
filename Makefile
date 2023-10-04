@@ -111,6 +111,7 @@ CFLAGS += --sysroot=$(WASI_SDK)/share/wasi-sysroot
 INCLUDES := -I$(CPP_SRC)
 INCLUDES += -I$(SM_SRC)/include
 INCLUDES += -I$(ROOT)/deps/include
+INCLUDES += -I$(ROOT)/deps/fmt/include
 INCLUDES += -I$(ROOT)/crates
 INCLUDES += -I$(BINDINGS)
 INCLUDES += -I$(BUILD)/openssl/include
@@ -156,7 +157,7 @@ $(BUILD):
 $(OBJ_DIR):
 	$(call cmd,mkdir,$@)
 
-$(OBJ_DIR)/third_party/fmt/src:
+$(OBJ_DIR)/deps/fmt/src:
 	$(call cmd,mkdir,$@)
 
 shared:
@@ -283,7 +284,7 @@ CPP_FILES += $(shell find $(CPP_SRC) -type f -name '*.cc')
 # CPP_FILES += $(wildcard $(CPP_SRC)/builtins/*.cpp)
 # CPP_FILES += $(wildcard $(CPP_SRC)/builtins/shared/*.cpp)
 # CPP_FILES += $(wildcard $(CPP_SRC)/core/*.cpp)
-# CPP_FILES += $(ROOT)/deps/fmt/src/format.cc
+CPP_FILES += $(ROOT)/deps/fmt/src/format.cc
 CPP_OBJ := $(call build_dest,$(call change_src_extension,$(CPP_FILES),o))
 
 

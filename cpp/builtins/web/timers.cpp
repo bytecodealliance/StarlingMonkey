@@ -1,6 +1,10 @@
 #include "timers.h"
 #include "core/event_loop.h"
 
+namespace builtins {
+namespace web {
+namespace timers {
+
 /**
  * The `setTimeout` and `setInterval` global functions
  * https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html#dom-settimeout
@@ -75,7 +79,10 @@ const JSFunctionSpec methods[] = {
     JS_FN("setTimeout", setTimeout_or_interval<false>, 1, JSPROP_ENUMERATE),
     JS_FS_END};
 
-bool builtins::web::timers::add_to_global(JSContext *cx,
-                                          JS::HandleObject global) {
+bool add_to_global(JSContext *cx, JS::HandleObject global) {
   return JS_DefineFunctions(cx, global, methods);
 }
+
+} // namespace queue_microtask
+} // namespace web
+} // namespace builtins

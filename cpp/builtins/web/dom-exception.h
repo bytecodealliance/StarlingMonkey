@@ -1,9 +1,10 @@
 #ifndef JS_COMPUTE_RUNTIME_BUILTIN_DOM_EXCEPTION_H
 #define JS_COMPUTE_RUNTIME_BUILTIN_DOM_EXCEPTION_H
 
-#include "builtin.h"
+#include "builtins/builtin.h"
 
 namespace builtins {
+namespace web {
 
 class DOMException : public BuiltinImpl<DOMException> {
 private:
@@ -27,6 +28,7 @@ public:
   static void raise(JSContext *cx, std::string_view message, std::string_view name);
 };
 
+} // namespace web
 } // namespace builtins
 
 #endif

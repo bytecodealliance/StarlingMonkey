@@ -1,7 +1,7 @@
 #ifndef JS_COMPUTE_RUNTIME_SUBTLE_CRYPTO_H
 #define JS_COMPUTE_RUNTIME_SUBTLE_CRYPTO_H
 
-#include "builtin.h"
+#include "builtins/builtin.h"
 #include "crypto-algorithm.h"
 
 namespace builtins {

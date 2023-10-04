@@ -1,7 +1,6 @@
 #include "crypto-key.h"
 #include "core/encode.h"
 #include "crypto-algorithm.h"
-#include "js-compute-builtins.h"
 #include "openssl/rsa.h"
 #include <iostream>
 #include <openssl/ec.h>
@@ -141,7 +140,7 @@ bool CryptoKey::algorithm_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   // instance of CryptoKey. We check if `self` is `CryptoKey.prototype` and if it is, we throw a JS
   // Error.
   if (self == proto_obj.get()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessageBuiltin, nullptr, JSMSG_INCOMPATIBLE_INSTANCE,
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INCOMPATIBLE_INSTANCE,
                               __func__, CryptoKey::class_.name);
     return false;
   }

@@ -1,16 +1,16 @@
 #include "dom-exception.h"
-#include "builtin.h"
+#include "builtins/builtin.h"
 #include "core/encode.h"
-#include "js-compute-builtins.h"
 #include "js/Context.h"
 
 namespace builtins {
+namespace web {
 
 bool DOMException::name_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
   if (self == proto_obj) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSBuiltinErrNum::JSMSG_INVALID_INTERFACE, "name get", "DOMException");
+                              JSMSG_INVALID_INTERFACE, "name get", "DOMException");
     return false;
   }
   args.rval().setString(JS::GetReservedSlot(self, Slots::Name).toString());
@@ -21,7 +21,7 @@ bool DOMException::message_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
   if (self == proto_obj) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSBuiltinErrNum::JSMSG_INVALID_INTERFACE, "name get", "DOMException");
+                              JSMSG_INVALID_INTERFACE, "name get", "DOMException");
     return false;
   }
   args.rval().setString(JS::GetReservedSlot(self, Slots::Message).toString());
@@ -32,7 +32,7 @@ bool DOMException::code_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
   if (self == proto_obj) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSBuiltinErrNum::JSMSG_INVALID_INTERFACE, "name get", "DOMException");
+                              JSMSG_INVALID_INTERFACE, "name get", "DOMException");
     return false;
   }
   JS::RootedString name_string(cx, JS::GetReservedSlot(self, Slots::Name).toString());
@@ -233,4 +233,5 @@ bool DOMException::init_class(JSContext *cx, JS::HandleObject global) {
   return init_class_impl(cx, global, proto);
 }
 
+} // namespace web
 } // namespace builtins

@@ -189,6 +189,27 @@ static void rejection_tracker(JSContext *cx, bool mutedErrors,
   }
 }
 
+bool math_random(JSContext *cx, unsigned argc, Value *vp) {
+  auto res = host_api::Random::get_u32();
+  MOZ_ASSERT(!res.is_err());
+  double newvalue = static_cast<double>(res.unwrap()) / std::pow(2.0, 32.0);
+
+  JS::CallArgs args = CallArgsFromVp(argc, vp);
+  args.rval().setDouble(newvalue);
+  return true;
+}
+
+bool fix_math_random(JSContext *cx, HandleObject global) {
+  JS::RootedValue math_val(cx);
+  if (!JS_GetProperty(cx, global, "Math", &math_val)) {
+    return false;
+  }
+  JS::RootedObject math(cx, &math_val.toObject());
+
+  const JSFunctionSpec funs[] = {JS_FN("random", math_random, 0, 0), JS_FS_END};
+  return JS_DefineFunctions(cx, math, funs);
+}
+
 bool init_js() {
   JS_Init();
 
@@ -225,7 +246,7 @@ bool init_js() {
   }
 
   JSAutoRealm ar(cx, global);
-  if (!JS::InitRealmStandardClasses(cx)) {
+  if (!JS::InitRealmStandardClasses(cx) || !fix_math_random(cx, global)) {
     return false;
   }
 
@@ -437,136 +458,11 @@ static void abort(JSContext *cx, const char *description) {
 //     printf("Request handler took %fms\n", diff / 1000);
 // }
 
-// static void process_pending_jobs(JSContext *cx, double *total_compute) {
-//   auto pre_reactions = system_clock::now();
-//   if (debug_logging_enabled()) {
-//     printf("Running promise reactions\n");
-//     fflush(stdout);
-//   }
-
-//   while (js::HasJobsPending(cx)) {
-//     js::RunJobs(cx);
-
-//     if (JS_IsExceptionPending(cx))
-//       abort(cx, "running Promise reactions");
-//   }
-
-//   double diff =
-//       duration_cast<microseconds>(system_clock::now() -
-//       pre_reactions).count();
-//   *total_compute += diff;
-//   if (debug_logging_enabled())
-//     printf("Running promise reactions took %fms\n", diff / 1000);
-// }
-
-// static void wait_for_backends(JSContext *cx, double *total_compute) {
-//   if (!core::EventLoop::has_pending_async_tasks())
-//     return;
-
-//   auto pre_requests = system_clock::now();
-//   if (debug_logging_enabled()) {
-//     printf("Waiting for backends ...\n");
-//     fflush(stdout);
-//   }
-
-//   if (!core::EventLoop::process_pending_async_tasks(cx))
-//     abort(cx, "processing network requests");
-
-//   double diff =
-//       duration_cast<microseconds>(system_clock::now() -
-//       pre_requests).count();
-//   if (debug_logging_enabled())
-//     printf("Done, waited for %fms\n", diff / 1000);
-// }
-
-// bool reactor_main(host_api::Request req) {
-//   assert(hasWizeningFinished());
-
-//   builtins::Performance::timeOrigin.emplace(
-//       std::chrono::high_resolution_clock::now());
-
-//   double total_compute = 0;
-//   auto start = system_clock::now();
-
-//   __wasilibc_initialize_environ();
-
-//   if (debug_logging_enabled()) {
-//     printf("Running JS handleRequest function for C@E service version %s\n",
-//            getenv("FASTLY_SERVICE_VERSION"));
-//     fflush(stdout);
-//   }
-
-//   JSContext *cx = CONTEXT;
-//   JSAutoRealm ar(cx, GLOBAL);
-//   js::ResetMathRandomSeed(cx);
-
-//   HandleObject fetch_event = builtins::FetchEvent::instance();
-//   builtins::FetchEvent::init_request(cx, fetch_event, req.req, req.body);
-
-//   dispatch_fetch_event(cx, fetch_event, &total_compute);
-
-//   // Loop until no more resolved promises or backend requests are pending.
-//   if (debug_logging_enabled()) {
-//     printf("Start processing async jobs ...\n");
-//     fflush(stdout);
-//   }
-
-//   do {
-//     // First, drain the promise reactions queue.
-//     process_pending_jobs(cx, &total_compute);
-
-//     // Then, check if the fetch event is still active, i.e. had pending
-//     promises
-//     // added to it using `respondWith` or `waitUntil`.
-//     if (!builtins::FetchEvent::is_active(fetch_event))
-//       break;
-
-//     // Process async tasks.
-//     wait_for_backends(cx, &total_compute);
-//   } while (js::HasJobsPending(cx) ||
-//            core::EventLoop::has_pending_async_tasks());
-
-//   if (debug_logging_enabled() && core::EventLoop::has_pending_async_tasks())
-//   {
-//     fprintf(stderr, "Service terminated with async tasks pending. "
-//                     "Use FetchEvent#waitUntil to extend the service's
-//                     lifetime " "if needed.\n");
-//   }
-
-//   if (JS::SetSize(cx, unhandledRejectedPromises) > 0) {
-//     report_unhandled_promise_rejections(cx);
-
-//     // Respond with status `500` if any promise rejections were left
-//     unhandled
-//     // and no response was ever sent.
-//     if (!builtins::FetchEvent::response_started(fetch_event)) {
-//       builtins::FetchEvent::respondWithError(cx, fetch_event);
-//     }
-//   }
-
-//   // Respond with status `500` if an exception is pending
-//   // and no response was ever sent.
-//   if (JS_IsExceptionPending(cx)) {
-//     if (!builtins::FetchEvent::response_started(fetch_event)) {
-//       builtins::FetchEvent::respondWithError(cx, fetch_event);
-//     }
-//   }
-
-//   auto end = system_clock::now();
-//   double diff = duration_cast<microseconds>(end - start).count();
-//   if (debug_logging_enabled()) {
-//     printf(
-//         "Done. Total request processing time: %fms. Total compute time:
-//         %fms\n", diff / 1000, total_compute / 1000);
-//   }
-//   return true;
-// }
-
 core::Engine::Engine() {
   total_compute = 0;
   bool result = init_js();
-  JS::EnterRealm(cx(), global());
   MOZ_RELEASE_ASSERT(result);
+  JS::EnterRealm(cx(), global());
   core::EventLoop::init(cx());
 }
 

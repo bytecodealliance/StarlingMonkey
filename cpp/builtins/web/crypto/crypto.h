@@ -1,8 +1,7 @@
 #ifndef JS_COMPUTE_RUNTIME_BUILTIN_CRYPTO_H
 #define JS_COMPUTE_RUNTIME_BUILTIN_CRYPTO_H
 
-#include "builtin.h"
-#include "js-compute-builtins.h"
+#include "builtins/builtin.h"
 
 namespace builtins {
 namespace web {
