@@ -74,7 +74,7 @@ ifeq ($(WASM_TOOLS),)
 $(error ERROR: "No wasm-tools found in PATH, consider running 'cargo install wasm-tools'")
 else
 WASM_METADATA = $(WASM_TOOLS) metadata add --sdk $(PROJECT_NAME)=$(PROJECT_VERSION) --output $1 $1
-COMPONENT_TYPE = $(WASM_TOOLS) component new --adapt deps/wasi_snapshot_preview1.wasm --output $1 $1
+COMPONENT_TYPE = $(WASM_TOOLS) component new --adapt $(HOST_INTERFACE)/wasi_snapshot_preview1.wasm --output $1 $1
 endif
 
 # The base build directory, where all our build artifacts go.
@@ -86,7 +86,13 @@ OBJ_DIR := $(BUILD)/$(MODE)
 # The path to the //runtime/spidermonkey/$(MODE) directory.
 SM_SRC := $(ROOT)/deps/spidermonkey/$(MODE)
 
-BINDINGS := $(BUILD)/bindings
+ifneq ($(CAE),)
+HOST_INTERFACE := compute-at-edge
+else
+HOST_INTERFACE := wasi-preview2
+endif
+
+BINDINGS := $(HOST_INTERFACE)/bindings
 
 # The objects we link in from spidermonkey
 SM_OBJ := $(wildcard $(SM_SRC)/lib/*.o)
@@ -265,7 +271,7 @@ regenerate-world:
 	@echo ""
 	@echo "No wit-bindgen found in PATH, consider running"
 	@echo ""
-	@echo "  cargo install --git https://github.com/bytecodealliance/wit-bindgen wit-bindgen-cli --no-default-features --features c"
+	@echo "  cargo install wit-bindgen"
 	@echo ""
 	@exit 1
 else
@@ -273,13 +279,14 @@ regenerate-world:
 	$Q $(WIT_BINDGEN) c \
 	  --out-dir $(BINDINGS) \
 	  --world bindings \
-	  wit
+	  $(HOST_INTERFACE)/wit
 endif
 
 
 # Winter runtime shared build #################################################
 
 CPP_FILES := $(wildcard $(RT_SRC)/*.cpp)
+CPP_FILES += $(shell find $(HOST_INTERFACE) -type f -name '*.cpp')
 CPP_FILES += $(shell find $(CPP_SRC) -type f -name '*.cpp')
 CPP_FILES += $(shell find $(CPP_SRC) -type f -name '*.cc')
 CPP_FILES += $(ROOT)/deps/fmt/src/format.cc

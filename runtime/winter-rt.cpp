@@ -73,7 +73,7 @@ bool exports_wasi_cli_run_run(void) {
 }
 
 void exports_wasi_http_incoming_handler_handle(
-    wasi_http_incoming_handler_incoming_request_t request,
-    wasi_http_incoming_handler_response_outparam_t response_out) {
-      std::cout << "Incoming request" << std::endl;
+    bindings_own_incoming_request_t request,
+    bindings_own_response_outparam_t response_out) {
+  std::cout << "Incoming request" << std::endl;
 }
