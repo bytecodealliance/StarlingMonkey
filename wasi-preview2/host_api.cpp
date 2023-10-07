@@ -57,13 +57,11 @@ Result<std::optional<uint32_t>> AsyncHandle::select(std::vector<AsyncHandle> &ha
 
   auto count = handles.size();
   if (timeout_ms > 0) {
-    DBG("1\n");
     // WASI clock resolution is in us.
     auto timeout = timeout_ms * 1000;
     auto timer = wasi_clocks_monotonic_clock_subscribe(timeout, false);
     count++;
     handles.push_back(static_cast<AsyncHandle>(timer.__handle));
-    DBG("2\n");
   }
   auto handles_ptr =
       reinterpret_cast<bindings_borrow_pollable_t *>(handles.data());
@@ -71,7 +69,6 @@ Result<std::optional<uint32_t>> AsyncHandle::select(std::vector<AsyncHandle> &ha
   auto list = bindings_list_borrow_pollable_t{handles_ptr, count};
   bindings_list_u32_t result = {.ptr = nullptr,.len = 0};
   wasi_io_poll_poll_list(&list, &result);
-  DBG("count: %zu. Result len: %zu, ptr: %p\n", count, result.len, result.ptr);
   MOZ_ASSERT(result.len > 0);
   if (timeout_ms > 0 && result.ptr[0] == count - 1) {
     res.emplace(std::nullopt);
@@ -105,16 +102,32 @@ Result<uint32_t> Random::get_u32() {
   return res;
 }
 
-Result<HttpBody> HttpBody::make() {
+Result<HttpBody> HttpBody::make(HttpResp response) {
   Result<HttpBody> res;
 
-  // http_body_t handle;
-  // fastly_compute_at_edge_types_error_t err;
-  // if (!fastly_compute_at_edge_http_body_new(&handle, &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace(handle);
-  // }
+  bindings_own_outgoing_body_t body;
+  if (!wasi_http_types_method_outgoing_response_write(
+      bindings_borrow_outgoing_response_t{response.handle}, &body)) {
+    // TODO: define proper error codes.
+    res.emplace_err(0);
+  } else {
+    res.emplace(body.__handle);
+  }
+
+  return res;
+}
+
+Result<HttpBody> HttpBody::make(HttpReq request) {
+  Result<HttpBody> res;
+
+  bindings_own_outgoing_body_t body;
+  if (!wasi_http_types_method_outgoing_request_write(
+      bindings_borrow_outgoing_request_t{request.handle}, &body)) {
+    // TODO: define proper error codes.
+    res.emplace_err(0);
+  } else {
+    res.emplace(body.__handle);
+  }
 
   return res;
 }

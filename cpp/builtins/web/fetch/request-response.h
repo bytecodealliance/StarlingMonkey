@@ -23,7 +23,7 @@ public:
   };
 
   static bool is_instance(JSObject *obj);
-  static uint32_t handle(JSObject *obj);
+  static int32_t handle(JSObject *obj);
   static bool has_body(JSObject *obj);
   static host_api::HttpBody body_handle(JSObject *obj);
   static JSObject *body_stream(JSObject *obj);

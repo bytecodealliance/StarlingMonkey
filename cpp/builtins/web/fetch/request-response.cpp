@@ -117,10 +117,9 @@ bool RequestOrResponse::is_instance(JSObject *obj) {
 ;
 }
 
-uint32_t RequestOrResponse::handle(JSObject *obj) {
+int32_t RequestOrResponse::handle(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
-  return static_cast<uint32_t>(
-      JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::RequestOrResponse)).toInt32());
+  return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::RequestOrResponse)).toInt32();
 }
 
 bool RequestOrResponse::has_body(JSObject *obj) {
@@ -1317,7 +1316,7 @@ bool Request::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
       return false;
     }
 
-    auto res = host_api::HttpBody::make();
+    auto res = host_api::HttpBody::make(request_handle);
     if (auto *err = res.to_err()) {
       HANDLE_ERROR(cx, *err);
       return false;
@@ -1506,14 +1505,14 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     HANDLE_ERROR(cx, *err);
     return nullptr;
   }
+  auto request_handle = request_handle_res.unwrap();
 
-  auto body = host_api::HttpBody::make();
+  auto body = host_api::HttpBody::make(request_handle);
   if (auto *err = body.to_err()) {
     HANDLE_ERROR(cx, *err);
     return nullptr;
   }
 
-  auto request_handle = request_handle_res.unwrap();
   JS::RootedObject request(cx, create(cx, requestInstance, request_handle, body.unwrap(), false));
   if (!request) {
     return nullptr;
@@ -2386,7 +2385,7 @@ bool Response::redirect(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  auto make_res = host_api::HttpBody::make();
+  auto make_res = host_api::HttpBody::make(response_handle);
   if (auto *err = make_res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
@@ -2532,7 +2531,7 @@ bool Response::json(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  auto make_res = host_api::HttpBody::make();
+  auto make_res = host_api::HttpBody::make(response_handle);
   if (auto *err = make_res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
@@ -2712,14 +2711,14 @@ bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     HANDLE_ERROR(cx, *err);
     return false;
   }
+  auto response_handle = response_handle_res.unwrap();
 
-  auto make_res = host_api::HttpBody::make();
+  auto make_res = host_api::HttpBody::make(response_handle);
   if (auto *err = make_res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
   }
 
-  auto response_handle = response_handle_res.unwrap();
   auto body = make_res.unwrap();
   JS::RootedObject responseInstance(cx, JS_NewObjectForConstructor(cx, &class_, args));
   JS::RootedObject response(cx, create(cx, responseInstance, response_handle,

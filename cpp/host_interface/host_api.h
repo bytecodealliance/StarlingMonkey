@@ -24,16 +24,16 @@ namespace host_api {
 /// A type to signal that a result produces no value.
 struct Void final {};
 
-/// The type of erros returned from the host.
-using FastlyError = uint8_t;
+/// The type of errors returned from the host.
+using APIError = uint8_t;
 
-bool error_is_generic(FastlyError e);
-bool error_is_invalid_argument(FastlyError e);
-bool error_is_optional_none(FastlyError e);
-bool error_is_bad_handle(FastlyError e);
+bool error_is_generic(APIError e);
+bool error_is_invalid_argument(APIError e);
+bool error_is_optional_none(APIError e);
+bool error_is_bad_handle(APIError e);
 
 /// Generate an error in the JSContext.
-void handle_api_error(JSContext *cx, FastlyError err, int line, const char *func);
+void handle_api_error(JSContext *cx, APIError err, int line, const char *func);
 
 /// Wrap up a call to handle_api_error with the current line and function.
 #define HANDLE_ERROR(cx, err) ::host_api::handle_api_error(cx, err, __LINE__, __func__)
@@ -42,9 +42,9 @@ template <typename T> class Result final {
   /// A private wrapper to distinguish `fastly_compute_at_edge_types_error_t` in the private
   /// variant.
   struct Error {
-    FastlyError value;
+    APIError value;
 
-    explicit Error(FastlyError value) : value{value} {}
+    explicit Error(APIError value) : value{value} {}
   };
 
   std::variant<T, Error> result;
@@ -53,7 +53,7 @@ public:
   Result() = default;
 
   /// Explicitly construct an error.
-  static Result err(FastlyError err) {
+  static Result err(APIError err) {
     Result res;
     res.emplace_err(err);
     return res;
@@ -67,7 +67,7 @@ public:
   }
 
   /// Construct an error in-place.
-  FastlyError &emplace_err(FastlyError err) & {
+  APIError &emplace_err(APIError err) & {
     return this->result.template emplace<Error>(err).value;
   }
 
@@ -80,8 +80,8 @@ public:
   bool is_err() const { return std::holds_alternative<Error>(this->result); }
 
   /// Return a pointer to the error value of this result, if the call failed.
-  const FastlyError *to_err() const {
-    return reinterpret_cast<const FastlyError *>(std::get_if<Error>(&this->result));
+  const APIError *to_err() const {
+    return reinterpret_cast<const APIError *>(std::get_if<Error>(&this->result));
   }
 
   /// Assume the call was successful, and return a reference to the result.
@@ -184,9 +184,14 @@ struct HostBytes final {
 /// Common methods for async handles.
 class AsyncHandle {
 public:
+#ifdef CAE
   using Handle = uint32_t;
-
   static constexpr Handle invalid = UINT32_MAX - 1;
+#else
+  using Handle = int32_t;
+  static constexpr Handle invalid = -1;
+#endif // CAE
+
 
   Handle handle;
 
@@ -213,12 +218,20 @@ public:
                                                 uint32_t timeout_ms);
 };
 
+class HttpReq;
+class HttpResp;
+
 /// A convenience wrapper for the host calls involving http bodies.
 class HttpBody final {
 public:
+#ifdef CAE
   using Handle = uint32_t;
-
   static constexpr Handle invalid = UINT32_MAX - 1;
+#else
+  using Handle = int32_t;
+  static constexpr Handle invalid = -1;
+#endif // CAE
+
 
   /// The handle to use when making host calls, initialized to the special invalid value used by
   /// executed.
@@ -232,7 +245,8 @@ public:
   bool valid() const { return this->handle != invalid; }
 
   /// Make a new body handle.
-  static Result<HttpBody> make();
+  static Result<HttpBody> make(HttpReq request);
+  static Result<HttpBody> make(HttpResp response);
 
   /// Read a chunk from this handle.
   Result<HostString> read(uint32_t chunk_size) const;
@@ -259,9 +273,13 @@ struct Response;
 
 class HttpPendingReq final {
 public:
+#ifdef CAE
   using Handle = uint32_t;
-
   static constexpr Handle invalid = UINT32_MAX - 1;
+#else
+  using Handle = int32_t;
+  static constexpr Handle invalid = -1;
+#endif // CAE
 
   Handle handle = invalid;
 
@@ -340,9 +358,14 @@ struct Request;
 
 class HttpReq final : public HttpBase {
 public:
+#ifdef CAE
   using Handle = uint32_t;
-
   static constexpr Handle invalid = UINT32_MAX - 1;
+#else
+  using Handle = int32_t;
+  static constexpr Handle invalid = -1;
+#endif // CAE
+
 
   Handle handle = invalid;
 
@@ -419,9 +442,14 @@ public:
 
 class HttpResp final : public HttpBase {
 public:
+#ifdef CAE
   using Handle = uint32_t;
-
   static constexpr Handle invalid = UINT32_MAX - 1;
+#else
+  using Handle = int32_t;
+  static constexpr Handle invalid = -1;
+#endif // CAE
+
 
   Handle handle = invalid;
 

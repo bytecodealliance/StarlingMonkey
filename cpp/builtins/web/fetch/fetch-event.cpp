@@ -321,14 +321,14 @@ bool FetchEvent::respondWithError(JSContext *cx, JS::HandleObject self) {
     HANDLE_ERROR(cx, *err);
     return false;
   }
+  auto response = response_res.unwrap();
 
-  auto make_res = host_api::HttpBody::make();
+  auto make_res = host_api::HttpBody::make(response);
   if (auto *err = make_res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
   }
 
-  auto response = response_res.unwrap();
   auto status_res = response.set_status(500);
   if (auto *err = status_res.to_err()) {
     HANDLE_ERROR(cx, *err);

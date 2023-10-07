@@ -72,10 +72,9 @@ bool lazy_values(JSObject *self) {
       .toBoolean();
 }
 
-uint32_t get_handle(JSObject *self) {
+int32_t get_handle(JSObject *self) {
   MOZ_ASSERT(Headers::is_instance(self));
-  return static_cast<uint32_t>(
-      JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Handle)).toInt32());
+  return JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Handle)).toInt32();
 }
 
 /**
@@ -237,7 +236,7 @@ bool append_header_value_to_map(JSContext *cx, JS::HandleObject self,
   return JS::MapSet(cx, map, normalized_name, normalized_value);
 }
 
-bool get_header_names_from_handle(JSContext *cx, uint32_t handle, Headers::Mode mode,
+bool get_header_names_from_handle(JSContext *cx, int32_t handle, Headers::Mode mode,
                                   JS::HandleObject backing_map) {
 
   auto names = mode == Headers::Mode::ProxyToRequest
@@ -268,7 +267,7 @@ bool retrieve_value_for_header_from_handle(JSContext *cx, JS::HandleObject self,
                                            JS::HandleValue name, JS::MutableHandleValue value) {
   auto mode = get_mode(self);
   MOZ_ASSERT(mode != Headers::Mode::Standalone);
-  uint32_t handle = get_handle(self);
+  int32_t handle = get_handle(self);
 
   JS::RootedString name_str(cx, name.toString());
   auto name_chars = core::encode(cx, name_str);
@@ -791,12 +790,12 @@ JSObject *Headers::create(JSContext *cx, JS::HandleObject self, Headers::Mode mo
                           JS::HandleObject owner) {
   JS_SetReservedSlot(self, static_cast<uint32_t>(Slots::Mode),
                      JS::Int32Value(static_cast<int32_t>(mode)));
-  uint32_t handle = UINT32_MAX - 1;
+  int32_t handle = UINT32_MAX - 1;
   if (mode != Headers::Mode::Standalone) {
     handle = RequestOrResponse::handle(owner);
   }
   JS_SetReservedSlot(self, static_cast<uint32_t>(Slots::Handle),
-                     JS::Int32Value(static_cast<int32_t>(handle)));
+                     JS::Int32Value(handle));
 
   JS::RootedObject backing_map(cx, JS::NewMapObject(cx));
   if (!backing_map) {
