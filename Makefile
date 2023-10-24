@@ -43,6 +43,12 @@ include mk/commands.mk
 
 # Derived configuration ########################################################
 
+ifneq ($(CAE),)
+HOST_INTERFACE := $(ROOT)/compute-at-edge
+else
+HOST_INTERFACE :=$(ROOT)/wasi-preview2
+endif
+
 # The wasi-sdk provided c++ compiler wrapper.
 WASI_CXX ?= $(WASI_SDK)/bin/clang++
 
@@ -56,16 +62,20 @@ ifneq ($(DEBUG),false)
   MODE := debug
   CARGO_FLAG :=
   OPT_FLAGS += -DDEBUG -DJS_DEBUG -g
+  ADAPTER_DIR := $(HOST_INTERFACE)/preview1-adapter-debug
 
   # Define an empty WASM_STRIP macro when making a debug build
   WASM_STRIP =
 else
   MODE := release
   CARGO_FLAG := --release
+  ADAPTER_DIR := $(HOST_INTERFACE)/preview1-adapter-release
 
   # Strip binaries when making a non-debug build.
   WASM_STRIP = wasm-opt --strip-debug -o $1 $1
 endif
+
+ADAPTER := $(ADAPTER_DIR)/wasi_snapshot_preview1.wasm
 
 # The path to the wasm-tools executable
 WASM_TOOLS ?= $(shell which wasm-tools)
@@ -74,7 +84,7 @@ ifeq ($(WASM_TOOLS),)
 $(error ERROR: "No wasm-tools found in PATH, consider running 'cargo install wasm-tools'")
 else
 WASM_METADATA = $(WASM_TOOLS) metadata add --sdk $(PROJECT_NAME)=$(PROJECT_VERSION) --output $1 $1
-COMPONENT_TYPE = $(WASM_TOOLS) component new --adapt $(HOST_INTERFACE)/wasi_snapshot_preview1.wasm --output $1 $1
+COMPONENT_TYPE = $(WASM_TOOLS) component new --adapt $(ADAPTER) --output $1 $1
 endif
 
 # The base build directory, where all our build artifacts go.
@@ -86,14 +96,6 @@ OBJ_DIR := $(BUILD)/$(MODE)
 # The path to the //runtime/spidermonkey/$(MODE) directory.
 SM_SRC := $(ROOT)/deps/spidermonkey/$(MODE)
 
-ifneq ($(CAE),)
-HOST_INTERFACE := compute-at-edge
-else
-HOST_INTERFACE := wasi-preview2
-endif
-
-BINDINGS := $(HOST_INTERFACE)/bindings
-
 # The objects we link in from spidermonkey
 SM_OBJ := $(wildcard $(SM_SRC)/lib/*.o)
 SM_OBJ += $(wildcard $(SM_SRC)/lib/*.a)
@@ -101,6 +103,8 @@ SM_OBJ += $(wildcard $(SM_SRC)/lib/*.a)
 # This is required when using spidermonkey headers, as it allows us to enable
 # the streams library when setting up the js context.
 DEFINES := -DMOZ_JS_STREAMS
+
+BINDINGS := $(HOST_INTERFACE)/bindings
 
 # Flags for c++ compilation
 CXX_FLAGS := -std=gnu++20 -Wall -Werror -Qunused-arguments
@@ -117,6 +121,7 @@ CFLAGS += --sysroot=$(WASI_SDK)/share/wasi-sysroot
 # Includes for compiling c++
 INCLUDES := -I$(RT_SRC)
 INCLUDES += -I$(CPP_SRC)
+INCLUDES += -I$(CPP_SRC)/host_interface
 INCLUDES += -I$(SM_SRC)/include
 INCLUDES += -I$(ROOT)/deps/include
 INCLUDES += -I$(ROOT)/deps/fmt/include
@@ -137,12 +142,12 @@ LD_FLAGS += -L$(BUILD)/openssl/libx32 -lcrypto
 # Default targets ##############################################################
 
 .PHONY: all
-all: $(BUILD)/winter-runtime-component.wasm
+all: $(BUILD)/js-runtime-component.wasm
 
 # Remove just the build artifacts for the current runtime build.
 .PHONY: clean
 clean:
-	$(call cmd,rm,$(BUILD)/winter-runtime-component.wasm)
+	$(call cmd,rm,$(BUILD)/js-runtime-component.wasm)
 	$(call cmd,rmdir,$(BUILD)/release)
 	$(call cmd,rmdir,$(BUILD)/debug)
 
@@ -305,10 +310,8 @@ $(foreach source,$(BINDINGS_SRC),$(eval $(call compile_c,$(source))))
 # NOTE: we shadow wasm-opt by adding $(ROOT)/scripts to the path, which
 # includes a script called wasm-opt that immediately exits successfully. See
 # that script for more information about why we do this.
-$(OBJ_DIR)/winter-runtime-component.wasm: $(CPP_OBJ) $(SM_OBJ) $(RUST_URL_LIB) $(RUST_ENCODING_LIB)
-# $(OBJ_DIR)/winter-runtime-component.wasm: $(OBJ_DIR)/impl/main_component.o
-$(OBJ_DIR)/winter-runtime-component.wasm: $(BINDINGS)/*.o
-$(OBJ_DIR)/winter-runtime-component.wasm: $(BINDINGS_OBJ)
+$(OBJ_DIR)/js-runtime-component.wasm: $(CPP_OBJ) $(SM_OBJ) $(RUST_URL_LIB) $(RUST_ENCODING_LIB)
+$(OBJ_DIR)/js-runtime-component.wasm: $(BINDINGS)/*.o $(BINDINGS_OBJ)
 	$(call cmd_format,WASI_LD,$@) PATH="$(ROOT)/scripts:$$PATH" \
 	$(WASI_CXX) $(LD_FLAGS) $(OPENSSL_LIBS) -o $@ $^
 	$(call cmd_format,WASM_STRIP,$@) $(call WASM_STRIP,$@)
@@ -349,8 +352,8 @@ $(OBJ_DIR)/builtins.a: $(OBJ_DIR)/core/encode.o
 # Without marking it phony, the wasm won't be copied in the last invocation of
 # make, as it will look up-to-date.
 
-.PHONY: $(BUILD)/winter-runtime-component.wasm
-$(BUILD)/winter-runtime-component.wasm: $(OBJ_DIR)/winter-runtime-component.wasm
+.PHONY: $(BUILD)/js-runtime-component.wasm
+$(BUILD)/js-runtime-component.wasm: $(OBJ_DIR)/js-runtime-component.wasm
 	$(call cmd,cp,$@)
 
 

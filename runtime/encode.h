@@ -1,7 +1,7 @@
 #ifndef JS_COMPUTE_RUNTIME_ENCODE_H
 #define JS_COMPUTE_RUNTIME_ENCODE_H
 
-#include "host_interface/host_api.h"
+#include "host_api.h"
 #include "rust-url/rust-url.h"
 
 namespace core {

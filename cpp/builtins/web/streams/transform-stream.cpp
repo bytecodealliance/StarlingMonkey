@@ -15,6 +15,9 @@
 #include "transform-stream.h"
 
 namespace ReadableStream_additions {
+
+using namespace builtins::web::streams;
+
 static JS::PersistentRooted<JSObject *> proto_obj;
 
 bool is_instance(JSObject *obj) { return JS::IsReadableStream(obj); }
@@ -40,14 +43,14 @@ bool pipeTo(JSContext *cx, unsigned argc, JS::Value *vp) {
   // writable end of a TransformStream, set the TransformStream as the owner of
   // the receiver's source. This enables us to shortcut operations later on.
   JS::RootedObject target(cx, args[0].isObject() ? &args[0].toObject() : nullptr);
-  if (target && builtins::NativeStreamSource::stream_has_native_source(cx, self) &&
-      JS::IsWritableStream(target) && builtins::TransformStream::is_ts_writable(cx, target)) {
-    if (auto ts = builtins::TransformStream::ts_from_writable(cx, target)) {
+  if (target && NativeStreamSource::stream_has_native_source(cx, self) &&
+      JS::IsWritableStream(target) && TransformStream::is_ts_writable(cx, target)) {
+    if (auto ts = TransformStream::ts_from_writable(cx, target)) {
       auto streamHasTransformer =
-          JS::GetReservedSlot(ts, builtins::TransformStream::Slots::HasTransformer).toBoolean();
+          JS::GetReservedSlot(ts, TransformStream::Slots::HasTransformer).toBoolean();
       // We only want to apply the optimisation on identity-streams
       if (!streamHasTransformer) {
-        builtins::NativeStreamSource::set_stream_piped_to_ts_writable(cx, self, target);
+        NativeStreamSource::set_stream_piped_to_ts_writable(cx, self, target);
       }
     }
   }
@@ -259,6 +262,8 @@ bool ExtractStrategy(JSContext *cx, JS::HandleValue strategy, double default_hwm
  * https://streams.spec.whatwg.org/#ts-class
  */
 namespace builtins {
+namespace web {
+namespace streams {
 /**
  * The native object owning the sink underlying the TransformStream's readable
  * end.
@@ -283,18 +288,18 @@ JSObject *TransformStream::readable(JSObject *self) {
 }
 
 bool TransformStream::is_ts_readable(JSContext *cx, JS::HandleObject readable) {
-  JSObject *source = builtins::NativeStreamSource::get_stream_source(cx, readable);
-  if (!source || !builtins::NativeStreamSource::is_instance(source)) {
+  JSObject *source = NativeStreamSource::get_stream_source(cx, readable);
+  if (!source || !NativeStreamSource::is_instance(source)) {
     return false;
   }
-  JSObject *stream_owner = builtins::NativeStreamSource::owner(source);
+  JSObject *stream_owner = NativeStreamSource::owner(source);
   return stream_owner ? TransformStream::is_instance(stream_owner) : false;
 }
 
 JSObject *TransformStream::ts_from_readable(JSContext *cx, JS::HandleObject readable) {
   MOZ_ASSERT(is_ts_readable(cx, readable));
-  JSObject *source = builtins::NativeStreamSource::get_stream_source(cx, readable);
-  return builtins::NativeStreamSource::owner(source);
+  JSObject *source = NativeStreamSource::get_stream_source(cx, readable);
+  return NativeStreamSource::owner(source);
 }
 
 bool TransformStream::readable_used_as_body(JSObject *self) {
@@ -327,19 +332,19 @@ JSObject *TransformStream::writable(JSObject *self) {
 
 JSObject *TransformStream::ts_from_writable(JSContext *cx, JS::HandleObject writable) {
   MOZ_ASSERT(is_ts_writable(cx, writable));
-  JSObject *sink = builtins::NativeStreamSink::get_stream_sink(cx, writable);
-  if (!sink || !builtins::NativeStreamSink::is_instance(sink)) {
+  JSObject *sink = NativeStreamSink::get_stream_sink(cx, writable);
+  if (!sink || !NativeStreamSink::is_instance(sink)) {
     return nullptr;
   }
-  return builtins::NativeStreamSink::owner(sink);
+  return NativeStreamSink::owner(sink);
 }
 
 bool TransformStream::is_ts_writable(JSContext *cx, JS::HandleObject writable) {
-  JSObject *sink = builtins::NativeStreamSink::get_stream_sink(cx, writable);
-  if (!sink || !builtins::NativeStreamSink::is_instance(sink)) {
+  JSObject *sink = NativeStreamSink::get_stream_sink(cx, writable);
+  if (!sink || !NativeStreamSink::is_instance(sink)) {
     return false;
   }
-  JSObject *stream_owner = builtins::NativeStreamSink::owner(sink);
+  JSObject *stream_owner = NativeStreamSink::owner(sink);
   return stream_owner ? is_instance(stream_owner) : false;
 }
 
@@ -585,7 +590,7 @@ bool TransformStream::default_sink_write_algo_then_handler(JSContext *cx, JS::Ha
   // chunk).
   JS::RootedObject transformPromise(cx);
   transformPromise =
-      builtins::TransformStreamDefaultController::PerformTransform(cx, controller, chunk);
+      TransformStreamDefaultController::PerformTransform(cx, controller, chunk);
   if (!transformPromise) {
     return false;
   }
@@ -638,7 +643,7 @@ bool TransformStream::DefaultSinkWriteAlgorithm(JSContext *cx, JS::CallArgs args
   // chunk).
   JS::RootedObject transformPromise(cx);
   transformPromise =
-      builtins::TransformStreamDefaultController::PerformTransform(cx, controller, chunk);
+      TransformStreamDefaultController::PerformTransform(cx, controller, chunk);
   if (!transformPromise) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
@@ -737,7 +742,7 @@ bool TransformStream::DefaultSinkCloseAlgorithm(JSContext *cx, JS::CallArgs args
 
   // 3.  Let flushPromise be the result of performing
   // controller.[flushAlgorithm].
-  auto flushAlgorithm = builtins::TransformStreamDefaultController::flushAlgorithm(controller);
+  auto flushAlgorithm = TransformStreamDefaultController::flushAlgorithm(controller);
   JS::RootedObject flushPromise(cx, flushAlgorithm(cx, controller));
   if (!flushPromise) {
     return false;
@@ -745,7 +750,7 @@ bool TransformStream::DefaultSinkCloseAlgorithm(JSContext *cx, JS::CallArgs args
 
   // 4.  Perform !
   // [TransformStreamDefaultControllerClearAlgorithms](controller).
-  builtins::TransformStreamDefaultController::ClearAlgorithms(controller);
+  TransformStreamDefaultController::ClearAlgorithms(controller);
 
   // 5.  Return the result of [reacting] to flushPromise:
   // 5.1.  If flushPromise was fulfilled, then:
@@ -822,7 +827,7 @@ bool TransformStream::Initialize(JSContext *cx, JS::HandleObject stream,
   // writableSizeAlgorithm).
   JS::RootedValue startPromiseVal(cx, JS::ObjectValue(*startPromise));
   JS::RootedObject sink(
-      cx, builtins::NativeStreamSink::create(cx, stream, startPromiseVal, DefaultSinkWriteAlgorithm,
+      cx, NativeStreamSink::create(cx, stream, startPromiseVal, DefaultSinkWriteAlgorithm,
                                              DefaultSinkCloseAlgorithm, DefaultSinkAbortAlgorithm));
   if (!sink)
     return false;
@@ -845,7 +850,7 @@ bool TransformStream::Initialize(JSContext *cx, JS::HandleObject stream,
   // Step 8.  Set stream.[readable] to ! [CreateReadableStream](startAlgorithm,
   // pullAlgorithm, cancelAlgorithm, readableHighWaterMark,
   // readableSizeAlgorithm).
-  JS::RootedObject source(cx, builtins::NativeStreamSource::create(cx, stream, startPromiseVal,
+  JS::RootedObject source(cx, NativeStreamSource::create(cx, stream, startPromiseVal,
                                                                    pullAlgorithm, cancelAlgorithm));
   if (!source)
     return false;
@@ -888,7 +893,7 @@ bool TransformStream::ErrorWritableAndUnblockWrite(JSContext *cx, JS::HandleObje
 
   // 1.  Perform
   // TransformStreamDefaultControllerClearAlgorithms(stream.[controller]).
-  builtins::TransformStreamDefaultController::ClearAlgorithms(controller(stream));
+  TransformStreamDefaultController::ClearAlgorithms(controller(stream));
 
   // 2.  Perform
   // WritableStreamDefaultControllerErrorIfNeeded(stream.[writable].[controller],
@@ -935,7 +940,7 @@ TransformStream::create(JSContext *cx, JS::HandleObject self, double writableHig
 
   // Step 11.
   JS::RootedObject controller(cx);
-  controller = builtins::TransformStreamDefaultController::SetUpFromTransformer(
+  controller = TransformStreamDefaultController::SetUpFromTransformer(
       cx, self, transformer, transformFunction, flushFunction);
   if (!controller) {
     return nullptr;
@@ -1001,4 +1006,6 @@ JSObject *TransformStream::create_rs_proxy(JSContext *cx, JS::HandleObject input
 
   return readable(transform_stream);
 }
+} // namespace streams
+} // namespace web
 } // namespace builtins

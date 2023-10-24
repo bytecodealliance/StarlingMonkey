@@ -4,6 +4,8 @@
 #include "builtins/builtin.h"
 
 namespace builtins {
+namespace web {
+namespace streams {
 
 class TransformStreamDefaultController
     : public BuiltinNoConstructor<TransformStreamDefaultController> {
@@ -67,6 +69,8 @@ public:
   static void ClearAlgorithms(JSObject *controller);
 };
 
+} // namespace streams
+} // namespace web
 } // namespace builtins
 
 #endif

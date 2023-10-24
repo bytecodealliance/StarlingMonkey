@@ -1,7 +1,9 @@
 #include "event_loop.h"
 #include "bindings.h"
 #include "builtins/builtin.h"
-#include "host_interface/host_api.h"
+#include "builtins/web/fetch/request-response.h"
+#include "builtins/web/streams/native-stream-source.h"
+#include "host_api.h"
 
 #include <chrono>
 #include <iostream>
@@ -146,42 +148,41 @@ JS::PersistentRooted<js::UniquePtr<ScheduledTimers>> timers;
 
 JS::PersistentRootedObjectVector *pending_async_tasks;
 
-// bool process_pending_request(JSContext *cx, JS::HandleObject request,
-//                              host_api::HttpPendingReq pending) {
+bool process_pending_request(JSContext *cx, JS::HandleObject request) {
 
-//   JS::RootedObject response_promise(
-//       cx, builtins::Request::response_promise(request));
+  JS::RootedObject response_promise(
+      cx, builtins::web::fetch::Request::response_promise(request));
 
-//   auto res = pending.wait();
-//   if (auto *err = res.to_err()) {
-//     JS_ReportErrorUTF8(cx, "NetworkError when attempting to fetch
-//     resource."); return RejectPromiseWithPendingError(cx, response_promise);
-//   }
 
-//   auto [response_handle, body] = res.unwrap();
-//   JS::RootedObject response_instance(
-//       cx, JS_NewObjectWithGivenProto(cx, &builtins::Response::class_,
-//                                      builtins::Response::proto_obj));
-//   if (!response_instance) {
-//     return false;
-//   }
+  auto pending = builtins::web::fetch::Request::pending_handle(request);
 
-//   bool is_upstream = true;
-//   bool is_grip_upgrade = false;
-//   JS::RootedObject response(
-//       cx,
-//       builtins::Response::create(cx, response_instance, response_handle,
-//       body,
-//                                  is_upstream, is_grip_upgrade, nullptr));
-//   if (!response) {
-//     return false;
-//   }
+  auto res = pending->poll();
+  if (auto *err = res.to_err()) {
+    JS_ReportErrorUTF8(cx, "NetworkError when attempting to fetch resource.");
+    return RejectPromiseWithPendingError(cx, response_promise);
+  }
 
-//   builtins::RequestOrResponse::set_url(
-//       response, builtins::RequestOrResponse::url(request));
-//   JS::RootedValue response_val(cx, JS::ObjectValue(*response));
-//   return JS::ResolvePromise(cx, response_promise, response_val);
-// }
+
+  auto maybe_response = res.unwrap();
+  MOZ_ASSERT(maybe_response.has_value());
+  auto response = maybe_response.value();
+  JS::RootedObject response_obj(cx,
+                                JS_NewObjectWithGivenProto(cx, &builtins::web::fetch::Response::class_,
+                                                           builtins::web::fetch::Response::proto_obj));
+  if (!response_obj) {
+    return false;
+  }
+
+  response_obj = builtins::web::fetch::Response::create(cx, response_obj, response);
+  if (!response_obj) {
+    return false;
+  }
+
+  builtins::web::fetch::RequestOrResponse::set_url(
+      response_obj, builtins::web::fetch::RequestOrResponse::url(request));
+  JS::RootedValue response_val(cx, JS::ObjectValue(*response_obj));
+  return JS::ResolvePromise(cx, response_promise, response_val);
+}
 
 // bool error_stream_controller_with_pending_exception(
 //     JSContext *cx, JS::HandleObject controller) {
@@ -201,9 +202,9 @@ JS::PersistentRootedObjectVector *pending_async_tasks;
 // bool process_body_read(JSContext *cx, JS::HandleObject streamSource,
 //                        host_api::HttpBody body) {
 //   JS::RootedObject owner(cx,
-//   builtins::NativeStreamSource::owner(streamSource)); JS::RootedObject
+//   builtins::web::streams::NativeStreamSource::owner(streamSource)); JS::RootedObject
 //   controller(
-//       cx, builtins::NativeStreamSource::controller(streamSource));
+//       cx, builtins::web::streams::NativeStreamSource::controller(streamSource));
 
 //   auto read_res = body.read(HANDLE_READ_CHUNK_SIZE);
 //   if (auto *err = read_res.to_err()) {
@@ -272,27 +273,29 @@ bool EventLoop::process_pending_async_tasks(JSContext *cx) {
 
   size_t count = pending_async_tasks->length();
   std::vector<host_api::AsyncHandle> handles;
-  handles.resize(count);
 
-  // for (size_t i = 0; i < count; i++) {
-  //   JS::HandleObject pending_obj = (*pending_async_tasks)[i];
-  //   if (builtins::Request::is_instance(pending_obj)) {
-  //     handles.push_back(
-  //         builtins::Request::pending_handle(pending_obj).async_handle());
-  //   } else {
-  //     MOZ_ASSERT(builtins::NativeStreamSource::is_instance(pending_obj));
-  //     JS::RootedObject owner(cx,
-  //                            builtins::NativeStreamSource::owner(pending_obj));
-  //     handles.push_back(
-  //         builtins::RequestOrResponse::body_handle(owner).async_handle());
-  //   }
-  // }
+  for (size_t i = 0; i < count; i++) {
+    JS::HandleObject pending_obj = (*pending_async_tasks)[i];
+    if (builtins::web::fetch::Request::is_instance(pending_obj)) {
+      handles.push_back(
+          builtins::web::fetch::Request::pending_handle(pending_obj)
+              ->async_handle());
+    // } else {
+    //   MOZ_ASSERT(
+    //       builtins::web::streams::NativeStreamSource::is_instance(pending_obj));
+    //   JS::RootedObject owner(cx,
+    //                          builtins::web::streams::NativeStreamSource::owner(pending_obj));
+    //   handles.push_back(
+    //       builtins::web::fetch::RequestOrResponse::body_handle(owner)
+    //           .async_handle());
+    }
+  }
 
   // TODO: WASI's poll_oneoff is infallible, so once legacy CAE support isn't
   // required anymore this should be simplified.
   auto res = host_api::AsyncHandle::select(handles, timeout);
-  DBG("2\n");
-  if (auto *err = res.to_err()) {
+  if (res.is_err()) {
+    auto *err = res.to_err();
     HANDLE_ERROR(cx, *err);
     return false;
   }
@@ -320,14 +323,13 @@ bool EventLoop::process_pending_async_tasks(JSContext *cx) {
   bool ok = true;
   JS::HandleObject ready_obj = (*pending_async_tasks)[ready_index];
   // TODO(TS)
-  // if (builtins::Request::is_instance(ready_obj)) {
-  //   ok = process_pending_request(cx, ready_obj,
-  //                                host_api::HttpPendingReq{ready_handle});
+  if (builtins::web::fetch::Request::is_instance(ready_obj)) {
+    ok = process_pending_request(cx, ready_obj);
   // } else {
   //   MOZ_ASSERT(builtins::NativeStreamSource::is_instance(ready_obj));
   //   ok = process_body_read(cx, ready_obj,
   //   host_api::HttpBody{ready_handle});
-  // }
+  }
 
   pending_async_tasks->erase(const_cast<JSObject **>(ready_obj.address()));
   return ok;

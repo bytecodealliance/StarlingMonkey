@@ -24,7 +24,8 @@ public:
   HandleObject global();
   bool eval(char *code, size_t len, MutableHandleValue result);
   bool run_event_loop(MutableHandleValue result);
-  bool dump_value(JS::Value val, FILE *fp);
+  bool dump_value(JS::Value val, FILE *fp = stdout);
+  void dump_pending_exception(const char* description = "");
 
 private:
   double total_compute;

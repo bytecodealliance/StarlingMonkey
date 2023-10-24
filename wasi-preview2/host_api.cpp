@@ -1,9 +1,7 @@
 #include <algorithm>
 #include <type_traits>
 
-#include "allocator.h"
-#include "builtins/web/fetch/request-response.h"
-#include "bindings.h"
+#include "host_api.h"
 
 typedef uint8_t bindings_string_t_ptr_t;
 typedef bindings_own_incoming_body_t http_body_t;
@@ -20,6 +18,13 @@ namespace {
 bindings_string_t string_view_to_world_string(std::string_view str) {
   return {
       .ptr = (bindings_string_t_ptr_t *)str.data(),
+      .len = str.size(),
+  };
+}
+
+bindings_list_u8_t string_view_to_world_bytes(std::string_view str) {
+  return {
+      .ptr = (uint8_t *)str.data(),
       .len = str.size(),
   };
 }
@@ -44,10 +49,10 @@ HostString make_host_string(bindings_list_u8_t str) {
 static_assert(sizeof(uint32_t) == sizeof(void *));
 
 // Ensure that the handle types stay in sync with bindings.h
-static_assert(sizeof(HttpBody::Handle) == sizeof(http_body_t));
-static_assert(sizeof(HttpPendingReq::Handle) == sizeof(own_pending_request_t));
-static_assert(sizeof(HttpReq::Handle) == sizeof(own_request_t));
-static_assert(sizeof(HttpResp::Handle) == sizeof(own_response_t));
+static_assert(sizeof(HttpIncomingBody::Handle) == sizeof(http_body_t));
+static_assert(sizeof(FutureHttpIncomingResponse::Handle) == sizeof(own_pending_request_t));
+// static_assert(sizeof(HttpIncomingRequest::Handle) == sizeof(own_request_t));
+// static_assert(sizeof(HttpIncomingResponse::Handle) == sizeof(own_response_t));
 
 Result<std::optional<uint32_t>> AsyncHandle::select(std::vector<AsyncHandle> &handles,
                                                     uint32_t timeout_ms) {
@@ -61,7 +66,7 @@ Result<std::optional<uint32_t>> AsyncHandle::select(std::vector<AsyncHandle> &ha
     auto timeout = timeout_ms * 1000;
     auto timer = wasi_clocks_monotonic_clock_subscribe(timeout, false);
     count++;
-    handles.push_back(static_cast<AsyncHandle>(timer.__handle));
+    handles.push_back(AsyncHandle(timer));
   }
   auto handles_ptr =
       reinterpret_cast<bindings_borrow_pollable_t *>(handles.data());
@@ -80,6 +85,7 @@ Result<std::optional<uint32_t>> AsyncHandle::select(std::vector<AsyncHandle> &ha
 
   return res;
 }
+
 Result<HostBytes> Random::get_bytes(size_t num_bytes) {
   Result<HostBytes> res;
 
@@ -102,88 +108,457 @@ Result<uint32_t> Random::get_u32() {
   return res;
 }
 
-Result<HttpBody> HttpBody::make(HttpResp response) {
-  Result<HttpBody> res;
+// Result<HttpBody> HttpBody::make(HttpResp response) {
+//   Result<HttpBody> res;
 
-  bindings_own_outgoing_body_t body;
-  if (!wasi_http_types_method_outgoing_response_write(
-      bindings_borrow_outgoing_response_t{response.handle}, &body)) {
-    // TODO: define proper error codes.
-    res.emplace_err(0);
+//   bindings_own_outgoing_body_t body;
+//   if (!wasi_http_types_method_outgoing_response_write(
+//       bindings_borrow_outgoing_response_t{response.handle}, &body)) {
+//     // TODO: define proper error codes.
+//     res.emplace_err(154);
+//   } else {
+//     res.emplace(body.__handle);
+//   }
+
+//   return res;
+// }
+
+// Result<HttpBody> HttpBody::make(HttpReq request) {
+//   Result<HttpBody> res;
+
+//   bindings_own_outgoing_body_t body;
+//   if (!wasi_http_types_method_outgoing_request_write(
+//       bindings_borrow_outgoing_request_t{request.handle}, &body)) {
+//     // TODO: define proper error codes.
+//     res.emplace_err(154);
+//   } else {
+//     res.emplace(body.__handle);
+//   }
+
+//   return res;
+// }
+
+// Result<HostString> HttpBody::read(uint32_t chunk_size) const {
+//   Result<HostString> res;
+
+//   // bindings_list_u8_t ret;
+//   // fastly_compute_at_edge_types_error_t err;
+//   // if (!fastly_compute_at_edge_http_body_read(this->handle, chunk_size, &ret, &err)) {
+//   //   res.emplace_err(err);
+//   // } else {
+//   //   res.emplace(JS::UniqueChars(reinterpret_cast<char *>(ret.ptr)), ret.len);
+//   // }
+
+//   return res;
+// }
+
+// namespace {
+
+
+// } // namespace
+
+// Result<std::optional<Response>> HttpPendingReq::poll() {
+//   Result<std::optional<Response>> res;
+
+//   // fastly_compute_at_edge_types_error_t err;
+//   // fastly_world_option_fastly_compute_at_edge_http_req_response_t ret;
+//   // if (!fastly_compute_at_edge_http_req_pending_req_poll(this->handle, &ret, &err)) {
+//   //   res.emplace_err(err);
+//   // } else if (ret.is_some) {
+//   //   res.emplace(make_response(ret.val));
+//   // } else {
+//   //   res.emplace(std::nullopt);
+//   // }
+
+//   return res;
+// }
+
+// Result<Response> HttpPendingReq::wait() {
+//   Result<Response> res;
+
+//   // fastly_compute_at_edge_types_error_t err;
+//   // fastly_compute_at_edge_http_types_response_t ret;
+//   // if (!fastly_compute_at_edge_http_req_pending_req_wait(this->handle, &ret, &err)) {
+//   //   res.emplace_err(err);
+//   // } else {
+//   //   res.emplace(make_response(ret));
+//   // }
+
+//   return res;
+// }
+
+// AsyncHandle HttpPendingReq::async_handle() const { return AsyncHandle{this->handle}; }
+
+// Result<HttpReq> HttpReq::make() {
+//   Result<HttpReq> res;
+
+//   // own_request_t handle;
+//   // fastly_compute_at_edge_types_error_t err;
+//   // if (!fastly_compute_at_edge_http_req_new(&handle, &err)) {
+//   //   res.emplace_err(err);
+//   // } else {
+//   //   res.emplace(handle);
+//   // }
+
+//   return res;
+// }
+
+// Result<Response> HttpReq::send(HttpBody body, std::string_view backend) {
+//   Result<Response> res;
+
+//   // fastly_compute_at_edge_types_error_t err;
+//   // fastly_compute_at_edge_http_types_response_t ret;
+//   // bindings_string_t backend_str = string_view_to_world_string(backend);
+//   // if (!fastly_compute_at_edge_http_req_send(this->handle, body.handle, &backend_str, &ret, &err)) {
+//   //   res.emplace_err(err);
+//   // } else {
+//   //   res.emplace(make_response(ret));
+//   // }
+
+//   return res;
+// }
+
+// Result<HttpPendingReq> HttpReq::send_async(HttpBody body, std::string_view backend) {
+//   Result<HttpPendingReq> res;
+
+//   // fastly_compute_at_edge_types_error_t err;
+//   // own_pending_request_t ret;
+//   // bindings_string_t backend_str = string_view_to_world_string(backend);
+//   // if (!fastly_compute_at_edge_http_req_send_async(this->handle, body.handle,
+//   // &backend_str, &ret,
+//   //                                                 &err)) {
+//   //   res.emplace_err(err);
+//   // } else {
+//   //   res.emplace(ret);
+//   // }
+
+//   return res;
+// }
+
+// Result<HttpPendingReq> HttpReq::send_async_streaming(HttpBody body, std::string_view backend) {
+//   Result<HttpPendingReq> res;
+
+//   // fastly_compute_at_edge_types_error_t err;
+//   // own_pending_request_t ret;
+//   // bindings_string_t backend_str = string_view_to_world_string(backend);
+//   // if (!fastly_compute_at_edge_http_req_send_async_streaming(this->handle,
+//   // body.handle, &backend_str,
+//   //                                                           &ret, &err)) {
+//   //   res.emplace_err(err);
+//   // } else {
+//   //   res.emplace(ret);
+//   // }
+
+//   return res;
+// }
+
+// Result<Void> HttpReq::set_uri(std::string_view str) {
+//   Result<Void> res;
+
+//   // fastly_compute_at_edge_types_error_t err;
+//   // bindings_string_t uri = string_view_to_world_string(str);
+//   // if (!fastly_compute_at_edge_http_req_uri_set(this->handle, &uri, &err)) {
+//   //   res.emplace_err(err);
+//   // } else {
+//   //   res.emplace();
+//   // }
+
+//   return res;
+// }
+
+// Result<HostString> HttpReq::get_uri() const {
+//   Result<HostString> res;
+
+//   // fastly_compute_at_edge_types_error_t err;
+//   // bindings_string_t uri;
+//   // if (!fastly_compute_at_edge_http_req_uri_get(this->handle, &uri, &err)) {
+//   //   res.emplace_err(err);
+//   // } else {
+//   //   res.emplace(make_host_string(uri));
+//   // }
+
+//   return res;
+// }
+
+// Result<HttpResp> HttpResp::make() {
+//   Result<HttpResp> res;
+
+//   // own_response_t handle;
+//   // fastly_compute_at_edge_types_error_t err;
+//   // if (!fastly_compute_at_edge_http_resp_new(&handle, &err)) {
+//   //   res.emplace_err(err);
+//   // } else {
+//   //   res.emplace(handle);
+//   // }
+
+//   return res;
+// }
+
+// Result<Void> HttpResp::send_downstream(HttpBody body, bool streaming) {
+//   Result<Void> res;
+
+//   // fastly_compute_at_edge_types_error_t err;
+//   // if (!fastly_compute_at_edge_http_resp_send_downstream(
+//   //         this->handle, body.handle, streaming, &err)) {
+//   //   res.emplace_err(err);
+//   // } else {
+//   //   res.emplace();
+//   // }
+
+//   return res;
+// }
+
+// bool HttpResp::is_valid() const { return this->handle != HttpResp::invalid; }
+
+// } // namespace host_api
+
+using std::optional;
+using std::string_view;
+using std::tuple;
+using std::unique_ptr;
+using std::vector;
+
+HttpHeaders::HttpHeaders() {
+  auto entries =
+      bindings_list_tuple2_wasi_http_types_field_key_wasi_http_types_field_value_t{
+          nullptr, 0};
+  this->handle = wasi_http_types_constructor_fields(&entries);
+}
+
+HttpHeaders::HttpHeaders(
+    vector<tuple<HostString, vector<HostString>>> entries) {
+}
+
+HttpHeaders::HttpHeaders(const HttpHeaders &headers) {
+}
+
+Result<vector<tuple<HostString, vector<HostString>>>> HttpHeaders::entries() const {
+  Result<vector<tuple<HostString, vector<HostString>>>> res;
+  MOZ_ASSERT(valid());
+
+  bindings_list_tuple2_wasi_http_types_field_key_wasi_http_types_field_value_t entries;
+  auto borrow = wasi_http_types_borrow_fields(handle);
+  wasi_http_types_method_fields_entries(borrow, &entries);
+
+  vector<tuple<HostString, vector<HostString>>> entries_vec;
+  for (int i = 0; i < entries.len; i++) {
+    auto key = entries.ptr[i].f0;
+    auto value = entries.ptr[i].f1;
+    entries_vec.emplace_back(
+        tuple(make_host_string(key),
+              make_host_string(bindings_list_u8_t { value.ptr, value.len })));
+  }
+  // Free the outer list, but not the entries themselves.
+  free(entries.ptr);
+  res.emplace(std::move(entries_vec));
+
+  return res;
+}
+
+Result<vector<HostString>> HttpHeaders::names() const {
+  Result<vector<HostString>> res;
+  MOZ_ASSERT(valid());
+
+  bindings_list_tuple2_wasi_http_types_field_key_wasi_http_types_field_value_t entries;
+  wasi_http_types_method_fields_entries(wasi_http_types_borrow_fields(handle),
+                                        &entries);
+
+  vector<HostString> names;
+  for (int i = 0; i < entries.len; i++) {
+    names.emplace_back(make_host_string(entries.ptr[i].f0));
+  }
+  // Free the outer list, but not the entries themselves.
+  free(entries.ptr);
+  res.emplace(std::move(names));
+
+  return res;
+}
+
+Result<optional<vector<HostString>>> HttpHeaders::get(string_view name) const {
+  Result<optional<vector<HostString>>> res;
+  MOZ_ASSERT(valid());
+
+  bindings_list_wasi_http_types_field_value_t values;
+  auto hdr = string_view_to_world_string(name);
+  wasi_http_types_method_fields_get(wasi_http_types_borrow_fields(handle), &hdr,
+                                    &values);
+
+  if (values.len > 0) {
+    std::vector<HostString> names;
+    for (int i = 0; i < values.len; i++) {
+      auto value = values.ptr[i];
+      names.emplace_back(
+          make_host_string(bindings_list_u8_t{value.ptr, value.len}));
+    }
+    // Free the outer list, but not the values themselves.
+    free(values.ptr);
+    res.emplace(std::move(names));
   } else {
-    res.emplace(body.__handle);
+    res.emplace(std::nullopt);
   }
 
   return res;
 }
 
-Result<HttpBody> HttpBody::make(HttpReq request) {
-  Result<HttpBody> res;
+Result<Void> HttpHeaders::set(string_view name, string_view value) {
+  MOZ_ASSERT(valid());
+  auto hdr = string_view_to_world_string(name);
+  auto value_bytes = string_view_to_world_bytes(value);
+  auto fieldval =
+      wasi_http_types_field_value_t{value_bytes.ptr, value_bytes.len};
 
-  bindings_own_outgoing_body_t body;
-  if (!wasi_http_types_method_outgoing_request_write(
-      bindings_borrow_outgoing_request_t{request.handle}, &body)) {
-    // TODO: define proper error codes.
-    res.emplace_err(0);
-  } else {
-    res.emplace(body.__handle);
+  bindings_list_wasi_http_types_field_value_t host_values = {&fieldval, 1};
+
+  auto borrow = wasi_http_types_borrow_fields(handle);
+  wasi_http_types_method_fields_set(borrow, &hdr, &host_values);
+  free(host_values.ptr);
+
+  return Result<Void>();
+}
+
+Result<Void> HttpHeaders::append(string_view name, string_view value) {
+  MOZ_ASSERT(valid());
+  auto hdr = string_view_to_world_string(name);
+  auto bytes = string_view_to_world_bytes(value);
+
+  auto borrow = wasi_http_types_borrow_fields(handle);
+  auto fieldval =
+      wasi_http_types_field_value_t{bytes.ptr, bytes.len};
+  wasi_http_types_method_fields_append(borrow, &hdr, &fieldval);
+
+  return Result<Void>();
+}
+
+Result<Void> HttpHeaders::remove(string_view name) {
+  MOZ_ASSERT(valid());
+  auto hdr = string_view_to_world_string(name);
+
+  auto borrow = wasi_http_types_borrow_fields(handle);
+  wasi_http_types_method_fields_delete(borrow, &hdr);
+
+  return Result<Void>();
+}
+
+Result<tuple<bindings_borrow_output_stream_t, uint64_t>>
+HttpOutgoingBody::ensure_stream() {
+  MOZ_ASSERT(valid());
+  typedef Result<tuple<bindings_borrow_output_stream_t, uint64_t>> Res;
+
+  if (stream.__handle == invalid_stream.__handle) {
+    auto borrow = wasi_http_types_borrow_outgoing_body(handle);
+    if (!wasi_http_types_method_outgoing_body_write(borrow, &this->stream)) {
+      return Res::err(154);
+    }
   }
 
-  return res;
+  MOZ_ASSERT(stream.__handle != invalid_stream.__handle);
+
+  auto borrow = wasi_io_streams_borrow_output_stream(stream);
+  uint64_t capacity = 0;
+  wasi_io_streams_stream_error_t err;
+  if (!wasi_io_streams_method_output_stream_check_write(borrow, &capacity,
+                                                        &err)) {
+    return Res::err(154);
+  }
+  return Res::ok(std::make_tuple(borrow, capacity));
 }
 
-Result<HostString> HttpBody::read(uint32_t chunk_size) const {
-  Result<HostString> res;
+Result<tuple<bindings_borrow_output_stream_t, uint64_t>>
+HttpOutgoingBody::ensure_stream_with_capacity() {
+  MOZ_ASSERT(valid());
+  typedef Result<tuple<bindings_borrow_output_stream_t, uint64_t>> Res;
+  auto res = ensure_stream();
+  if (res.is_err()) {
+    return res;
+  }
+  auto [borrow, capacity] = res.unwrap();
 
-  // bindings_list_u8_t ret;
-  // fastly_compute_at_edge_types_error_t err;
-  // if (!fastly_compute_at_edge_http_body_read(this->handle, chunk_size, &ret, &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace(JS::UniqueChars(reinterpret_cast<char *>(ret.ptr)), ret.len);
-  // }
+  if (capacity == 0) {
+    wasi_io_streams_stream_error_t err;
+    auto pollable = wasi_io_streams_method_output_stream_subscribe(borrow);
+    wasi_io_poll_poll_one(wasi_io_poll_borrow_pollable(pollable));
+    if (!wasi_io_streams_method_output_stream_check_write(borrow, &capacity,
+                                                          &err)) {
+      return Res::err(154);
+    }
+  }
 
-  return res;
+  MOZ_ASSERT(capacity > 0);
+
+  return Res::ok(std::make_tuple(borrow, capacity));
 }
 
-Result<uint32_t> HttpBody::write(const uint8_t *ptr, size_t len) const {
-  Result<uint32_t> res;
-
-  // The write call doesn't mutate the buffer; the cast is just for the generated fastly api.
-  // bindings_list_u8_t chunk{const_cast<uint8_t *>(ptr), len};
-
-  // fastly_compute_at_edge_types_error_t err;
-  // uint32_t written;
-  // if (!fastly_compute_at_edge_http_body_write(
-  //         this->handle, &chunk, FASTLY_COMPUTE_AT_EDGE_HTTP_BODY_WRITE_END_BACK, &written, &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace(written);
-  // }
-
-  return res;
+bool write_to_outgoing_body(bindings_borrow_output_stream_t borrow,
+                            const uint8_t *ptr, size_t len) {
+  // The write call doesn't mutate the buffer; the cast is just for the
+  // generated bindings.
+  bindings_list_u8_t list{const_cast<uint8_t *>(ptr), len};
+  wasi_io_streams_stream_error_t err;
+  // TODO: proper error handling.
+  return wasi_io_streams_method_output_stream_write(borrow, &list, &err);
 }
 
-Result<Void> HttpBody::write_all(const uint8_t *ptr, size_t len) const {
+Result<uint32_t> HttpOutgoingBody::write(const uint8_t *ptr, size_t len) {
+  MOZ_ASSERT(valid());
+  auto res = ensure_stream();
+  if (res.is_err()) {
+    // TODO: proper error handling for all 154 error codes.
+      return Result<uint32_t>::err(154);
+  }
+  auto [borrow, capacity] = res.unwrap();
+
+  len = std::min(len, size_t(capacity));
+  if (!write_to_outgoing_body(borrow, ptr, len)) {
+    return Result<uint32_t>::err(154);
+  }
+
+  return Result<uint32_t>::ok(len);
+}
+
+Result<Void> HttpOutgoingBody::write_all(const uint8_t *bytes, size_t len) {
+  MOZ_ASSERT(valid());
   while (len > 0) {
-    auto write_res = this->write(ptr, len);
-    if (auto *err = write_res.to_err()) {
-      return Result<Void>::err(*err);
+    auto res = ensure_stream_with_capacity();
+    if (res.is_err()) {
+      // TODO: proper error handling for all 154 error codes.
+      return Result<Void>::err(154);
+    }
+    auto [borrow, capacity] = res.unwrap();
+    auto bytes_to_write = std::min(len, static_cast<size_t>(capacity));
+    if (!write_to_outgoing_body(borrow, bytes, len)) {
+      return Result<Void>::err(154);
     }
 
-    auto written = write_res.unwrap();
-    ptr += written;
-    len -= std::min(len, static_cast<size_t>(written));
+    bytes += bytes_to_write;
+    len -= bytes_to_write;
   }
 
   return Result<Void>::ok();
 }
 
-Result<Void> HttpBody::append(HttpBody other) const {
+Result<bindings_borrow_input_stream_t> HttpIncomingBody::ensure_stream() {
+  typedef Result<bindings_borrow_input_stream_t> Res;
+  MOZ_ASSERT(valid());
+
+  if (stream.__handle == invalid_stream.__handle) {
+    auto borrow = wasi_http_types_borrow_incoming_body(handle);
+    if (!wasi_http_types_method_incoming_body_stream(borrow, &this->stream)) {
+      return Res::err(154);
+    }
+  }
+
+  MOZ_ASSERT(stream.__handle != invalid_stream.__handle);
+
+  return Res::ok(wasi_io_streams_borrow_input_stream(stream));
+}
+
+Result<Void> HttpOutgoingBody::append(HttpIncomingBody *other) {
+  MOZ_ASSERT(valid());
   Result<Void> res;
 
   // fastly_compute_at_edge_types_error_t err;
-  // if (!fastly_compute_at_edge_http_body_append(this->handle, other.handle, &err)) {
+  // if (!fastly_compute_at_edge_http_body_append(this->handle, other.handle,
+  // &err)) {
   //   res.emplace_err(err);
   // } else {
   //   res.emplace();
@@ -192,7 +567,8 @@ Result<Void> HttpBody::append(HttpBody other) const {
   return res;
 }
 
-Result<Void> HttpBody::close() {
+Result<Void> HttpOutgoingBody::close() {
+  MOZ_ASSERT(valid());
   Result<Void> res;
 
   // fastly_compute_at_edge_types_error_t err;
@@ -205,357 +581,198 @@ Result<Void> HttpBody::close() {
   return res;
 }
 
-AsyncHandle HttpBody::async_handle() const { return AsyncHandle{this->handle}; }
-
-namespace {
-
-Result<std::vector<HostString>>
-headers_get_names(bindings_own_headers_t headers) {
-  Result<std::vector<HostString>> res;
-
-  bindings_list_tuple2_string_list_u8_t *entries = nullptr;
-  wasi_http_types_method_fields_entries(bindings_borrow_fields_t {headers.__handle}, entries);
-
-  std::vector<HostString> names;
-  for (int i = 0; i < entries->len; i++) {
-    names.emplace_back(make_host_string(entries->ptr[i].f0));
-  }
-  // Free the outer list, but not the entries themselves.
-  free(entries->ptr);
-  res.emplace(std::move(names));
-
-  return res;
+AsyncHandle HttpOutgoingBody::async_handle() {
+  MOZ_ASSERT(valid());
+  auto res = ensure_stream();
+  // TODO: proper error handling
+  MOZ_ASSERT(!res.is_err());
+  auto [borrow, _] = res.unwrap();
+  auto handle = wasi_io_streams_method_output_stream_subscribe(borrow);
+  return AsyncHandle{handle};
 }
 
-Result<std::optional<std::vector<HostString>>>
-headers_get_values(bindings_own_headers_t headers,
-                          std::string_view name) {
-  Result<std::optional<std::vector<HostString>>> res;
+wasi_http_types_method_t http_method_to_host(string_view method_str) {
+  static const char *names[9] = {"GET",     "HEAD",   "POST",
+                                 "PUT",     "DELETE", "CONNECT",
+                                 "OPTIONS", "TRACE",  "PATCH"};
 
-  bindings_string_t hdr = string_view_to_world_string(name);
+  if (method_str.empty()) {
+    return wasi_http_types_method_t{WASI_HTTP_TYPES_METHOD_GET};
+  }
 
-  bindings_list_list_u8_t *values = nullptr;
-  wasi_http_types_method_fields_get(bindings_borrow_fields_t{headers.__handle},
-                                    &hdr, values);
-
-  if (values->len > 0) {
-    std::vector<HostString> names;
-    for (int i = 0; i < values->len; i++) {
-      names.emplace_back(make_host_string(values->ptr[i]));
+  auto method = method_str.begin();
+  for (uint8_t i = 0; i < WASI_HTTP_TYPES_METHOD_OTHER; i++) {
+    auto name = names[i];
+    if (strcasecmp(method, name) == 0) {
+      return wasi_http_types_method_t{i};
     }
-    // Free the outer list, but not the values themselves.
-    free(values->ptr);
-    res.emplace(std::move(names));
-  } else {
-    res.emplace(std::nullopt);
   }
 
-  return res;
+  auto val = bindings_string_t{reinterpret_cast<uint8_t*>(const_cast<char*>(method)), method_str.length()};
+  return wasi_http_types_method_t{WASI_HTTP_TYPES_METHOD_OTHER, {val}};
 }
 
-template <auto header_op>
-Result<Void> generic_header_op(auto handle, std::string_view name, std::string_view value) {
-  Result<Void> res;
+HttpOutgoingRequest::HttpOutgoingRequest(string_view method_str,
+                                         optional<HostString> url_str,
+                                         HttpHeaders *headers) {
+  bindings_string_t path_with_query;
+  wasi_http_types_scheme_t scheme;
+  bindings_string_t authority;
 
-  // bindings_string_t hdr = string_view_to_world_string(name);
-  // bindings_string_t val = string_view_to_world_string(value);
-  // fastly_compute_at_edge_types_error_t err;
-  // if (!header_op(handle, &hdr, &val, &err)) {
-  //   res.emplace_err(err);
-  // }
+  bindings_string_t *maybe_path_with_query = nullptr;
+  wasi_http_types_scheme_t *maybe_scheme = nullptr;
+  bindings_string_t *maybe_authority = nullptr;
 
-  return res;
+  if (url_str) {
+    jsurl::SpecString val = url_str.value();
+    jsurl::JSUrl* url = jsurl::new_jsurl(&val);
+    jsurl::SpecSlice protocol = jsurl::protocol(url);
+    if (std::memcmp(protocol.data, "http:", protocol.len) == 0) {
+      scheme.tag = WASI_HTTP_TYPES_SCHEME_HTTP;
+    } else if (std::memcmp(protocol.data, "https:", protocol.len) == 0) {
+      scheme.tag = WASI_HTTP_TYPES_SCHEME_HTTPS;
+    } else {
+      scheme = wasi_http_types_scheme_t{WASI_HTTP_TYPES_SCHEME_OTHER, {const_cast<uint8_t*>(protocol.data), protocol.len - 1}};
+    }
+    maybe_scheme = &scheme;
+
+    jsurl::SpecSlice authority_slice = jsurl::authority(url);
+    authority = {const_cast<uint8_t*>(authority_slice.data), authority_slice.len};
+    maybe_authority = &authority;
+
+    jsurl::SpecSlice path_with_query_slice = jsurl::path_with_query(url);
+    path_with_query = {const_cast<uint8_t*>(path_with_query_slice.data), path_with_query_slice.len};
+    maybe_path_with_query = &path_with_query;
+  }
+
+  wasi_http_types_method_t method = http_method_to_host(method_str);
+  handle = wasi_http_types_constructor_outgoing_request(&method, maybe_path_with_query,
+                                                        maybe_scheme, maybe_authority,
+                                                        headers->borrow());
 }
 
-template <auto remove_header>
-Result<Void> generic_header_remove(auto handle, std::string_view name) {
-  Result<Void> res;
-
-  // bindings_string_t hdr = string_view_to_world_string(name);
-  // fastly_compute_at_edge_types_error_t err;
-  // if (!remove_header(handle, &hdr, &err)) {
-  //   res.emplace_err(err);
-  // }
-
-  return res;
+HttpHeaders *HttpOutgoingRequest::headers() {
+  MOZ_ASSERT(valid());
+  MOZ_ASSERT(headers_handle);
+  return headers_handle;
 }
 
-} // namespace
-
-Result<std::optional<Response>> HttpPendingReq::poll() {
-  Result<std::optional<Response>> res;
-
-  // fastly_compute_at_edge_types_error_t err;
-  // fastly_world_option_fastly_compute_at_edge_http_req_response_t ret;
-  // if (!fastly_compute_at_edge_http_req_pending_req_poll(this->handle, &ret, &err)) {
-  //   res.emplace_err(err);
-  // } else if (ret.is_some) {
-  //   res.emplace(make_response(ret.val));
-  // } else {
-  //   res.emplace(std::nullopt);
-  // }
-
-  return res;
+Result<HttpOutgoingBody *> HttpOutgoingRequest::body() {
+  MOZ_ASSERT(valid());
+  // TODO(TS)
+  return Result<HttpOutgoingBody *>::ok(nullptr);
 }
 
-Result<Response> HttpPendingReq::wait() {
-  Result<Response> res;
-
-  // fastly_compute_at_edge_types_error_t err;
-  // fastly_compute_at_edge_http_types_response_t ret;
-  // if (!fastly_compute_at_edge_http_req_pending_req_wait(this->handle, &ret, &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace(make_response(ret));
-  // }
-
-  return res;
+Result<FutureHttpIncomingResponse*> HttpOutgoingRequest::send() {
+  MOZ_ASSERT(valid());
+  bindings_own_future_incoming_response_t ret;
+  wasi_http_outgoing_handler_error_t err;
+  wasi_http_outgoing_handler_handle(handle, nullptr, &ret, &err);
+  auto res = new FutureHttpIncomingResponse(ret);
+  return Result<FutureHttpIncomingResponse*>::ok(res);
 }
 
-AsyncHandle HttpPendingReq::async_handle() const { return AsyncHandle{this->handle}; }
+Result<tuple<HostString, bool>> HttpIncomingBody::read(uint32_t chunk_size) {
+  typedef Result<tuple<HostString, bool>> Res;
+  auto res = ensure_stream();
+  // TODO: proper error handling
+  MOZ_ASSERT(!res.is_err());
+  auto stream = res.unwrap();
 
-Result<HttpReq> HttpReq::make() {
-  Result<HttpReq> res;
-
-  // own_request_t handle;
-  // fastly_compute_at_edge_types_error_t err;
-  // if (!fastly_compute_at_edge_http_req_new(&handle, &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace(handle);
-  // }
-
-  return res;
+  auto ret = bindings_list_u8_t {};
+  auto err = wasi_io_streams_stream_error_t {};
+  if (!wasi_io_streams_method_input_stream_read(stream, chunk_size, &ret, &err)) {
+    if (err.tag == WASI_IO_STREAMS_STREAM_ERROR_CLOSED) {
+      return Res::ok(tuple(HostString(), true));
+    }
+    return Res::err(154);
+  }
+  return Res::ok(tuple(HostString(ret), false));
 }
 
-Result<Response> HttpReq::send(HttpBody body, std::string_view backend) {
-  Result<Response> res;
+Result<Void> HttpIncomingBody::close() { return Result<Void>(); }
 
-  // fastly_compute_at_edge_types_error_t err;
-  // fastly_compute_at_edge_http_types_response_t ret;
-  // bindings_string_t backend_str = string_view_to_world_string(backend);
-  // if (!fastly_compute_at_edge_http_req_send(this->handle, body.handle, &backend_str, &ret, &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace(make_response(ret));
-  // }
-
-  return res;
+AsyncHandle HttpIncomingBody::async_handle() {
+  MOZ_ASSERT(valid());
+  auto res = ensure_stream();
+  // TODO: proper error handling
+  MOZ_ASSERT(!res.is_err());
+  auto borrow = res.unwrap();
+  auto handle = wasi_io_streams_method_input_stream_subscribe(borrow);
+  return AsyncHandle{handle};
 }
 
-Result<HttpPendingReq> HttpReq::send_async(HttpBody body, std::string_view backend) {
-  Result<HttpPendingReq> res;
+Result<optional<HttpIncomingResponse *>> FutureHttpIncomingResponse::poll() {
+  typedef Result<optional<HttpIncomingResponse *>> Res;
+  bindings_result_result_own_incoming_response_wasi_http_types_error_void_t res;
+  if (!wasi_http_types_method_future_incoming_response_get(
+      wasi_http_types_borrow_future_incoming_response(handle), &res)) {
+    return Res::ok(std::nullopt);
+  }
 
-  // fastly_compute_at_edge_types_error_t err;
-  // own_pending_request_t ret;
-  // bindings_string_t backend_str = string_view_to_world_string(backend);
-  // if (!fastly_compute_at_edge_http_req_send_async(this->handle, body.handle,
-  // &backend_str, &ret,
-  //                                                 &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace(ret);
-  // }
+  MOZ_ASSERT(!res.is_err, "FutureHttpIncomingResponse::poll must not be called again after succeeding once");
 
-  return res;
+  auto inner = res.val.ok;
+  if (inner.is_err) {
+    return Res::err(154);
+  }
+
+  auto handle = inner.val.ok;
+  return Res::ok(new HttpIncomingResponse(handle));
 }
 
-Result<HttpPendingReq> HttpReq::send_async_streaming(HttpBody body, std::string_view backend) {
-  Result<HttpPendingReq> res;
-
-  // fastly_compute_at_edge_types_error_t err;
-  // own_pending_request_t ret;
-  // bindings_string_t backend_str = string_view_to_world_string(backend);
-  // if (!fastly_compute_at_edge_http_req_send_async_streaming(this->handle,
-  // body.handle, &backend_str,
-  //                                                           &ret, &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace(ret);
-  // }
-
-  return res;
+AsyncHandle FutureHttpIncomingResponse::async_handle() {
+  if (!pollable.valid()) {
+    auto async_handle = wasi_http_types_method_future_incoming_response_subscribe(wasi_http_types_borrow_future_incoming_response(handle));
+    pollable.handle.__handle = async_handle.__handle;
+  }
+  return pollable;
 }
 
-Result<Void> HttpReq::set_method(std::string_view method) {
-  Result<Void> res;
-
-  // fastly_compute_at_edge_types_error_t err;
-  // bindings_string_t str = string_view_to_world_string(method);
-  // if (!fastly_compute_at_edge_http_req_method_set(this->handle, &str, &err)) {
-  //   res.emplace_err(err);
-  // }
-
-  return res;
+uint16_t HttpIncomingResponse::status() const {
+  return wasi_http_types_method_incoming_response_status(
+      wasi_http_types_borrow_incoming_response(handle));
 }
 
-Result<HostString> HttpReq::get_method() const {
-  Result<HostString> res;
+HttpHeaders *HttpIncomingResponse::headers() {
+  MOZ_ASSERT(valid());
+  if (!headers_handle) {
+    auto res = wasi_http_types_method_incoming_response_headers(
+        wasi_http_types_borrow_incoming_response(handle));
+    headers_handle = new HttpHeaders(res);
+  }
 
-  // fastly_compute_at_edge_types_error_t err;
-  // bindings_string_t ret;
-  // if (!fastly_compute_at_edge_http_req_method_get(this->handle, &ret, &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace(make_host_string(ret));
-  // }
-
-  return res;
+  return headers_handle;
 }
 
-Result<Void> HttpReq::set_uri(std::string_view str) {
-  Result<Void> res;
-
-  // fastly_compute_at_edge_types_error_t err;
-  // bindings_string_t uri = string_view_to_world_string(str);
-  // if (!fastly_compute_at_edge_http_req_uri_set(this->handle, &uri, &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace();
-  // }
-
-  return res;
+Result<HttpIncomingBody *> HttpIncomingResponse::body() {
+  MOZ_ASSERT(valid());
+  if (!body_handle) {
+    bindings_own_incoming_body_t body;
+    if (!wasi_http_types_method_incoming_response_consume(
+        wasi_http_types_borrow_incoming_response(handle), &body)) {
+      return Result<HttpIncomingBody *>::err(154);
+    }
+    body_handle = new HttpIncomingBody(body);
+  }
+  return Result<HttpIncomingBody *>::ok(body_handle);
 }
 
-Result<HostString> HttpReq::get_uri() const {
-  Result<HostString> res;
-
-  // fastly_compute_at_edge_types_error_t err;
-  // bindings_string_t uri;
-  // if (!fastly_compute_at_edge_http_req_uri_get(this->handle, &uri, &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace(make_host_string(uri));
-  // }
-
-  return res;
+HttpOutgoingResponse::HttpOutgoingResponse(uint16_t status,
+                                           HttpHeaders *headers) : status(status) {
+  handle = wasi_http_types_constructor_outgoing_response(status, headers->borrow());
 }
 
-bool HttpReq::is_valid() const { return this->handle != HttpReq::invalid; }
-
-Result<std::vector<HostString>> HttpReq::get_header_names() {
-  bindings_own_headers_t headers =
-      wasi_http_types_method_incoming_request_headers(
-          bindings_borrow_incoming_request_t{(int32_t)handle});
-  return headers_get_names(headers);
+HttpHeaders *HttpOutgoingResponse::headers() {
+  MOZ_ASSERT(valid());
+  MOZ_ASSERT(headers_handle);
+  return headers_handle;
 }
 
-Result<std::optional<std::vector<HostString>>>
-HttpReq::get_header_values(std::string_view name) {
-  bindings_own_headers_t headers =
-      wasi_http_types_method_incoming_request_headers(
-          bindings_borrow_incoming_request_t{(int32_t)handle});
-  return headers_get_values(headers, name);
+Result<HttpOutgoingBody *> HttpOutgoingResponse::body() {
+  MOZ_ASSERT(valid());
+  // TODO(TS)
+  return Result<HttpOutgoingBody *>::ok(nullptr);
 }
 
-Result<Void> HttpReq::insert_header(std::string_view name,
-                                    std::string_view value) {
-// TODO: properly support both insert and append.
-  return generic_header_op<wasi_http_types_method_incoming_request_headers>(
-      this->handle, name, value);
-}
-
-Result<Void> HttpReq::append_header(std::string_view name,
-                                    std::string_view value) {
-// TODO: properly support both insert and append.
-  return generic_header_op<wasi_http_types_method_incoming_request_headers>(
-      this->handle, name, value);
-}
-
-Result<Void> HttpReq::remove_header(std::string_view name) {
-  return generic_header_remove<wasi_http_types_method_incoming_request_headers>(
-      this->handle, name);
-}
-
-Result<HttpResp> HttpResp::make() {
-  Result<HttpResp> res;
-
-  // own_response_t handle;
-  // fastly_compute_at_edge_types_error_t err;
-  // if (!fastly_compute_at_edge_http_resp_new(&handle, &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace(handle);
-  // }
-
-  return res;
-}
-
-Result<uint16_t> HttpResp::get_status() const {
-  Result<uint16_t> res;
-
-  // fastly_compute_at_edge_http_types_http_status_t ret;
-  // fastly_compute_at_edge_types_error_t err;
-  // if (!fastly_compute_at_edge_http_resp_status_get(this->handle, &ret, &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace(ret);
-  // }
-
-  return res;
-}
-
-Result<Void> HttpResp::set_status(uint16_t status) {
-  Result<Void> res;
-
-  // fastly_compute_at_edge_types_error_t err;
-  // if (!fastly_compute_at_edge_http_resp_status_set(this->handle, status,
-  //                                                  &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace();
-  // }
-
-  return res;
-}
-
-Result<Void> HttpResp::send_downstream(HttpBody body, bool streaming) {
-  Result<Void> res;
-
-  // fastly_compute_at_edge_types_error_t err;
-  // if (!fastly_compute_at_edge_http_resp_send_downstream(
-  //         this->handle, body.handle, streaming, &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace();
-  // }
-
-  return res;
-}
-
-bool HttpResp::is_valid() const { return this->handle != HttpResp::invalid; }
-
-Result<std::vector<HostString>> HttpResp::get_header_names() {
-  bindings_own_headers_t headers =
-      wasi_http_types_method_incoming_response_headers(
-          bindings_borrow_incoming_response_t{(int32_t)handle});
-  return headers_get_names(headers);
-}
-
-Result<std::optional<std::vector<HostString>>>
-HttpResp::get_header_values(std::string_view name) {
-  bindings_own_headers_t headers =
-      wasi_http_types_method_incoming_response_headers(
-          bindings_borrow_incoming_response_t{(int32_t)handle});
-  return headers_get_values(headers, name);
-}
-
-Result<Void> HttpResp::insert_header(std::string_view name,
-                                     std::string_view value) {
-  // TODO: properly support both insert and append.
-  return generic_header_op<wasi_http_types_method_incoming_response_headers>(
-      this->handle, name, value);
-}
-
-Result<Void> HttpResp::append_header(std::string_view name,
-                                     std::string_view value) {
-  // TODO: properly support both insert and append.
-  return generic_header_op<wasi_http_types_method_incoming_response_headers>(
-      this->handle, name, value);
-}
-
-Result<Void> HttpResp::remove_header(std::string_view name) {
-  return generic_header_remove<wasi_http_types_method_incoming_response_headers>(
-      this->handle, name);
-}
 } // namespace host_api

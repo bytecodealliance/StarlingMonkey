@@ -7,7 +7,7 @@
 #include "fetch/fetch-api.h"
 #include "performance.h"
 #include "queue-microtask.h"
-#include "streams/streams.h"
+// #include "streams/streams.h"
 #include "text-codec/text-codec.h"
 #include "timers.h"
 #include "url.h"
@@ -50,7 +50,7 @@ bool builtins::web::add_to_global(JSContext *cx, JS::HandleObject global) {
          fetch::add_to_global(cx, global) &&
          performance::add_to_global(cx, global) &&
          queue_microtask::add_to_global(cx, global) &&
-         streams::add_to_global(cx, global) &&
+        //  streams::add_to_global(cx, global) &&
          timers::add_to_global(cx, global) &&
          text_codec::add_to_global(cx, global) &&
          url::add_to_global(cx, global) &&

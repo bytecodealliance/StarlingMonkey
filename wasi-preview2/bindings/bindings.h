@@ -71,10 +71,6 @@ typedef struct {
   int32_t __handle;
 } bindings_own_pollable_t;
 
-typedef struct {
-  int32_t __handle;
-} bindings_own_input_stream_t;
-
 // A timestamp in nanoseconds.
 typedef uint64_t wasi_clocks_monotonic_clock_instant_t;
 
@@ -412,6 +408,10 @@ typedef struct {
 
 typedef struct {
   int32_t __handle;
+} bindings_own_input_stream_t;
+
+typedef struct {
+  int32_t __handle;
 } bindings_own_output_stream_t;
 
 typedef struct {
@@ -455,6 +455,7 @@ typedef struct {
 // - `access-denied`
 // - `not-supported`
 // - `out-of-memory`
+// - `concurrency-conflict`
 //
 // See each individual API for what the POSIX equivalents are. They sometimes differ per API.
 typedef uint8_t wasi_sockets_network_error_code_t;
@@ -469,71 +470,53 @@ typedef uint8_t wasi_sockets_network_error_code_t;
 //
 // POSIX equivalent: EOPNOTSUPP
 #define WASI_SOCKETS_NETWORK_ERROR_CODE_NOT_SUPPORTED 2
+// One of the arguments is invalid.
+//
+// POSIX equivalent: EINVAL
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_INVALID_ARGUMENT 3
 // Not enough memory to complete the operation.
 //
 // POSIX equivalent: ENOMEM, ENOBUFS, EAI_MEMORY
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_OUT_OF_MEMORY 3
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_OUT_OF_MEMORY 4
 // The operation timed out before it could finish completely.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_TIMEOUT 4
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_TIMEOUT 5
 // This operation is incompatible with another asynchronous operation that is already in progress.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_CONCURRENCY_CONFLICT 5
+//
+// POSIX equivalent: EALREADY
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_CONCURRENCY_CONFLICT 6
 // Trying to finish an asynchronous operation that:
 // - has not been started yet, or:
 // - was already finished by a previous `finish-*` call.
 //
 // Note: this is scheduled to be removed when `future`s are natively supported.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_NOT_IN_PROGRESS 6
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_NOT_IN_PROGRESS 7
 // The operation has been aborted because it could not be completed immediately.
 //
 // Note: this is scheduled to be removed when `future`s are natively supported.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_WOULD_BLOCK 7
-// The specified address-family is not supported.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_ADDRESS_FAMILY_NOT_SUPPORTED 8
-// An IPv4 address was passed to an IPv6 resource, or vice versa.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_ADDRESS_FAMILY_MISMATCH 9
-// The socket address is not a valid remote address. E.g. the IP address is set to INADDR_ANY, or the port is set to 0.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_INVALID_REMOTE_ADDRESS 10
-// The operation is only supported on IPv4 resources.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_IPV4_ONLY_OPERATION 11
-// The operation is only supported on IPv6 resources.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_IPV6_ONLY_OPERATION 12
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_WOULD_BLOCK 8
+// The operation is not valid in the socket's current state.
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_INVALID_STATE 9
 // A new socket resource could not be created because of a system limit.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_NEW_SOCKET_LIMIT 13
-// The socket is already attached to another network.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_ALREADY_ATTACHED 14
-// The socket is already bound.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_ALREADY_BOUND 15
-// The socket is already in the Connection state.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_ALREADY_CONNECTED 16
-// The socket is not bound to any local address.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_NOT_BOUND 17
-// The socket is not in the Connection state.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_NOT_CONNECTED 18
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_NEW_SOCKET_LIMIT 10
 // A bind operation failed because the provided address is not an address that the `network` can bind to.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_ADDRESS_NOT_BINDABLE 19
-// A bind operation failed because the provided address is already in use.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_ADDRESS_IN_USE 20
-// A bind operation failed because there are no ephemeral ports available.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_EPHEMERAL_PORTS_EXHAUSTED 21
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_ADDRESS_NOT_BINDABLE 11
+// A bind operation failed because the provided address is already in use or because there are no ephemeral ports available.
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_ADDRESS_IN_USE 12
 // The remote address is not reachable
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_REMOTE_UNREACHABLE 22
-// The socket is already in the Listener state.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_ALREADY_LISTENING 23
-// The socket is already in the Listener state.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_NOT_LISTENING 24
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_REMOTE_UNREACHABLE 13
 // The connection was forcefully rejected
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_CONNECTION_REFUSED 25
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_CONNECTION_REFUSED 14
 // The connection was reset.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_CONNECTION_RESET 26
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_DATAGRAM_TOO_LARGE 27
-// The provided name is a syntactically invalid domain name.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_INVALID_NAME 28
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_CONNECTION_RESET 15
+// A connection was aborted.
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_CONNECTION_ABORTED 16
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_DATAGRAM_TOO_LARGE 17
 // Name does not exist or has no suitable associated IP addresses.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_NAME_UNRESOLVABLE 29
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_NAME_UNRESOLVABLE 18
 // A temporary failure in name resolution occurred.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_TEMPORARY_RESOLVER_FAILURE 30
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_TEMPORARY_RESOLVER_FAILURE 19
 // A permanent failure in name resolution occurred.
-#define WASI_SOCKETS_NETWORK_ERROR_CODE_PERMANENT_RESOLVER_FAILURE 31
+#define WASI_SOCKETS_NETWORK_ERROR_CODE_PERMANENT_RESOLVER_FAILURE 20
 
 typedef uint8_t wasi_sockets_network_ip_address_family_t;
 
@@ -719,6 +702,7 @@ typedef struct {
   int32_t __handle;
 } bindings_own_terminal_output_t;
 
+// This type corresponds to HTTP standard Methods.
 typedef struct {
   uint8_t tag;
   union {
@@ -737,6 +721,7 @@ typedef struct {
 #define WASI_HTTP_TYPES_METHOD_PATCH 8
 #define WASI_HTTP_TYPES_METHOD_OTHER 9
 
+// This type corresponds to HTTP standard Related Schemes.
 typedef struct {
   uint8_t tag;
   union {
@@ -748,6 +733,9 @@ typedef struct {
 #define WASI_HTTP_TYPES_SCHEME_HTTPS 1
 #define WASI_HTTP_TYPES_SCHEME_OTHER 2
 
+// TODO: perhaps better align with HTTP semantics?
+// This type enumerates the different kinds of errors that may occur when
+// initially returning a response.
 typedef struct {
   uint8_t tag;
   union {
@@ -763,37 +751,63 @@ typedef struct {
 #define WASI_HTTP_TYPES_ERROR_PROTOCOL_ERROR 2
 #define WASI_HTTP_TYPES_ERROR_UNEXPECTED_ERROR 3
 
+// Field keys are always strings.
+typedef bindings_string_t wasi_http_types_field_key_t;
+
+// Field values should always be ASCII strings. However, in
+// reality, HTTP implementations often have to interpret malformed values,
+// so they are provided as a list of bytes.
+typedef struct {
+  uint8_t *ptr;
+  size_t len;
+} wasi_http_types_field_value_t;
+
 typedef struct {
   bool is_some;
   uint32_t val;
 } bindings_option_u32_t;
 
+// Parameters for making an HTTP Request. Each of these parameters is an
+// optional timeout, with the unit in milliseconds, applicable to the
+// transport layer of the HTTP protocol.
+//
+// These timeouts are separate from any the user may use to bound a
+// blocking call to `wasi:io/poll.poll-list`.
+//
+// FIXME: Make this a resource to allow it to be optionally extended by
+// future evolution of the standard and/or other interfaces at some later
+// date?
 typedef struct {
+  // The timeout for the initial connect to the HTTP Server.
   bindings_option_u32_t connect_timeout_ms;
+  // The timeout for receiving the first byte of the Response body.
   bindings_option_u32_t first_byte_timeout_ms;
+  // The timeout for receiving subsequent chunks of bytes in the Response
+  // body stream.
   bindings_option_u32_t between_bytes_timeout_ms;
 } wasi_http_types_request_options_t;
 
+// This type corresponds to the HTTP standard Status Code.
 typedef uint16_t wasi_http_types_status_code_t;
 
 typedef struct {
-  bindings_string_t f0;
-  bindings_list_u8_t f1;
-} bindings_tuple2_string_list_u8_t;
+  wasi_http_types_field_key_t f0;
+  wasi_http_types_field_value_t f1;
+} bindings_tuple2_wasi_http_types_field_key_wasi_http_types_field_value_t;
 
 typedef struct {
-  bindings_tuple2_string_list_u8_t *ptr;
+  bindings_tuple2_wasi_http_types_field_key_wasi_http_types_field_value_t *ptr;
   size_t len;
-} bindings_list_tuple2_string_list_u8_t;
+} bindings_list_tuple2_wasi_http_types_field_key_wasi_http_types_field_value_t;
 
 typedef struct {
   int32_t __handle;
 } bindings_borrow_fields_t;
 
 typedef struct {
-  bindings_list_u8_t *ptr;
+  wasi_http_types_field_value_t *ptr;
   size_t len;
-} bindings_list_list_u8_t;
+} bindings_list_wasi_http_types_field_value_t;
 
 typedef struct {
   int32_t __handle;
@@ -835,13 +849,12 @@ typedef struct {
 
 typedef struct {
   int32_t __handle;
-} bindings_borrow_future_trailers_t;
+} bindings_own_fields_t;
 
 typedef struct {
   int32_t __handle;
-} bindings_own_fields_t;
+} bindings_borrow_future_trailers_t;
 
-typedef bindings_own_fields_t bindings_own_headers_t;
 typedef bindings_own_fields_t bindings_own_trailers_t;
 
 typedef struct {
@@ -891,6 +904,8 @@ typedef struct {
   int32_t __handle;
 } bindings_own_future_incoming_response_t;
 
+typedef bindings_own_fields_t bindings_own_headers_t;
+
 typedef struct {
   int32_t __handle;
 } bindings_own_outgoing_request_t;
@@ -907,7 +922,7 @@ typedef struct {
   int32_t __handle;
 } bindings_own_incoming_request_t;
 
-// Imported Functions from `wasi:clocks/wall-clock`
+// Imported Functions from `wasi:clocks/wall-clock@0.2.0-rc-2023-11-05`
 // Read the current value of the clock.
 //
 // This clock is not monotonic, therefore calling this function repeatedly
@@ -927,7 +942,7 @@ extern void wasi_clocks_wall_clock_now(wasi_clocks_wall_clock_datetime_t *ret);
 // The nanoseconds field of the output is always less than 1000000000.
 extern void wasi_clocks_wall_clock_resolution(wasi_clocks_wall_clock_datetime_t *ret);
 
-// Imported Functions from `wasi:io/poll`
+// Imported Functions from `wasi:io/poll@0.2.0-rc-2023-11-05`
 // Poll for completion on a set of pollables.
 //
 // This function takes a list of pollables, which identify I/O sources of
@@ -953,7 +968,7 @@ extern void wasi_io_poll_poll_list(bindings_list_borrow_pollable_t *in, bindings
 // pollable. When it returns, the handle is ready for I/O.
 extern void wasi_io_poll_poll_one(bindings_borrow_pollable_t in);
 
-// Imported Functions from `wasi:clocks/monotonic-clock`
+// Imported Functions from `wasi:clocks/monotonic-clock@0.2.0-rc-2023-11-05`
 // Read the current value of the clock.
 //
 // The clock is monotonic, therefore calling this function repeatedly will
@@ -965,7 +980,7 @@ extern wasi_clocks_monotonic_clock_instant_t wasi_clocks_monotonic_clock_resolut
 // reached.
 extern bindings_own_pollable_t wasi_clocks_monotonic_clock_subscribe(wasi_clocks_monotonic_clock_instant_t when, bool absolute);
 
-// Imported Functions from `wasi:clocks/timezone`
+// Imported Functions from `wasi:clocks/timezone@0.2.0-rc-2023-11-05`
 // Return information needed to display the given `datetime`. This includes
 // the UTC offset, the time zone name, and a flag indicating whether
 // daylight saving time is active.
@@ -977,7 +992,7 @@ extern void wasi_clocks_timezone_display(wasi_clocks_timezone_datetime_t *when, 
 // The same as `display`, but only return the UTC offset.
 extern int32_t wasi_clocks_timezone_utc_offset(wasi_clocks_timezone_datetime_t *when);
 
-// Imported Functions from `wasi:io/streams`
+// Imported Functions from `wasi:io/streams@0.2.0-rc-2023-11-05`
 // Returns a string that's suitable to assist humans in debugging this
 // error.
 //
@@ -1136,32 +1151,26 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     extern bool wasi_io_streams_method_output_stream_blocking_write_zeroes_and_flush(bindings_borrow_output_stream_t self, uint64_t len, wasi_io_streams_stream_error_t *err);
     // Read from one stream and write to another.
     //
+    // The behavior of splice is equivelant to:
+    // 1. calling `check-write` on the `output-stream`
+    // 2. calling `read` on the `input-stream` with the smaller of the
+    // `check-write` permitted length and the `len` provided to `splice`
+    // 3. calling `write` on the `output-stream` with that read data.
+    //
+    // Any error reported by the call to `check-write`, `read`, or
+    // `write` ends the splice and reports that error.
+    //
     // This function returns the number of bytes transferred; it may be less
     // than `len`.
-    //
-    // Unlike other I/O functions, this function blocks until all the data
-    // read from the input stream has been written to the output stream.
-    extern bool wasi_io_streams_method_output_stream_splice(bindings_borrow_output_stream_t self, bindings_own_input_stream_t src, uint64_t len, uint64_t *ret, wasi_io_streams_stream_error_t *err);
+    extern bool wasi_io_streams_method_output_stream_splice(bindings_borrow_output_stream_t self, bindings_borrow_input_stream_t src, uint64_t len, uint64_t *ret, wasi_io_streams_stream_error_t *err);
     // Read from one stream and write to another, with blocking.
     //
-    // This is similar to `splice`, except that it blocks until at least
-    // one byte can be read.
-    extern bool wasi_io_streams_method_output_stream_blocking_splice(bindings_borrow_output_stream_t self, bindings_own_input_stream_t src, uint64_t len, uint64_t *ret, wasi_io_streams_stream_error_t *err);
-    // Forward the entire contents of an input stream to an output stream.
-    //
-    // This function repeatedly reads from the input stream and writes
-    // the data to the output stream, until the end of the input stream
-    // is reached, or an error is encountered.
-    //
-    // Unlike other I/O functions, this function blocks until the end
-    // of the input stream is seen and all the data has been written to
-    // the output stream.
-    //
-    // This function returns the number of bytes transferred, and the status of
-    // the output stream.
-    extern bool wasi_io_streams_method_output_stream_forward(bindings_borrow_output_stream_t self, bindings_own_input_stream_t src, uint64_t *ret, wasi_io_streams_stream_error_t *err);
+    // This is similar to `splice`, except that it blocks until the
+    // `output-stream` is ready for writing, and the `input-stream`
+    // is ready for reading, before performing the `splice`.
+    extern bool wasi_io_streams_method_output_stream_blocking_splice(bindings_borrow_output_stream_t self, bindings_borrow_input_stream_t src, uint64_t len, uint64_t *ret, wasi_io_streams_stream_error_t *err);
 
-    // Imported Functions from `wasi:filesystem/types`
+    // Imported Functions from `wasi:filesystem/types@0.2.0-rc-2023-11-05`
     // Return a stream for reading from a file, if available.
     //
     // May fail with an error-code describing why the file cannot be read.
@@ -1514,15 +1523,15 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // errors are filesystem-related errors.
     extern bool wasi_filesystem_types_filesystem_error_code(bindings_borrow_error_t err, wasi_filesystem_types_error_code_t *ret);
 
-    // Imported Functions from `wasi:filesystem/preopens`
+    // Imported Functions from `wasi:filesystem/preopens@0.2.0-rc-2023-11-05`
     // Return the set of preopened directories, and their path.
     extern void wasi_filesystem_preopens_get_directories(bindings_list_tuple2_own_descriptor_string_t *ret);
 
-    // Imported Functions from `wasi:sockets/instance-network`
+    // Imported Functions from `wasi:sockets/instance-network@0.2.0-rc-2023-11-05`
     // Get a handle to the default network.
     extern bindings_own_network_t wasi_sockets_instance_network_instance_network(void);
 
-    // Imported Functions from `wasi:sockets/ip-name-lookup`
+    // Imported Functions from `wasi:sockets/ip-name-lookup@0.2.0-rc-2023-11-05`
     // Resolve an internet host name to a list of IP addresses.
     //
     // See the wasi-socket proposal README.md for a comparison with getaddrinfo.
@@ -1544,9 +1553,9 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // to `resolve-next-address` never returns `ok(none)`. This may change in the future.
     //
     // # Typical errors
-    // - `invalid-name`:                 `name` is a syntactically invalid domain name.
-    // - `invalid-name`:                 `name` is an IP address.
-    // - `address-family-not-supported`: The specified `address-family` is not supported. (EAI_FAMILY)
+    // - `invalid-argument`:     `name` is a syntactically invalid domain name.
+    // - `invalid-argument`:     `name` is an IP address.
+    // - `not-supported`:        The specified `address-family` is not supported. (EAI_FAMILY)
     //
     // # References:
     // - <https://pubs.opengroup.org/onlinepubs/9699919799/functions/getaddrinfo.html>
@@ -1574,7 +1583,7 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // It's planned to be removed when `future` is natively supported in Preview3.
     extern bindings_own_pollable_t wasi_sockets_ip_name_lookup_method_resolve_address_stream_subscribe(bindings_borrow_resolve_address_stream_t self);
 
-    // Imported Functions from `wasi:sockets/tcp`
+    // Imported Functions from `wasi:sockets/tcp@0.2.0-rc-2023-11-05`
     // Bind the socket to a specific network on the provided IP address and port.
     //
     // If the IP address is zero (`0.0.0.0` in IPv4, `::` in IPv6), it is left to the implementation to decide which
@@ -1587,12 +1596,13 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // Unlike in POSIX, this function is async. This enables interactive WASI hosts to inject permission prompts.
     //
     // # Typical `start` errors
-    // - `address-family-mismatch`:   The `local-address` has the wrong address family. (EINVAL)
-    // - `already-bound`:             The socket is already bound. (EINVAL)
-    // - `concurrency-conflict`:      Another `bind`, `connect` or `listen` operation is already in progress. (EALREADY)
+    // - `invalid-argument`:          The `local-address` has the wrong address family. (EAFNOSUPPORT, EFAULT on Windows)
+    // - `invalid-argument`:          `local-address` is not a unicast address. (EINVAL)
+    // - `invalid-argument`:          `local-address` is an IPv4-mapped IPv6 address, but the socket has `ipv6-only` enabled. (EINVAL)
+    // - `invalid-state`:             The socket is already bound. (EINVAL)
     //
     // # Typical `finish` errors
-    // - `ephemeral-ports-exhausted`: No ephemeral ports available. (EADDRINUSE, ENOBUFS on Windows)
+    // - `address-in-use`:            No ephemeral ports available. (EADDRINUSE, ENOBUFS on Windows)
     // - `address-in-use`:            Address is already in use. (EADDRINUSE)
     // - `address-not-bindable`:      `local-address` is not an address that the `network` can bind to. (EADDRNOTAVAIL)
     // - `not-in-progress`:           A `bind` operation is not in progress.
@@ -1611,21 +1621,33 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // - the socket is transitioned into the Connection state
     // - a pair of streams is returned that can be used to read & write to the connection
     //
+    // POSIX mentions:
+    // > If connect() fails, the state of the socket is unspecified. Conforming applications should
+    // > close the file descriptor and create a new socket before attempting to reconnect.
+    //
+    // WASI prescribes the following behavior:
+    // - If `connect` fails because an input/state validation error, the socket should remain usable.
+    // - If a connection was actually attempted but failed, the socket should become unusable for further network communication.
+    // Besides `drop`, any method after such a failure may return an error.
+    //
     // # Typical `start` errors
-    // - `address-family-mismatch`:   The `remote-address` has the wrong address family. (EAFNOSUPPORT)
-    // - `invalid-remote-address`:    The IP address in `remote-address` is set to INADDR_ANY (`0.0.0.0` / `::`). (EADDRNOTAVAIL on Windows)
-    // - `invalid-remote-address`:    The port in `remote-address` is set to 0. (EADDRNOTAVAIL on Windows)
-    // - `already-attached`:          The socket is already attached to a different network. The `network` passed to `connect` must be identical to the one passed to `bind`.
-    // - `already-connected`:         The socket is already in the Connection state. (EISCONN)
-    // - `already-listening`:         The socket is already in the Listener state. (EOPNOTSUPP, EINVAL on Windows)
-    // - `concurrency-conflict`:      Another `bind`, `connect` or `listen` operation is already in progress. (EALREADY)
+    // - `invalid-argument`:          The `remote-address` has the wrong address family. (EAFNOSUPPORT)
+    // - `invalid-argument`:          `remote-address` is not a unicast address. (EINVAL, ENETUNREACH on Linux, EAFNOSUPPORT on MacOS)
+    // - `invalid-argument`:          `remote-address` is an IPv4-mapped IPv6 address, but the socket has `ipv6-only` enabled. (EINVAL, EADDRNOTAVAIL on Illumos)
+    // - `invalid-argument`:          `remote-address` is a non-IPv4-mapped IPv6 address, but the socket was bound to a specific IPv4-mapped IPv6 address. (or vice versa)
+    // - `invalid-argument`:          The IP address in `remote-address` is set to INADDR_ANY (`0.0.0.0` / `::`). (EADDRNOTAVAIL on Windows)
+    // - `invalid-argument`:          The port in `remote-address` is set to 0. (EADDRNOTAVAIL on Windows)
+    // - `invalid-argument`:          The socket is already attached to a different network. The `network` passed to `connect` must be identical to the one passed to `bind`.
+    // - `invalid-state`:             The socket is already in the Connection state. (EISCONN)
+    // - `invalid-state`:             The socket is already in the Listener state. (EOPNOTSUPP, EINVAL on Windows)
     //
     // # Typical `finish` errors
     // - `timeout`:                   Connection timed out. (ETIMEDOUT)
     // - `connection-refused`:        The connection was forcefully rejected. (ECONNREFUSED)
     // - `connection-reset`:          The connection was reset. (ECONNRESET)
+    // - `connection-aborted`:        The connection was aborted. (ECONNABORTED)
     // - `remote-unreachable`:        The remote address is not reachable. (EHOSTUNREACH, EHOSTDOWN, ENETUNREACH, ENETDOWN)
-    // - `ephemeral-ports-exhausted`: Tried to perform an implicit bind, but there were no ephemeral ports available. (EADDRINUSE, EADDRNOTAVAIL on Linux, EAGAIN on BSD)
+    // - `address-in-use`:            Tried to perform an implicit bind, but there were no ephemeral ports available. (EADDRINUSE, EADDRNOTAVAIL on Linux, EAGAIN on BSD)
     // - `not-in-progress`:           A `connect` operation is not in progress.
     // - `would-block`:               Can't finish the operation, it is still in progress. (EWOULDBLOCK, EAGAIN)
     //
@@ -1645,13 +1667,12 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // - the socket must already be explicitly bound.
     //
     // # Typical `start` errors
-    // - `not-bound`:                 The socket is not bound to any local address. (EDESTADDRREQ)
-    // - `already-connected`:         The socket is already in the Connection state. (EISCONN, EINVAL on BSD)
-    // - `already-listening`:         The socket is already in the Listener state.
-    // - `concurrency-conflict`:      Another `bind`, `connect` or `listen` operation is already in progress. (EINVAL on BSD)
+    // - `invalid-state`:             The socket is not bound to any local address. (EDESTADDRREQ)
+    // - `invalid-state`:             The socket is already in the Connection state. (EISCONN, EINVAL on BSD)
+    // - `invalid-state`:             The socket is already in the Listener state.
     //
     // # Typical `finish` errors
-    // - `ephemeral-ports-exhausted`: Tried to perform an implicit bind, but there were no ephemeral ports available. (EADDRINUSE)
+    // - `address-in-use`:            Tried to perform an implicit bind, but there were no ephemeral ports available. (EADDRINUSE)
     // - `not-in-progress`:           A `listen` operation is not in progress.
     // - `would-block`:               Can't finish the operation, it is still in progress. (EWOULDBLOCK, EAGAIN)
     //
@@ -1664,16 +1685,23 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     extern bool wasi_sockets_tcp_method_tcp_socket_finish_listen(bindings_borrow_tcp_socket_t self, wasi_sockets_tcp_error_code_t *err);
     // Accept a new client socket.
     //
-    // The returned socket is bound and in the Connection state.
+    // The returned socket is bound and in the Connection state. The following properties are inherited from the listener socket:
+    // - `address-family`
+    // - `ipv6-only`
+    // - `keep-alive`
+    // - `no-delay`
+    // - `unicast-hop-limit`
+    // - `receive-buffer-size`
+    // - `send-buffer-size`
     //
     // On success, this function returns the newly accepted client socket along with
     // a pair of streams that can be used to read & write to the connection.
     //
     // # Typical errors
-    // - `not-listening`: Socket is not in the Listener state. (EINVAL)
-    // - `would-block`:   No pending connections at the moment. (EWOULDBLOCK, EAGAIN)
-    //
-    // Host implementations must skip over transient errors returned by the native accept syscall.
+    // - `invalid-state`:      Socket is not in the Listener state. (EINVAL)
+    // - `would-block`:        No pending connections at the moment. (EWOULDBLOCK, EAGAIN)
+    // - `connection-aborted`: An incoming connection was pending, but was terminated by the client before this listener could accept it. (ECONNABORTED)
+    // - `new-socket-limit`:   The new socket resource could not be created because of a system limit. (EMFILE, ENFILE)
     //
     // # References
     // - <https://pubs.opengroup.org/onlinepubs/9699919799/functions/accept.html>
@@ -1683,8 +1711,14 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     extern bool wasi_sockets_tcp_method_tcp_socket_accept(bindings_borrow_tcp_socket_t self, bindings_tuple3_own_tcp_socket_own_input_stream_own_output_stream_t *ret, wasi_sockets_tcp_error_code_t *err);
     // Get the bound local address.
     //
+    // POSIX mentions:
+    // > If the socket has not been bound to a local name, the value
+    // > stored in the object pointed to by `address` is unspecified.
+    //
+    // WASI is stricter and requires `local-address` to return `invalid-state` when the socket hasn't been bound yet.
+    //
     // # Typical errors
-    // - `not-bound`: The socket is not bound to any local address.
+    // - `invalid-state`: The socket is not bound to any local address.
     //
     // # References
     // - <https://pubs.opengroup.org/onlinepubs/9699919799/functions/getsockname.html>
@@ -1692,10 +1726,10 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // - <https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-getsockname>
     // - <https://man.freebsd.org/cgi/man.cgi?getsockname>
     extern bool wasi_sockets_tcp_method_tcp_socket_local_address(bindings_borrow_tcp_socket_t self, wasi_sockets_tcp_ip_socket_address_t *ret, wasi_sockets_tcp_error_code_t *err);
-    // Get the bound remote address.
+    // Get the remote address.
     //
     // # Typical errors
-    // - `not-connected`: The socket is not connected to a remote address. (ENOTCONN)
+    // - `invalid-state`: The socket is not connected to a remote address. (ENOTCONN)
     //
     // # References
     // - <https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpeername.html>
@@ -1712,36 +1746,31 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // Equivalent to the IPV6_V6ONLY socket option.
     //
     // # Typical errors
-    // - `ipv6-only-operation`:  (get/set) `this` socket is an IPv4 socket.
-    // - `already-bound`:        (set) The socket is already bound.
+    // - `invalid-state`:        (set) The socket is already bound.
+    // - `not-supported`:        (get/set) `this` socket is an IPv4 socket.
     // - `not-supported`:        (set) Host does not support dual-stack sockets. (Implementations are not required to.)
-    // - `concurrency-conflict`: (set) A `bind`, `connect` or `listen` operation is already in progress. (EALREADY)
     extern bool wasi_sockets_tcp_method_tcp_socket_ipv6_only(bindings_borrow_tcp_socket_t self, bool *ret, wasi_sockets_tcp_error_code_t *err);
     extern bool wasi_sockets_tcp_method_tcp_socket_set_ipv6_only(bindings_borrow_tcp_socket_t self, bool value, wasi_sockets_tcp_error_code_t *err);
     // Hints the desired listen queue size. Implementations are free to ignore this.
     //
     // # Typical errors
-    // - `already-connected`:    (set) The socket is already in the Connection state.
-    // - `concurrency-conflict`: (set) A `bind`, `connect` or `listen` operation is already in progress. (EALREADY)
+    // - `not-supported`:        (set) The platform does not support changing the backlog size after the initial listen.
+    // - `invalid-state`:        (set) The socket is already in the Connection state.
     extern bool wasi_sockets_tcp_method_tcp_socket_set_listen_backlog_size(bindings_borrow_tcp_socket_t self, uint64_t value, wasi_sockets_tcp_error_code_t *err);
     // Equivalent to the SO_KEEPALIVE socket option.
-    //
-    // # Typical errors
-    // - `concurrency-conflict`: (set) A `bind`, `connect` or `listen` operation is already in progress. (EALREADY)
     extern bool wasi_sockets_tcp_method_tcp_socket_keep_alive(bindings_borrow_tcp_socket_t self, bool *ret, wasi_sockets_tcp_error_code_t *err);
     extern bool wasi_sockets_tcp_method_tcp_socket_set_keep_alive(bindings_borrow_tcp_socket_t self, bool value, wasi_sockets_tcp_error_code_t *err);
     // Equivalent to the TCP_NODELAY socket option.
     //
-    // # Typical errors
-    // - `concurrency-conflict`: (set) A `bind`, `connect` or `listen` operation is already in progress. (EALREADY)
+    // The default value is `false`.
     extern bool wasi_sockets_tcp_method_tcp_socket_no_delay(bindings_borrow_tcp_socket_t self, bool *ret, wasi_sockets_tcp_error_code_t *err);
     extern bool wasi_sockets_tcp_method_tcp_socket_set_no_delay(bindings_borrow_tcp_socket_t self, bool value, wasi_sockets_tcp_error_code_t *err);
     // Equivalent to the IP_TTL & IPV6_UNICAST_HOPS socket options.
     //
     // # Typical errors
-    // - `already-connected`:    (set) The socket is already in the Connection state.
-    // - `already-listening`:    (set) The socket is already in the Listener state.
-    // - `concurrency-conflict`: (set) A `bind`, `connect` or `listen` operation is already in progress. (EALREADY)
+    // - `invalid-argument`:     (set) The TTL value must be 1 or higher.
+    // - `invalid-state`:        (set) The socket is already in the Connection state.
+    // - `invalid-state`:        (set) The socket is already in the Listener state.
     extern bool wasi_sockets_tcp_method_tcp_socket_unicast_hop_limit(bindings_borrow_tcp_socket_t self, uint8_t *ret, wasi_sockets_tcp_error_code_t *err);
     extern bool wasi_sockets_tcp_method_tcp_socket_set_unicast_hop_limit(bindings_borrow_tcp_socket_t self, uint8_t value, wasi_sockets_tcp_error_code_t *err);
     // The kernel buffer space reserved for sends/receives on this socket.
@@ -1756,9 +1785,8 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // Equivalent to the SO_RCVBUF and SO_SNDBUF socket options.
     //
     // # Typical errors
-    // - `already-connected`:    (set) The socket is already in the Connection state.
-    // - `already-listening`:    (set) The socket is already in the Listener state.
-    // - `concurrency-conflict`: (set) A `bind`, `connect` or `listen` operation is already in progress. (EALREADY)
+    // - `invalid-state`:        (set) The socket is already in the Connection state.
+    // - `invalid-state`:        (set) The socket is already in the Listener state.
     extern bool wasi_sockets_tcp_method_tcp_socket_receive_buffer_size(bindings_borrow_tcp_socket_t self, uint64_t *ret, wasi_sockets_tcp_error_code_t *err);
     extern bool wasi_sockets_tcp_method_tcp_socket_set_receive_buffer_size(bindings_borrow_tcp_socket_t self, uint64_t value, wasi_sockets_tcp_error_code_t *err);
     extern bool wasi_sockets_tcp_method_tcp_socket_send_buffer_size(bindings_borrow_tcp_socket_t self, uint64_t *ret, wasi_sockets_tcp_error_code_t *err);
@@ -1780,7 +1808,7 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // The shutdown function does not close (drop) the socket.
     //
     // # Typical errors
-    // - `not-connected`: The socket is not in the Connection state. (ENOTCONN)
+    // - `invalid-state`: The socket is not in the Connection state. (ENOTCONN)
     //
     // # References
     // - <https://pubs.opengroup.org/onlinepubs/9699919799/functions/shutdown.html>
@@ -1789,7 +1817,7 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // - <https://man.freebsd.org/cgi/man.cgi?query=shutdown&sektion=2>
     extern bool wasi_sockets_tcp_method_tcp_socket_shutdown(bindings_borrow_tcp_socket_t self, wasi_sockets_tcp_shutdown_type_t shutdown_type, wasi_sockets_tcp_error_code_t *err);
 
-    // Imported Functions from `wasi:sockets/tcp-create-socket`
+    // Imported Functions from `wasi:sockets/tcp-create-socket@0.2.0-rc-2023-11-05`
     // Create a new TCP socket.
     //
     // Similar to `socket(AF_INET or AF_INET6, SOCK_STREAM, IPPROTO_TCP)` in POSIX.
@@ -1801,9 +1829,8 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // All sockets are non-blocking. Use the wasi-poll interface to block on asynchronous operations.
     //
     // # Typical errors
-    // - `not-supported`:                The host does not support TCP sockets. (EOPNOTSUPP)
-    // - `address-family-not-supported`: The specified `address-family` is not supported. (EAFNOSUPPORT)
-    // - `new-socket-limit`:             The new socket resource could not be created because of a system limit. (EMFILE, ENFILE)
+    // - `not-supported`:     The specified `address-family` is not supported. (EAFNOSUPPORT)
+    // - `new-socket-limit`:  The new socket resource could not be created because of a system limit. (EMFILE, ENFILE)
     //
     // # References
     // - <https://pubs.opengroup.org/onlinepubs/9699919799/functions/socket.html>
@@ -1812,7 +1839,7 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // - <https://man.freebsd.org/cgi/man.cgi?query=socket&sektion=2>
     extern bool wasi_sockets_tcp_create_socket_create_tcp_socket(wasi_sockets_tcp_create_socket_ip_address_family_t address_family, bindings_own_tcp_socket_t *ret, wasi_sockets_tcp_create_socket_error_code_t *err);
 
-    // Imported Functions from `wasi:sockets/udp`
+    // Imported Functions from `wasi:sockets/udp@0.2.0-rc-2023-11-05`
     // Bind the socket to a specific network on the provided IP address and port.
     //
     // If the IP address is zero (`0.0.0.0` in IPv4, `::` in IPv6), it is left to the implementation to decide which
@@ -1824,12 +1851,11 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // Unlike in POSIX, this function is async. This enables interactive WASI hosts to inject permission prompts.
     //
     // # Typical `start` errors
-    // - `address-family-mismatch`:   The `local-address` has the wrong address family. (EINVAL)
-    // - `already-bound`:             The socket is already bound. (EINVAL)
-    // - `concurrency-conflict`:      Another `bind` or `connect` operation is already in progress. (EALREADY)
+    // - `invalid-argument`:          The `local-address` has the wrong address family. (EAFNOSUPPORT, EFAULT on Windows)
+    // - `invalid-state`:             The socket is already bound. (EINVAL)
     //
     // # Typical `finish` errors
-    // - `ephemeral-ports-exhausted`: No ephemeral ports available. (EADDRINUSE, ENOBUFS on Windows)
+    // - `address-in-use`:            No ephemeral ports available. (EADDRINUSE, ENOBUFS on Windows)
     // - `address-in-use`:            Address is already in use. (EADDRINUSE)
     // - `address-not-bindable`:      `local-address` is not an address that the `network` can bind to. (EADDRNOTAVAIL)
     // - `not-in-progress`:           A `bind` operation is not in progress.
@@ -1855,14 +1881,14 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // Unlike in POSIX, this function is async. This enables interactive WASI hosts to inject permission prompts.
     //
     // # Typical `start` errors
-    // - `address-family-mismatch`:   The `remote-address` has the wrong address family. (EAFNOSUPPORT)
-    // - `invalid-remote-address`:    The IP address in `remote-address` is set to INADDR_ANY (`0.0.0.0` / `::`). (EDESTADDRREQ, EADDRNOTAVAIL)
-    // - `invalid-remote-address`:    The port in `remote-address` is set to 0. (EDESTADDRREQ, EADDRNOTAVAIL)
-    // - `already-attached`:          The socket is already bound to a different network. The `network` passed to `connect` must be identical to the one passed to `bind`.
-    // - `concurrency-conflict`:      Another `bind` or `connect` operation is already in progress. (EALREADY)
+    // - `invalid-argument`:          The `remote-address` has the wrong address family. (EAFNOSUPPORT)
+    // - `invalid-argument`:          `remote-address` is a non-IPv4-mapped IPv6 address, but the socket was bound to a specific IPv4-mapped IPv6 address. (or vice versa)
+    // - `invalid-argument`:          The IP address in `remote-address` is set to INADDR_ANY (`0.0.0.0` / `::`). (EDESTADDRREQ, EADDRNOTAVAIL)
+    // - `invalid-argument`:          The port in `remote-address` is set to 0. (EDESTADDRREQ, EADDRNOTAVAIL)
+    // - `invalid-argument`:          The socket is already bound to a different network. The `network` passed to `connect` must be identical to the one passed to `bind`.
     //
     // # Typical `finish` errors
-    // - `ephemeral-ports-exhausted`: Tried to perform an implicit bind, but there were no ephemeral ports available. (EADDRINUSE, EADDRNOTAVAIL on Linux, EAGAIN on BSD)
+    // - `address-in-use`:            Tried to perform an implicit bind, but there were no ephemeral ports available. (EADDRINUSE, EADDRNOTAVAIL on Linux, EAGAIN on BSD)
     // - `not-in-progress`:           A `connect` operation is not in progress.
     // - `would-block`:               Can't finish the operation, it is still in progress. (EWOULDBLOCK, EAGAIN)
     //
@@ -1880,7 +1906,7 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // If `max-results` is 0, this function returns successfully with an empty list.
     //
     // # Typical errors
-    // - `not-bound`:          The socket is not bound to any local address. (EINVAL)
+    // - `invalid-state`:      The socket is not bound to any local address. (EINVAL)
     // - `remote-unreachable`: The remote address is not reachable. (ECONNREFUSED, ECONNRESET, ENETRESET on Windows, EHOSTUNREACH, EHOSTDOWN, ENETUNREACH, ENETDOWN)
     // - `would-block`:        There is no pending data available to be read at the moment. (EWOULDBLOCK, EAGAIN)
     //
@@ -1909,11 +1935,12 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // call `remote-address` to get their address.
     //
     // # Typical errors
-    // - `address-family-mismatch`: The `remote-address` has the wrong address family. (EAFNOSUPPORT)
-    // - `invalid-remote-address`:  The IP address in `remote-address` is set to INADDR_ANY (`0.0.0.0` / `::`). (EDESTADDRREQ, EADDRNOTAVAIL)
-    // - `invalid-remote-address`:  The port in `remote-address` is set to 0. (EDESTADDRREQ, EADDRNOTAVAIL)
-    // - `already-connected`:       The socket is in "connected" mode and the `datagram.remote-address` does not match the address passed to `connect`. (EISCONN)
-    // - `not-bound`:               The socket is not bound to any local address. Unlike POSIX, this function does not perform an implicit bind.
+    // - `invalid-argument`:        The `remote-address` has the wrong address family. (EAFNOSUPPORT)
+    // - `invalid-argument`:        `remote-address` is a non-IPv4-mapped IPv6 address, but the socket was bound to a specific IPv4-mapped IPv6 address. (or vice versa)
+    // - `invalid-argument`:        The IP address in `remote-address` is set to INADDR_ANY (`0.0.0.0` / `::`). (EDESTADDRREQ, EADDRNOTAVAIL)
+    // - `invalid-argument`:        The port in `remote-address` is set to 0. (EDESTADDRREQ, EADDRNOTAVAIL)
+    // - `invalid-argument`:        The socket is in "connected" mode and the `datagram.remote-address` does not match the address passed to `connect`. (EISCONN)
+    // - `invalid-state`:           The socket is not bound to any local address. Unlike POSIX, this function does not perform an implicit bind.
     // - `remote-unreachable`:      The remote address is not reachable. (ECONNREFUSED, ECONNRESET, ENETRESET on Windows, EHOSTUNREACH, EHOSTDOWN, ENETUNREACH, ENETDOWN)
     // - `datagram-too-large`:      The datagram is too large. (EMSGSIZE)
     // - `would-block`:             The send buffer is currently full. (EWOULDBLOCK, EAGAIN)
@@ -1930,8 +1957,14 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     extern bool wasi_sockets_udp_method_udp_socket_send(bindings_borrow_udp_socket_t self, bindings_list_wasi_sockets_udp_datagram_t *datagrams, uint64_t *ret, wasi_sockets_udp_error_code_t *err);
     // Get the current bound address.
     //
+    // POSIX mentions:
+    // > If the socket has not been bound to a local name, the value
+    // > stored in the object pointed to by `address` is unspecified.
+    //
+    // WASI is stricter and requires `local-address` to return `invalid-state` when the socket hasn't been bound yet.
+    //
     // # Typical errors
-    // - `not-bound`: The socket is not bound to any local address.
+    // - `invalid-state`: The socket is not bound to any local address.
     //
     // # References
     // - <https://pubs.opengroup.org/onlinepubs/9699919799/functions/getsockname.html>
@@ -1942,7 +1975,7 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // Get the address set with `connect`.
     //
     // # Typical errors
-    // - `not-connected`: The socket is not connected to a remote address. (ENOTCONN)
+    // - `invalid-state`: The socket is not connected to a remote address. (ENOTCONN)
     //
     // # References
     // - <https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpeername.html>
@@ -1959,16 +1992,12 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // Equivalent to the IPV6_V6ONLY socket option.
     //
     // # Typical errors
-    // - `ipv6-only-operation`:  (get/set) `this` socket is an IPv4 socket.
-    // - `already-bound`:        (set) The socket is already bound.
+    // - `not-supported`:        (get/set) `this` socket is an IPv4 socket.
+    // - `invalid-state`:        (set) The socket is already bound.
     // - `not-supported`:        (set) Host does not support dual-stack sockets. (Implementations are not required to.)
-    // - `concurrency-conflict`: (set) Another `bind` or `connect` operation is already in progress. (EALREADY)
     extern bool wasi_sockets_udp_method_udp_socket_ipv6_only(bindings_borrow_udp_socket_t self, bool *ret, wasi_sockets_udp_error_code_t *err);
     extern bool wasi_sockets_udp_method_udp_socket_set_ipv6_only(bindings_borrow_udp_socket_t self, bool value, wasi_sockets_udp_error_code_t *err);
     // Equivalent to the IP_TTL & IPV6_UNICAST_HOPS socket options.
-    //
-    // # Typical errors
-    // - `concurrency-conflict`: (set) Another `bind` or `connect` operation is already in progress. (EALREADY)
     extern bool wasi_sockets_udp_method_udp_socket_unicast_hop_limit(bindings_borrow_udp_socket_t self, uint8_t *ret, wasi_sockets_udp_error_code_t *err);
     extern bool wasi_sockets_udp_method_udp_socket_set_unicast_hop_limit(bindings_borrow_udp_socket_t self, uint8_t value, wasi_sockets_udp_error_code_t *err);
     // The kernel buffer space reserved for sends/receives on this socket.
@@ -1981,9 +2010,6 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // for internal metadata structures.
     //
     // Equivalent to the SO_RCVBUF and SO_SNDBUF socket options.
-    //
-    // # Typical errors
-    // - `concurrency-conflict`: (set) Another `bind` or `connect` operation is already in progress. (EALREADY)
     extern bool wasi_sockets_udp_method_udp_socket_receive_buffer_size(bindings_borrow_udp_socket_t self, uint64_t *ret, wasi_sockets_udp_error_code_t *err);
     extern bool wasi_sockets_udp_method_udp_socket_set_receive_buffer_size(bindings_borrow_udp_socket_t self, uint64_t value, wasi_sockets_udp_error_code_t *err);
     extern bool wasi_sockets_udp_method_udp_socket_send_buffer_size(bindings_borrow_udp_socket_t self, uint64_t *ret, wasi_sockets_udp_error_code_t *err);
@@ -1994,7 +2020,7 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // It's planned to be removed when `future` is natively supported in Preview3.
     extern bindings_own_pollable_t wasi_sockets_udp_method_udp_socket_subscribe(bindings_borrow_udp_socket_t self);
 
-    // Imported Functions from `wasi:sockets/udp-create-socket`
+    // Imported Functions from `wasi:sockets/udp-create-socket@0.2.0-rc-2023-11-05`
     // Create a new UDP socket.
     //
     // Similar to `socket(AF_INET or AF_INET6, SOCK_DGRAM, IPPROTO_UDP)` in POSIX.
@@ -2006,9 +2032,8 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // All sockets are non-blocking. Use the wasi-poll interface to block on asynchronous operations.
     //
     // # Typical errors
-    // - `not-supported`:                The host does not support UDP sockets. (EOPNOTSUPP)
-    // - `address-family-not-supported`: The specified `address-family` is not supported. (EAFNOSUPPORT)
-    // - `new-socket-limit`:             The new socket resource could not be created because of a system limit. (EMFILE, ENFILE)
+    // - `not-supported`:     The specified `address-family` is not supported. (EAFNOSUPPORT)
+    // - `new-socket-limit`:  The new socket resource could not be created because of a system limit. (EMFILE, ENFILE)
     //
     // # References:
     // - <https://pubs.opengroup.org/onlinepubs/9699919799/functions/socket.html>
@@ -2017,7 +2042,7 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // - <https://man.freebsd.org/cgi/man.cgi?query=socket&sektion=2>
     extern bool wasi_sockets_udp_create_socket_create_udp_socket(wasi_sockets_udp_create_socket_ip_address_family_t address_family, bindings_own_udp_socket_t *ret, wasi_sockets_udp_create_socket_error_code_t *err);
 
-    // Imported Functions from `wasi:random/random`
+    // Imported Functions from `wasi:random/random@0.2.0-rc-2023-11-05`
     // Return `len` cryptographically-secure random or pseudo-random bytes.
     //
     // This function must produce data at least as cryptographically secure and
@@ -2037,7 +2062,7 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // represented as a `u64`.
     extern uint64_t wasi_random_random_get_random_u64(void);
 
-    // Imported Functions from `wasi:random/insecure`
+    // Imported Functions from `wasi:random/insecure@0.2.0-rc-2023-11-05`
     // Return `len` insecure pseudo-random bytes.
     //
     // This function is not cryptographically secure. Do not use it for
@@ -2053,7 +2078,7 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // `get-insecure-random-bytes`, represented as a `u64`.
     extern uint64_t wasi_random_insecure_get_insecure_random_u64(void);
 
-    // Imported Functions from `wasi:random/insecure-seed`
+    // Imported Functions from `wasi:random/insecure-seed@0.2.0-rc-2023-11-05`
     // Return a 128-bit value that may contain a pseudo-random value.
     //
     // The returned value is not required to be computed from a CSPRNG, and may
@@ -2073,7 +2098,7 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // protection.
     extern void wasi_random_insecure_seed_insecure_seed(bindings_tuple2_u64_u64_t *ret);
 
-    // Imported Functions from `wasi:cli/environment`
+    // Imported Functions from `wasi:cli/environment@0.2.0-rc-2023-11-05`
     // Get the POSIX-style environment variables.
     //
     // Each environment variable is provided as a pair of string variable names
@@ -2089,89 +2114,198 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // directory, interpreting `.` as shorthand for this.
     extern bool wasi_cli_environment_initial_cwd(bindings_string_t *ret);
 
-    // Imported Functions from `wasi:cli/exit`
+    // Imported Functions from `wasi:cli/exit@0.2.0-rc-2023-11-05`
     // Exit the current instance and any linked instances.
     extern void wasi_cli_exit_exit(bindings_result_void_void_t *status);
 
-    // Imported Functions from `wasi:cli/stdin`
+    // Imported Functions from `wasi:cli/stdin@0.2.0-rc-2023-11-05`
     extern bindings_own_input_stream_t wasi_cli_stdin_get_stdin(void);
 
-    // Imported Functions from `wasi:cli/stdout`
+    // Imported Functions from `wasi:cli/stdout@0.2.0-rc-2023-11-05`
     extern bindings_own_output_stream_t wasi_cli_stdout_get_stdout(void);
 
-    // Imported Functions from `wasi:cli/stderr`
+    // Imported Functions from `wasi:cli/stderr@0.2.0-rc-2023-11-05`
     extern bindings_own_output_stream_t wasi_cli_stderr_get_stderr(void);
 
-    // Imported Functions from `wasi:cli/terminal-stdin`
+    // Imported Functions from `wasi:cli/terminal-stdin@0.2.0-rc-2023-11-05`
     // If stdin is connected to a terminal, return a `terminal-input` handle
     // allowing further interaction with it.
     extern bool wasi_cli_terminal_stdin_get_terminal_stdin(bindings_own_terminal_input_t *ret);
 
-    // Imported Functions from `wasi:cli/terminal-stdout`
+    // Imported Functions from `wasi:cli/terminal-stdout@0.2.0-rc-2023-11-05`
     // If stdout is connected to a terminal, return a `terminal-output` handle
     // allowing further interaction with it.
     extern bool wasi_cli_terminal_stdout_get_terminal_stdout(bindings_own_terminal_output_t *ret);
 
-    // Imported Functions from `wasi:cli/terminal-stderr`
+    // Imported Functions from `wasi:cli/terminal-stderr@0.2.0-rc-2023-11-05`
     // If stderr is connected to a terminal, return a `terminal-output` handle
     // allowing further interaction with it.
     extern bool wasi_cli_terminal_stderr_get_terminal_stderr(bindings_own_terminal_output_t *ret);
 
-    // Imported Functions from `wasi:http/types`
-    extern bindings_own_fields_t wasi_http_types_constructor_fields(bindings_list_tuple2_string_list_u8_t *entries);
-    extern void wasi_http_types_method_fields_get(bindings_borrow_fields_t self, bindings_string_t *name, bindings_list_list_u8_t *ret);
-    extern void wasi_http_types_method_fields_set(bindings_borrow_fields_t self, bindings_string_t *name, bindings_list_list_u8_t *value);
-    extern void wasi_http_types_method_fields_delete(bindings_borrow_fields_t self, bindings_string_t *name);
-    extern void wasi_http_types_method_fields_append(bindings_borrow_fields_t self, bindings_string_t *name, bindings_list_u8_t *value);
-    extern void wasi_http_types_method_fields_entries(bindings_borrow_fields_t self, bindings_list_tuple2_string_list_u8_t *ret);
+    // Imported Functions from `wasi:http/types@0.2.0-rc-2023-11-05`
+    // Construct an HTTP Fields.
+    //
+    // The list represents each key-value pair in the Fields. Keys
+    // which have multiple values are represented by multiple entries in this
+    // list with the same key.
+    //
+    // The tuple is a pair of the field key, represented as a string, and
+    // Value, represented as a list of bytes. In a valid Fields, all keys
+    // and values are valid UTF-8 strings. However, values are not always
+    // well-formed, so they are represented as a raw list of bytes.
+    extern bindings_own_fields_t wasi_http_types_constructor_fields(bindings_list_tuple2_wasi_http_types_field_key_wasi_http_types_field_value_t *entries);
+    // Get all of the values corresponding to a key.
+    extern void wasi_http_types_method_fields_get(bindings_borrow_fields_t self, wasi_http_types_field_key_t *name, bindings_list_wasi_http_types_field_value_t *ret);
+    // Set all of the values for a key. Clears any existing values for that
+    // key, if they have been set.
+    extern void wasi_http_types_method_fields_set(bindings_borrow_fields_t self, wasi_http_types_field_key_t *name, bindings_list_wasi_http_types_field_value_t *value);
+    // Delete all values for a key. Does nothing if no values for the key
+    // exist.
+    extern void wasi_http_types_method_fields_delete(bindings_borrow_fields_t self, wasi_http_types_field_key_t *name);
+    // Append a value for a key. Does not change or delete any existing
+    // values for that key.
+    extern void wasi_http_types_method_fields_append(bindings_borrow_fields_t self, wasi_http_types_field_key_t *name, wasi_http_types_field_value_t *value);
+    // Retrieve the full set of keys and values in the Fields. Like the
+    // constructor, the list represents each key-value pair.
+    //
+    // The outer list represents each key-value pair in the Fields. Keys
+    // which have multiple values are represented by multiple entries in this
+    // list with the same key.
+    extern void wasi_http_types_method_fields_entries(bindings_borrow_fields_t self, bindings_list_tuple2_wasi_http_types_field_key_wasi_http_types_field_value_t *ret);
+    // Make a deep copy of the Fields. Equivelant in behavior to calling the
+    // `fields` constructor on the return value of `entries`
     extern bindings_own_fields_t wasi_http_types_method_fields_clone(bindings_borrow_fields_t self);
+    // Returns the method of the incoming request.
     extern void wasi_http_types_method_incoming_request_method(bindings_borrow_incoming_request_t self, wasi_http_types_method_t *ret);
+    // Returns the path with query parameters from the request, as a string.
     extern bool wasi_http_types_method_incoming_request_path_with_query(bindings_borrow_incoming_request_t self, bindings_string_t *ret);
+    // Returns the protocol scheme from the request.
     extern bool wasi_http_types_method_incoming_request_scheme(bindings_borrow_incoming_request_t self, wasi_http_types_scheme_t *ret);
+    // Returns the authority from the request, if it was present.
     extern bool wasi_http_types_method_incoming_request_authority(bindings_borrow_incoming_request_t self, bindings_string_t *ret);
+    // Returns the `headers` from the request.
+    //
+    // The `headers` returned are a child resource: it must be dropped before
+    // the parent `incoming-request` is dropped. Dropping this
+    // `incoming-request` before all children are dropped will trap.
     extern bindings_own_headers_t wasi_http_types_method_incoming_request_headers(bindings_borrow_incoming_request_t self);
+    // Gives the `incoming-body` associated with this request. Will only
+    // return success at most once, and subsequent calls will return error.
     extern bool wasi_http_types_method_incoming_request_consume(bindings_borrow_incoming_request_t self, bindings_own_incoming_body_t *ret);
+    // Construct a new `outgoing-request`.
     extern bindings_own_outgoing_request_t wasi_http_types_constructor_outgoing_request(wasi_http_types_method_t *method, bindings_string_t *maybe_path_with_query, wasi_http_types_scheme_t *maybe_scheme, bindings_string_t *maybe_authority, bindings_borrow_headers_t headers);
+    // Will return the outgoing-body child at most once. If called more than
+    // once, subsequent calls will return error.
     extern bool wasi_http_types_method_outgoing_request_write(bindings_borrow_outgoing_request_t self, bindings_own_outgoing_body_t *ret);
+    // Set the value of the `response-outparam` to either send a response,
+    // or indicate an error.
+    //
+    // This method consumes the `response-outparam` to ensure that it is
+    // called at most once. If it is never called, the implementation
+    // will respond with an error.
     extern void wasi_http_types_static_response_outparam_set(bindings_own_response_outparam_t param, bindings_result_own_outgoing_response_wasi_http_types_error_t *response);
+    // Returns the status code from the incoming response.
     extern wasi_http_types_status_code_t wasi_http_types_method_incoming_response_status(bindings_borrow_incoming_response_t self);
+    // Returns the headers from the incoming response.
     extern bindings_own_headers_t wasi_http_types_method_incoming_response_headers(bindings_borrow_incoming_response_t self);
+    // Returns the incoming body. May be called at most once. Returns error
+    // if called additional times.
     extern bool wasi_http_types_method_incoming_response_consume(bindings_borrow_incoming_response_t self, bindings_own_incoming_body_t *ret);
+    // Returns the contents of the body, as a stream of bytes.
+    //
+    // Returns success on first call: the stream representing the contents
+    // can be retrieved at most once. Subsequent calls will return error.
+    //
+    // The returned `input-stream` resource is a child: it must be dropped
+    // before the parent `incoming-body` is dropped, or consumed by
+    // `incoming-body.finish`.
+    //
+    // This invariant ensures that the implementation can determine whether
+    // the user is consuming the contents of the body, waiting on the
+    // `future-trailers` to be ready, or neither. This allows for network
+    // backpressure is to be applied when the user is consuming the body,
+    // and for that backpressure to not inhibit delivery of the trailers if
+    // the user does not read the entire body.
     extern bool wasi_http_types_method_incoming_body_stream(bindings_borrow_incoming_body_t self, bindings_own_input_stream_t *ret);
+    // Takes ownership of `incoming-body`, and returns a `future-trailers`.
+    // This function will trap if the `input-stream` child is still alive.
     extern bindings_own_future_trailers_t wasi_http_types_static_incoming_body_finish(bindings_own_incoming_body_t this_);
-    // Pollable that resolves when the body has been fully read, and the trailers
-    // are ready to be consumed.
+    // Returns a pollable which becomes ready when either the trailers have
+    // been received, or an error has occured. When this pollable is ready,
+    // the `get` method will return `some`.
     extern bindings_own_pollable_t wasi_http_types_method_future_trailers_subscribe(bindings_borrow_future_trailers_t self);
-    // Retrieve reference to trailers, if they are ready.
+    // Returns the contents of the trailers, or an error which occured,
+    // once the future is ready.
+    //
+    // The outer `option` represents future readiness. Users can wait on this
+    // `option` to become `some` using the `subscribe` method.
+    //
+    // The `result` represents that either the HTTP Request or Response body,
+    // as well as any trailers, were received successfully, or that an error
+    // occured receiving them.
     extern bool wasi_http_types_method_future_trailers_get(bindings_borrow_future_trailers_t self, bindings_result_own_trailers_wasi_http_types_error_t *ret);
+    // Construct an `outgoing-response`.
     extern bindings_own_outgoing_response_t wasi_http_types_constructor_outgoing_response(wasi_http_types_status_code_t status_code, bindings_borrow_headers_t headers);
-    // Will give the child outgoing-response at most once. subsequent calls will
-    // return an error.
+    // Returns the resource corresponding to the outgoing Body for this Response.
+    //
+    // Returns success on the first call: the `outgoing-body` resource for
+    // this `outgoing-response` can be retrieved at most once. Sunsequent
+    // calls will return error.
+    //
+    // FIXME: rename this method to `body`.
     extern bool wasi_http_types_method_outgoing_response_write(bindings_borrow_outgoing_response_t self, bindings_own_outgoing_body_t *ret);
-    // Will give the child output-stream at most once. subsequent calls will
-    // return an error.
+    // Returns a stream for writing the body contents.
+    //
+    // The returned `output-stream` is a child resource: it must be dropped
+    // before the parent `outgoing-body` resource is dropped (or finished),
+    // otherwise the `outgoing-body` drop or `finish` will trap.
+    //
+    // Returns success on the first call: the `output-stream` resource for
+    // this `outgoing-body` may be retrieved at most once. Subsequent calls
+    // will return error.
     extern bool wasi_http_types_method_outgoing_body_write(bindings_borrow_outgoing_body_t self, bindings_own_output_stream_t *ret);
     // Finalize an outgoing body, optionally providing trailers. This must be
-    // called to signal that the response is complete. If the `outgoing-body` is
-    // dropped without calling `outgoing-body-finalize`, the implementation
+    // called to signal that the response is complete. If the `outgoing-body`
+    // is dropped without calling `outgoing-body.finalize`, the implementation
     // should treat the body as corrupted.
     extern void wasi_http_types_static_outgoing_body_finish(bindings_own_outgoing_body_t this_, bindings_own_trailers_t *maybe_trailers);
-    // option indicates readiness.
-    // outer result indicates you are allowed to get the
-    // incoming-response-or-error at most once. subsequent calls after ready
-    // will return an error here.
-    // inner result indicates whether the incoming-response was available, or an
-    // error occured.
-    extern bool wasi_http_types_method_future_incoming_response_get(bindings_borrow_future_incoming_response_t self, bindings_result_result_own_incoming_response_wasi_http_types_error_void_t *ret);
+    // Returns a pollable which becomes ready when either the Response has
+    // been received, or an error has occured. When this pollable is ready,
+    // the `get` method will return `some`.
     extern bindings_own_pollable_t wasi_http_types_method_future_incoming_response_subscribe(bindings_borrow_future_incoming_response_t self);
+    // Returns the incoming HTTP Response, or an error, once one is ready.
+    //
+    // The outer `option` represents future readiness. Users can wait on this
+    // `option` to become `some` using the `subscribe` method.
+    //
+    // The outer `result` is used to retrieve the response or error at most
+    // once. It will be success on the first call in which the outer option
+    // is `some`, and error on subsequent calls.
+    //
+    // The inner `result` represents that either the incoming HTTP Response
+    // status and headers have recieved successfully, or that an error
+    // occured. Errors may also occur while consuming the response body,
+    // but those will be reported by the `incoming-body` and its
+    // `output-stream` child.
+    extern bool wasi_http_types_method_future_incoming_response_get(bindings_borrow_future_incoming_response_t self, bindings_result_result_own_incoming_response_wasi_http_types_error_void_t *ret);
 
-    // Imported Functions from `wasi:http/outgoing-handler`
+    // Imported Functions from `wasi:http/outgoing-handler@0.2.0-rc-2023-11-05`
+    // This function is invoked with an outgoing HTTP Request, and it returns
+    // a resource `future-incoming-response` which represents an HTTP Response
+    // which may arrive in the future.
+    //
+    // The `options` argument accepts optional parameters for the HTTP
+    // protocol's transport layer.
+    //
+    // This function may return an error if the `outgoing-request` is invalid
+    // or not allowed to be made. Otherwise, protocol errors are reported
+    // through the `future-incoming-response`.
     extern bool wasi_http_outgoing_handler_handle(bindings_own_outgoing_request_t request, wasi_http_outgoing_handler_request_options_t *maybe_options, bindings_own_future_incoming_response_t *ret, wasi_http_outgoing_handler_error_t *err);
 
-    // Exported Functions from `wasi:cli/run`
+    // Exported Functions from `wasi:cli/run@0.2.0-rc-2023-11-05`
     bool exports_wasi_cli_run_run(void);
 
-    // Exported Functions from `wasi:http/incoming-handler`
+    // Exported Functions from `wasi:http/incoming-handler@0.2.0-rc-2023-11-05`
     void exports_wasi_http_incoming_handler_handle(bindings_own_incoming_request_t request, bindings_own_response_outparam_t response_out);
 
     // Helper Functions
@@ -2186,10 +2320,10 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     void bindings_list_u8_free(bindings_list_u8_t *ptr);
     void bindings_borrow_output_stream_free(bindings_borrow_output_stream_t *ptr);
     void bindings_own_pollable_free(bindings_own_pollable_t *ptr);
-    void bindings_own_input_stream_free(bindings_own_input_stream_t *ptr);
     void wasi_clocks_timezone_timezone_display_free(wasi_clocks_timezone_timezone_display_t *ptr);
     void wasi_filesystem_types_directory_entry_free(wasi_filesystem_types_directory_entry_t *ptr);
     void bindings_borrow_descriptor_free(bindings_borrow_descriptor_t *ptr);
+    void bindings_own_input_stream_free(bindings_own_input_stream_t *ptr);
     void bindings_own_output_stream_free(bindings_own_output_stream_t *ptr);
     void bindings_tuple2_list_u8_bool_free(bindings_tuple2_list_u8_bool_t *ptr);
     void bindings_own_directory_entry_stream_free(bindings_own_directory_entry_stream_t *ptr);
@@ -2218,10 +2352,12 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     void wasi_http_types_method_free(wasi_http_types_method_t *ptr);
     void wasi_http_types_scheme_free(wasi_http_types_scheme_t *ptr);
     void wasi_http_types_error_free(wasi_http_types_error_t *ptr);
-    void bindings_tuple2_string_list_u8_free(bindings_tuple2_string_list_u8_t *ptr);
-    void bindings_list_tuple2_string_list_u8_free(bindings_list_tuple2_string_list_u8_t *ptr);
+    void wasi_http_types_field_key_free(wasi_http_types_field_key_t *ptr);
+    void wasi_http_types_field_value_free(wasi_http_types_field_value_t *ptr);
+    void bindings_tuple2_wasi_http_types_field_key_wasi_http_types_field_value_free(bindings_tuple2_wasi_http_types_field_key_wasi_http_types_field_value_t *ptr);
+    void bindings_list_tuple2_wasi_http_types_field_key_wasi_http_types_field_value_free(bindings_list_tuple2_wasi_http_types_field_key_wasi_http_types_field_value_t *ptr);
     void bindings_borrow_fields_free(bindings_borrow_fields_t *ptr);
-    void bindings_list_list_u8_free(bindings_list_list_u8_t *ptr);
+    void bindings_list_wasi_http_types_field_value_free(bindings_list_wasi_http_types_field_value_t *ptr);
     void bindings_borrow_incoming_request_free(bindings_borrow_incoming_request_t *ptr);
     void bindings_own_incoming_body_free(bindings_own_incoming_body_t *ptr);
     void bindings_borrow_headers_free(bindings_borrow_headers_t *ptr);
@@ -2259,109 +2395,109 @@ extern bool wasi_io_streams_method_output_stream_write(bindings_borrow_output_st
     // the memory behind the string.
     void bindings_string_free(bindings_string_t *ret);
 
-    // Functions for working with resource `wasi:http/types/incoming-body`
-    bindings_borrow_incoming_body_t wasi_http_types_borrow_incoming_body(bindings_own_incoming_body_t);
-    void wasi_http_types_incoming_body_drop_own(bindings_own_incoming_body_t);
-    extern void bindings_incoming_body_drop_borrow(bindings_borrow_incoming_body_t);
-
-    // Functions for working with resource `wasi:http/types/outgoing-body`
-    bindings_borrow_outgoing_body_t wasi_http_types_borrow_outgoing_body(bindings_own_outgoing_body_t);
-    void wasi_http_types_outgoing_body_drop_own(bindings_own_outgoing_body_t);
-    extern void bindings_outgoing_body_drop_borrow(bindings_borrow_outgoing_body_t);
-
-    // Functions for working with resource `wasi:cli/terminal-input/terminal-input`
-    void wasi_cli_terminal_input_terminal_input_drop_own(bindings_own_terminal_input_t);
-
-    // Functions for working with resource `wasi:http/types/outgoing-response`
-    bindings_borrow_outgoing_response_t wasi_http_types_borrow_outgoing_response(bindings_own_outgoing_response_t);
-    void wasi_http_types_outgoing_response_drop_own(bindings_own_outgoing_response_t);
-    extern void bindings_outgoing_response_drop_borrow(bindings_borrow_outgoing_response_t);
-
-    // Functions for working with resource `wasi:io/poll/pollable`
+    // Functions for working with resource `wasi:io/poll@0.2.0-rc-2023-11-05/pollable`
     bindings_borrow_pollable_t wasi_io_poll_borrow_pollable(bindings_own_pollable_t);
     void wasi_io_poll_pollable_drop_own(bindings_own_pollable_t);
     extern void bindings_pollable_drop_borrow(bindings_borrow_pollable_t);
 
-    // Functions for working with resource `wasi:io/streams/input-stream`
-    bindings_borrow_input_stream_t wasi_io_streams_borrow_input_stream(bindings_own_input_stream_t);
-    void wasi_io_streams_input_stream_drop_own(bindings_own_input_stream_t);
-    extern void bindings_input_stream_drop_borrow(bindings_borrow_input_stream_t);
-
-    // Functions for working with resource `wasi:io/streams/output-stream`
-    bindings_borrow_output_stream_t wasi_io_streams_borrow_output_stream(bindings_own_output_stream_t);
-    void wasi_io_streams_output_stream_drop_own(bindings_own_output_stream_t);
-    extern void bindings_output_stream_drop_borrow(bindings_borrow_output_stream_t);
-
-    // Functions for working with resource `wasi:sockets/network/network`
+    // Functions for working with resource `wasi:sockets/network@0.2.0-rc-2023-11-05/network`
     bindings_borrow_network_t wasi_sockets_network_borrow_network(bindings_own_network_t);
     void wasi_sockets_network_network_drop_own(bindings_own_network_t);
     extern void bindings_network_drop_borrow(bindings_borrow_network_t);
 
-    // Functions for working with resource `wasi:sockets/ip-name-lookup/resolve-address-stream`
-    bindings_borrow_resolve_address_stream_t wasi_sockets_ip_name_lookup_borrow_resolve_address_stream(bindings_own_resolve_address_stream_t);
-    void wasi_sockets_ip_name_lookup_resolve_address_stream_drop_own(bindings_own_resolve_address_stream_t);
-    extern void bindings_resolve_address_stream_drop_borrow(bindings_borrow_resolve_address_stream_t);
-
-    // Functions for working with resource `wasi:io/streams/error`
-    bindings_borrow_error_t wasi_io_streams_borrow_error(bindings_own_error_t);
-    void wasi_io_streams_error_drop_own(bindings_own_error_t);
-    extern void bindings_error_drop_borrow(bindings_borrow_error_t);
-
-    // Functions for working with resource `wasi:http/types/outgoing-request`
-    bindings_borrow_outgoing_request_t wasi_http_types_borrow_outgoing_request(bindings_own_outgoing_request_t);
-    void wasi_http_types_outgoing_request_drop_own(bindings_own_outgoing_request_t);
-    extern void bindings_outgoing_request_drop_borrow(bindings_borrow_outgoing_request_t);
-
-    // Functions for working with resource `wasi:sockets/udp/udp-socket`
-    bindings_borrow_udp_socket_t wasi_sockets_udp_borrow_udp_socket(bindings_own_udp_socket_t);
-    void wasi_sockets_udp_udp_socket_drop_own(bindings_own_udp_socket_t);
-    extern void bindings_udp_socket_drop_borrow(bindings_borrow_udp_socket_t);
-
-    // Functions for working with resource `wasi:filesystem/types/directory-entry-stream`
-    bindings_borrow_directory_entry_stream_t wasi_filesystem_types_borrow_directory_entry_stream(bindings_own_directory_entry_stream_t);
-    void wasi_filesystem_types_directory_entry_stream_drop_own(bindings_own_directory_entry_stream_t);
-    extern void bindings_directory_entry_stream_drop_borrow(bindings_borrow_directory_entry_stream_t);
-
-    // Functions for working with resource `wasi:http/types/response-outparam`
-    void wasi_http_types_response_outparam_drop_own(bindings_own_response_outparam_t);
-
-    // Functions for working with resource `wasi:http/types/incoming-response`
-    bindings_borrow_incoming_response_t wasi_http_types_borrow_incoming_response(bindings_own_incoming_response_t);
-    void wasi_http_types_incoming_response_drop_own(bindings_own_incoming_response_t);
-    extern void bindings_incoming_response_drop_borrow(bindings_borrow_incoming_response_t);
-
-    // Functions for working with resource `wasi:filesystem/types/descriptor`
+    // Functions for working with resource `wasi:filesystem/types@0.2.0-rc-2023-11-05/descriptor`
     bindings_borrow_descriptor_t wasi_filesystem_types_borrow_descriptor(bindings_own_descriptor_t);
     void wasi_filesystem_types_descriptor_drop_own(bindings_own_descriptor_t);
     extern void bindings_descriptor_drop_borrow(bindings_borrow_descriptor_t);
 
-    // Functions for working with resource `wasi:http/types/future-trailers`
-    bindings_borrow_future_trailers_t wasi_http_types_borrow_future_trailers(bindings_own_future_trailers_t);
-    void wasi_http_types_future_trailers_drop_own(bindings_own_future_trailers_t);
-    extern void bindings_future_trailers_drop_borrow(bindings_borrow_future_trailers_t);
+    // Functions for working with resource `wasi:http/types@0.2.0-rc-2023-11-05/outgoing-request`
+    bindings_borrow_outgoing_request_t wasi_http_types_borrow_outgoing_request(bindings_own_outgoing_request_t);
+    void wasi_http_types_outgoing_request_drop_own(bindings_own_outgoing_request_t);
+    extern void bindings_outgoing_request_drop_borrow(bindings_borrow_outgoing_request_t);
 
-    // Functions for working with resource `wasi:sockets/tcp/tcp-socket`
-    bindings_borrow_tcp_socket_t wasi_sockets_tcp_borrow_tcp_socket(bindings_own_tcp_socket_t);
-    void wasi_sockets_tcp_tcp_socket_drop_own(bindings_own_tcp_socket_t);
-    extern void bindings_tcp_socket_drop_borrow(bindings_borrow_tcp_socket_t);
+    // Functions for working with resource `wasi:io/streams@0.2.0-rc-2023-11-05/output-stream`
+    bindings_borrow_output_stream_t wasi_io_streams_borrow_output_stream(bindings_own_output_stream_t);
+    void wasi_io_streams_output_stream_drop_own(bindings_own_output_stream_t);
+    extern void bindings_output_stream_drop_borrow(bindings_borrow_output_stream_t);
 
-    // Functions for working with resource `wasi:cli/terminal-output/terminal-output`
-    void wasi_cli_terminal_output_terminal_output_drop_own(bindings_own_terminal_output_t);
+    // Functions for working with resource `wasi:io/streams@0.2.0-rc-2023-11-05/error`
+    bindings_borrow_error_t wasi_io_streams_borrow_error(bindings_own_error_t);
+    void wasi_io_streams_error_drop_own(bindings_own_error_t);
+    extern void bindings_error_drop_borrow(bindings_borrow_error_t);
 
-    // Functions for working with resource `wasi:http/types/fields`
-    bindings_borrow_fields_t wasi_http_types_borrow_fields(bindings_own_fields_t);
-    void wasi_http_types_fields_drop_own(bindings_own_fields_t);
-    extern void bindings_fields_drop_borrow(bindings_borrow_fields_t);
+    // Functions for working with resource `wasi:http/types@0.2.0-rc-2023-11-05/incoming-body`
+    bindings_borrow_incoming_body_t wasi_http_types_borrow_incoming_body(bindings_own_incoming_body_t);
+    void wasi_http_types_incoming_body_drop_own(bindings_own_incoming_body_t);
+    extern void bindings_incoming_body_drop_borrow(bindings_borrow_incoming_body_t);
 
-    // Functions for working with resource `wasi:http/types/incoming-request`
+    // Functions for working with resource `wasi:sockets/udp@0.2.0-rc-2023-11-05/udp-socket`
+    bindings_borrow_udp_socket_t wasi_sockets_udp_borrow_udp_socket(bindings_own_udp_socket_t);
+    void wasi_sockets_udp_udp_socket_drop_own(bindings_own_udp_socket_t);
+    extern void bindings_udp_socket_drop_borrow(bindings_borrow_udp_socket_t);
+
+    // Functions for working with resource `wasi:http/types@0.2.0-rc-2023-11-05/incoming-request`
     bindings_borrow_incoming_request_t wasi_http_types_borrow_incoming_request(bindings_own_incoming_request_t);
     void wasi_http_types_incoming_request_drop_own(bindings_own_incoming_request_t);
     extern void bindings_incoming_request_drop_borrow(bindings_borrow_incoming_request_t);
 
-    // Functions for working with resource `wasi:http/types/future-incoming-response`
+    // Functions for working with resource `wasi:sockets/tcp@0.2.0-rc-2023-11-05/tcp-socket`
+    bindings_borrow_tcp_socket_t wasi_sockets_tcp_borrow_tcp_socket(bindings_own_tcp_socket_t);
+    void wasi_sockets_tcp_tcp_socket_drop_own(bindings_own_tcp_socket_t);
+    extern void bindings_tcp_socket_drop_borrow(bindings_borrow_tcp_socket_t);
+
+    // Functions for working with resource `wasi:http/types@0.2.0-rc-2023-11-05/response-outparam`
+    void wasi_http_types_response_outparam_drop_own(bindings_own_response_outparam_t);
+
+    // Functions for working with resource `wasi:http/types@0.2.0-rc-2023-11-05/outgoing-response`
+    bindings_borrow_outgoing_response_t wasi_http_types_borrow_outgoing_response(bindings_own_outgoing_response_t);
+    void wasi_http_types_outgoing_response_drop_own(bindings_own_outgoing_response_t);
+    extern void bindings_outgoing_response_drop_borrow(bindings_borrow_outgoing_response_t);
+
+    // Functions for working with resource `wasi:http/types@0.2.0-rc-2023-11-05/incoming-response`
+    bindings_borrow_incoming_response_t wasi_http_types_borrow_incoming_response(bindings_own_incoming_response_t);
+    void wasi_http_types_incoming_response_drop_own(bindings_own_incoming_response_t);
+    extern void bindings_incoming_response_drop_borrow(bindings_borrow_incoming_response_t);
+
+    // Functions for working with resource `wasi:http/types@0.2.0-rc-2023-11-05/outgoing-body`
+    bindings_borrow_outgoing_body_t wasi_http_types_borrow_outgoing_body(bindings_own_outgoing_body_t);
+    void wasi_http_types_outgoing_body_drop_own(bindings_own_outgoing_body_t);
+    extern void bindings_outgoing_body_drop_borrow(bindings_borrow_outgoing_body_t);
+
+    // Functions for working with resource `wasi:http/types@0.2.0-rc-2023-11-05/future-incoming-response`
     bindings_borrow_future_incoming_response_t wasi_http_types_borrow_future_incoming_response(bindings_own_future_incoming_response_t);
     void wasi_http_types_future_incoming_response_drop_own(bindings_own_future_incoming_response_t);
     extern void bindings_future_incoming_response_drop_borrow(bindings_borrow_future_incoming_response_t);
+
+    // Functions for working with resource `wasi:sockets/ip-name-lookup@0.2.0-rc-2023-11-05/resolve-address-stream`
+    bindings_borrow_resolve_address_stream_t wasi_sockets_ip_name_lookup_borrow_resolve_address_stream(bindings_own_resolve_address_stream_t);
+    void wasi_sockets_ip_name_lookup_resolve_address_stream_drop_own(bindings_own_resolve_address_stream_t);
+    extern void bindings_resolve_address_stream_drop_borrow(bindings_borrow_resolve_address_stream_t);
+
+    // Functions for working with resource `wasi:filesystem/types@0.2.0-rc-2023-11-05/directory-entry-stream`
+    bindings_borrow_directory_entry_stream_t wasi_filesystem_types_borrow_directory_entry_stream(bindings_own_directory_entry_stream_t);
+    void wasi_filesystem_types_directory_entry_stream_drop_own(bindings_own_directory_entry_stream_t);
+    extern void bindings_directory_entry_stream_drop_borrow(bindings_borrow_directory_entry_stream_t);
+
+    // Functions for working with resource `wasi:http/types@0.2.0-rc-2023-11-05/future-trailers`
+    bindings_borrow_future_trailers_t wasi_http_types_borrow_future_trailers(bindings_own_future_trailers_t);
+    void wasi_http_types_future_trailers_drop_own(bindings_own_future_trailers_t);
+    extern void bindings_future_trailers_drop_borrow(bindings_borrow_future_trailers_t);
+
+    // Functions for working with resource `wasi:cli/terminal-output@0.2.0-rc-2023-11-05/terminal-output`
+    void wasi_cli_terminal_output_terminal_output_drop_own(bindings_own_terminal_output_t);
+
+    // Functions for working with resource `wasi:io/streams@0.2.0-rc-2023-11-05/input-stream`
+    bindings_borrow_input_stream_t wasi_io_streams_borrow_input_stream(bindings_own_input_stream_t);
+    void wasi_io_streams_input_stream_drop_own(bindings_own_input_stream_t);
+    extern void bindings_input_stream_drop_borrow(bindings_borrow_input_stream_t);
+
+    // Functions for working with resource `wasi:cli/terminal-input@0.2.0-rc-2023-11-05/terminal-input`
+    void wasi_cli_terminal_input_terminal_input_drop_own(bindings_own_terminal_input_t);
+
+    // Functions for working with resource `wasi:http/types@0.2.0-rc-2023-11-05/fields`
+    bindings_borrow_fields_t wasi_http_types_borrow_fields(bindings_own_fields_t);
+    void wasi_http_types_fields_drop_own(bindings_own_fields_t);
+    extern void bindings_fields_drop_borrow(bindings_borrow_fields_t);
 
     #ifdef __cplusplus
   }

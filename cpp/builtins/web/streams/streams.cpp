@@ -12,17 +12,17 @@ namespace web {
 namespace streams {
 
 bool add_to_global(JSContext *cx, JS::HandleObject global) {
-  if (!builtins::NativeStreamSource::init_class(cx, global))
+  if (!NativeStreamSource::init_class(cx, global))
     return false;
-  if (!builtins::NativeStreamSink::init_class(cx, global))
+  if (!NativeStreamSink::init_class(cx, global))
     return false;
-  if (!builtins::TransformStreamDefaultController::init_class(cx, global))
+  if (!TransformStreamDefaultController::init_class(cx, global))
     return false;
-  if (!builtins::TransformStream::init_class(cx, global))
+  if (!TransformStream::init_class(cx, global))
     return false;
-  if (!builtins::CompressionStream::init_class(cx, global))
+  if (!CompressionStream::init_class(cx, global))
     return false;
-  if (!builtins::DecompressionStream::init_class(cx, global))
+  if (!DecompressionStream::init_class(cx, global))
     return false;
   return true;
 }

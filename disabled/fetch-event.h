@@ -3,7 +3,7 @@
 
 #include "builtins/builtin.h"
 #include "engine.h"
-#include "host_interface/host_api.h"
+#include "host_api.h"
 
 namespace builtins {
 namespace web {

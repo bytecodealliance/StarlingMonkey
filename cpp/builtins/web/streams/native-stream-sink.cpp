@@ -12,6 +12,8 @@
 // A JS class to use as the underlying sink for native writable streams, used
 // for TransformStream.
 namespace builtins {
+namespace web {
+namespace streams {
 
 JSObject *NativeStreamSink::owner(JSObject *self) {
   return &JS::GetReservedSlot(self, Slots::Owner).toObject();
@@ -140,4 +142,6 @@ JSObject *NativeStreamSink::create(JSContext *cx, JS::HandleObject owner,
   JS::SetReservedSlot(sink, Slots::CloseAlgorithm, JS::PrivateValue((void *)close));
   return sink;
 }
+} // namespace streams
+} // namespace web
 } // namespace builtins

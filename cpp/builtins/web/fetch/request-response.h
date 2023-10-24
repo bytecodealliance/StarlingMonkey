@@ -2,17 +2,17 @@
 #define BUILTIN_REQUEST_RESPONSE
 
 #include "headers.h"
-#include "host_interface/host_api.h"
+#include "host_api.h"
 
 namespace builtins {
 namespace web {
 namespace fetch {
 
 class RequestOrResponse final {
+
 public:
   enum class Slots {
     RequestOrResponse,
-    Body,
     BodyStream,
     BodyAllPromise,
     HasBody,
@@ -23,9 +23,12 @@ public:
   };
 
   static bool is_instance(JSObject *obj);
-  static int32_t handle(JSObject *obj);
+  static bool is_incoming(JSObject *obj);
+  static host_api::HttpRequestResponseBase *handle(JSObject *obj);
+  static host_api::HttpHeaders* headers_handle(JSObject *obj);
   static bool has_body(JSObject *obj);
-  static host_api::HttpBody body_handle(JSObject *obj);
+  static host_api::HttpIncomingBody* incoming_body_handle(JSObject *obj);
+  static host_api::HttpOutgoingBody* outgoing_body_handle(JSObject *obj);
   static JSObject *body_stream(JSObject *obj);
   static JSObject *body_source(JSContext *cx, JS::HandleObject obj);
   static bool body_used(JSObject *obj);
@@ -45,7 +48,7 @@ public:
   /**
    * Returns the RequestOrResponse's Headers, reifying it if necessary.
    */
-  template <Headers::Mode mode> static JSObject *headers(JSContext *cx, JS::HandleObject obj);
+  static JSObject *headers(JSContext *cx, JS::HandleObject obj);
 
   static bool append_body(JSContext *cx, JS::HandleObject self, JS::HandleObject source);
 
@@ -122,20 +125,16 @@ public:
 
   enum class Slots {
     Request = static_cast<int>(RequestOrResponse::Slots::RequestOrResponse),
-    Body = static_cast<int>(RequestOrResponse::Slots::Body),
     BodyStream = static_cast<int>(RequestOrResponse::Slots::BodyStream),
     HasBody = static_cast<int>(RequestOrResponse::Slots::HasBody),
     BodyUsed = static_cast<int>(RequestOrResponse::Slots::BodyUsed),
     Headers = static_cast<int>(RequestOrResponse::Slots::Headers),
     URL = static_cast<int>(RequestOrResponse::Slots::URL),
-#ifdef CAE
-    Backend = static_cast<int>(RequestOrResponse::Slots::Count),
-#endif
-    Method,
+    Method = static_cast<int>(RequestOrResponse::Slots::Count),
     PendingRequest,
     ResponsePromise,
-    IsDownstream,
 #ifdef CAE
+    Backend,
     CacheOverride,
     AutoDecompressGzip,
 #endif
@@ -144,9 +143,10 @@ public:
 
   static JSObject *response_promise(JSObject *obj);
   static JSString *method(JSContext *cx, JS::HandleObject obj);
-  static host_api::HttpReq request_handle(JSObject *obj);
-  static host_api::HttpPendingReq pending_handle(JSObject *obj);
-  static bool is_downstream(JSObject *obj);
+  static host_api::HttpRequest *request_handle(JSObject *obj);
+  static host_api::HttpOutgoingRequest *outgoing_handle(JSObject *obj);
+  static host_api::HttpIncomingRequest *incoming_handle(JSObject *obj);
+  static host_api::FutureHttpIncomingResponse* pending_handle(JSObject *obj);
 
 #ifdef CAE
   static bool set_cache_key(JSContext *cx, JS::HandleObject self, JS::HandleValue cache_key_val);
@@ -168,8 +168,7 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 
   static JSObject *create(JSContext *cx, JS::HandleObject requestInstance,
-                          host_api::HttpReq request_handle, host_api::HttpBody body_handle,
-                          bool is_downstream);
+                          host_api::HttpRequest* request_handle);
   static JSObject *create(JSContext *cx, JS::HandleObject requestInstance, JS::HandleValue input,
                           JS::HandleValue init_val);
 
@@ -203,13 +202,11 @@ public:
 
   enum class Slots {
     Response = static_cast<int>(RequestOrResponse::Slots::RequestOrResponse),
-    Body = static_cast<int>(RequestOrResponse::Slots::Body),
     BodyStream = static_cast<int>(RequestOrResponse::Slots::BodyStream),
     HasBody = static_cast<int>(RequestOrResponse::Slots::HasBody),
     BodyUsed = static_cast<int>(RequestOrResponse::Slots::BodyUsed),
     Headers = static_cast<int>(RequestOrResponse::Slots::Headers),
-    IsUpstream = static_cast<int>(RequestOrResponse::Slots::Count),
-    Status,
+    Status = static_cast<int>(RequestOrResponse::Slots::Count),
     StatusMessage,
     Redirected,
 #ifdef CAE
@@ -229,15 +226,13 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 
   static JSObject *create(JSContext *cx, JS::HandleObject response,
-                          host_api::HttpResp response_handle, host_api::HttpBody body_handle,
-                          bool is_upstream
+                          host_api::HttpResponse* response_handle
 #ifdef CAE
                           , bool is_grip_upgrade, JS::UniqueChars backend
 #endif
                           );
 
-  static host_api::HttpResp response_handle(JSObject *obj);
-  static bool is_upstream(JSObject *obj);
+  static host_api::HttpResponse* response_handle(JSObject *obj);
   static uint16_t status(JSObject *obj);
   static JSString *status_message(JSObject *obj);
   static void set_status_message_from_code(JSContext *cx, JSObject *obj, uint16_t code);

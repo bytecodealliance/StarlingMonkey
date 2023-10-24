@@ -1,5 +1,6 @@
 #include "event_loop.h"
 #include "fetch-api.h"
+#include "headers.h"
 #include "request-response.h"
 
 namespace builtins {
@@ -14,7 +15,7 @@ namespace fetch {
 bool fetch(JSContext *cx, unsigned argc, Value *vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  REQUEST_HANDLER_ONLY("fetch")
+  // REQUEST_HANDLER_ONLY("fetch")
 
   if (!args.requireAtLeast(cx, "fetch", 1)) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
@@ -75,9 +76,6 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
   if (!Request::apply_auto_decompress_gzip(cx, request)) {
     return false;
   }
-#else
-  // TODO: remove once support for the proprietary CAE API is no longer needed.
-  std::string_view backend_chars = "dummy";
 #endif // CAE
 
   RootedObject response_promise(cx, JS::NewPromiseObject(cx, nullptr));
@@ -85,18 +83,14 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
 
   bool streaming = false;
-  if (!RequestOrResponse::maybe_stream_body(cx, request,
-                                                      &streaming)) {
+  if (!RequestOrResponse::maybe_stream_body(cx, request, &streaming)) {
     return false;
   }
 
-  host_api::HttpPendingReq pending_handle;
+  host_api::FutureHttpIncomingResponse* pending_handle;
   {
-    auto request_handle = Request::request_handle(request);
-    auto body = RequestOrResponse::body_handle(request);
-    auto res = streaming
-                   ? request_handle.send_async_streaming(body, backend_chars)
-                   : request_handle.send_async(body, backend_chars);
+    auto request_handle = Request::outgoing_handle(request);
+    auto res = request_handle->send();
 
     if (auto *err = res.to_err()) {
 #ifdef CAE
@@ -126,7 +120,7 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
 
   JS::SetReservedSlot(
       request, static_cast<uint32_t>(Request::Slots::PendingRequest),
-      JS::Int32Value(pending_handle.handle));
+      JS::PrivateValue(pending_handle));
   JS::SetReservedSlot(
       request, static_cast<uint32_t>(Request::Slots::ResponsePromise),
       JS::ObjectValue(*response_promise));

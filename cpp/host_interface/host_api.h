@@ -11,13 +11,21 @@
 #include <vector>
 
 #include "allocator.h"
+#include "bindings.h"
 #include "js/TypeDecls.h"
+#include "rust-url/rust-url.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #include "js/Utility.h"
 #include "jsapi.h"
 #pragma clang diagnostic pop
+
+using std::optional;
+using std::string_view;
+using std::tuple;
+using std::unique_ptr;
+using std::vector;
 
 namespace host_api {
 
@@ -85,7 +93,10 @@ public:
   }
 
   /// Assume the call was successful, and return a reference to the result.
-  T &unwrap() { return std::get<T>(this->result); }
+  T &unwrap() {
+    MOZ_ASSERT(!is_err());
+    return std::get<T>(this->result);
+  }
 };
 
 /// A string allocated by the host interface. Holds ownership of the data.
@@ -96,6 +107,7 @@ struct HostString final {
   HostString() = default;
   HostString(std::nullptr_t) : HostString() {}
   HostString(JS::UniqueChars ptr, size_t len) : ptr{std::move(ptr)}, len{len} {}
+  HostString(bindings_list_u8_t list) : ptr{reinterpret_cast<char*>(list.ptr)}, len{list.len} {}
 
   HostString(const HostString &other) = delete;
   HostString &operator=(const HostString &other) = delete;
@@ -127,17 +139,32 @@ struct HostString final {
   /// Comparison against nullptr
   bool operator!=(std::nullptr_t) { return this->ptr != nullptr; }
 
-  /// Conversion to a `std::string_view`.
-  operator std::string_view() const { return std::string_view(this->ptr.get(), this->len); }
+  /// Conversion to a `bindings_string_t`.
+  operator bindings_string_t() const {
+    return bindings_string_t { reinterpret_cast<uint8_t*>(this->ptr.get()), this->len };
+  }
+
+  /// Conversion to a `bindings_list_u8_t`.
+  operator bindings_list_u8_t() const {
+    return bindings_list_u8_t { reinterpret_cast<uint8_t *>(this->ptr.get()), this->len };
+  }
+
+  /// Conversion to a `string_view`.
+  operator string_view() const { return string_view(this->ptr.get(), this->len); }
+
+  /// Conversion to a `jsurl::SpecString`.
+  operator jsurl::SpecString() {
+    return jsurl::SpecString(reinterpret_cast<uint8_t *>(this->ptr.release()), this->len, this->len);
+  }
 };
 
 struct HostBytes final {
-  std::unique_ptr<uint8_t[]> ptr;
+  unique_ptr<uint8_t[]> ptr;
   size_t len;
 
   HostBytes() = default;
   HostBytes(std::nullptr_t) : HostBytes() {}
-  HostBytes(std::unique_ptr<uint8_t[]> ptr, size_t len) : ptr{std::move(ptr)}, len{len} {}
+  HostBytes(unique_ptr<uint8_t[]> ptr, size_t len) : ptr{std::move(ptr)}, len{len} {}
 
   HostBytes(const HostBytes &other) = delete;
   HostBytes &operator=(const HostBytes &other) = delete;
@@ -177,8 +204,10 @@ struct HostBytes final {
   /// Comparison against nullptr
   bool operator!=(std::nullptr_t) { return this->ptr != nullptr; }
 
-  /// Converstion to a `std::span<uint8_t>`.
-  operator std::span<uint8_t>() const { return std::span{this->ptr.get(), this->len}; }
+  /// Conversion to a `std::span<uint8_t>`.
+  operator std::span<uint8_t>() const {
+    return std::span<uint8_t>(this->ptr.get(), this->len);
+  }
 };
 
 /// Common methods for async handles.
@@ -188,18 +217,19 @@ public:
   using Handle = uint32_t;
   static constexpr Handle invalid = UINT32_MAX - 1;
 #else
-  using Handle = int32_t;
-  static constexpr Handle invalid = -1;
+  using Handle = bindings_own_pollable_t;
+  static constexpr Handle invalid = bindings_own_pollable_t { -1 };
 #endif // CAE
 
+  Handle handle = invalid;
 
-  Handle handle;
-
-  AsyncHandle() = default;
+  explicit AsyncHandle() : handle{invalid} {}
   explicit AsyncHandle(Handle handle) : handle{handle} {}
 
-// WASI pollables don't have a generic way to query readiness, and this is only used for debug asserts.
+  bool valid() const { return this->handle.__handle != invalid.__handle; }
+
 #ifdef CAE
+  // WASI pollables don't have a generic way to query readiness, and this is only used for debug asserts.
   /// Check to see if this handle is ready.
   Result<bool> is_ready() const;
 #endif
@@ -214,288 +244,274 @@ public:
   /// If the timeout is non-zero, two behaviors are possible
   ///   * no handle becomes ready within timeout, and the successful `std::nullopt` is returned
   ///   * a handle becomes ready within the timeout, and its index is returned.
-  static Result<std::optional<uint32_t>> select(std::vector<AsyncHandle> &handles,
-                                                uint32_t timeout_ms);
+  static Result<optional<uint32_t>> select(vector<AsyncHandle> &handles, uint32_t timeout_ms);
 };
 
-class HttpReq;
-class HttpResp;
+/// A convenience wrapper for the host calls involving incoming http bodies.
+class HttpIncomingBody final {
+#ifdef CAE
+public:
+  using Handle = uint32_t;
+  static constexpr Handle invalid = UINT32_MAX - 1;
+#else
+private:
+  /// Ensures that this body's stream is initialized and returns a borrowed handle to it.
+  Result<bindings_borrow_input_stream_t> ensure_stream();
 
-/// A convenience wrapper for the host calls involving http bodies.
-class HttpBody final {
+public:
+  using Handle = bindings_own_incoming_body_t;
+  static constexpr Handle invalid = Handle { -1 };
+
+  using StreamHandle = bindings_own_input_stream_t;
+  static constexpr StreamHandle invalid_stream = StreamHandle { -1 };
+  StreamHandle stream = invalid_stream;
+#endif // CAE
+
+  /// The handle to use when making host calls.
+  Handle handle = invalid;
+
+  HttpIncomingBody() = delete;
+  explicit HttpIncomingBody(Handle handle) : handle{handle} {}
+
+  /// Returns true when this body handle is valid.
+  bool valid() const { return this->handle.__handle != invalid.__handle; }
+
+  /// Read a chunk from this handle.
+  // TODO: check why this doesn't return HostBytes.
+  Result<tuple<HostString, bool>> read(uint32_t chunk_size);
+
+  /// Close this handle, and reset internal state to invalid.
+  Result<Void> close();
+
+  AsyncHandle async_handle();
+};
+
+/// A convenience wrapper for the host calls involving outgoing http bodies.
+class HttpOutgoingBody final {
+private:
+  /// Ensures that this body's stream is initialized.
+  /// Returns the stream handle and its capacity, which might be 0.
+  Result<tuple<bindings_borrow_output_stream_t, uint64_t>>
+  ensure_stream();
+  /// Ensures that this body's stream is initialized.
+  /// Returns the stream handle and its capacity, blocking until the capacity is > 0.
+  Result<tuple<bindings_borrow_output_stream_t, uint64_t>>
+  ensure_stream_with_capacity();
+
 public:
 #ifdef CAE
   using Handle = uint32_t;
   static constexpr Handle invalid = UINT32_MAX - 1;
 #else
-  using Handle = int32_t;
-  static constexpr Handle invalid = -1;
+  using Handle = bindings_own_outgoing_body_t;
+  static constexpr Handle invalid = Handle{-1};
+  using StreamHandle = bindings_own_output_stream_t;
+  static constexpr StreamHandle invalid_stream = StreamHandle{-1};
 #endif // CAE
 
 
-  /// The handle to use when making host calls, initialized to the special invalid value used by
-  /// executed.
-  Handle handle = invalid;
+  /// The handle to use when making host calls.
+  Handle handle;
+#ifndef CAE
+  StreamHandle stream;
+#endif
 
-  HttpBody() = default;
-  explicit HttpBody(Handle handle) : handle{handle} {}
-  explicit HttpBody(AsyncHandle async) : handle{async.handle} {}
+  HttpOutgoingBody() = delete;
+  explicit HttpOutgoingBody(Handle handle) : handle{handle} {}
 
   /// Returns true when this body handle is valid.
-  bool valid() const { return this->handle != invalid; }
-
-  /// Make a new body handle.
-  static Result<HttpBody> make(HttpReq request);
-  static Result<HttpBody> make(HttpResp response);
-
-  /// Read a chunk from this handle.
-  Result<HostString> read(uint32_t chunk_size) const;
+  bool valid() const { return this->handle.__handle != invalid.__handle; }
 
   /// Write a chunk to this handle.
-  Result<uint32_t> write(const uint8_t *bytes, size_t len) const;
+  Result<uint32_t> write(const uint8_t *bytes, size_t len);
 
   /// Writes the given number of bytes from the given buffer to the given handle.
   ///
   /// The host doesn't necessarily write all bytes in any particular call to
   /// `write`, so to ensure all bytes are written, we call it in a loop.
-  Result<Void> write_all(const uint8_t *bytes, size_t len) const;
+  Result<Void> write_all(const uint8_t *bytes, size_t len);
 
-  /// Append another HttpBody to this one.
-  Result<Void> append(HttpBody other) const;
+  /// Append an HttpIncomingBody to this one.
+  Result<Void> append(HttpIncomingBody* other);
 
   /// Close this handle, and reset internal state to invalid.
   Result<Void> close();
 
-  AsyncHandle async_handle() const;
+  AsyncHandle async_handle();
 };
 
-struct Response;
-
-class HttpPendingReq final {
+class HttpIncomingResponse;
+class FutureHttpIncomingResponse final {
 public:
 #ifdef CAE
   using Handle = uint32_t;
   static constexpr Handle invalid = UINT32_MAX - 1;
 #else
-  using Handle = int32_t;
-  static constexpr Handle invalid = -1;
+  using Handle = bindings_own_future_incoming_response_t;
+  static constexpr Handle invalid = Handle { -1 };
+  AsyncHandle pollable;
 #endif // CAE
 
   Handle handle = invalid;
 
-  HttpPendingReq() = default;
-  explicit HttpPendingReq(Handle handle) : handle{handle} {}
-  explicit HttpPendingReq(AsyncHandle async) : handle{async.handle} {}
+  FutureHttpIncomingResponse() = delete;
+  explicit FutureHttpIncomingResponse(Handle handle) : handle(handle) {}
 
   /// Poll for the response to this request.
-  Result<std::optional<Response>> poll();
+  Result<optional<HttpIncomingResponse*>> poll();
 
   /// Block until the response is ready.
-  Result<Response> wait();
+  Result<HttpIncomingResponse*> wait();
 
   /// Fetch the AsyncHandle for this pending request.
-  AsyncHandle async_handle() const;
+  AsyncHandle async_handle();
 };
 
-using HttpVersion = uint8_t;
+class HttpHeaders final {
+  using Handle = bindings_own_fields_t;
+  static constexpr Handle invalid = Handle{-1};
 
-class HttpBase {
+private:
+  Handle handle;
+
 public:
-  virtual ~HttpBase() = default;
+  HttpHeaders();
+  HttpHeaders(Handle handle) : handle(handle) {}
+  HttpHeaders(vector<tuple<HostString, vector<HostString>>> entries);
+  HttpHeaders(const HttpHeaders &headers);
 
-  virtual bool is_valid() const = 0;
+  bool valid() const { return this->handle.__handle != invalid.__handle; }
 
-#ifdef CAE
-  /// Get the http version used for this request.
-  virtual Result<HttpVersion> get_version() const = 0;
-#endif
+  bindings_borrow_fields_t borrow() const {
+    return bindings_borrow_fields_t{handle.__handle};
+  }
 
-  virtual Result<std::vector<HostString>> get_header_names() = 0;
-  virtual Result<std::optional<std::vector<HostString>>>
-  get_header_values(std::string_view name) = 0;
-  virtual Result<Void> insert_header(std::string_view name, std::string_view value) = 0;
-  virtual Result<Void> append_header(std::string_view name, std::string_view value) = 0;
-  virtual Result<Void> remove_header(std::string_view name) = 0;
+  Result<vector<tuple<HostString, vector<HostString>>>> entries() const;
+  Result<vector<HostString>> names() const;
+
+  Result<optional<vector<HostString>>> get(string_view name) const;
+  Result<Void> set(string_view name, string_view value);
+  Result<Void> append(string_view name, string_view value);
+  Result<Void> remove(string_view name);
 };
 
-#ifdef CAE
-struct TlsVersion {
-  uint8_t value = 0;
+class HttpRequestResponseBase {
+protected:
+   HttpHeaders* headers_handle = nullptr;
 
-  explicit TlsVersion(uint8_t raw);
-
-  static TlsVersion version_1();
-  static TlsVersion version_1_1();
-  static TlsVersion version_1_2();
-  static TlsVersion version_1_3();
-};
-
-struct BackendConfig {
-  std::optional<HostString> host_override;
-  std::optional<uint32_t> connect_timeout;
-  std::optional<uint32_t> first_byte_timeout;
-  std::optional<uint32_t> between_bytes_timeout;
-  std::optional<bool> use_ssl;
-  std::optional<bool> dont_pool;
-  std::optional<TlsVersion> ssl_min_version;
-  std::optional<TlsVersion> ssl_max_version;
-  std::optional<HostString> cert_hostname;
-  std::optional<HostString> ca_cert;
-  std::optional<HostString> ciphers;
-  std::optional<HostString> sni_hostname;
-};
-
-struct CacheOverrideTag final {
-  uint8_t value = 0;
-
-  void set_pass();
-  void set_ttl();
-  void set_stale_while_revalidate();
-  void set_pci();
-};
-#endif // CAE
-struct Request;
-
-class HttpReq final : public HttpBase {
 public:
-#ifdef CAE
-  using Handle = uint32_t;
-  static constexpr Handle invalid = UINT32_MAX - 1;
-#else
-  using Handle = int32_t;
-  static constexpr Handle invalid = -1;
-#endif // CAE
-
-
-  Handle handle = invalid;
-
-  HttpReq() = default;
-  explicit HttpReq(Handle handle) : handle{handle} {}
-
-  static Result<HttpReq> make();
-#ifdef CAE
-
-  static Result<Void> redirect_to_grip_proxy(std::string_view backend);
-
-  static Result<Void> register_dynamic_backend(std::string_view name, std::string_view target,
-                                               const BackendConfig &config);
-
-  /// Fetch the downstream request/body pair
-  static Result<Request> downstream_get();
-
-  /// Get the downstream ip address.
-  static Result<HostBytes> downstream_client_ip_addr();
-
-  static Result<HostString> http_req_downstream_tls_cipher_openssl_name();
-
-  static Result<HostString> http_req_downstream_tls_protocol();
-
-  static Result<HostBytes> http_req_downstream_tls_client_hello();
-
-  static Result<HostBytes> http_req_downstream_tls_raw_client_certificate();
-
-  static Result<HostBytes> http_req_downstream_tls_ja3_md5();
-
-  Result<Void> auto_decompress_gzip();
-
-  /// Configure cache-override settings.
-  Result<Void> cache_override(CacheOverrideTag tag, std::optional<uint32_t> ttl,
-                              std::optional<uint32_t> stale_while_revalidate,
-                              std::optional<std::string_view> surrogate_key);
-#endif // CAE
-
-  /// Send this request synchronously, and wait for the response.
-  Result<Response> send(HttpBody body, std::string_view backend);
-
-  /// Send this request asynchronously.
-  Result<HttpPendingReq> send_async(HttpBody body, std::string_view backend);
-
-  /// Send this request asynchronously, and allow sending additional data through the body.
-  Result<HttpPendingReq> send_async_streaming(HttpBody body, std::string_view backend);
-
-  /// Get the http version used for this request.
-
-  /// Set the request method.
-  Result<Void> set_method(std::string_view method);
-
-  /// Get the request method.
-  Result<HostString> get_method() const;
-
-  /// Set the request uri.
-  Result<Void> set_uri(std::string_view str);
-
-  /// Get the request uri.
-  Result<HostString> get_uri() const;
-
-  bool is_valid() const override;
-
-#ifdef CAE
-  Result<HttpVersion> get_version() const override;
-#endif
-
-  Result<std::vector<HostString>> get_header_names() override;
-  Result<std::optional<std::vector<HostString>>> get_header_values(std::string_view name) override;
-  Result<Void> insert_header(std::string_view name, std::string_view value) override;
-  Result<Void> append_header(std::string_view name, std::string_view value) override;
-  Result<Void> remove_header(std::string_view name) override;
+  virtual HttpHeaders *headers() = 0;
+  virtual bool is_incoming() = 0;
+  virtual bool is_request() = 0;
+  virtual bool valid() = 0;
 };
 
-class HttpResp final : public HttpBase {
+class HttpIncomingBodyOwner {
+protected:
+  HttpIncomingBody* body_handle = nullptr;
+
 public:
-#ifdef CAE
-  using Handle = uint32_t;
-  static constexpr Handle invalid = UINT32_MAX - 1;
-#else
-  using Handle = int32_t;
-  static constexpr Handle invalid = -1;
-#endif // CAE
-
-
-  Handle handle = invalid;
-
-  HttpResp() = default;
-  explicit HttpResp(Handle handle) : handle{handle} {}
-
-  static Result<HttpResp> make();
-
-  /// Get the http status for the response.
-  Result<uint16_t> get_status() const;
-
-  /// Set the http status for the response.
-  Result<Void> set_status(uint16_t status);
-
-  /// Immediately begin sending this response to the downstream client.
-  Result<Void> send_downstream(HttpBody body, bool streaming);
-
-  bool is_valid() const override;
-
-#ifdef CAE
-  Result<HttpVersion> get_version() const override;
-#endif
-
-  Result<std::vector<HostString>> get_header_names() override;
-  Result<std::optional<std::vector<HostString>>> get_header_values(std::string_view name) override;
-  Result<Void> insert_header(std::string_view name, std::string_view value) override;
-  Result<Void> append_header(std::string_view name, std::string_view value) override;
-  Result<Void> remove_header(std::string_view name) override;
+  virtual Result<HttpIncomingBody *> body() = 0;
 };
 
-/// The pair of a response and its body.
-struct Response {
-  HttpResp resp;
-  HttpBody body;
+class HttpOutgoingBodyOwner {
+protected:
+  HttpOutgoingBody* body_handle = nullptr;
 
-  Response() = default;
-  Response(HttpResp resp, HttpBody body) : resp{resp}, body{body} {}
+public:
+  virtual Result<HttpOutgoingBody *> body() = 0;
 };
 
-/// The pair of a request and its body.
-struct Request {
-  HttpReq req;
-  HttpBody body;
+class HttpRequest : public HttpRequestResponseBase {};
 
-  Request() = default;
-  Request(HttpReq req, HttpBody body) : req{req}, body{body} {}
+class HttpIncomingRequest : public HttpRequest,
+                            public HttpIncomingBodyOwner {
+  using Handle = bindings_own_incoming_request_t;
+  static constexpr Handle invalid = Handle{-1};
+
+private:
+  Handle handle;
+
+public:
+  HttpIncomingRequest() = delete;
+  explicit HttpIncomingRequest(Handle handle) : handle(handle) {}
+
+  const string_view method() const;
+  const optional<string_view> path() const;
+  const optional<string_view> scheme() const;
+  const optional<string_view> authority() const;
+  const optional<string_view> url() const;
+
+  bool is_incoming() override { return true; }
+  bool is_request() override { return true; }
+  bool valid() override { return handle.__handle != invalid.__handle; }
+  HttpHeaders *headers() override;
+  Result<HttpIncomingBody*> body() override;
+};
+
+class HttpOutgoingRequest : public HttpRequest,
+                            public HttpOutgoingBodyOwner {
+private:
+  using Handle = bindings_own_outgoing_request_t;
+  static constexpr Handle invalid = Handle{-1};
+
+  Handle handle;
+
+public:
+  HttpOutgoingRequest() = delete;
+  HttpOutgoingRequest(string_view method, optional<HostString> url, HttpHeaders *headers);
+
+  bool is_incoming() override { return false; }
+  bool is_request() override { return true; }
+  bool valid() override { return handle.__handle != invalid.__handle; }
+  HttpHeaders *headers() override;
+  Result<HttpOutgoingBody *> body() override;
+
+  Result<FutureHttpIncomingResponse*> send();
+};
+
+class HttpResponse : public HttpRequestResponseBase {};
+
+class HttpIncomingResponse final : public HttpResponse,
+                                   public HttpIncomingBodyOwner {
+private:
+  using Handle = bindings_own_incoming_response_t;
+  static constexpr Handle invalid = Handle{-1};
+
+  Handle handle;
+
+public:
+  uint16_t status() const;
+
+  HttpIncomingResponse() = delete;
+  explicit HttpIncomingResponse(Handle handle) : handle(handle) {}
+
+  bool is_incoming() override { return true; }
+  bool is_request() override { return false; }
+  bool valid() override { return handle.__handle != invalid.__handle; }
+  HttpHeaders *headers() override;
+  Result<HttpIncomingBody *> body() override;
+};
+
+class HttpOutgoingResponse final : public HttpResponse,
+                                   public HttpOutgoingBodyOwner {
+private:
+  using Handle = bindings_own_outgoing_response_t;
+  static constexpr Handle invalid = Handle{-1};
+
+  Handle handle;
+
+public:
+  const uint16_t status;
+
+  HttpOutgoingResponse() = delete;
+  HttpOutgoingResponse(uint16_t status, HttpHeaders *headers);
+
+  bool is_incoming() override { return false; }
+  bool is_request() override { return false; }
+  bool valid() override { return handle.__handle != invalid.__handle; }
+  HttpHeaders *headers() override;
+  Result<HttpOutgoingBody *> body() override;
 };
 
 class Random final {
@@ -505,167 +521,6 @@ public:
   static Result<uint32_t> get_u32();
 };
 
-#ifdef CAE
-class GeoIp final {
-  ~GeoIp() = delete;
-
-public:
-  /// Lookup information about the ip address provided.
-  static Result<HostString> lookup(std::span<uint8_t> bytes);
-};
-
-class LogEndpoint final {
-public:
-  using Handle = uint32_t;
-
-  Handle handle = UINT32_MAX - 1;
-
-  LogEndpoint() = default;
-  explicit LogEndpoint(Handle handle) : handle{handle} {}
-
-  static Result<LogEndpoint> get(std::string_view name);
-
-  Result<Void> write(std::string_view msg);
-};
-
-class Dict final {
-public:
-  using Handle = uint32_t;
-
-  Handle handle = UINT32_MAX - 1;
-
-  Dict() = default;
-  explicit Dict(Handle handle) : handle{handle} {}
-
-  static Result<Dict> open(std::string_view name);
-
-  Result<std::optional<HostString>> get(std::string_view name);
-};
-
-class ObjectStore final {
-public:
-  using Handle = uint32_t;
-
-  Handle handle = UINT32_MAX - 1;
-
-  ObjectStore() = default;
-  explicit ObjectStore(Handle handle) : handle{handle} {}
-
-  static Result<ObjectStore> open(std::string_view name);
-
-  Result<std::optional<HttpBody>> lookup(std::string_view name);
-
-  Result<Void> insert(std::string_view name, HttpBody body);
-};
-
-class Secret final {
-public:
-  using Handle = uint32_t;
-
-  Handle handle = UINT32_MAX - 1;
-
-  Secret() = default;
-  explicit Secret(Handle handle) : handle{handle} {}
-
-  Result<std::optional<HostString>> plaintext() const;
-};
-
-class SecretStore final {
-public:
-  using Handle = uint32_t;
-
-  Handle handle = UINT32_MAX - 1;
-
-  SecretStore() = default;
-  explicit SecretStore(Handle handle) : handle{handle} {}
-
-  static Result<SecretStore> open(std::string_view name);
-
-  Result<std::optional<Secret>> get(std::string_view name);
-};
-
-struct CacheLookupOptions final {
-  /// A full request handle, used only for its headers.
-  HttpReq request_headers;
-};
-
-struct CacheGetBodyOptions final {
-  uint64_t start = 0;
-  uint64_t end = 0;
-};
-
-struct CacheWriteOptions final {
-  uint64_t max_age_ns = 0;
-  HttpReq req;
-  std::string_view vary_rule;
-
-  uint64_t initial_age_ns = 0;
-  uint64_t stale_while_revalidate_ns = 0;
-
-  std::string_view surrogate_keys;
-
-  uint64_t length = 0;
-
-  std::span<uint8_t> metadata;
-
-  bool sensitive = false;
-};
-
-struct CacheState final {
-  uint8_t state = 0;
-
-  CacheState() = default;
-  CacheState(uint8_t state) : state{state} {}
-
-  bool is_found() const;
-  bool is_usable() const;
-  bool is_stale() const;
-  bool must_insert_or_update() const;
-};
-
-class CacheHandle final {
-public:
-  using Handle = uint32_t;
-
-  static constexpr Handle invalid = UINT32_MAX - 1;
-
-  Handle handle = invalid;
-
-  CacheHandle() = default;
-  explicit CacheHandle(Handle handle) : handle{handle} {}
-
-  /// Lookup a cached object.
-  static Result<CacheHandle> lookup(std::string_view key, const CacheLookupOptions &opts);
-
-  static Result<CacheHandle> transaction_lookup(std::string_view key,
-                                                const CacheLookupOptions &opts);
-
-  /// Insert a cache object.
-  static Result<HttpBody> insert(std::string_view key, const CacheWriteOptions &opts);
-
-  /// Insert this cached object and stream it back.
-  Result<std::tuple<HttpBody, CacheHandle>> insert_and_stream_back(const CacheWriteOptions &opts);
-
-  bool is_valid() const { return this->handle != invalid; }
-
-  /// Cancel a transaction.
-  Result<Void> transaction_cancel();
-
-  /// Fetch the body handle for the cached data.
-  Result<HttpBody> get_body(const CacheGetBodyOptions &opts);
-
-  /// Fetch the state for this cache handle.
-  Result<CacheState> get_state();
-};
-
-class Fastly final {
-  ~Fastly() = delete;
-
-public:
-  /// Purge the given surrogate key.
-  static Result<std::optional<HostString>> purge_surrogate_key(std::string_view key);
-};
-#endif // CAE
 } // namespace host_api
 
 #endif

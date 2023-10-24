@@ -5,13 +5,15 @@
             "includePath": [
                 "/opt/wasi-sdk/share/wasi-sysroot/include/",
                 "${workspaceFolder}/deps/spidermonkey/debug/include",
-                "${workspaceFolder}/deps/spidermonkey/release/include",
                 "${workspaceFolder}/deps/include",
                 "${workspaceFolder}/deps/fmt/include",
                 "${workspaceFolder}/crates",
-                "${workspaceFolder}/build/bindings",
                 "${workspaceFolder}/build/openssl-3.0.7/include",
-                "${workspaceFolder}/cpp"
+                "${workspaceFolder}/cpp",
+                "${workspaceFolder}/cpp/**",
+                "${workspaceFolder}/runtime/**",
+                "${workspaceFolder}/wasi-preview2",
+                "${workspaceFolder}/wasi-preview2/bindings"
             ],
             "defines": [
                 "__wasi__"
@@ -25,8 +27,7 @@
             },
             "forcedInclude": [
                 "${workspaceFolder}/.vscode/vscode-preinclude.h"
-            ],
-            "configurationProvider": "ms-vscode.makefile-tools"
+            ]
         }
     ],
     "version": 4

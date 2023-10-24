@@ -4,6 +4,8 @@
 #include "builtins/builtin.h"
 
 namespace builtins {
+namespace web {
+namespace streams {
 class NativeStreamSource : public BuiltinNoConstructor<NativeStreamSource> {
 private:
 public:
@@ -51,5 +53,7 @@ public:
   static JSObject *create(JSContext *cx, JS::HandleObject owner, JS::HandleValue startPromise,
                           PullAlgorithmImplementation *pull, CancelAlgorithmImplementation *cancel);
 };
+} // namespace streams
+} // namespace web
 } // namespace builtins
 #endif

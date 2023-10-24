@@ -26,7 +26,7 @@
 #pragma clang diagnostic pop
 
 // #include "builtins/fetch-event.h"
-// #include "host_interface/host_api.h"
+// #include "host_api.h"
 // #include "js-compute-builtins.h"
 #ifdef MEM_STATS
 #include "memory-reporting.h"
@@ -519,8 +519,12 @@ bool core::Engine::eval(char *code, size_t len, MutableHandleValue result) {
   JS::NonIncrementalGC(cx, JS::GCOptions::Shrink, JS::GCReason::API);
 
   // Execute the top-level script.
-  if (!JS_ExecuteScript(cx, script, result))
+  if (!JS_ExecuteScript(cx, script, result)) {
+    if (JS::SetSize(cx, unhandledRejectedPromises) > 0) {
+      report_unhandled_promise_rejections(cx);
+    }
     return false;
+  }
 
   // Ensure that any pending promise reactions are run before taking the
   // snapshot.
@@ -611,8 +615,9 @@ bool core::Engine::run_event_loop(MutableHandleValue result) {
       //   break;
 
       // Process async tasks.
-      core::EventLoop::process_pending_async_tasks(cx());
-      // wait_for_backends(cx, &total_compute);
+      if (core::EventLoop::has_pending_async_tasks()) {
+        core::EventLoop::process_pending_async_tasks(cx());
+      }
     } while (js::HasJobsPending(cx()) ||
              core::EventLoop::has_pending_async_tasks());
 
@@ -629,4 +634,8 @@ bool core::Engine::run_event_loop(MutableHandleValue result) {
 
 bool core::Engine::dump_value(JS::Value val, FILE *fp) {
   return ::dump_value(CONTEXT, val, fp);
+}
+
+void core::Engine::dump_pending_exception(const char* description) {
+  DumpPendingException(CONTEXT, description);
 }

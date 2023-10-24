@@ -25,6 +25,7 @@
 #include "builtins/web/web_builtins.h"
 #include "engine.h"
 #include "event_loop.h"
+#include "host_api.h"
 // #include "wizer.h"
 
 // bool WIZENED = false;
@@ -38,6 +39,13 @@ core::Engine *engine;
 
 bool exports_wasi_cli_run_run(void) {
   __wasm_call_ctors();
+
+  auto args = bindings_list_string_t{};
+  wasi_cli_environment_get_arguments(&args);
+  auto namebuf = args.ptr[1];
+  std::string filename(reinterpret_cast<const char *>(namebuf.ptr), namebuf.len);
+  FILE *fd = fopen(filename.c_str(), "r");
+
   core::Engine engine = core::Engine();
   if (!builtins::web::add_to_global(engine.cx(), engine.global())) {
     return false;
@@ -47,28 +55,31 @@ bool exports_wasi_cli_run_run(void) {
 
   char *code = NULL;
   size_t len = 0;
-  if (getdelim(&code, &len, EOF, stdin) < 0) {
+  if (getdelim(&code, &len, EOF, fd) < 0) {
     return false;
   }
 
   RootedValue result(engine.cx());
   if (!engine.eval(code, strlen(code), &result)) {
-    engine.dump_value(result, stderr);
+    fflush(stdout);
+    if (JS_IsExceptionPending(engine.cx())) {
+      engine.dump_pending_exception("Error evaluating code: ");
+    }
     return false;
   }
 
   if (!engine.run_event_loop(&result)) {
+    fflush(stdout);
     fprintf(stderr, "Error running event loop: ");
     engine.dump_value(result, stderr);
     return false;
   }
-  DBG("2\n");
+  if (JS_IsExceptionPending(engine.cx())) {
+    engine.dump_pending_exception("Error evaluating code: ");
+  }
 
+  printf("Done\n");
 
-  //   auto stdout = wasi_cli_stdout_get_stdout();
-  //   wasi_io_streams_write_error_t result;
-  //   auto list = bindings_list_u8_t{(uint8_t *)(&"Hello, stream!\n"), 14};
-  //   wasi_io_streams_write(stdout, &list, &result);
   return true;
 }
 

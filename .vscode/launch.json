@@ -1,0 +1,30 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(lldb) Launch spidermonkey in wasmtime",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/Users/till/.cargo/bin/wasmtime",
+            "args": ["run", "--wasm",
+                "component-model",
+                "--wasi",
+                "http",
+                "-D",
+                "debug-info",
+                "--dir",
+                ".",
+                "build/js-runtime-component.wasm",
+                "tests/smoke.js"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [{"name": "WASMTIME_BACKTRACE_DETAILS", "value": "1"}],
+            "externalConsole": false,
+            "MIMode": "lldb"
+        },
+
+    ]
+}

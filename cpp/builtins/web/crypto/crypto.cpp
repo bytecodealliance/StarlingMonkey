@@ -8,7 +8,7 @@
 #include "crypto.h"
 #include "subtle-crypto.h"
 #include "../dom-exception.h"
-#include "host_interface/host_api.h"
+#include "host_api.h"
 
 bool is_int_typed_array(JSObject *obj) {
   return JS_IsInt8Array(obj) || JS_IsUint8Array(obj) || JS_IsInt16Array(obj) ||

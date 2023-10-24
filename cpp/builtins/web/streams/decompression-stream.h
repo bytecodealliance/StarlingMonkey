@@ -4,6 +4,8 @@
 #include "builtins/builtin.h"
 
 namespace builtins {
+namespace web {
+namespace streams {
 
 /**
  * Implementation of the WICG DecompressionStream builtin.
@@ -33,6 +35,8 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 };
 
+} // namespace streams
+} // namespace web
 } // namespace builtins
 
 #endif

@@ -4,6 +4,8 @@
 #include "builtins/builtin.h"
 
 namespace builtins {
+namespace web {
+namespace streams {
 
 class NativeStreamSink : public BuiltinNoConstructor<NativeStreamSink> {
 private:
@@ -60,5 +62,7 @@ public:
                           AbortAlgorithmImplementation *abort);
 };
 
+} // namespace streams
+} // namespace web
 } // namespace builtins
 #endif
