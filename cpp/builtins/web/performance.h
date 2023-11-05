@@ -27,7 +27,7 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
 };
 
-bool add_to_global(JSContext *cx, JS::HandleObject global);
+bool install(core::Engine* engine);
 
 } // namespace performance
 } // namespace web

@@ -73,8 +73,8 @@ bool Performance::init_class(JSContext *cx, JS::HandleObject global) {
   return init_class_impl(cx, global);
 }
 
-bool add_to_global(JSContext *cx, JS::HandleObject global) {
-  return Performance::init_class(cx, global);
+bool install(core::Engine* engine) {
+  return Performance::init_class(engine->cx(), engine->global());
 }
 
 } // namespace performance

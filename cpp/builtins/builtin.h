@@ -1,6 +1,8 @@
 #ifndef JS_COMPUTE_RUNTIME_BUILTIN_H
 #define JS_COMPUTE_RUNTIME_BUILTIN_H
 
+#include "engine.h"
+
 #include <optional>
 #include <span>
 #include <tuple>

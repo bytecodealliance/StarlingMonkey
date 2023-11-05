@@ -29,8 +29,8 @@ public:
   Timer(uint32_t id, JS::HandleObject callback, uint32_t delay,
         JS::HandleValueVector args, bool repeat)
       : id(id), callback(callback), delay(delay), repeat(repeat) {
-    deadline = wasi_clocks_monotonic_clock_now() +
-               wasi_clocks_monotonic_clock_resolution() * (delay * 1000);
+    deadline = wasi_clocks_0_2_0_rc_2023_10_18_monotonic_clock_now() +
+               wasi_clocks_0_2_0_rc_2023_10_18_monotonic_clock_resolution() * (delay * 1000);
     arguments.reserve(args.length());
     for (auto &arg : args) {
       arguments.push_back(JS::Heap(arg));
@@ -67,8 +67,8 @@ private:
     MOZ_ASSERT(!this->timers.empty());
     auto timer = std::move(this->timers.front());
     timers.pop_front();
-    timer->deadline = wasi_clocks_monotonic_clock_now() +
-                      wasi_clocks_monotonic_clock_resolution() *
+    timer->deadline = wasi_clocks_0_2_0_rc_2023_10_18_monotonic_clock_now() +
+                      wasi_clocks_0_2_0_rc_2023_10_18_monotonic_clock_resolution() *
                           (timer->delay * 1000);
     add_timer(std::move(timer));
   }
@@ -103,7 +103,7 @@ public:
     {
       auto *timer = first();
       MOZ_ASSERT(timer);
-      MOZ_ASSERT(wasi_clocks_monotonic_clock_now() > timer->deadline);
+      MOZ_ASSERT(wasi_clocks_0_2_0_rc_2023_10_18_monotonic_clock_now() > timer->deadline);
       id = timer->id;
       JS::RootedObject fun(cx, timer->callback);
       fun_val.setObject(*fun.get());
@@ -255,7 +255,7 @@ bool EventLoop::process_pending_async_tasks(JSContext *cx) {
 
   // Taking a timestamp once here is precise enough, even though we might spend some time
   // processing things before using it as part of deadline calculations for async tasks.
-  auto now = wasi_clocks_monotonic_clock_now();
+  auto now = wasi_clocks_0_2_0_rc_2023_10_18_monotonic_clock_now();
 
   int64_t timeout = 0;
   if (!timers->empty()) {

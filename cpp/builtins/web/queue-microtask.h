@@ -7,7 +7,7 @@ namespace builtins {
 namespace web {
 namespace queue_microtask {
 
-bool add_to_global(JSContext *cx, JS::HandleObject global);
+bool install(core::Engine* engine);
 
 } // namespace queue_microtask
 } // namespace web

@@ -7,7 +7,7 @@ namespace builtins {
 namespace web {
 namespace base64 {
 
-bool add_to_global(JSContext *cx, JS::HandleObject global);
+bool install(core::Engine* engine);
 
 extern const uint8_t base64DecodeTable[128];
 extern const uint8_t base64URLDecodeTable[128];

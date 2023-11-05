@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 #ifdef MEM_STATS
 #include <string>
 #endif
@@ -23,44 +24,33 @@
 #pragma clang diagnostic pop
 
 #include "builtins/web/web_builtins.h"
+#include "builtins/web/fetch/fetch_event.h"
 #include "engine.h"
 #include "event_loop.h"
 #include "host_api.h"
-// #include "wizer.h"
+#include "wizer.h"
 
-// bool WIZENED = false;
-// void wizen() { WIZENED = true; }
-// WIZER_INIT(wizen);
+bool WIZENED = false;
+
 extern "C" void __wasm_call_ctors();
-
-int main() { return 0; }
 
 core::Engine *engine;
 
-bool exports_wasi_cli_run_run(void) {
-  __wasm_call_ctors();
-
-  auto args = bindings_list_string_t{};
-  wasi_cli_environment_get_arguments(&args);
-  auto namebuf = args.ptr[1];
-  std::string filename(reinterpret_cast<const char *>(namebuf.ptr), namebuf.len);
-  FILE *fd = fopen(filename.c_str(), "r");
-
+bool initialize(char *script_src, size_t len, const char* filename) {
   core::Engine engine = core::Engine();
-  if (!builtins::web::add_to_global(engine.cx(), engine.global())) {
+
+  if (!builtins::web::install(&engine)) {
+    return false;
+  }
+
+  if (!builtins::web::fetch_event::install(&engine)) {
     return false;
   }
 
   js::ResetMathRandomSeed(engine.cx());
 
-  char *code = NULL;
-  size_t len = 0;
-  if (getdelim(&code, &len, EOF, fd) < 0) {
-    return false;
-  }
-
   RootedValue result(engine.cx());
-  if (!engine.eval(code, strlen(code), &result)) {
+  if (!engine.eval(script_src, len, filename, &result)) {
     fflush(stdout);
     if (JS_IsExceptionPending(engine.cx())) {
       engine.dump_pending_exception("Error evaluating code: ");
@@ -78,13 +68,58 @@ bool exports_wasi_cli_run_run(void) {
     engine.dump_pending_exception("Error evaluating code: ");
   }
 
-  printf("Done\n");
+  return true;
+}
+
+using namespace std::literals;
+bool initialize(std::string script_path) {
+  std::ifstream is{script_path};
+  if (!is.is_open()) {
+    std::cerr << "Error reading file " << script_path << std::endl;
+    return false;
+  }
+
+
+  std::string code;
+  std::getline(is, code, '\0');
+  auto len = code.size();
+  is.seekg(0);
+  is.read(&code[0], len);
+  return initialize(&code[0], len, script_path.c_str());
+}
+
+bool exports_wasi_cli_0_2_0_rc_2023_10_18_run_run(void) {
+  __wasm_call_ctors();
+
+  auto args = bindings_list_string_t{};
+  wasi_cli_0_2_0_rc_2023_10_18_environment_get_arguments(&args);
+  auto namebuf = args.ptr[1];
+  std::string filename(reinterpret_cast<const char *>(namebuf.ptr), namebuf.len);
+
+  if (!initialize(filename)) {
+    return false;
+  }
 
   return true;
 }
 
-void exports_wasi_http_incoming_handler_handle(
-    bindings_own_incoming_request_t request,
-    bindings_own_response_outparam_t response_out) {
-  std::cout << "Incoming request" << std::endl;
+int main(int argc, const char *argv[]) {
+  printf("Main starting\n");
+  return 0;
 }
+
+void wizen() {
+  printf("Wizening starting\n");
+  std::string filename;
+  std::getline(std::cin, filename);
+
+  if (!initialize(filename)) {
+    exit(1);
+  }
+  markWizeningAsFinished();
+  printf("Wizening Done\n");
+
+  WIZENED = true;
+}
+
+WIZER_INIT(wizen);

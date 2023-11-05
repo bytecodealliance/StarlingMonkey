@@ -10,7 +10,7 @@ RT_SRC := $(ROOT)/runtime
 CPP_SRC := $(ROOT)/cpp
 
 # The name of the project
-PROJECT_NAME := "WebAssembly Winter Runtime"
+PROJECT_NAME := "WebAssembly JS Runtime"
 PROJECT_VERSION := "0.1.0"
 
 # Environmentally derived config ###############################################
@@ -58,6 +58,8 @@ WASI_CC ?= $(WASI_SDK)/bin/clang
 # The wasi-sdk provided ar wrapper.
 WASI_AR ?= $(WASI_SDK)/bin/ar
 
+TEST_JS ?= $(ROOT)/tests/smoke.js
+
 ifneq ($(DEBUG),false)
   MODE := debug
   CARGO_FLAG :=
@@ -85,6 +87,15 @@ $(error ERROR: "No wasm-tools found in PATH, consider running 'cargo install was
 else
 WASM_METADATA = $(WASM_TOOLS) metadata add --sdk $(PROJECT_NAME)=$(PROJECT_VERSION) --output $1 $1
 COMPONENT_TYPE = $(WASM_TOOLS) component new --adapt $(ADAPTER) --output $1 $1
+endif
+
+# The path to the wizer executable
+WIZER ?= $(shell which wizer)
+
+ifeq ($(WIZER),)
+$(error ERROR: "No wizer found in PATH, consider running 'cargo install wizer --features=\"env_logger structopt\"")
+else
+WIZEN = echo $2 | $(WIZER) --allow-wasi --wasm-bulk-memory true --inherit-stdio true --dir $(ROOT) -o $1 -- $3
 endif
 
 # The base build directory, where all our build artifacts go.
@@ -133,6 +144,7 @@ INCLUDES += -include $(ROOT)/.vscode/vscode-preinclude.h
 
 # Linker flags.
 LD_FLAGS := -Wl,-z,stack-size=1048576 -Wl,--stack-first
+LD_FLAGS += -mexec-model=reactor
 LD_FLAGS += -lwasi-emulated-signal
 LD_FLAGS += -lwasi-emulated-process-clocks
 LD_FLAGS += -lwasi-emulated-getpid
@@ -142,12 +154,12 @@ LD_FLAGS += -L$(BUILD)/openssl/libx32 -lcrypto
 # Default targets ##############################################################
 
 .PHONY: all
-all: $(BUILD)/js-runtime-component.wasm
+all: $(BUILD)/js-component.wasm
 
 # Remove just the build artifacts for the current runtime build.
 .PHONY: clean
 clean:
-	$(call cmd,rm,$(BUILD)/js-runtime-component.wasm)
+	$(call cmd,rm,$(BUILD)/js-runtime.wasm)
 	$(call cmd,rmdir,$(BUILD)/release)
 	$(call cmd,rmdir,$(BUILD)/debug)
 
@@ -288,7 +300,7 @@ regenerate-world:
 endif
 
 
-# Winter runtime shared build #################################################
+# JS runtime shared build #################################################
 
 CPP_FILES := $(wildcard $(RT_SRC)/*.cpp)
 CPP_FILES += $(shell find $(HOST_INTERFACE) -type f -name '*.cpp')
@@ -301,7 +313,7 @@ CPP_OBJ := $(call build_dest,$(call change_src_extension,$(CPP_FILES),o))
 # Build all the above object files
 $(foreach source,$(CPP_FILES),$(eval $(call compile_cxx,$(source))))
 
-# Winter runtime component build ##############################################
+# JS runtime component build ##############################################
 
 BINDINGS_SRC := $(shell find $(BINDINGS) -type f -name '*.c')
 BINDINGS_OBJ := $(call build_dest,$(call change_src_extension,$(BINDINGS_SRC),o))
@@ -310,13 +322,12 @@ $(foreach source,$(BINDINGS_SRC),$(eval $(call compile_c,$(source))))
 # NOTE: we shadow wasm-opt by adding $(ROOT)/scripts to the path, which
 # includes a script called wasm-opt that immediately exits successfully. See
 # that script for more information about why we do this.
-$(OBJ_DIR)/js-runtime-component.wasm: $(CPP_OBJ) $(SM_OBJ) $(RUST_URL_LIB) $(RUST_ENCODING_LIB)
-$(OBJ_DIR)/js-runtime-component.wasm: $(BINDINGS)/*.o $(BINDINGS_OBJ)
+$(OBJ_DIR)/js-runtime.wasm: $(CPP_OBJ) $(SM_OBJ) $(RUST_URL_LIB) $(RUST_ENCODING_LIB)
+$(OBJ_DIR)/js-runtime.wasm: $(BINDINGS)/*.o $(BINDINGS_OBJ)
 	$(call cmd_format,WASI_LD,$@) PATH="$(ROOT)/scripts:$$PATH" \
 	$(WASI_CXX) $(LD_FLAGS) $(OPENSSL_LIBS) -o $@ $^
 	$(call cmd_format,WASM_STRIP,$@) $(call WASM_STRIP,$@)
 	$(call cmd_format,WASM_METADATA,$@) $(call WASM_METADATA,$@)
-	$(call cmd_format,COMPONENT_TYPE,$@) $(call COMPONENT_TYPE,$@)
 
 # Shared builtins build ########################################################
 
@@ -352,9 +363,10 @@ $(OBJ_DIR)/builtins.a: $(OBJ_DIR)/core/encode.o
 # Without marking it phony, the wasm won't be copied in the last invocation of
 # make, as it will look up-to-date.
 
-.PHONY: $(BUILD)/js-runtime-component.wasm
-$(BUILD)/js-runtime-component.wasm: $(OBJ_DIR)/js-runtime-component.wasm
-	$(call cmd,cp,$@)
+.PHONY: $(BUILD)/js-component.wasm
+$(BUILD)/js-component.wasm: $(OBJ_DIR)/js-runtime.wasm $(TEST_JS)
+	$(call cmd_format,WIZEN,$@, $(TEST_JS)) $(call WIZEN,$@, $(TEST_JS), $(OBJ_DIR)/js-runtime.wasm)
+	$(call cmd_format,COMPONENT_TYPE,$@) $(call COMPONENT_TYPE,$@)
 
 
 # Debugging rules ##############################################################

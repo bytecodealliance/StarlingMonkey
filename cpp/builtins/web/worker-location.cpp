@@ -84,8 +84,8 @@ bool WorkerLocation::init_class(JSContext *cx, JS::HandleObject global) {
   return JS_DefineProperty(cx, global, "location", location, JSPROP_ENUMERATE);
 }
 
-bool add_to_global(JSContext *cx, JS::HandleObject global) {
-  return WorkerLocation::init_class(cx, global);
+bool install(core::Engine* engine) {
+  return WorkerLocation::init_class(engine->cx(), engine->global());
 }
 
 } // namespace worker_location

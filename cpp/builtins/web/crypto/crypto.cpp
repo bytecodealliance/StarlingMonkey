@@ -246,12 +246,12 @@ bool Crypto::init_class(JSContext *cx, JS::HandleObject global) {
   return JS_DefineProperty(cx, global, "crypto", crypto_get, nullptr, JSPROP_ENUMERATE);
 }
 
-bool add_to_global(JSContext *cx, JS::HandleObject global) {
-  if (!SubtleCrypto::init_class(cx, global))
+bool install(core::Engine* engine) {
+  if (!SubtleCrypto::init_class(engine->cx(), engine->global()))
     return false;
-  if (!Crypto::init_class(cx, global))
+  if (!Crypto::init_class(engine->cx(), engine->global()))
     return false;
-  if (!CryptoKey::init_class(cx, global))
+  if (!CryptoKey::init_class(engine->cx(), engine->global()))
     return false;
   return true;
 }

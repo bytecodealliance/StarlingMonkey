@@ -671,12 +671,12 @@ bool URL::init_class(JSContext *cx, JS::HandleObject global) {
   return URL::init_class_impl(cx, global);
 }
 
-bool add_to_global(JSContext *cx, JS::HandleObject global) {
-  if (!URL::init_class(cx, global))
+bool install(core::Engine* engine) {
+  if (!URL::init_class(engine->cx(), engine->global()))
     return false;
-  if (!URLSearchParams::init_class(cx, global))
+  if (!URLSearchParams::init_class(engine->cx(), engine->global()))
     return false;
-  if (!URLSearchParamsIterator::init_class(cx, global))
+  if (!URLSearchParamsIterator::init_class(engine->cx(), engine->global()))
     return false;
   return true;
 }

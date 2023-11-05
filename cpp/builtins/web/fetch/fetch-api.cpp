@@ -132,14 +132,14 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
 const JSFunctionSpec methods[] = {JS_FN("fetch", fetch, 2, JSPROP_ENUMERATE),
                                   JS_FS_END};
 
-bool add_to_global(JSContext *cx, JS::HandleObject global) {
-  if (!JS_DefineFunctions(cx, global, methods))
+bool install(core::Engine* engine) {
+  if (!JS_DefineFunctions(engine->cx(), engine->global(), methods))
     return false;
-  if (!Request::init_class(cx, global))
+  if (!Request::init_class(engine->cx(), engine->global()))
     return false;
-  if (!Response::init_class(cx, global))
+  if (!Response::init_class(engine->cx(), engine->global()))
     return false;
-  if (!Headers::init_class(cx, global))
+  if (!Headers::init_class(engine->cx(), engine->global()))
     return false;
   return true;
 }

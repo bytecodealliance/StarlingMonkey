@@ -6,10 +6,10 @@ namespace builtins {
 namespace web {
 namespace text_codec {
 
-bool add_to_global(JSContext *cx, JS::HandleObject global) {
-  if (!TextEncoder::init_class(cx, global))
+bool install(core::Engine* engine) {
+  if (!TextEncoder::init_class(engine->cx(), engine->global()))
     return false;
-  if (!TextDecoder::init_class(cx, global))
+  if (!TextDecoder::init_class(engine->cx(), engine->global()))
     return false;
   return true;
 }

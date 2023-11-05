@@ -12,7 +12,6 @@
 #include "encode.h"
 #include "engine.h"
 #include "event_loop.h"
-// #include "fetch-event.h"
 #include "host_api.h"
 #include "../url.h"
 #include "picosha2.h"
@@ -956,8 +955,9 @@ bool RequestOrResponse::body_reader_catch_handler(JSContext *cx, JS::HandleObjec
   // `FetchEvent#respondWith` to send to the client. As such, we can be certain
   // that if we have a response here, we can advance the FetchState to
   // `responseDone`. (Note that even though we encountered an error,
-  // `responseDone` is the right state: `responsedWithError` is for when sending
+  // `responseDone` is the right state: `respondedWithError` is for when sending
   // a response at all failed.)
+  // TODO(TS): investigate why this is disabled.
   // if (Response::is_instance(body_owner)) {
   //   FetchEvent::set_state(FetchEvent::instance(), FetchEvent::State::responseDone);
   // }
@@ -1998,7 +1998,7 @@ JSObject *Request::create_instance(JSContext *cx) {
 }
 
 bool Request::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
-  // REQUEST_HANDLER_ONLY("The Request builtin");
+  REQUEST_HANDLER_ONLY("The Request builtin");
   CTOR_HEADER("Request", 1);
   JS::RootedObject requestInstance(cx, JS_NewObjectForConstructor(cx, &class_, args));
   JS::RootedObject request(cx, create(cx, requestInstance, args[0], args.get(1)));
@@ -2816,10 +2816,10 @@ JSObject *Response::create(JSContext *cx, JS::HandleObject response,
                           , bool is_grip_upgrade, JS::UniqueChars backend
 #endif
 ) {
-  // MOZ_ASSERT(cx);
-  // MOZ_ASSERT(is_instance(response));
-  // MOZ_ASSERT(response_handle);
-  // MOZ_ASSERT(body_handle);
+  MOZ_ASSERT(cx);
+  MOZ_ASSERT(is_instance(response));
+  MOZ_ASSERT(response_handle);
+
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Response),
                       JS::PrivateValue(response_handle));
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Headers), JS::NullValue());

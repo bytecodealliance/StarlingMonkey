@@ -845,20 +845,19 @@ const JSFunctionSpec Console::methods[] = {
 const JSPropertySpec Console::properties[] = {
     JS_STRING_SYM_PS(toStringTag, "console", JSPROP_READONLY), JS_PS_END};
 
-bool Console::add_to_global(JSContext *cx, JS::HandleObject global) {
-  JS::RootedObject proto(cx, JS_NewPlainObject(cx));
-  JS::RootedObject console(
-      cx, JS_NewObjectWithGivenProto(cx, &Console::class_, proto));
+bool Console::install(core::Engine* engine) {
+  JS::RootedObject proto(engine->cx(), JS_NewPlainObject(engine->cx()));
+  JS::RootedObject console(engine->cx(), JS_NewObjectWithGivenProto(engine->cx(), &Console::class_, proto));
   if (!console) {
     return false;
   }
-  if (!JS_DefineProperty(cx, global, "console", console, 0)) {
+  if (!JS_DefineProperty(engine->cx(), engine->global(), "console", console, 0)) {
     return false;
   }
-  if (!JS_DefineProperties(cx, console, properties)) {
+  if (!JS_DefineProperties(engine->cx(), console, properties)) {
     return false;
   }
-  return JS_DefineFunctions(cx, console, methods);
+  return JS_DefineFunctions(engine->cx(), console, methods);
 }
 } // namespace web
 } // namespace builtins

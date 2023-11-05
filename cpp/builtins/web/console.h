@@ -21,7 +21,7 @@ public:
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
 
-  static bool add_to_global(JSContext *cx, JS::HandleObject global);
+  static bool install(core::Engine* engine);
 };
 } // namespace web
 

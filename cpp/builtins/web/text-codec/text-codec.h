@@ -6,7 +6,7 @@
 namespace builtins {
 namespace web {
 namespace text_codec {
-bool add_to_global(JSContext *cx, JS::HandleObject global);
+bool install(core::Engine* engine);
 }
 } // namespace web
 } // namespace builtins

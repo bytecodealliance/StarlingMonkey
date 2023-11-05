@@ -1,5 +1,4 @@
 #include "web_builtins.h"
-#include "builtins/builtin.h"
 
 #include "base64.h"
 #include "console.h"
@@ -43,17 +42,17 @@ bool self_set(JSContext *cx, unsigned argc, Value *vp) {
 const JSPropertySpec properties[] = {
     JS_PSGS("self", self_get, self_set, JSPROP_ENUMERATE), JS_PS_END};
 
-bool builtins::web::add_to_global(JSContext *cx, JS::HandleObject global) {
-  return Console::add_to_global(cx, global) &&
-         base64::add_to_global(cx, global) &&
-         crypto::add_to_global(cx, global) &&
-         fetch::add_to_global(cx, global) &&
-         performance::add_to_global(cx, global) &&
-         queue_microtask::add_to_global(cx, global) &&
-        //  streams::add_to_global(cx, global) &&
-         timers::add_to_global(cx, global) &&
-         text_codec::add_to_global(cx, global) &&
-         url::add_to_global(cx, global) &&
-         worker_location::add_to_global(cx, global) &&
-         JS_DefineProperties(cx, global, properties);
+bool builtins::web::install(core::Engine *engine) {
+  return Console::install(engine) &&
+         base64::install(engine) &&
+         crypto::install(engine) &&
+         fetch::install(engine) &&
+         performance::install(engine) &&
+         queue_microtask::install(engine) &&
+        //  streams::install(engine) &&
+         timers::install(engine) &&
+         text_codec::install(engine) &&
+         url::install(engine) &&
+         worker_location::install(engine) &&
+         JS_DefineProperties(engine->cx(), engine->global(), properties);
 }

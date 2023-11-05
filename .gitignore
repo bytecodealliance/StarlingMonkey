@@ -1,1 +1,3 @@
 /build
+/.spin
+.DS_Store

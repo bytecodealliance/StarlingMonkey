@@ -1,0 +1,18 @@
+spin_manifest_version = 2
+
+[application]
+name = "js-component"
+version = "0.1.0"
+authors = ["Till Schneidereit <till@tillschneidereit.net>"]
+description = ""
+
+[[trigger.http]]
+route = "/..."
+component = "js-component"
+
+[component.js-component]
+source = "build/js-component.wasm"
+allowed_outbound_hosts = ["https://fermyon.com:443"]
+[component.js-component.build]
+command = "V=1 DEBUG=1 make all"
+# watch = ["src/**/*.rs", "Cargo.toml"]

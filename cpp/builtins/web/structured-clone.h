@@ -9,7 +9,7 @@ namespace builtins {
 namespace web {
 namespace structured_clone {
 
-bool add_to_global(JSContext *cx, JS::HandleObject global);
+bool install(core::Engine* engine);
 
 } // namespace structured_clone
 } // namespace web

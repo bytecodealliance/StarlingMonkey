@@ -1,0 +1,18 @@
+spin_manifest_version = 2
+
+[application]
+name = "js-component"
+version = "0.1.0"
+authors = ["Till Schneidereit <till@tillschneidereit.net>"]
+description = ""
+
+[[trigger.http]]
+route = "/..."
+component = "js-component"
+
+[component.js-component]
+source = "target/wasm32-wasi/release/js_component.wasm"
+allowed_outbound_hosts = []
+[component.js-component.build]
+command = "cargo build --target wasm32-wasi --release"
+watch = ["src/**/*.rs", "Cargo.toml"]

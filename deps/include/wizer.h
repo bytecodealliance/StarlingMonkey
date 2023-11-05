@@ -94,7 +94,7 @@
     /* to manually invoke it here because `wizer.initialize` is the     */     \
     /* direct entry point, and no libc startup (crt1.o or equivalent)   */     \
     /* is executed before this code does. */                                   \
-    __wasm_call_ctors();                                                       \
+    /* __wasm_call_ctors(); */                                                       \
     /* We now invoke the provided init function before returning.       */     \
     init_func();                                                               \
   }                                                                            \

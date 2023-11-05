@@ -11,18 +11,18 @@ namespace builtins {
 namespace web {
 namespace streams {
 
-bool add_to_global(JSContext *cx, JS::HandleObject global) {
-  if (!NativeStreamSource::init_class(cx, global))
+bool install(core::Engine* engine) {
+  if (!NativeStreamSource::init_class(engine->cx(), engine->global()))
     return false;
-  if (!NativeStreamSink::init_class(cx, global))
+  if (!NativeStreamSink::init_class(engine->cx(), engine->global()))
     return false;
-  if (!TransformStreamDefaultController::init_class(cx, global))
+  if (!TransformStreamDefaultController::init_class(engine->cx(), engine->global()))
     return false;
-  if (!TransformStream::init_class(cx, global))
+  if (!TransformStream::init_class(engine->cx(), engine->global()))
     return false;
-  if (!CompressionStream::init_class(cx, global))
+  if (!CompressionStream::init_class(engine->cx(), engine->global()))
     return false;
-  if (!DecompressionStream::init_class(cx, global))
+  if (!DecompressionStream::init_class(engine->cx(), engine->global()))
     return false;
   return true;
 }

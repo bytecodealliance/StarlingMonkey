@@ -298,6 +298,8 @@ private:
   Result<tuple<bindings_borrow_output_stream_t, uint64_t>>
   ensure_stream_with_capacity();
 
+  bool _closed = false;
+
 public:
 #ifdef CAE
   using Handle = uint32_t;
@@ -336,6 +338,7 @@ public:
 
   /// Close this handle, and reset internal state to invalid.
   Result<Void> close();
+  bool closed();
 
   AsyncHandle async_handle();
 };
@@ -386,7 +389,7 @@ public:
     return bindings_borrow_fields_t{handle.__handle};
   }
 
-  Result<vector<tuple<HostString, vector<HostString>>>> entries() const;
+  Result<vector<tuple<HostString, HostString>>> entries() const;
   Result<vector<HostString>> names() const;
 
   Result<optional<vector<HostString>>> get(string_view name) const;
@@ -504,6 +507,8 @@ private:
 public:
   const uint16_t status;
 
+  using ResponseOutparam = bindings_own_response_outparam_t;
+
   HttpOutgoingResponse() = delete;
   HttpOutgoingResponse(uint16_t status, HttpHeaders *headers);
 
@@ -512,6 +517,8 @@ public:
   bool valid() override { return handle.__handle != invalid.__handle; }
   HttpHeaders *headers() override;
   Result<HttpOutgoingBody *> body() override;
+
+  Result<Void> send(ResponseOutparam* out_param);
 };
 
 class Random final {

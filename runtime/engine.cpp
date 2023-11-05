@@ -25,9 +25,6 @@
 
 #pragma clang diagnostic pop
 
-// #include "builtins/fetch-event.h"
-// #include "host_api.h"
-// #include "js-compute-builtins.h"
 #ifdef MEM_STATS
 #include "memory-reporting.h"
 #endif
@@ -63,8 +60,16 @@ static bool dump_mem_stats(JSContext *cx) {
 }
 #endif // MEM_STATS
 
-bool DEBUG_LOGGING = false;
+#ifndef DEBUG_LOGGING
+#define DEBUG_LOGGING false
+#endif
+
 bool debug_logging_enabled() { return DEBUG_LOGGING; }
+#define LOG(...) \
+  if (debug_logging_enabled()) { \
+    printf(__VA_ARGS__); \
+    fflush(stdout); \
+  }
 
 JS::UniqueChars stringify_value(JSContext *cx, JS::HandleValue value) {
   JS::RootedString str(cx, JS_ValueToSource(cx, value));
@@ -152,13 +157,9 @@ static JSClass global_class = {"global", JSCLASS_GLOBAL_FLAGS,
 JS::PersistentRootedObject GLOBAL;
 JS::PersistentRootedObject unhandledRejectedPromises;
 
-// static JS::PersistentRootedObjectVector *FETCH_HANDLERS;
-
 void gc_callback(JSContext *cx, JSGCStatus status, JS::GCReason reason,
                  void *data) {
-  if (debug_logging_enabled())
-    printf("gc for reason %s, %s\n", JS::ExplainGCReason(reason),
-           status ? "end" : "start");
+  LOG("gc for reason %s, %s\n", JS::ExplainGCReason(reason), status ? "end" : "start");
 }
 
 static void rejection_tracker(JSContext *cx, bool mutedErrors,
@@ -327,6 +328,7 @@ static void abort(JSContext *cx, const char *description) {
     report_unhandled_promise_rejections(cx);
   }
 
+  // TODO: move this into the fetch implementation
   // Respond with status `500` if no response was ever sent.
   //   HandleObject fetch_event = builtins::FetchEvent::instance();
   //   if (hasWizeningFinished() &&
@@ -337,126 +339,6 @@ static void abort(JSContext *cx, const char *description) {
   fflush(stderr);
   exit(1);
 }
-
-// static bool addEventListener(JSContext *cx, unsigned argc, Value *vp) {
-//   JS::CallArgs args = CallArgsFromVp(argc, vp);
-//   if (!args.requireAtLeast(cx, "addEventListener", 2)) {
-//     return false;
-//   }
-
-//   auto event_chars = core::encode(cx, args[0]);
-//   if (!event_chars) {
-//     return false;
-//   }
-
-//   if (strncmp(event_chars.begin(), "fetch", event_chars.len)) {
-//     fprintf(
-//         stderr,
-//         "Error: addEventListener only supports the event 'fetch' right now, "
-//         "but got event '%s'\n",
-//         event_chars.begin());
-//     exit(1);
-//   }
-
-//   RootedValue val(cx, args[1]);
-//   if (!val.isObject() || !JS_ObjectIsFunction(&val.toObject())) {
-//     fprintf(stderr, "Error: addEventListener: Argument 2 is not a
-//     function.\n"); exit(1);
-//   }
-
-//   return FETCH_HANDLERS->append(&val.toObject());
-// }
-
-// void init() {
-//   if (!init_js())
-//     exit(1);
-
-//   //   JSContext *cx = CONTEXT;
-//   //   RootedObject global(cx, GLOBAL);
-//   //   JSAutoRealm ar(cx, global);
-//   //   FETCH_HANDLERS = new JS::PersistentRootedObjectVector(cx);
-
-//   //   bool ENABLE_EXPERIMENTAL_HIGH_RESOLUTION_TIME_METHODS =
-//   //       std::string(std::getenv(
-//   //           "ENABLE_EXPERIMENTAL_HIGH_RESOLUTION_TIME_METHODS")) == "1";
-//   //   FastlyOptions options;
-//   //   options.setExperimentalHighResolutionTimeMethodsEnabled(
-//   //       ENABLE_EXPERIMENTAL_HIGH_RESOLUTION_TIME_METHODS);
-
-//   //   define_fastly_sys(cx, global, options);
-//   if (!JS_DefineFunction(cx, global, "addEventListener", addEventListener, 2,
-//                          0))
-//     exit(1);
-
-//   //   if (!builtins::FetchEvent::create(cx))
-//   //     exit(1);
-
-//   //   if (FETCH_HANDLERS->length() == 0) {
-//   //     RootedValue val(cx);
-//   //     if (!JS_GetProperty(cx, global, "onfetch", &val) || !val.isObject()
-//   ||
-//   //         !JS_ObjectIsFunction(&val.toObject())) {
-//   //       // The error message only mentions `addEventListener`, even though
-//   we
-//   //       also
-//   //       // support an `onfetch` top-level function as an alternative.
-//   We're
-//   //       // treating the latter as undocumented functionality for the time
-//   //       being. fprintf(
-//   //           stderr,
-//   //           "Error: no `fetch` event handler registered during
-//   //           initialization. " "Make sure to call
-//   `addEventListener('fetch',
-//   //           your_handler)`.\n");
-//   //       exit(1);
-//   //     }
-//   //     if (!FETCH_HANDLERS->append(&val.toObject()))
-//   //       abort(cx, "Adding onfetch as a fetch event handler");
-//   //   }
-
-//   fflush(stdout);
-//   fflush(stderr);
-
-//   // Define this to print a simple memory usage report.
-// #ifdef MEM_STATS
-//   dump_mem_stats(cx);
-// #endif
-
-//   markWizeningAsFinished();
-// }
-
-// static void dispatch_fetch_event(JSContext *cx, HandleObject event,
-//                                  double *total_compute) {
-//   auto pre_handler = system_clock::now();
-
-//   builtins::FetchEvent::start_dispatching(event);
-
-//   RootedValue result(cx);
-//   RootedValue event_val(cx, JS::ObjectValue(*event));
-//   HandleValueArray argsv = HandleValueArray(event_val);
-//   RootedValue handler(cx);
-//   RootedValue rval(cx);
-
-//   for (size_t i = 0; i < FETCH_HANDLERS->length(); i++) {
-//     handler.setObject(*(*FETCH_HANDLERS)[i]);
-//     if (!JS_CallFunctionValue(cx, GLOBAL, handler, argsv, &rval)) {
-//       DumpPendingException(cx, "dispatching FetchEvent\n");
-//       break;
-//     }
-//     if (builtins::FetchEvent::state(event) !=
-//         builtins::FetchEvent::State::unhandled) {
-//       break;
-//     }
-//   }
-
-//   builtins::FetchEvent::stop_dispatching(event);
-
-//   double diff =
-//       duration_cast<microseconds>(system_clock::now() - pre_handler).count();
-//   *total_compute += diff;
-//   if (debug_logging_enabled())
-//     printf("Request handler took %fms\n", diff / 1000);
-// }
 
 core::Engine::Engine() {
   total_compute = 0;
@@ -470,7 +352,9 @@ JSContext *core::Engine::cx() { return CONTEXT; }
 
 HandleObject core::Engine::global() { return GLOBAL; }
 
-bool core::Engine::eval(char *code, size_t len, MutableHandleValue result) {
+void core::Engine::abort(const char* reason) { ::abort(CONTEXT, reason); }
+
+bool core::Engine::eval(char *code, size_t len, const char* filename, MutableHandleValue result) {
   JSContext *cx = CONTEXT;
   RootedObject global(cx, GLOBAL);
   JS::CompileOptions opts(cx);
@@ -485,7 +369,7 @@ bool core::Engine::eval(char *code, size_t len, MutableHandleValue result) {
   // TODO: furthermore, investigate whether Wizer by now allows us to pass an
   // actual path and open that, instead of having to redirect `stdin` for a
   // subprocess of `js-compute-runtime`.
-  opts.setFileAndLine("<stdin>", 1);
+  opts.setFileAndLine(filename, 1);
 
   JS::SourceText<mozilla::Utf8Unit> srcBuf;
   if (!srcBuf.init(cx, code, len, JS::SourceOwnership::TakeOwnership)) {
@@ -531,8 +415,9 @@ bool core::Engine::eval(char *code, size_t len, MutableHandleValue result) {
   while (js::HasJobsPending(cx)) {
     js::RunJobs(cx);
 
-    if (JS_IsExceptionPending(cx))
-      abort(cx, "running Promise reactions");
+    if (JS_IsExceptionPending(cx)){
+      abort("running Promise reactions");
+    }
   }
 
   // Report any promise rejections that weren't handled before snapshotting.
@@ -573,10 +458,7 @@ bool core::Engine::eval(char *code, size_t len, MutableHandleValue result) {
 
 static void process_pending_jobs(JSContext *cx, double *total_compute) {
   auto pre_reactions = system_clock::now();
-  if (debug_logging_enabled()) {
-    printf("Running promise reactions\n");
-    fflush(stdout);
-  }
+  LOG("Running promise reactions\n");
 
   while (js::HasJobsPending(cx)) {
     js::RunJobs(cx);
@@ -589,26 +471,19 @@ static void process_pending_jobs(JSContext *cx, double *total_compute) {
       duration_cast<microseconds>(system_clock::now() -
       pre_reactions).count();
   *total_compute += diff;
-  if (debug_logging_enabled())
-    printf("Running promise reactions took %fms\n", diff / 1000);
+  LOG("Running promise reactions took %fms\n", diff / 1000);
 }
 
 bool core::Engine::run_event_loop(MutableHandleValue result) {
-    // HandleObject fetch_event = builtins::FetchEvent::instance();
-    // builtins::FetchEvent::init_request(cx, fetch_event, req.req, req.body);
-
-    // dispatch_fetch_event(cx, fetch_event, &total_compute);
 
     // // Loop until no more resolved promises or backend requests are pending.
-    // if (debug_logging_enabled()) {
-    //   printf("Start processing async jobs ...\n");
-    //   fflush(stdout);
-    // }
+    // LOG("Start processing async jobs ...\n");
 
     do {
       // First, drain the promise reactions queue.
       process_pending_jobs(cx(), &total_compute);
 
+      // TODO: add general mechanism for extending the event loop duration.
       // Then, check if the fetch event is still active, i.e. had pending promises
       // added to it using `respondWith` or `waitUntil`.
       // if (!builtins::FetchEvent::is_active(fetch_event))
@@ -621,14 +496,6 @@ bool core::Engine::run_event_loop(MutableHandleValue result) {
     } while (js::HasJobsPending(cx()) ||
              core::EventLoop::has_pending_async_tasks());
 
-    if (debug_logging_enabled() &&
-    core::EventLoop::has_pending_async_tasks())
-    {
-      fprintf(stderr, "Event loop terminated with async tasks pending. "
-                      "Use FetchEvent#waitUntil to extend the service's "
-                      "lifetime if needed.\n");
-    }
-
   return true;
 }
 
@@ -638,4 +505,10 @@ bool core::Engine::dump_value(JS::Value val, FILE *fp) {
 
 void core::Engine::dump_pending_exception(const char* description) {
   DumpPendingException(CONTEXT, description);
+}
+
+bool core::Engine::debug_logging_enabled() { return ::debug_logging_enabled(); }
+
+bool core::Engine::has_pending_async_tasks() {
+  return EventLoop::has_pending_async_tasks();
 }

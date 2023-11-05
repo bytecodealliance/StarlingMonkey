@@ -132,7 +132,7 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 };
 
-bool add_to_global(JSContext *cx, JS::HandleObject global);
+bool install(core::Engine* engine);
 
 } // namespace url
 } // namespace web

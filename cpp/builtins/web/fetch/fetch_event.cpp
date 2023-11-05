@@ -1,22 +1,28 @@
-#include "fetch-event.h"
-#include "request-response.h"
+#include "fetch_event.h"
 #include "../url.h"
 #include "../worker-location.h"
-
-#ifdef CAE
-#include "client-info.h"
-#include "fastly.h"
-#endif
+#include "encode.h"
+#include "request-response.h"
+#include <iostream>
 
 using namespace std::literals::string_view_literals;
 
 namespace builtins {
 namespace web {
-namespace fetch {
+namespace fetch_event {
+
+using fetch::Request;
+using fetch::Response;
+using fetch::RequestOrResponse;
 
 namespace {
 
+static core::Engine *ENGINE;
+
 JS::PersistentRooted<JSObject *> INSTANCE;
+static JS::PersistentRootedObjectVector *FETCH_HANDLERS;
+
+static bindings_own_response_outparam_t* RESPONSE_OUT;
 
 void inc_pending_promise_count(JSObject *self) {
   MOZ_ASSERT(FetchEvent::is_instance(self));
@@ -57,56 +63,32 @@ bool add_pending_promise(JSContext *cx, JS::HandleObject self, JS::HandleObject 
 
 } // namespace
 
-#ifdef CAE
-bool FetchEvent::client_get(JSContext *cx, unsigned argc, JS::Value *vp) {
-  METHOD_HEADER(0)
-
-  JS::RootedValue clientInfo(cx,
-                             JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::ClientInfo)));
-
-  if (clientInfo.isUndefined()) {
-    JS::RootedObject obj(cx, ClientInfo::create(cx));
-    if (!obj)
-      return false;
-    clientInfo.setObject(*obj);
-    JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::ClientInfo), clientInfo);
-  }
-
-  args.rval().set(clientInfo);
-  return true;
-}
-#endif
-
 JSObject *FetchEvent::prepare_downstream_request(JSContext *cx) {
   JS::RootedObject requestInstance(
       cx, JS_NewObjectWithGivenProto(cx, &Request::class_, Request::proto_obj));
   if (!requestInstance)
     return nullptr;
-  return Request::create(cx, requestInstance, host_api::HttpReq{}, host_api::HttpBody{}, true);
+  return Request::create(cx, requestInstance, nullptr);
 }
 
-bool FetchEvent::init_downstream_request(JSContext *cx, JS::HandleObject request,
-                                         host_api::HttpReq req, host_api::HttpBody body) {
-  MOZ_ASSERT(!Request::request_handle(request).is_valid());
+bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
+                                       host_api::HttpIncomingRequest *req) {
+  JS::RootedObject request(
+      cx, &JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::Request))
+               .toObject());
+
+  MOZ_ASSERT(!Request::request_handle(request));
 
   JS::SetReservedSlot(request, static_cast<uint32_t>(Request::Slots::Request),
-                      JS::Int32Value(req.handle));
-  JS::SetReservedSlot(request, static_cast<uint32_t>(Request::Slots::Body),
-                      JS::Int32Value(body.handle));
+                      JS::PrivateValue(req));
 
   // Set the method.
-  auto res = req.get_method();
-  if (auto *err = res.to_err()) {
-    HANDLE_ERROR(cx, *err);
-    return false;
-  }
-
-  auto method_str = std::move(res.unwrap());
-  bool is_get = method_str == "GET"sv;
-  bool is_head = method_str == "HEAD"sv;
+  auto method_str = req->method();
+  bool is_get = method_str == "GET";
+  bool is_head = !is_get && method_str == "HEAD";
 
   if (!is_get) {
-    JS::RootedString method(cx, JS_NewStringCopyN(cx, method_str.ptr.release(), method_str.len));
+    JS::RootedString method(cx, JS_NewStringCopyN(cx, method_str.cbegin(), method_str.length()));
     if (!method) {
       return false;
     }
@@ -123,14 +105,27 @@ bool FetchEvent::init_downstream_request(JSContext *cx, JS::HandleObject request
     JS::SetReservedSlot(request, static_cast<uint32_t>(Request::Slots::HasBody), JS::TrueValue());
   }
 
-  auto uri_res = req.get_uri();
-  if (auto *err = uri_res.to_err()) {
-    HANDLE_ERROR(cx, *err);
-    return false;
+  std::string uri_str = "http://";
+  auto uri = req->url();
+  if (uri.has_value()) {
+    uri_str = uri.value();
+  } else {
+    auto headers = std::move(req->headers()->entries().unwrap());
+    for (const auto &header : headers) {
+      std::cout << "header: " << std::string_view(std::get<0>(header)) << ": " << std::string_view(std::get<1>(header)) << std::endl;
+    }
+
+    auto host_res = req->headers()->get("host");
+    if (host_res.is_err() || !host_res.unwrap().has_value()) {
+      ENGINE->abort("Can't process incoming requests without a URL or a 'host' header\n");
+    }
+    auto host = std::move(host_res.unwrap().value()[0]);
+    uri_str.append(std::string_view(host));
   }
 
-  auto uri_str = std::move(uri_res.unwrap());
-  JS::RootedString url(cx, JS_NewStringCopyN(cx, uri_str.ptr.get(), uri_str.len));
+  std::cout << "host-len: " << uri_str.size() << "host: " << uri_str << std::endl;
+
+  JS::RootedString url(cx, JS_NewStringCopyN(cx, uri_str.data(), uri_str.size()));
   if (!url) {
     return false;
   }
@@ -143,7 +138,10 @@ bool FetchEvent::init_downstream_request(JSContext *cx, JS::HandleObject request
     return false;
   }
 
-  jsurl::SpecString spec(reinterpret_cast<uint8_t *>(uri_str.ptr.get()), uri_str.len, uri_str.len);
+  auto uri_bytes = new uint8_t[uri_str.size() + 1];
+  std::copy(uri_str.begin(), uri_str.end(), uri_bytes);
+  jsurl::SpecString spec(uri_bytes, uri_str.size(), uri_str.size());
+
   worker_location::WorkerLocation::url = url::URL::create(cx, url_instance, spec);
   if (!worker_location::WorkerLocation::url) {
     return false;
@@ -153,15 +151,15 @@ bool FetchEvent::init_downstream_request(JSContext *cx, JS::HandleObject request
   // Note that this only happens if baseURL hasn't already been set to another
   // value explicitly.
   // TODO: support baseURL
-  // if (!builtins::Fastly::baseURL.get()) {
+  // if (!Fastly::baseURL.get()) {
   //   JS::RootedObject url_instance(
   //       cx, JS_NewObjectWithGivenProto(cx, &url::URL::class_, url::URL::proto_obj));
   //   if (!url_instance)
   //     return false;
 
-  //   builtins::Fastly::baseURL = url::URL::create(
+  //   Fastly::baseURL = url::URL::create(
   //       cx, url_instance, url::URL::origin(cx, worker_location::WorkerLocation::url));
-  //   if (!builtins::Fastly::baseURL)
+  //   if (!Fastly::baseURL)
   //     return false;
   // }
 
@@ -177,16 +175,32 @@ bool FetchEvent::request_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 namespace {
 
-bool start_response(JSContext *cx, JS::HandleObject response_obj, bool streaming) {
-  auto response = Response::response_handle(response_obj);
-  auto body = RequestOrResponse::body_handle(response_obj);
+bool send_response(host_api::HttpOutgoingResponse *response,
+                   JS::HandleObject self, FetchEvent::State new_state) {
+  printf("old state: %d, new state: %d\n", FetchEvent::state(self), new_state);
+  MOZ_ASSERT(FetchEvent::state(self) == FetchEvent::State::unhandled ||
+                 FetchEvent::state(self) == FetchEvent::State::waitToRespond);
+  auto result = response->send(RESPONSE_OUT);
+  FetchEvent::set_state(self, new_state);
 
-  auto res = response.send_downstream(body, streaming);
-  if (auto *err = res.to_err()) {
-    HANDLE_ERROR(cx, *err);
+  if (auto *err = result.to_err()) {
+    HANDLE_ERROR(CONTEXT, *err);
     return false;
   }
+
   return true;
+}
+
+bool start_response(JSContext *cx, JS::HandleObject response_obj, bool streaming) {
+  auto generic_response = Response::response_handle(response_obj);
+  MOZ_ASSERT(!generic_response->is_incoming());
+  auto response = static_cast<host_api::HttpOutgoingResponse *>(generic_response);
+  return send_response(response, FetchEvent::instance(), streaming ? FetchEvent::State::responseStreaming : FetchEvent::State::responseDone);
+
+  // TODO(TS): add body support
+
+  // auto body = RequestOrResponse::outgoing_body_handle(response_obj);
+  // if (!streaming)
 }
 
 // Steps in this function refer to the spec at
@@ -216,34 +230,20 @@ bool response_promise_then_handler(JSContext *cx, JS::HandleObject event, JS::Ha
 
   // Ensure that all headers are stored client-side, so we retain access to them
   // after sending the response off.
-  if (Response::is_upstream(response_obj)) {
-    JS::RootedObject headers(cx);
-    headers =
-        RequestOrResponse::headers<Headers::Mode::ProxyToResponse>(cx, response_obj);
-    if (!Headers::delazify(cx, headers))
-      return false;
-  }
-
-#ifdef CAE
-  if (Response::is_grip_upgrade(response_obj)) {
-    std::string backend(Response::grip_backend(response_obj));
-
-    auto res = host_api::HttpReq::redirect_to_grip_proxy(backend);
-    if (auto *err = res.to_err()) {
-      HANDLE_ERROR(cx, *err);
-      return false;
-    }
-    return true;
-  }
-#endif // CAE
+  // TODO: restore proper headers handling
+  // if (Response::is_upstream(response_obj)) {
+  //   JS::RootedObject headers(cx);
+  //   headers =
+  //       RequestOrResponse::headers<Headers::Mode::ProxyToResponse>(cx, response_obj);
+  //   if (!Headers::delazify(cx, headers))
+  //     return false;
+  // }
 
   bool streaming = false;
   if (!RequestOrResponse::maybe_stream_body(cx, response_obj, &streaming)) {
     return false;
   }
 
-  FetchEvent::set_state(event, streaming ? FetchEvent::State::responseStreaming
-                                         : FetchEvent::State::responseDone);
   return start_response(cx, response_obj, streaming);
 }
 
@@ -314,34 +314,16 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 bool FetchEvent::respondWithError(JSContext *cx, JS::HandleObject self) {
   MOZ_RELEASE_ASSERT(state(self) == State::unhandled || state(self) == State::waitToRespond);
-  set_state(self, State::responsedWithError);
 
-  auto response_res = host_api::HttpResp::make();
-  if (auto *err = response_res.to_err()) {
-    HANDLE_ERROR(cx, *err);
-    return false;
-  }
-  auto response = response_res.unwrap();
+  auto response = new host_api::HttpOutgoingResponse(500, nullptr);
 
-  auto make_res = host_api::HttpBody::make(response);
-  if (auto *err = make_res.to_err()) {
+  auto body_res = response->body();
+  if (auto *err = body_res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
   }
 
-  auto status_res = response.set_status(500);
-  if (auto *err = status_res.to_err()) {
-    HANDLE_ERROR(cx, *err);
-    return false;
-  }
-
-  auto send_res = response.send_downstream(make_res.unwrap(), false);
-  if (auto *err = send_res.to_err()) {
-    HANDLE_ERROR(cx, *err);
-    return false;
-  }
-
-  return true;
+  return send_response(response, self, FetchEvent::State::respondedWithError);
 }
 
 namespace {
@@ -427,17 +409,15 @@ JSObject *FetchEvent::create(JSContext *cx) {
                       JS::ObjectValue(*dec_count_handler));
 
   INSTANCE.init(cx, self);
+  self = INSTANCE;
   return self;
 }
 
-JS::HandleObject FetchEvent::instance() { return INSTANCE; }
-
-bool FetchEvent::init_request(JSContext *cx, JS::HandleObject self, host_api::HttpReq req,
-                              host_api::HttpBody body) {
-  JS::RootedObject request(
-      cx, &JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::Request)).toObject());
-  return init_downstream_request(cx, request, req, body);
-}
+JS::HandleObject FetchEvent::instance() {
+  MOZ_ASSERT(INSTANCE);
+  MOZ_ASSERT(is_instance(INSTANCE));
+  return INSTANCE;
+  }
 
 bool FetchEvent::is_active(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
@@ -483,6 +463,153 @@ bool FetchEvent::response_started(JSObject *self) {
   return current_state != State::unhandled && current_state != State::waitToRespond;
 }
 
-} // namespace fetch
+static bool addEventListener(JSContext *cx, unsigned argc, Value *vp) {
+  JS::CallArgs args = CallArgsFromVp(argc, vp);
+  printf("addEventListener\n");
+  if (!args.requireAtLeast(cx, "addEventListener", 2)) {
+    return false;
+  }
+
+  auto event_chars = core::encode(cx, args[0]);
+  if (!event_chars) {
+    return false;
+  }
+
+  if (strncmp(event_chars.begin(), "fetch", event_chars.len)) {
+    fprintf(
+        stderr,
+        "Error: addEventListener only supports the event 'fetch' right now, "
+        "but got event '%s'\n",
+        event_chars.begin());
+    exit(1);
+  }
+
+  RootedValue val(cx, args[1]);
+  if (!val.isObject() || !JS_ObjectIsFunction(&val.toObject())) {
+    fprintf(stderr, "Error: addEventListener: Argument 2 is not a function.\n"); exit(1);
+  }
+
+  return FETCH_HANDLERS->append(&val.toObject());
+}
+
+static void dispatch_fetch_event(HandleObject event, double *total_compute) {
+  MOZ_ASSERT(FetchEvent::is_instance(event));
+  // auto pre_handler = system_clock::now();
+
+  RootedValue result(ENGINE->cx());
+  RootedValue event_val(ENGINE->cx(), JS::ObjectValue(*event));
+  HandleValueArray argsv = HandleValueArray(event_val);
+  RootedValue handler(ENGINE->cx());
+  RootedValue rval(ENGINE->cx());
+
+  FetchEvent::start_dispatching(event);
+
+  for (size_t i = 0; i < FETCH_HANDLERS->length(); i++) {
+    handler.setObject(*(*FETCH_HANDLERS)[i]);
+    if (!JS_CallFunctionValue(ENGINE->cx(), ENGINE->global(), handler, argsv, &rval)) {
+      ENGINE->dump_pending_exception("dispatching FetchEvent\n");
+      break;
+    }
+    if (FetchEvent::state(event) != FetchEvent::State::unhandled) {
+      break;
+    }
+  }
+
+  FetchEvent::stop_dispatching(event);
+
+  // double diff =
+  //     duration_cast<microseconds>(system_clock::now() - pre_handler).count();
+  // *total_compute += diff;
+  // LOG("Request handler took %fms\n", diff / 1000);
+}
+
+bool install(core::Engine* engine) {
+  ENGINE = engine;
+  FETCH_HANDLERS = new JS::PersistentRootedObjectVector(engine->cx());
+
+  if (!JS_DefineFunction(engine->cx(), engine->global(), "addEventListener", addEventListener, 2, 0)) {
+    MOZ_RELEASE_ASSERT(false);
+  }
+
+  if (!FetchEvent::init_class(engine->cx(), engine->global()))
+    return false;
+
+  if (!FetchEvent::create(engine->cx())) {
+    MOZ_RELEASE_ASSERT(false);
+  }
+
+  // TODO(TS): restore validation
+  // if (FETCH_HANDLERS->length() == 0) {
+  //   RootedValue val(engine->cx());
+  //   if (!JS_GetProperty(engine->cx(), engine->global(), "onfetch", &val) || !val.isObject()
+  //       || !JS_ObjectIsFunction(&val.toObject())) {
+  //     // The error message only mentions `addEventListener`, even though we also
+  //     // support an `onfetch` top-level function as an alternative. We're
+  //     // treating the latter as undocumented functionality for the time being.
+  //     fprintf(
+  //         stderr,
+  //         "Error: no `fetch` event handler registered during initialization. "
+  //         "Make sure to call `addEventListener('fetch', your_handler)`.\n");
+  //     exit(1);
+  //   }
+  //   if (!FETCH_HANDLERS->append(&val.toObject())) {
+  //     engine->abort("Adding onfetch as a fetch event handler");
+  //   }
+  // }
+
+  return true;
+}
+
+} // namespace fetch_event
 } // namespace web
 } // namespace builtins
+
+using namespace builtins::web::fetch_event;
+void exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_handle(
+    bindings_own_incoming_request_t request_handle,
+    bindings_own_response_outparam_t response_out) {
+  RESPONSE_OUT = &response_out;
+
+  fprintf(stderr, "Incoming request handler called\n");
+
+  auto request = new host_api::HttpIncomingRequest(request_handle);
+  HandleObject fetch_event = FetchEvent::instance();
+  MOZ_ASSERT(FetchEvent::is_instance(fetch_event));
+  FetchEvent::init_incoming_request(ENGINE->cx(), fetch_event, request);
+
+  double total_compute = 0;
+
+  fprintf(stderr, "about to dispatch\n");
+  dispatch_fetch_event(fetch_event, &total_compute);
+  fprintf(stderr, "dispatched\n");
+
+  RootedValue result(ENGINE->cx());
+  if (!ENGINE->run_event_loop(&result)) {
+    fflush(stdout);
+    fprintf(stderr, "Error running event loop: ");
+    ENGINE->dump_value(result, stderr);
+    return;
+  }
+  fprintf(stderr, "ran event loop\n");
+
+  if (JS_IsExceptionPending(ENGINE->cx())) {
+    ENGINE->dump_pending_exception("Error evaluating code: ");
+  }
+
+  if (ENGINE->debug_logging_enabled() && ENGINE->has_pending_async_tasks()) {
+    fprintf(stderr, "Event loop terminated with async tasks pending. "
+                    "Use FetchEvent#waitUntil to extend the component's "
+                    "lifetime if needed.\n");
+  }
+
+  auto state = FetchEvent::state(fetch_event);
+  fprintf(stderr, "state after event loop: %d\n", state);
+  if (state == FetchEvent::State::unhandled || state == FetchEvent::State::waitToRespond) {
+    FetchEvent::respondWithError(ENGINE->cx(), fetch_event);
+    return;
+  }
+
+  if (state == FetchEvent::State::responseStreaming) {
+    // TODO(TS): ensure the response body is closed.
+  }
+}

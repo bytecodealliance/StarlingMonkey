@@ -79,8 +79,8 @@ const JSFunctionSpec methods[] = {
     JS_FN("setTimeout", setTimeout_or_interval<false>, 1, JSPROP_ENUMERATE),
     JS_FS_END};
 
-bool add_to_global(JSContext *cx, JS::HandleObject global) {
-  return JS_DefineFunctions(cx, global, methods);
+bool install(core::Engine* engine) {
+  return JS_DefineFunctions(engine->cx(), engine->global(), methods);
 }
 
 } // namespace queue_microtask
