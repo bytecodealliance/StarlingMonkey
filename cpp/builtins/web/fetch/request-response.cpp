@@ -70,7 +70,7 @@ ReadResult read_from_handle_all(JSContext *cx, host_api::HttpIncomingBody* body)
   std::vector<host_api::HostString> chunks;
   size_t bytes_read = 0;
   while (true) {
-    auto res = body->read(HANDLE_READ_CHUNK_SIZE);
+    auto res = body->read(HANDLE_READ_CHUNK_SIZE, true);
     if (auto *err = res.to_err()) {
       HANDLE_ERROR(cx, *err);
       return {nullptr, 0};
@@ -149,9 +149,16 @@ host_api::HttpIncomingBody* RequestOrResponse::incoming_body_handle(JSObject *ob
 
 host_api::HttpOutgoingBody* RequestOrResponse::outgoing_body_handle(JSObject *obj) {
   MOZ_ASSERT(!is_incoming(obj));
-  auto owner = reinterpret_cast<host_api::HttpOutgoingBodyOwner *>(handle(obj));
-  return owner->body().unwrap();
-}
+  host_api::Result<host_api::HttpOutgoingBody *> res;
+  if (Request::is_instance(obj)) {
+    auto owner = reinterpret_cast<host_api::HttpOutgoingRequest *>(handle(obj));
+    res = owner->body();
+  } else {
+    auto owner = reinterpret_cast<host_api::HttpOutgoingResponse *>(handle(obj));
+    res = owner->body();
+  }
+  return res.unwrap();
+  }
 
 JSObject *RequestOrResponse::body_stream(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));

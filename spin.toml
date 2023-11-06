@@ -15,4 +15,4 @@ source = "build/js-component.wasm"
 allowed_outbound_hosts = ["https://fermyon.com:443"]
 [component.js-component.build]
 command = "V=1 DEBUG=1 make all"
-# watch = ["src/**/*.rs", "Cargo.toml"]
+watch = ["tests/smoke.js"]

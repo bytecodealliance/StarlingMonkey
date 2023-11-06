@@ -23,6 +23,7 @@ JS::PersistentRooted<JSObject *> INSTANCE;
 static JS::PersistentRootedObjectVector *FETCH_HANDLERS;
 
 static bindings_own_response_outparam_t* RESPONSE_OUT;
+static host_api::HttpOutgoingBody* STREAMING_BODY;
 
 void inc_pending_promise_count(JSObject *self) {
   MOZ_ASSERT(FetchEvent::is_instance(self));
@@ -107,24 +108,11 @@ bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
 
   std::string uri_str = "http://";
   auto uri = req->url();
-  if (uri.has_value()) {
-    uri_str = uri.value();
-  } else {
-    auto headers = std::move(req->headers()->entries().unwrap());
-    for (const auto &header : headers) {
-      std::cout << "header: " << std::string_view(std::get<0>(header)) << ": " << std::string_view(std::get<1>(header)) << std::endl;
-    }
-
-    auto host_res = req->headers()->get("host");
-    if (host_res.is_err() || !host_res.unwrap().has_value()) {
-      ENGINE->abort("Can't process incoming requests without a URL or a 'host' header\n");
-    }
-    auto host = std::move(host_res.unwrap().value()[0]);
-    uri_str.append(std::string_view(host));
+  if (!uri.has_value()) {
+    ENGINE->abort("Can't process incoming requests without a URL\n");
   }
 
-  std::cout << "host-len: " << uri_str.size() << "host: " << uri_str << std::endl;
-
+  uri_str = uri.value();
   JS::RootedString url(cx, JS_NewStringCopyN(cx, uri_str.data(), uri_str.size()));
   if (!url) {
     return false;
@@ -177,7 +165,6 @@ namespace {
 
 bool send_response(host_api::HttpOutgoingResponse *response,
                    JS::HandleObject self, FetchEvent::State new_state) {
-  printf("old state: %d, new state: %d\n", FetchEvent::state(self), new_state);
   MOZ_ASSERT(FetchEvent::state(self) == FetchEvent::State::unhandled ||
                  FetchEvent::state(self) == FetchEvent::State::waitToRespond);
   auto result = response->send(RESPONSE_OUT);
@@ -193,14 +180,17 @@ bool send_response(host_api::HttpOutgoingResponse *response,
 
 bool start_response(JSContext *cx, JS::HandleObject response_obj, bool streaming) {
   auto generic_response = Response::response_handle(response_obj);
-  MOZ_ASSERT(!generic_response->is_incoming());
+
+  if (generic_response->is_incoming()) {
+  // TODO(TS): implement, including support for forwarding bodies
+    MOZ_ASSERT_UNREACHABLE("Incoming responses are not supported as outgoing ones yet");
+  }
+
   auto response = static_cast<host_api::HttpOutgoingResponse *>(generic_response);
+  if (streaming && response->has_body()) {
+    STREAMING_BODY = response->body().unwrap();
+  }
   return send_response(response, FetchEvent::instance(), streaming ? FetchEvent::State::responseStreaming : FetchEvent::State::responseDone);
-
-  // TODO(TS): add body support
-
-  // auto body = RequestOrResponse::outgoing_body_handle(response_obj);
-  // if (!streaming)
 }
 
 // Steps in this function refer to the spec at
@@ -465,7 +455,6 @@ bool FetchEvent::response_started(JSObject *self) {
 
 static bool addEventListener(JSContext *cx, unsigned argc, Value *vp) {
   JS::CallArgs args = CallArgsFromVp(argc, vp);
-  printf("addEventListener\n");
   if (!args.requireAtLeast(cx, "addEventListener", 2)) {
     return false;
   }
@@ -570,18 +559,18 @@ void exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_handle(
     bindings_own_response_outparam_t response_out) {
   RESPONSE_OUT = &response_out;
 
-  fprintf(stderr, "Incoming request handler called\n");
 
   auto request = new host_api::HttpIncomingRequest(request_handle);
   HandleObject fetch_event = FetchEvent::instance();
   MOZ_ASSERT(FetchEvent::is_instance(fetch_event));
-  FetchEvent::init_incoming_request(ENGINE->cx(), fetch_event, request);
+  if (!FetchEvent::init_incoming_request(ENGINE->cx(), fetch_event, request)) {
+    ENGINE->dump_pending_exception("initialization of FetchEvent");
+    return;
+  }
 
   double total_compute = 0;
 
-  fprintf(stderr, "about to dispatch\n");
   dispatch_fetch_event(fetch_event, &total_compute);
-  fprintf(stderr, "dispatched\n");
 
   RootedValue result(ENGINE->cx());
   if (!ENGINE->run_event_loop(&result)) {
@@ -590,7 +579,6 @@ void exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_handle(
     ENGINE->dump_value(result, stderr);
     return;
   }
-  fprintf(stderr, "ran event loop\n");
 
   if (JS_IsExceptionPending(ENGINE->cx())) {
     ENGINE->dump_pending_exception("Error evaluating code: ");
@@ -603,13 +591,14 @@ void exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_handle(
   }
 
   auto state = FetchEvent::state(fetch_event);
-  fprintf(stderr, "state after event loop: %d\n", state);
   if (state == FetchEvent::State::unhandled || state == FetchEvent::State::waitToRespond) {
     FetchEvent::respondWithError(ENGINE->cx(), fetch_event);
     return;
   }
 
   if (state == FetchEvent::State::responseStreaming) {
+    MOZ_ASSERT(STREAMING_BODY);
+    STREAMING_BODY->close();
     // TODO(TS): ensure the response body is closed.
   }
 }

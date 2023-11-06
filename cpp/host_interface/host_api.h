@@ -106,8 +106,10 @@ struct HostString final {
 
   HostString() = default;
   HostString(std::nullptr_t) : HostString() {}
+  HostString(const char *c_str);
   HostString(JS::UniqueChars ptr, size_t len) : ptr{std::move(ptr)}, len{len} {}
   HostString(bindings_list_u8_t list) : ptr{reinterpret_cast<char*>(list.ptr)}, len{list.len} {}
+  HostString(bindings_string_t list) : ptr{reinterpret_cast<char*>(list.ptr)}, len{list.len} {}
 
   HostString(const HostString &other) = delete;
   HostString &operator=(const HostString &other) = delete;
@@ -276,9 +278,12 @@ public:
   /// Returns true when this body handle is valid.
   bool valid() const { return this->handle.__handle != invalid.__handle; }
 
-  /// Read a chunk from this handle.
+  /// Read a chunk of up to `chunk_size` bytes from this handle.
+  ///
+  /// If the `blocking` flag is set, will block until at least one byte has been read.
+  /// Otherwise, might return an empty string.
   // TODO: check why this doesn't return HostBytes.
-  Result<tuple<HostString, bool>> read(uint32_t chunk_size);
+  Result<tuple<HostString, bool>> read(uint32_t chunk_size, bool blocking);
 
   /// Close this handle, and reset internal state to invalid.
   Result<Void> close();
@@ -313,9 +318,9 @@ public:
 
 
   /// The handle to use when making host calls.
-  Handle handle;
+  Handle handle = invalid;
 #ifndef CAE
-  StreamHandle stream;
+  StreamHandle stream = invalid_stream;
 #endif
 
   HttpOutgoingBody() = delete;
@@ -375,7 +380,7 @@ class HttpHeaders final {
   static constexpr Handle invalid = Handle{-1};
 
 private:
-  Handle handle;
+  Handle handle = invalid;
 
 public:
   HttpHeaders();
@@ -400,10 +405,14 @@ public:
 
 class HttpRequestResponseBase {
 protected:
-   HttpHeaders* headers_handle = nullptr;
+  HttpHeaders* headers_handle = nullptr;
+  std::string* _url = nullptr;
+  virtual void ensure_url() {};
 
-public:
+ public:
   virtual HttpHeaders *headers() = 0;
+  const optional<string_view> url();
+
   virtual bool is_incoming() = 0;
   virtual bool is_request() = 0;
   virtual bool valid() = 0;
@@ -415,6 +424,7 @@ protected:
 
 public:
   virtual Result<HttpIncomingBody *> body() = 0;
+  bool has_body() { return body_handle != nullptr; }
 };
 
 class HttpOutgoingBodyOwner {
@@ -423,6 +433,7 @@ protected:
 
 public:
   virtual Result<HttpOutgoingBody *> body() = 0;
+  bool has_body() { return body_handle != nullptr; }
 };
 
 class HttpRequest : public HttpRequestResponseBase {};
@@ -433,23 +444,22 @@ class HttpIncomingRequest : public HttpRequest,
   static constexpr Handle invalid = Handle{-1};
 
 private:
-  Handle handle;
+  Handle handle = invalid;
+
+protected:
+  virtual void ensure_url() override;
 
 public:
   HttpIncomingRequest() = delete;
   explicit HttpIncomingRequest(Handle handle) : handle(handle) {}
 
   const string_view method() const;
-  const optional<string_view> path() const;
-  const optional<string_view> scheme() const;
-  const optional<string_view> authority() const;
-  const optional<string_view> url() const;
 
   bool is_incoming() override { return true; }
   bool is_request() override { return true; }
   bool valid() override { return handle.__handle != invalid.__handle; }
   HttpHeaders *headers() override;
-  Result<HttpIncomingBody*> body() override;
+  virtual Result<HttpIncomingBody*> body() override;
 };
 
 class HttpOutgoingRequest : public HttpRequest,
@@ -458,7 +468,7 @@ private:
   using Handle = bindings_own_outgoing_request_t;
   static constexpr Handle invalid = Handle{-1};
 
-  Handle handle;
+  Handle handle = invalid;
 
 public:
   HttpOutgoingRequest() = delete;
@@ -468,7 +478,7 @@ public:
   bool is_request() override { return true; }
   bool valid() override { return handle.__handle != invalid.__handle; }
   HttpHeaders *headers() override;
-  Result<HttpOutgoingBody *> body() override;
+  virtual Result<HttpOutgoingBody *> body() override;
 
   Result<FutureHttpIncomingResponse*> send();
 };
@@ -481,7 +491,7 @@ private:
   using Handle = bindings_own_incoming_response_t;
   static constexpr Handle invalid = Handle{-1};
 
-  Handle handle;
+  Handle handle = invalid;
 
 public:
   uint16_t status() const;
@@ -493,7 +503,7 @@ public:
   bool is_request() override { return false; }
   bool valid() override { return handle.__handle != invalid.__handle; }
   HttpHeaders *headers() override;
-  Result<HttpIncomingBody *> body() override;
+  virtual Result<HttpIncomingBody *> body() override;
 };
 
 class HttpOutgoingResponse final : public HttpResponse,
@@ -502,7 +512,7 @@ private:
   using Handle = bindings_own_outgoing_response_t;
   static constexpr Handle invalid = Handle{-1};
 
-  Handle handle;
+  Handle handle = invalid;
 
 public:
   const uint16_t status;
@@ -516,7 +526,7 @@ public:
   bool is_request() override { return false; }
   bool valid() override { return handle.__handle != invalid.__handle; }
   HttpHeaders *headers() override;
-  Result<HttpOutgoingBody *> body() override;
+  virtual Result<HttpOutgoingBody *> body() override;
 
   Result<Void> send(ResponseOutparam* out_param);
 };
