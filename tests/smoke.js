@@ -4,8 +4,6 @@ async function main(event) {
         url.host = "fermyon.com";
         url.protocol = "https";
         url.port = "";
-        // console.log(event.request);
-        // let req = new Request();
         let p = fetch(url);
         let resolve, reject;
         let responsePromise = new Promise(async (res, rej) => {
@@ -14,9 +12,31 @@ async function main(event) {
         });
         event.respondWith(responsePromise);
         let response = await p;
-        // console.log("received!");
-        let buffer = await response.arrayBuffer();
-        let body = new ReadableStream()
+        let incomingBody = response.body;
+        let body = null;
+        if (incomingBody) {
+            const reader = incomingBody.getReader();
+
+            body = new ReadableStream({
+                start(controller) {
+                    return pump();
+
+                    function pump() {
+                        return reader.read().then(({ done, value }) => {
+                            // When no more data needs to be consumed, close the stream
+                            if (done) {
+                                controller.close();
+                                return;
+                            }
+
+                            // Enqueue the next data chunk into our target stream
+                            controller.enqueue(value);
+                            return pump();
+                        });
+                    }
+                },
+            });
+        }
 
         resolve(new Response(body, {headers: response.headers}));
         // for (let [key, value] of response.headers.entries()) {

@@ -184,69 +184,71 @@ bool process_pending_request(JSContext *cx, JS::HandleObject request) {
   return JS::ResolvePromise(cx, response_promise, response_val);
 }
 
-// bool error_stream_controller_with_pending_exception(
-//     JSContext *cx, JS::HandleObject controller) {
-//   JS::RootedValue exn(cx);
-//   if (!JS_GetPendingException(cx, &exn))
-//     return false;
-//   JS_ClearPendingException(cx);
+// TODO(TS): move this into the fetch or streams impl
+bool error_stream_controller_with_pending_exception(
+    JSContext *cx, JS::HandleObject controller) {
+  JS::RootedValue exn(cx);
+  if (!JS_GetPendingException(cx, &exn))
+    return false;
+  JS_ClearPendingException(cx);
 
-//   JS::RootedValueArray<1> args(cx);
-//   args[0].set(exn);
-//   JS::RootedValue r(cx);
-//   return JS::Call(cx, controller, "error", args, &r);
-// }
+  JS::RootedValueArray<1> args(cx);
+  args[0].set(exn);
+  JS::RootedValue r(cx);
+  return JS::Call(cx, controller, "error", args, &r);
+}
 
-// constexpr size_t HANDLE_READ_CHUNK_SIZE = 8192;
+constexpr size_t HANDLE_READ_CHUNK_SIZE = 8192;
 
-// bool process_body_read(JSContext *cx, JS::HandleObject streamSource,
-//                        host_api::HttpBody body) {
-//   JS::RootedObject owner(cx,
-//   builtins::web::streams::NativeStreamSource::owner(streamSource)); JS::RootedObject
-//   controller(
-//       cx, builtins::web::streams::NativeStreamSource::controller(streamSource));
+bool process_body_read(JSContext *cx, JS::HandleObject streamSource) {
+  JS::RootedObject owner(cx,
+      builtins::web::streams::NativeStreamSource::owner(streamSource));
+  JS::RootedObject controller( cx,
+      builtins::web::streams::NativeStreamSource::controller(streamSource));
+  auto body =
+      builtins::web::fetch::RequestOrResponse::incoming_body_handle(owner);
 
-//   auto read_res = body.read(HANDLE_READ_CHUNK_SIZE);
-//   if (auto *err = read_res.to_err()) {
-//     HANDLE_ERROR(cx, *err);
-//     return error_stream_controller_with_pending_exception(cx, controller);
-//   }
+  auto read_res = body->read(HANDLE_READ_CHUNK_SIZE, true);
+  if (auto *err = read_res.to_err()) {
+    HANDLE_ERROR(cx, *err);
+    return error_stream_controller_with_pending_exception(cx, controller);
+  }
 
-//   auto &chunk = read_res.unwrap();
-//   if (chunk.len == 0) {
-//     JS::RootedValue r(cx);
-//     return JS::Call(cx, controller, "close", JS::HandleValueArray::empty(),
-//     &r);
-//   }
+  auto &chunk = read_res.unwrap();
+  if (std::get<1>(chunk)) {
+    JS::RootedValue r(cx);
+    return JS::Call(cx, controller, "close", JS::HandleValueArray::empty(),
+    &r);
+  }
 
-//   // We don't release control of chunk's data until after we've checked that
-//   the
-//   // array buffer allocation has been successful, as that ensures that the
-//   // return path frees chunk automatically when necessary.
-//   JS::RootedObject buffer(
-//       cx, JS::NewArrayBufferWithContents(cx, chunk.len, chunk.ptr.get()));
-//   if (!buffer) {
-//     return error_stream_controller_with_pending_exception(cx, controller);
-//   }
+  // We don't release control of chunk's data until after we've checked that
+  // the array buffer allocation has been successful, as that ensures that the
+  // return path frees chunk automatically when necessary.
+  auto &bytes = std::get<0>(chunk);
+  JS::RootedObject buffer(
+      cx, JS::NewArrayBufferWithContents(cx, bytes.len, bytes.ptr.get()));
+  if (!buffer) {
+    return error_stream_controller_with_pending_exception(cx, controller);
+  }
 
-//   // At this point `buffer` has taken full ownership of the chunk's data.
-//   std::ignore = chunk.ptr.release();
+  // At this point `buffer` has taken full ownership of the chunk's data.
+  std::ignore = bytes.ptr.release();
 
-//   JS::RootedObject byte_array(
-//       cx, JS_NewUint8ArrayWithBuffer(cx, buffer, 0, chunk.len));
-//   if (!byte_array) {
-//     return false;
-//   }
+  JS::RootedObject byte_array(
+      cx, JS_NewUint8ArrayWithBuffer(cx, buffer, 0, bytes.len));
+  if (!byte_array) {
+    return false;
+  }
 
-//   JS::RootedValueArray<1> enqueue_args(cx);
-//   enqueue_args[0].setObject(*byte_array);
-//   JS::RootedValue r(cx);
-//   if (!JS::Call(cx, controller, "enqueue", enqueue_args, &r)) {
-//     return error_stream_controller_with_pending_exception(cx, controller);
-//   }
+  JS::RootedValueArray<1> enqueue_args(cx);
+  enqueue_args[0].setObject(*byte_array);
+  JS::RootedValue r(cx);
+  if (!JS::Call(cx, controller, "enqueue", enqueue_args, &r)) {
+    return error_stream_controller_with_pending_exception(cx, controller);
+  }
 
-//   return true;
-// }
+  return true;
+}
 
 } // namespace
 
@@ -280,14 +282,11 @@ bool EventLoop::process_pending_async_tasks(JSContext *cx) {
       handles.push_back(
           builtins::web::fetch::Request::pending_handle(pending_obj)
               ->async_handle());
-    // } else {
-    //   MOZ_ASSERT(
-    //       builtins::web::streams::NativeStreamSource::is_instance(pending_obj));
-    //   JS::RootedObject owner(cx,
-    //                          builtins::web::streams::NativeStreamSource::owner(pending_obj));
-    //   handles.push_back(
-    //       builtins::web::fetch::RequestOrResponse::body_handle(owner)
-    //           .async_handle());
+    } else {
+      JS::RootedObject owner(cx,
+                             builtins::web::streams::NativeStreamSource::owner(pending_obj));
+      handles.push_back(
+          builtins::web::fetch::RequestOrResponse::incoming_body_handle(owner)->async_handle());
     }
   }
 
@@ -325,10 +324,8 @@ bool EventLoop::process_pending_async_tasks(JSContext *cx) {
   // TODO(TS)
   if (builtins::web::fetch::Request::is_instance(ready_obj)) {
     ok = process_pending_request(cx, ready_obj);
-  // } else {
-  //   MOZ_ASSERT(builtins::NativeStreamSource::is_instance(ready_obj));
-  //   ok = process_body_read(cx, ready_obj,
-  //   host_api::HttpBody{ready_handle});
+  } else {
+    ok = process_body_read(cx, ready_obj);
   }
 
   pending_async_tasks->erase(const_cast<JSObject **>(ready_obj.address()));

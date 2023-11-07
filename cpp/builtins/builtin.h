@@ -70,27 +70,6 @@ const JSErrorFormatString *GetErrorMessage(void *userRef, unsigned errorNumber);
   printf(__VA_ARGS__);                                                         \
   fflush(stdout);
 
-#define MULTI_VALUE_HOSTCALL(op, accum)                                        \
-  uint32_t cursor = 0;                                                         \
-  int64_t ending_cursor = 0;                                                   \
-  size_t nwritten;                                                             \
-                                                                               \
-  while (true) {                                                               \
-    op                                                                         \
-                                                                               \
-        if (nwritten == 0) {                                                   \
-      break;                                                                   \
-    }                                                                          \
-                                                                               \
-    accum                                                                      \
-                                                                               \
-        if (ending_cursor < 0) {                                               \
-      break;                                                                   \
-    }                                                                          \
-                                                                               \
-    cursor = (uint32_t)ending_cursor;                                          \
-  }
-
 // Define this to make most methods print their name to stderr when invoked.
 // #define TRACE_METHOD_CALLS
 

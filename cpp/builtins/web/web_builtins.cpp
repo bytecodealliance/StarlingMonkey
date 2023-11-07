@@ -6,7 +6,7 @@
 #include "fetch/fetch-api.h"
 #include "performance.h"
 #include "queue-microtask.h"
-// #include "streams/streams.h"
+#include "streams/streams.h"
 #include "text-codec/text-codec.h"
 #include "timers.h"
 #include "url.h"
@@ -49,7 +49,7 @@ bool builtins::web::install(core::Engine *engine) {
          fetch::install(engine) &&
          performance::install(engine) &&
          queue_microtask::install(engine) &&
-        //  streams::install(engine) &&
+         streams::install(engine) &&
          timers::install(engine) &&
          text_codec::install(engine) &&
          url::install(engine) &&

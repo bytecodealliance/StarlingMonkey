@@ -12,6 +12,7 @@
 #include "encode.h"
 #include "engine.h"
 #include "event_loop.h"
+#include "fetch_event.h"
 #include "host_api.h"
 #include "../url.h"
 #include "picosha2.h"
@@ -876,9 +877,10 @@ bool RequestOrResponse::body_reader_then_handler(JSContext *cx, JS::HandleObject
     // `FetchEvent#respondWith` to send to the client. As such, we can be
     // certain that if we have a response here, we can advance the FetchState to
     // `responseDone`.
-    // if (Response::is_instance(body_owner)) {
-    //   FetchEvent::set_state(FetchEvent::instance(), FetchEvent::State::responseDone);
-    // }
+    // TODO(TS): factor this out to remove dependency on fetch-event.h
+    if (Response::is_instance(body_owner)) {
+      fetch_event::FetchEvent::set_state(fetch_event::FetchEvent::instance(), fetch_event::FetchEvent::State::responseDone);
+    }
 
     auto res = body->close();
     if (auto *err = res.to_err()) {
@@ -987,6 +989,7 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
   // If the body stream is backed by a C@E body handle, we can directly pipe
   // that handle into the body we're about to send.
   if (streams::NativeStreamSource::stream_is_body(cx, stream)) {
+    // TODO(TS): re-implement stream forwarding.
     // First, move the source's body handle to the target and lock the stream.
     JS::RootedObject stream_source(
         cx, streams::NativeStreamSource::get_stream_source(cx, stream));
@@ -2800,6 +2803,13 @@ bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     if (!RequestOrResponse::extract_body(cx, response, body_val)) {
       return false;
     }
+    if (RequestOrResponse::has_body(response)) {
+      if (response_handle->body().is_err()) {
+        auto err = response_handle->body().to_err();
+        HANDLE_ERROR(cx, *err);
+        return false;
+      }
+    }
   }
 
   args.rval().setObject(*response);
@@ -2818,11 +2828,7 @@ bool Response::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 JSObject *Response::create(JSContext *cx, JS::HandleObject response,
-                           host_api::HttpResponse* response_handle
-#ifdef CAE
-                          , bool is_grip_upgrade, JS::UniqueChars backend
-#endif
-) {
+                           host_api::HttpResponse* response_handle) {
   MOZ_ASSERT(cx);
   MOZ_ASSERT(is_instance(response));
   MOZ_ASSERT(response_handle);
@@ -2845,12 +2851,6 @@ JSObject *Response::create(JSContext *cx, JS::HandleObject response,
     }
   }
 
-#ifdef CAE
-  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::IsGripUpgrade),
-                      JS::BooleanValue(is_grip));
-  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::GripBackend),
-                      JS::PrivateValue(std::move(backend.release())));
-#endif
   return response;
 }
 
