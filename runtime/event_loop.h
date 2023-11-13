@@ -2,6 +2,7 @@
 #define JS_COMPUTE_RUNTIME_EVENT_LOOP_H
 
 #include "bindings.h"
+#include "engine.h"
 
 // TODO: remove these once the warnings are fixed
 #pragma clang diagnostic push
@@ -35,15 +36,16 @@ public:
   static bool queue_async_task(JS::HandleObject task);
 
   /**
-   * Register a timer.
+   * Set a task to run after the specified timeout has elapsed.
+   *
+   * If a timeout task had already been set, it will be replaced.
    */
-  static uint32_t add_timer(JS::HandleObject callback, uint32_t delay,
-                            JS::HandleValueVector arguments, bool repeat);
+  static void set_timeout_task(AsyncTask *task, int64_t timeout);
 
   /**
-   * Remove an active timer
+   * Remove the currently set async task, if any.
    */
-  static void remove_timer(uint32_t id);
+  static void remove_timeout_task();
 };
 
 } // namespace core

@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <type_traits>
 
 #include "host_api.h"
 
@@ -49,19 +48,18 @@ static_assert(sizeof(FutureHttpIncomingResponse::Handle) == sizeof(own_pending_r
 // static_assert(sizeof(HttpIncomingResponse::Handle) == sizeof(own_response_t));
 
 Result<std::optional<uint32_t>> AsyncHandle::select(std::vector<AsyncHandle> &handles,
-                                                    uint32_t timeout_ms) {
+                                                    int64_t timeout_ns) {
   Result<std::optional<uint32_t>> res;
 
   static_assert(sizeof(AsyncHandle) == sizeof(bindings_borrow_pollable_t));
 
   auto count = handles.size();
-  if (timeout_ms > 0) {
+  if (timeout_ns > 0) {
     // WASI clock resolution is in us.
-    auto timeout = timeout_ms * 1000;
     auto timer = wasi_clocks_0_2_0_rc_2023_10_18_monotonic_clock_subscribe(
-        timeout, false);
+        timeout_ns, false);
     count++;
-    handles.push_back(AsyncHandle(timer));
+    handles.emplace_back(timer);
   }
   auto handles_ptr =
       reinterpret_cast<bindings_borrow_pollable_t *>(handles.data());
@@ -70,7 +68,7 @@ Result<std::optional<uint32_t>> AsyncHandle::select(std::vector<AsyncHandle> &ha
   bindings_list_u32_t result = {.ptr = nullptr,.len = 0};
   wasi_io_0_2_0_rc_2023_10_18_poll_poll_list(&list, &result);
   MOZ_ASSERT(result.len > 0);
-  if (timeout_ms > 0 && result.ptr[0] == count - 1) {
+  if (timeout_ns > 0 && result.ptr[0] == count - 1) {
     res.emplace(std::nullopt);
   } else {
     // TODO: remember all handles that are ready instead of just the first one.
@@ -84,11 +82,11 @@ Result<std::optional<uint32_t>> AsyncHandle::select(std::vector<AsyncHandle> &ha
 Result<HostBytes> Random::get_bytes(size_t num_bytes) {
   Result<HostBytes> res;
 
-  bindings_list_u8_t* list = nullptr;
-  wasi_random_0_2_0_rc_2023_10_18_random_get_random_bytes(num_bytes, list);
+  bindings_list_u8_t list{};
+  wasi_random_0_2_0_rc_2023_10_18_random_get_random_bytes(num_bytes, &list);
   auto ret = HostBytes {
-      std::unique_ptr<uint8_t[]>{list->ptr},
-      list->len,
+      std::unique_ptr<uint8_t[]>{list.ptr},
+      list.len,
   };
   res.emplace(std::move(ret));
 
@@ -96,11 +94,7 @@ Result<HostBytes> Random::get_bytes(size_t num_bytes) {
 }
 
 Result<uint32_t> Random::get_u32() {
-  Result<uint32_t> res;
-
-  res.emplace(wasi_random_0_2_0_rc_2023_10_18_random_get_random_u64());
-
-  return res;
+  return Result<uint32_t>::ok(wasi_random_0_2_0_rc_2023_10_18_random_get_random_u64());
 }
 
 using std::optional;
@@ -116,8 +110,7 @@ HttpHeaders::HttpHeaders() {
   this->handle = wasi_http_0_2_0_rc_2023_10_18_types_constructor_fields(&entries);
 }
 
-HttpHeaders::HttpHeaders(
-    vector<tuple<HostString, vector<HostString>>> entries) {
+HttpHeaders::HttpHeaders(const vector<tuple<HostString, vector<HostString>>>& entries) {
 }
 
 HttpHeaders::HttpHeaders(const HttpHeaders &headers) {
@@ -135,7 +128,7 @@ Result<vector<tuple<HostString, HostString>>> HttpHeaders::entries() const {
   for (int i = 0; i < entries.len; i++) {
     auto key = entries.ptr[i].f0;
     auto value = entries.ptr[i].f1;
-    entries_vec.emplace_back(tuple(HostString(key), HostString(value)));
+    entries_vec.emplace_back(HostString(key), HostString(value));
   }
   // Free the outer list, but not the entries themselves.
   free(entries.ptr);
@@ -154,7 +147,7 @@ Result<vector<HostString>> HttpHeaders::names() const {
 
   vector<HostString> names;
   for (int i = 0; i < entries.len; i++) {
-    names.emplace_back(HostString(entries.ptr[i].f0));
+    names.emplace_back(entries.ptr[i].f0);
   }
   // Free the outer list, but not the entries themselves.
   free(entries.ptr);
@@ -176,7 +169,7 @@ Result<optional<vector<HostString>>> HttpHeaders::get(string_view name) const {
     std::vector<HostString> names;
     for (int i = 0; i < values.len; i++) {
       auto value = values.ptr[i];
-      names.emplace_back(HostString(value));
+      names.emplace_back(value);
     }
     // Free the outer list, but not the values themselves.
     free(values.ptr);
@@ -200,7 +193,7 @@ Result<Void> HttpHeaders::set(string_view name, string_view value) {
   wasi_http_0_2_0_rc_2023_10_18_types_method_fields_set(borrow, &hdr, &host_values);
   free(host_values.ptr);
 
-  return Result<Void>();
+  return {};
 }
 
 Result<Void> HttpHeaders::append(string_view name, string_view value) {
@@ -212,7 +205,7 @@ Result<Void> HttpHeaders::append(string_view name, string_view value) {
   auto fieldval = bindings_list_u8_t{bytes.ptr, bytes.len};
   wasi_http_0_2_0_rc_2023_10_18_types_method_fields_append(borrow, &hdr, &fieldval);
 
-  return Result<Void>();
+  return {};
 }
 
 Result<Void> HttpHeaders::remove(string_view name) {
@@ -222,10 +215,10 @@ Result<Void> HttpHeaders::remove(string_view name) {
   auto borrow = wasi_http_0_2_0_rc_2023_10_18_types_borrow_fields(handle);
   wasi_http_0_2_0_rc_2023_10_18_types_method_fields_delete(borrow, &hdr);
 
-  return Result<Void>();
+  return {};
 }
 
-const optional<string_view> HttpRequestResponseBase::url() {
+optional<string_view> HttpRequestResponseBase::url() {
   ensure_url();
   if (_url) {
     return string_view(*_url);
@@ -346,16 +339,9 @@ Result<bindings_borrow_input_stream_t> HttpIncomingBody::ensure_stream() {
 }
 
 Result<Void> HttpOutgoingBody::append(HttpIncomingBody *other) {
+  MOZ_ASSERT_UNREACHABLE("Not implemented");
   MOZ_ASSERT(valid());
   Result<Void> res;
-
-  // fastly_compute_at_edge_types_error_t err;
-  // if (!fastly_compute_at_edge_http_body_append(this->handle, other.handle,
-  // &err)) {
-  //   res.emplace_err(err);
-  // } else {
-  //   res.emplace();
-  // }
 
   return res;
 }
@@ -364,6 +350,7 @@ Result<Void> HttpOutgoingBody::close() {
   MOZ_ASSERT(valid());
   MOZ_ASSERT(!closed());
 
+  wasi_io_0_2_0_rc_2023_10_18_streams_output_stream_drop_own(stream);
   wasi_http_0_2_0_rc_2023_10_18_types_static_outgoing_body_finish(handle, nullptr);
   handle = invalid;
   stream = invalid_stream;

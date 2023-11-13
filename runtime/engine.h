@@ -1,7 +1,6 @@
-#ifndef WINTER_RT_CORE_ENGINE_H
-#define WINTER_RT_CORE_ENGINE_H
+#ifndef JS_RT_CORE_ENGINE_H
+#define JS_RT_CORE_ENGINE_H
 
-#include "bindings.h"
 // TODO: remove these once the warnings are fixed
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
@@ -22,30 +21,42 @@ using JS::PersistentRooted;
 using JS::PersistentRootedVector;
 
 namespace core {
+
+class AsyncTask;
+
 class Engine {
 public:
   Engine();
   JSContext *cx();
   HandleObject global();
-  void abort(const char* reason);
   bool eval(char *code, size_t len, const char* filename, MutableHandleValue result);
   bool run_event_loop(MutableHandleValue result);
-  bool dump_value(JS::Value val, FILE *fp = stdout);
-  void dump_pending_exception(const char* description = "");
+
+  bool has_pending_async_tasks();
+  void enqueue_async_task(AsyncTask *task);
+  void set_timeout_task(AsyncTask *task, int64_t timeout);
+  void remove_timeout_task();
+
+  void abort(const char* reason);
 
   bool debug_logging_enabled();
-  bool has_pending_async_tasks();
+
+  bool dump_value(JS::Value val, FILE *fp = stdout);
+  void dump_pending_exception(const char* description = "");
+  void dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp);
 
 private:
   double total_compute;
 };
+
+class AsyncTask {
+public:
+  virtual ~AsyncTask() = default;
+
+  virtual void enqueue() = 0;
+  virtual bool run() = 0;
+};
+
 } // namespace core
-
-bool dump_value(JSContext* cx, JS::Value val, FILE *fp);
-
-void dump_promise_rejection(JSContext *cx, JS::HandleValue reason,
-                            JS::HandleObject promise, FILE *fp);
-bool print_stack(JSContext *cx, FILE *fp);
-bool print_stack(JSContext *cx, JS::HandleObject stack, FILE *fp);
 
 #endif

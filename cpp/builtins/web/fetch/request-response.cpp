@@ -35,6 +35,8 @@ namespace builtins {
 namespace web {
 namespace fetch {
 
+static core::Engine *ENGINE;
+
 namespace {
 constexpr size_t HANDLE_READ_CHUNK_SIZE = 8192;
 
@@ -43,8 +45,7 @@ constexpr size_t HANDLE_READ_CHUNK_SIZE = 8192;
 bool normalize_http_method(char *method) {
   static const char *names[6] = {"DELETE", "GET", "HEAD", "OPTIONS", "POST", "PUT"};
 
-  for (size_t i = 0; i < 6; i++) {
-    auto name = names[i];
+  for (const auto name : names) {
     if (strcasecmp(method, name) == 0) {
       if (strcmp(method, name) == 0) {
         return false;
@@ -61,7 +62,7 @@ bool normalize_http_method(char *method) {
 }
 
 struct ReadResult {
-  JS::UniqueChars buffer;
+  UniqueChars buffer;
   size_t length;
 };
 
@@ -922,7 +923,7 @@ bool RequestOrResponse::body_reader_then_handler(JSContext *cx, JS::HandleObject
     // Uint8Array?
     fprintf(stderr, "Error: read operation on body ReadableStream didn't respond with a "
                     "Uint8Array. Received value: ");
-    dump_value(cx, val, stderr);
+    ENGINE->dump_value(val, stderr);
     return false;
   }
 
@@ -958,7 +959,7 @@ bool RequestOrResponse::body_reader_catch_handler(JSContext *cx, JS::HandleObjec
   // stream errored during the streaming send. Not much we can do, but at least
   // close the stream, and warn.
   fprintf(stderr, "Warning: body ReadableStream closed during body streaming. Exception: ");
-  dump_value(cx, args.get(0), stderr);
+  ENGINE->dump_value(args.get(0), stderr);
 
   // The only response we ever send is the one passed to
   // `FetchEvent#respondWith` to send to the client. As such, we can be certain
@@ -2854,6 +2855,19 @@ JSObject *Response::create(JSContext *cx, JS::HandleObject response,
   return response;
 }
 
+namespace request_response {
+
+bool install(core::Engine *engine) {
+  ENGINE = engine;
+
+  if (!Request::init_class(engine->cx(), engine->global()))
+    return false;
+  if (!Response::init_class(engine->cx(), engine->global()))
+    return false;
+  return true;
+}
+
+} // namespace request_response
 } // namespace fetch
 } // namespace web
 } // namespace builtins

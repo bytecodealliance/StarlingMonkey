@@ -95,13 +95,13 @@ WIZER ?= $(shell which wizer)
 ifeq ($(WIZER),)
 $(error ERROR: "No wizer found in PATH, consider running 'cargo install wizer --features=\"env_logger structopt\"")
 else
-WIZEN = echo $2 | $(WIZER) --allow-wasi --wasm-bulk-memory true --inherit-stdio true --dir $(ROOT) -o $1 -- $3
+WIZEN = echo $2 | WASMTIME_BACKTRACE_DETAILS=1 $(WIZER) --allow-wasi --wasm-bulk-memory true --inherit-stdio true --dir $(ROOT) -o $1 -- $3
 endif
 
 # The base build directory, where all our build artifacts go.
 BUILD := $(ROOT)/build
 
-# The output directory for the current build mode (relase/debug).
+# The output directory for the current build mode (release/debug).
 OBJ_DIR := $(BUILD)/$(MODE)
 
 # The path to the //runtime/spidermonkey/$(MODE) directory.

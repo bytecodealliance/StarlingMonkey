@@ -6,8 +6,10 @@
 namespace builtins {
 namespace web {
 namespace fetch {
+
 bool install(core::Engine* engine);
-}
+
+} // namespace fetch
 } // namespace web
 } // namespace builtins
 

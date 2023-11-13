@@ -246,7 +246,7 @@ public:
   /// If the timeout is non-zero, two behaviors are possible
   ///   * no handle becomes ready within timeout, and the successful `std::nullopt` is returned
   ///   * a handle becomes ready within the timeout, and its index is returned.
-  static Result<optional<uint32_t>> select(vector<AsyncHandle> &handles, uint32_t timeout_ms);
+  static Result<optional<uint32_t>> select(vector<AsyncHandle> &handles, int64_t timeout_ns);
 };
 
 /// A convenience wrapper for the host calls involving incoming http bodies.
@@ -348,6 +348,20 @@ public:
   AsyncHandle async_handle();
 };
 
+class HttpBodyPipe {
+private:
+  HttpIncomingBody* incoming;
+  HttpOutgoingBody* outgoing;
+
+public:
+  HttpBodyPipe(HttpIncomingBody *incoming, HttpOutgoingBody * outgoing)
+      : incoming(incoming), outgoing(outgoing) {}
+
+  Result<uint8_t> pump();
+  bool ready();
+  bool done();
+};
+
 class HttpIncomingResponse;
 class FutureHttpIncomingResponse final {
 public:
@@ -385,7 +399,7 @@ private:
 public:
   HttpHeaders();
   HttpHeaders(Handle handle) : handle(handle) {}
-  HttpHeaders(vector<tuple<HostString, vector<HostString>>> entries);
+  HttpHeaders(const vector<tuple<HostString, vector<HostString>>>& entries);
   HttpHeaders(const HttpHeaders &headers);
 
   bool valid() const { return this->handle.__handle != invalid.__handle; }
@@ -411,7 +425,8 @@ protected:
 
  public:
   virtual HttpHeaders *headers() = 0;
-  const optional<string_view> url();
+
+  optional<string_view> url();
 
   virtual bool is_incoming() = 0;
   virtual bool is_request() = 0;

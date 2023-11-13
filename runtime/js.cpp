@@ -1,10 +1,16 @@
-#include "bindings.h"
-#include "stdio.h"
-#include <cassert>
 #include <chrono>
+#include <cstdio>
 #include <cstdlib>
-#include <iostream>
 #include <fstream>
+#include <iostream>
+
+#include "bindings.h"
+#include "engine.h"
+#include "event_loop.h"
+#include "host_api.h"
+#include "wizer.h"
+#include "builtins/web/web_builtins.h"
+#include "builtins/web/fetch/fetch_event.h"
 #ifdef MEM_STATS
 #include <string>
 #endif
@@ -15,26 +21,24 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
-#include "js/CompilationAndEvaluation.h"
-#include "js/ContextOptions.h"
-#include "js/Initialization.h"
 #include "js/SourceText.h"
-#include "jsapi.h"
 
 #pragma clang diagnostic pop
-
-#include "builtins/web/web_builtins.h"
-#include "builtins/web/fetch/fetch_event.h"
-#include "engine.h"
-#include "event_loop.h"
-#include "host_api.h"
-#include "wizer.h"
 
 bool WIZENED = false;
 
 extern "C" void __wasm_call_ctors();
 
 core::Engine *engine;
+
+#ifdef DEBUG
+static bool trap(JSContext *cx, unsigned argc, JS::Value *vp) {
+  JS::CallArgs args = CallArgsFromVp(argc, vp);
+  engine->dump_value(args.get(0));
+  MOZ_ASSERT(false, "trap function called");
+  return false;
+}
+#endif
 
 bool initialize(char *script_src, size_t len, const char* filename) {
   core::Engine engine = core::Engine();
@@ -46,6 +50,12 @@ bool initialize(char *script_src, size_t len, const char* filename) {
   if (!builtins::web::fetch_event::install(&engine)) {
     return false;
   }
+
+#ifdef DEBUG
+  if (!JS_DefineFunction(engine.cx(), engine.global(), "trap", trap, 1, 0)) {
+    return false;
+  }
+#endif
 
   js::ResetMathRandomSeed(engine.cx());
 
@@ -93,8 +103,8 @@ bool exports_wasi_cli_0_2_0_rc_2023_10_18_run_run(void) {
 
   auto args = bindings_list_string_t{};
   wasi_cli_0_2_0_rc_2023_10_18_environment_get_arguments(&args);
-  auto namebuf = args.ptr[1];
-  std::string filename(reinterpret_cast<const char *>(namebuf.ptr), namebuf.len);
+  auto [ptr, len] = args.ptr[1];
+  std::string filename(reinterpret_cast<const char *>(ptr), len);
 
   if (!initialize(filename)) {
     return false;

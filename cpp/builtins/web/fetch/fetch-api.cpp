@@ -6,6 +6,9 @@
 namespace builtins {
 namespace web {
 namespace fetch {
+
+static core::Engine* ENGINE;
+
 // TODO: throw in all Request methods/getters that rely on host calls once a
 // request has been sent. The host won't let us act on them anymore anyway.
 /**
@@ -15,7 +18,7 @@ namespace fetch {
 bool fetch(JSContext *cx, unsigned argc, Value *vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  // REQUEST_HANDLER_ONLY("fetch")
+  REQUEST_HANDLER_ONLY("fetch")
 
   if (!args.requireAtLeast(cx, "fetch", 1)) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
@@ -133,12 +136,13 @@ const JSFunctionSpec methods[] = {JS_FN("fetch", fetch, 2, JSPROP_ENUMERATE),
                                   JS_FS_END};
 
 bool install(core::Engine* engine) {
+  ENGINE = engine;
+
   if (!JS_DefineFunctions(engine->cx(), engine->global(), methods))
     return false;
-  if (!Request::init_class(engine->cx(), engine->global()))
+  if (!request_response::install(engine)) {
     return false;
-  if (!Response::init_class(engine->cx(), engine->global()))
-    return false;
+  }
   if (!Headers::init_class(engine->cx(), engine->global()))
     return false;
   return true;

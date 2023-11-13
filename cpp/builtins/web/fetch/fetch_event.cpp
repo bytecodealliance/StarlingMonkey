@@ -244,7 +244,7 @@ bool response_promise_catch_handler(JSContext *cx, JS::HandleObject event,
   JS::RootedObject promise(cx, &promise_val.toObject());
 
   fprintf(stderr, "Error while running request handler: ");
-  dump_promise_rejection(cx, args.get(0), promise, stderr);
+  ENGINE->dump_promise_rejection(args.get(0), promise, stderr);
 
   // TODO: verify that this is the right behavior.
   // Steps 9.1-2
@@ -559,7 +559,6 @@ void exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_handle(
     bindings_own_response_outparam_t response_out) {
   RESPONSE_OUT = &response_out;
 
-
   auto request = new host_api::HttpIncomingRequest(request_handle);
   HandleObject fetch_event = FetchEvent::instance();
   MOZ_ASSERT(FetchEvent::is_instance(fetch_event));
@@ -590,13 +589,12 @@ void exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_handle(
                     "lifetime if needed.\n");
   }
 
-  auto state = FetchEvent::state(fetch_event);
-  if (state == FetchEvent::State::unhandled || state == FetchEvent::State::waitToRespond) {
+  if (!FetchEvent::response_started(fetch_event)) {
     FetchEvent::respondWithError(ENGINE->cx(), fetch_event);
     return;
   }
 
-  if (state == FetchEvent::State::responseStreaming) {
+  if (FetchEvent::state(fetch_event) == FetchEvent::State::responseStreaming) {
     MOZ_ASSERT(STREAMING_BODY);
     STREAMING_BODY->close();
     // TODO(TS): ensure the response body is closed.

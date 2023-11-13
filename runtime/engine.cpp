@@ -328,14 +328,6 @@ static void abort(JSContext *cx, const char *description) {
     report_unhandled_promise_rejections(cx);
   }
 
-  // TODO: move this into the fetch implementation
-  // Respond with status `500` if no response was ever sent.
-  //   HandleObject fetch_event = builtins::FetchEvent::instance();
-  //   if (hasWizeningFinished() &&
-  //       !builtins::FetchEvent::response_started(fetch_event)) {
-  //     builtins::FetchEvent::respondWithError(cx, fetch_event);
-  //   }
-
   fflush(stderr);
   exit(1);
 }
@@ -507,8 +499,21 @@ void core::Engine::dump_pending_exception(const char* description) {
   DumpPendingException(CONTEXT, description);
 }
 
+void core::Engine::dump_promise_rejection(HandleValue reason,
+                                          HandleObject promise, FILE *fp) {
+  ::dump_promise_rejection(CONTEXT, reason, promise, fp);
+}
+
 bool core::Engine::debug_logging_enabled() { return ::debug_logging_enabled(); }
 
 bool core::Engine::has_pending_async_tasks() {
   return EventLoop::has_pending_async_tasks();
+}
+
+void core::Engine::set_timeout_task(AsyncTask *task, int64_t timeout) {
+  EventLoop::set_timeout_task(task, timeout);
+}
+
+void core::Engine::remove_timeout_task() {
+  EventLoop::remove_timeout_task();
 }

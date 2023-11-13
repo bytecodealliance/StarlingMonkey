@@ -8,6 +8,12 @@ namespace builtins {
 namespace web {
 namespace fetch {
 
+namespace request_response {
+
+bool install(core::Engine *engine);
+
+}
+
 class RequestOrResponse final {
 
 public:
