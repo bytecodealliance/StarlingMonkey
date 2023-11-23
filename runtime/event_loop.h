@@ -26,26 +26,25 @@ public:
   static bool has_pending_async_tasks();
 
   /**
-   * Process any outstanding requests.
+   * Run the event loop until all async tasks have completed.
+   *
+   * Concretely, that means running a loop, whose body does two things:
+   * 1. Run all micro-tasks, i.e. pending Promise reactions
+   * 2. Run the next ready async task
+   *
+   * The loop terminates once both of these steps are null-ops.
    */
-  static bool process_pending_async_tasks(JSContext *cx);
+  static bool run_event_loop(Engine* engine, double total_compute, MutableHandleValue result);
 
   /**
    * Queue a new async task.
    */
-  static bool queue_async_task(JS::HandleObject task);
+  static void queue_async_task(AsyncTask* task);
 
   /**
-   * Set a task to run after the specified timeout has elapsed.
-   *
-   * If a timeout task had already been set, it will be replaced.
+   * Remove a queued async task.
    */
-  static void set_timeout_task(AsyncTask *task, int64_t timeout);
-
-  /**
-   * Remove the currently set async task, if any.
-   */
-  static void remove_timeout_task();
+  static bool cancel_async_task(Engine* engine, int32_t id);
 };
 
 } // namespace core

@@ -5,6 +5,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
+
 #include "jsapi.h"
 #pragma clang diagnostic pop
 
@@ -33,9 +34,8 @@ public:
   bool run_event_loop(MutableHandleValue result);
 
   bool has_pending_async_tasks();
-  void enqueue_async_task(AsyncTask *task);
-  void set_timeout_task(AsyncTask *task, int64_t timeout);
-  void remove_timeout_task();
+  void queue_async_task(AsyncTask *task);
+  bool cancel_async_task(int32_t id);
 
   void abort(const char* reason);
 
@@ -50,11 +50,30 @@ private:
 };
 
 class AsyncTask {
+protected:
+  int32_t handle_id_ = -1;
+
 public:
   virtual ~AsyncTask() = default;
 
-  virtual void enqueue() = 0;
-  virtual bool run() = 0;
+  virtual bool run(Engine* engine) = 0;
+  virtual bool cancel(Engine* engine) = 0;
+  virtual bool ready() = 0;
+
+  [[nodiscard]] int32_t id() const {
+    MOZ_ASSERT(handle_id_ > -1, "AsyncTask handle_id not initialized in subclass");
+    return handle_id_;
+  }
+
+  virtual void trace(JSTracer *trc) = 0;
+
+  /// Returns the first ready `AsyncTask`.
+  ///
+  /// TODO: as an optimization, return a vector containing the ready head of the queue.
+  /// Note that that works iff the very first entry in the queue is ready, and then only
+  /// for the dense head of the queue, without gaps. This is because during processing
+  /// of the ready tasks, other tasks might become ready that should be processed first.
+  static size_t select(std::vector<AsyncTask*>* handles);
 };
 
 } // namespace core

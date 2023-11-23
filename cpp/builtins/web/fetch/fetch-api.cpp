@@ -3,11 +3,73 @@
 #include "headers.h"
 #include "request-response.h"
 
-namespace builtins {
-namespace web {
-namespace fetch {
+namespace builtins::web::fetch {
 
 static core::Engine* ENGINE;
+
+class ResponseFutureTask final : public core::AsyncTask {
+  Heap<JSObject *> request_;
+  host_api::FutureHttpIncomingResponse* pending_handle_;
+
+public:
+  explicit ResponseFutureTask(const HandleObject request, host_api::FutureHttpIncomingResponse* pending_handle)
+    : request_(request), pending_handle_(pending_handle) {
+    handle_id_ = pending_handle->async_handle().handle.__handle;
+  }
+
+  [[nodiscard]] bool run(core::Engine* engine) override {
+    // MOZ_ASSERT(ready());
+    JSContext* cx = engine->cx();
+
+    const RootedObject request(cx, request_);
+    RootedObject response_promise(cx, Request::response_promise(request));
+
+
+    auto res = pending_handle_->poll();
+    if (res.is_err()) {
+      JS_ReportErrorUTF8(cx, "NetworkError when attempting to fetch resource.");
+      return RejectPromiseWithPendingError(cx, response_promise);
+    }
+
+    auto maybe_response = res.unwrap();
+    MOZ_ASSERT(maybe_response.has_value());
+    auto response = maybe_response.value();
+    RootedObject response_obj(cx, JS_NewObjectWithGivenProto(cx, &Response::class_,
+                                                                  Response::proto_obj));
+    if (!response_obj) {
+      return false;
+    }
+
+    response_obj = Response::create(cx, response_obj, response);
+    if (!response_obj) {
+      return false;
+    }
+
+    RequestOrResponse::set_url(
+        response_obj, RequestOrResponse::url(request));
+    RootedValue response_val(cx, ObjectValue(*response_obj));
+    if (!ResolvePromise(cx, response_promise, response_val)) {
+      return false;
+    }
+
+    return cancel(engine);
+  }
+
+  [[nodiscard]] bool cancel(core::Engine* engine) override {
+    // TODO(TS): implement
+    handle_id_ = -1;
+    return true;
+  }
+
+  bool ready() override {
+    // TODO(TS): implement
+    return true;
+  }
+
+  void trace(JSTracer *trc) override {
+    TraceEdge(trc, &request_, "Request for response future");
+  }
+};
 
 // TODO: throw in all Request methods/getters that rely on host calls once a
 // request has been sent. The host won't let us act on them anymore anyway.
@@ -117,13 +179,9 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
   // If the request body is streamed, we need to wait for streaming to complete
   // before marking the request as pending.
   if (!streaming) {
-    if (!core::EventLoop::queue_async_task(request))
-      return ReturnPromiseRejectedWithPendingError(cx, args);
+    ENGINE->queue_async_task(new ResponseFutureTask(request, pending_handle));
   }
 
-  JS::SetReservedSlot(
-      request, static_cast<uint32_t>(Request::Slots::PendingRequest),
-      JS::PrivateValue(pending_handle));
   JS::SetReservedSlot(
       request, static_cast<uint32_t>(Request::Slots::ResponsePromise),
       JS::ObjectValue(*response_promise));
@@ -148,6 +206,4 @@ bool install(core::Engine* engine) {
   return true;
 }
 
-} // namespace fetch
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::fetch

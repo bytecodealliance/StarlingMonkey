@@ -31,15 +31,165 @@
 #include "js/experimental/TypedData.h"
 #pragma clang diagnostic pop
 
-namespace builtins {
-namespace web {
-namespace fetch {
+namespace builtins::web::fetch {
 
 static core::Engine *ENGINE;
 
-namespace {
+bool error_stream_controller_with_pending_exception(JSContext *cx, HandleObject controller) {
+  RootedValue exn(cx);
+  if (!JS_GetPendingException(cx, &exn))
+    return false;
+  JS_ClearPendingException(cx);
+
+  RootedValueArray<1> args(cx);
+  args[0].set(exn);
+  RootedValue r(cx);
+  return JS::Call(cx, controller, "error", args, &r);
+}
+
 constexpr size_t HANDLE_READ_CHUNK_SIZE = 8192;
 
+class BodyFutureTask final : public core::AsyncTask {
+  Heap<JSObject *> body_source_;
+  host_api::HttpIncomingBody* incoming_body_;
+
+public:
+  explicit BodyFutureTask(const HandleObject body_source) : body_source_(body_source) {
+    auto owner = streams::NativeStreamSource::owner(body_source_);
+    incoming_body_ = RequestOrResponse::incoming_body_handle(owner);
+    handle_id_ = incoming_body_->async_handle().handle.__handle;
+  }
+
+  [[nodiscard]] bool run(core::Engine* engine) override {
+    // MOZ_ASSERT(ready());
+    JSContext* cx = engine->cx();
+    RootedObject owner(cx, streams::NativeStreamSource::owner(body_source_));
+    RootedObject controller( cx, streams::NativeStreamSource::controller(body_source_));
+    auto body = RequestOrResponse::incoming_body_handle(owner);
+
+    auto read_res = body->read(HANDLE_READ_CHUNK_SIZE, true);
+    if (auto *err = read_res.to_err()) {
+      HANDLE_ERROR(cx, *err);
+      return error_stream_controller_with_pending_exception(cx, controller);
+    }
+
+    auto &chunk = read_res.unwrap();
+    if (std::get<1>(chunk)) {
+      RootedValue r(cx);
+      return Call(cx, controller, "close", HandleValueArray::empty(), &r);
+    }
+
+    // We don't release control of chunk's data until after we've checked that
+    // the array buffer allocation has been successful, as that ensures that the
+    // return path frees chunk automatically when necessary.
+    auto &bytes = std::get<0>(chunk);
+    RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, bytes.len, bytes.ptr.get()));
+    if (!buffer) {
+      return error_stream_controller_with_pending_exception(cx, controller);
+    }
+
+    // At this point `buffer` has taken full ownership of the chunk's data.
+    std::ignore = bytes.ptr.release();
+
+    RootedObject byte_array(
+        cx, JS_NewUint8ArrayWithBuffer(cx, buffer, 0, bytes.len));
+    if (!byte_array) {
+      return false;
+    }
+
+    RootedValueArray<1> enqueue_args(cx);
+    enqueue_args[0].setObject(*byte_array);
+    RootedValue r(cx);
+    if (!JS::Call(cx, controller, "enqueue", enqueue_args, &r)) {
+      return error_stream_controller_with_pending_exception(cx, controller);
+    }
+
+    return cancel(engine);
+  }
+
+  [[nodiscard]] bool cancel(core::Engine* engine) override {
+    // TODO(TS): implement
+    handle_id_ = -1;
+    return true;
+  }
+
+  bool ready() override {
+    // TODO(TS): implement
+    return true;
+  }
+
+  void trace(JSTracer *trc) override {
+    TraceEdge(trc, &body_source_, "body source for future");
+  }
+};
+
+class ResponseFutureTask final : public core::AsyncTask {
+  Heap<JSObject *> request_;
+  host_api::FutureHttpIncomingResponse* pending_handle_;
+
+public:
+  explicit ResponseFutureTask(const HandleObject request, host_api::FutureHttpIncomingResponse* pending_handle)
+    : request_(request), pending_handle_(pending_handle) {
+    handle_id_ = pending_handle->async_handle().handle.__handle;
+  }
+
+  ResponseFutureTask(const RootedObject& rooted);
+
+  [[nodiscard]] bool run(core::Engine* engine) override {
+    // MOZ_ASSERT(ready());
+    JSContext* cx = engine->cx();
+
+    const RootedObject request(cx, request_);
+    RootedObject response_promise(cx, Request::response_promise(request));
+
+
+    auto res = pending_handle_->poll();
+    if (res.is_err()) {
+      JS_ReportErrorUTF8(cx, "NetworkError when attempting to fetch resource.");
+      return RejectPromiseWithPendingError(cx, response_promise);
+    }
+
+    auto maybe_response = res.unwrap();
+    MOZ_ASSERT(maybe_response.has_value());
+    auto response = maybe_response.value();
+    RootedObject response_obj(cx, JS_NewObjectWithGivenProto(cx, &Response::class_,
+                                                                  Response::proto_obj));
+    if (!response_obj) {
+      return false;
+    }
+
+    response_obj = Response::create(cx, response_obj, response);
+    if (!response_obj) {
+      return false;
+    }
+
+    RequestOrResponse::set_url(
+        response_obj, RequestOrResponse::url(request));
+    RootedValue response_val(cx, ObjectValue(*response_obj));
+    if (!ResolvePromise(cx, response_promise, response_val)) {
+      return false;
+    }
+
+    return cancel(engine);
+  }
+
+  [[nodiscard]] bool cancel(core::Engine* engine) override {
+    // TODO(TS): implement
+    handle_id_ = -1;
+    return true;
+  }
+
+  bool ready() override {
+    // TODO(TS): implement
+    return true;
+  }
+
+  void trace(JSTracer *trc) override {
+    TraceEdge(trc, &request_, "Request for response future");
+  }
+};
+
+namespace {
 // https://fetch.spec.whatwg.org/#concept-method-normalize
 // Returns `true` if the method name was normalized, `false` otherwise.
 bool normalize_http_method(char *method) {
@@ -799,10 +949,10 @@ bool RequestOrResponse::bodyAll(JSContext *cx, JS::CallArgs args, JS::HandleObje
   return true;
 }
 
-bool RequestOrResponse::body_source_pull_algorithm(JSContext *cx, JS::CallArgs args,
-                                                   JS::HandleObject source,
-                                                   JS::HandleObject body_owner,
-                                                   JS::HandleObject controller) {
+bool RequestOrResponse::body_source_pull_algorithm(JSContext *cx, CallArgs args,
+                                                   HandleObject source,
+                                                   HandleObject body_owner,
+                                                   HandleObject controller) {
   // If the stream has been piped to a TransformStream whose readable end was
   // then passed to a Request or Response as the body, we can just append the
   // entire source body to the destination using a single native hostcall, and
@@ -812,18 +962,18 @@ bool RequestOrResponse::body_source_pull_algorithm(JSContext *cx, JS::CallArgs a
   // order: ReadableStream#pipeTo locks the destination WritableStream until the
   // source ReadableStream is closed/canceled, so only one stream can ever be
   // piped in at the same time.
-  JS::RootedObject pipe_dest(
+  RootedObject pipe_dest(
       cx, streams::NativeStreamSource::piped_to_transform_stream(source));
   if (pipe_dest) {
     if (streams::TransformStream::readable_used_as_body(pipe_dest)) {
-      JS::RootedObject dest_owner(cx,
-                                  streams::TransformStream::owner(pipe_dest));
-      if (!RequestOrResponse::append_body(cx, dest_owner, body_owner)) {
+      RootedObject dest_owner(cx,
+                              streams::TransformStream::owner(pipe_dest));
+      if (!append_body(cx, dest_owner, body_owner)) {
         return false;
       }
 
-      JS::RootedObject stream(cx, streams::NativeStreamSource::stream(source));
-      bool success = JS::ReadableStreamClose(cx, stream);
+      RootedObject stream(cx, streams::NativeStreamSource::stream(source));
+      bool success = ReadableStreamClose(cx, stream);
       MOZ_RELEASE_ASSERT(success);
 
       args.rval().setUndefined();
@@ -831,18 +981,7 @@ bool RequestOrResponse::body_source_pull_algorithm(JSContext *cx, JS::CallArgs a
     }
   }
 
-  // The actual read from the body needs to be delayed, because it'd otherwise
-  // be a blocking operation in case the backend didn't yet send any data.
-  // That would lead to situations where we block on I/O before processing
-  // all pending Promises, which in turn can result in operations happening in
-  // observably different behavior, up to and including causing deadlocks
-  // because a body read response is blocked on content making another request.
-  //
-  // (This deadlock happens in automated tests, but admittedly might not happen
-  // in real usage.)
-
-  if (!core::EventLoop::queue_async_task(source))
-    return false;
+  ENGINE->queue_async_task(new BodyFutureTask(source));
 
   args.rval().setUndefined();
   return true;
@@ -852,6 +991,7 @@ bool RequestOrResponse::body_source_cancel_algorithm(JSContext *cx, JS::CallArgs
                                                      JS::HandleObject stream,
                                                      JS::HandleObject owner,
                                                      JS::HandleValue reason) {
+  // TODO: implement or add a comment explaining why no implementation is required.
   args.rval().setUndefined();
   return true;
 }
@@ -863,7 +1003,7 @@ bool RequestOrResponse::body_reader_then_handler(JSContext *cx, JS::HandleObject
   // So we get that first, then the reader.
   JS::RootedObject catch_handler(cx, &extra.toObject());
   JS::RootedObject reader(cx, &js::GetFunctionNativeReserved(catch_handler, 1).toObject());
-  auto body = RequestOrResponse::outgoing_body_handle(body_owner);
+  auto body = outgoing_body_handle(body_owner);
 
   // We're guaranteed to work with a native ReadableStreamDefaultReader here,
   // which in turn is guaranteed to vend {done: bool, value: any} objects to
@@ -890,9 +1030,7 @@ bool RequestOrResponse::body_reader_then_handler(JSContext *cx, JS::HandleObject
     }
 
     if (Request::is_instance(body_owner)) {
-      if (!core::EventLoop::queue_async_task(body_owner)) {
-        return false;
-      }
+      ENGINE->queue_async_task(new BodyFutureTask(body_owner));
     }
 
     return true;
@@ -1109,12 +1247,6 @@ host_api::HttpOutgoingRequest* Request::outgoing_handle(JSObject *obj) {
 host_api::HttpIncomingRequest* Request::incoming_handle(JSObject *obj) {
   auto base = RequestOrResponse::handle(obj);
   return reinterpret_cast<host_api::HttpIncomingRequest*>(base);
-}
-
-host_api::FutureHttpIncomingResponse* Request::pending_handle(JSObject *obj) {
-  JS::Value handle_val =
-      JS::GetReservedSlot(obj, static_cast<uint32_t>(Request::Slots::PendingRequest));
-  return static_cast<host_api::FutureHttpIncomingResponse*>(handle_val.toPrivate());
 }
 
 JSObject *Request::response_promise(JSObject *obj) {
@@ -2868,6 +3000,4 @@ bool install(core::Engine *engine) {
 }
 
 } // namespace request_response
-} // namespace fetch
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::fetch

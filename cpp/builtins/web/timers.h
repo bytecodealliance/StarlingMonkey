@@ -3,12 +3,10 @@
 
 #include "../builtin.h"
 
-namespace builtins {
-namespace web {
-namespace timers {
+namespace builtins::web::timers {
+
 bool install(core::Engine* engine);
+
 }
-} // namespace web
-} // namespace builtins
 
 #endif

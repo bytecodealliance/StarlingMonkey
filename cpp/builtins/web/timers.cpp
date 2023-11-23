@@ -3,221 +3,86 @@
 #include "event_loop.h"
 
 #include <ctime>
+#include <host_api.h>
 #include <iostream>
 #include <list>
 #include <vector>
 
-namespace builtins::web::timers {
-
-using TimerArgumentsVector = std::vector<JS::Heap<JS::Value>>;
-
-class TimersTask final : public core::AsyncTask {
-private:
-  static TimersTask *instance;
-  core::Engine *engine;
-
-  explicit TimersTask(core::Engine* engine) : engine(engine) {}
-
-public:
-  static void init(core::Engine *engine) {
-    MOZ_ASSERT(!instance);
-    instance = new TimersTask(engine);
-  }
-  static TimersTask *get() { return instance; }
-
-  void enqueue() override;
-  bool run() override;
-};
-
-TimersTask *TimersTask::instance = nullptr;
-
-#define NS_TO_MS(ns) ((ns) / 1000000)
 #define S_TO_NS(s) ((s) * 1000000000)
+#define NS_TO_MS(ns) ((ns) / 1000000)
 
-class Timer {
+static core::Engine *ENGINE;
+
+class TimerTask final : public core::AsyncTask {
+  using TimerArgumentsVector = std::vector<JS::Heap<JS::Value>>;
+  int64_t delay_;
+  int64_t deadline_;
+  bool repeat_;
+
+  Heap<JSObject *> callback_;
+  TimerArgumentsVector arguments_;
+
 public:
-  /// Returns the monotonic clock's current time in nanoseconds.
-  static int64_t now() {
-    timespec now{};
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    return S_TO_NS(now.tv_sec) + now.tv_nsec;
-  }
+  explicit TimerTask(const int64_t delay_ns, const bool repeat, HandleObject callback, JS::HandleValueVector args)
+    : delay_(delay_ns), repeat_(repeat), callback_(callback)
+  {
+    deadline_ = host_api::MonotonicClock::now() + delay_ns;
 
-  uint32_t id;
-  JS::Heap<JSObject *> callback;
-  TimerArgumentsVector arguments;
-  int64_t delay;
-  int64_t deadline;
-  bool repeat;
-
-  Timer(const uint32_t id, const HandleObject callback, const int64_t delay,
-        JS::HandleValueVector args, const bool repeat)
-      : id(id), callback(callback), delay(delay), repeat(repeat) {
-    const auto now = Timer::now();
-    deadline = now + delay;
-
-    arguments.reserve(args.length());
+    arguments_.reserve(args.length());
     for (auto &arg : args) {
-      arguments.emplace_back(arg);
+      arguments_.emplace_back(arg);
     }
+
+    handle_id_ = host_api::MonotonicClock::subscribe(deadline_, true);
   }
 
-  void trace(JSTracer *trc) {
-    TraceEdge(trc, &callback, "Timer callback");
-    for (auto &arg : arguments) {
+  [[nodiscard]] bool run(core::Engine* engine) override {
+    MOZ_ASSERT(ready());
+    JSContext* cx = engine->cx();
+
+    const RootedObject callback(cx, callback_);
+    JS::RootedValueVector argv(cx);
+    if (!argv.initCapacity(arguments_.size())) {
+      JS_ReportOutOfMemory(cx);
+      return false;
+    }
+
+    for (auto &arg : arguments_) {
+      argv.infallibleAppend(arg);
+    }
+
+
+    RootedValue rval(cx);
+    if (!Call(cx, NullHandleValue, callback, argv, &rval)) {
+      return false;
+    }
+
+    if (repeat_) {
+      engine->queue_async_task(new TimerTask(delay_, true, callback, argv));
+    }
+
+    return cancel(engine);
+  }
+
+  [[nodiscard]] bool cancel(core::Engine* engine) override {
+    host_api::MonotonicClock::unsubscribe(id());
+    handle_id_ = -1;
+    return true;
+  }
+
+  bool ready() override {
+    return host_api::MonotonicClock::now() >= this->deadline_;
+  }
+
+  void trace(JSTracer *trc) override {
+    TraceEdge(trc, &callback_, "Timer callback");
+    for (auto &arg : arguments_) {
       TraceEdge(trc, &arg, "Timer callback arguments");
     }
   }
 };
 
-class ScheduledTimers {
-private:
-  static PersistentRooted<js::UniquePtr<ScheduledTimers>> instance;
-  static core::Engine* engine;
-
-  std::list<std::unique_ptr<Timer>> timers;
-  int64_t first_deadline = 0;
-
-public:
-  static void init(core::Engine* engine) {
-    instance.init(engine->cx(), js::MakeUnique<ScheduledTimers>());
-    ScheduledTimers::engine = engine;
-  }
-
-private:
-  [[nodiscard]] Timer *first() const {
-    if (std::empty(timers)) {
-      return nullptr;
-    } else {
-      return timers.front().get();
-    }
-  }
-
-  // `repeat_first` must only be called if the `timers` list is not empty
-  // The caller of repeat_first needs to check the `timers` list is not empty
-  void repeat_first() {
-    MOZ_ASSERT(!this->timers.empty());
-    auto timer = std::move(this->timers.front());
-    timers.pop_front();
-    timer->deadline = Timer::now() + timer->delay;
-    add_timer(std::move(timer));
-  }
-
-  void add_timer(std::unique_ptr<Timer> timer) {
-    auto iter = timers.begin();
-
-    for (; iter != timers.end(); iter++) {
-      if ((*iter)->deadline > timer->deadline) {
-        break;
-      }
-    }
-
-    timers.insert(iter, std::move(timer));
-
-    if (first()->deadline != first_deadline) {
-      first_deadline = first()->deadline;
-      engine->set_timeout_task(TimersTask::get(), first_deadline);
-    }
-  }
-
-  void remove_timer(uint32_t id) {
-    auto it = std::find_if(timers.begin(), timers.end(),
-                           [id](auto &timer) { return timer->id == id; });
-    if (it == timers.end()) {
-      return;
-    }
-
-    timers.erase(it);
-
-    if (std::empty(timers)) {
-      MOZ_ASSERT(first_deadline != 0);
-      first_deadline = 0;
-      engine->remove_timeout_task();
-    } else if (first()->deadline != first_deadline) {
-      first_deadline = first()->deadline;
-      engine->set_timeout_task(TimersTask::get(), first_deadline);
-    }
-  }
-
-  bool run_first_timer(JSContext *cx) {
-    RootedValue fun_val(cx);
-    JS::RootedValueVector argv(cx);
-    uint32_t id;
-    {
-      auto *timer = first();
-      MOZ_ASSERT(timer);
-#ifdef DEBUG
-      const auto now = Timer::now();
-      const auto diff = now - NS_TO_MS(timer->deadline);
-#endif
-      MOZ_ASSERT(diff >= 0);
-      id = timer->id;
-      RootedObject fun(cx, timer->callback);
-      fun_val.setObject(*fun.get());
-      if (!argv.initCapacity(timer->arguments.size())) {
-        JS_ReportOutOfMemory(cx);
-        return false;
-      }
-
-      for (auto &arg : timer->arguments) {
-        argv.infallibleAppend(arg);
-      }
-    }
-
-    RootedObject fun(cx, &fun_val.toObject());
-
-    RootedValue rval(cx);
-    if (!Call(cx, NullHandleValue, fun, argv, &rval)) {
-      return false;
-    }
-
-    // Repeat / remove the first timer if it's still the one we just ran.
-    if (auto *timer = first(); timer && timer->id == id) {
-      if (timer->repeat) {
-        repeat_first();
-      } else {
-        remove_timer(timer->id);
-      }
-    }
-
-    return true;
-  }
-
-public:
-  static uint32_t add(HandleObject callback, int64_t delay,
-                      JS::HandleValueVector arguments, bool repeat) {
-    static uint32_t next_timer_id = 1;
-
-    auto id = next_timer_id++;
-    instance->add_timer(
-        std::make_unique<Timer>(id, callback, delay, arguments, repeat));
-    return id;
-  }
-
-  static void remove(const uint32_t id) { instance->remove_timer(id); }
-
-  static bool run(JSContext *cx) { return instance->run_first_timer(cx); }
-
-  static bool empty() { return instance->timers.empty(); }
-
-  static int64_t timeout() {
-    return instance->first_deadline;
-  }
-
-  void trace(JSTracer *trc) const {
-    for (auto &timer : timers) {
-      timer->trace(trc);
-    }
-  }
-};
-
-PersistentRooted<js::UniquePtr<ScheduledTimers>> ScheduledTimers::instance;
-core::Engine* ScheduledTimers::engine = nullptr;
-
-void TimersTask::enqueue() {
-  engine->set_timeout_task(this, ScheduledTimers::timeout());
-}
-bool TimersTask::run() { return ScheduledTimers::run(engine->cx()); }
+namespace builtins::web::timers {
 
 /**
  * The `setTimeout` and `setInterval` global functions
@@ -259,9 +124,10 @@ bool setTimeout_or_interval(JSContext *cx, const unsigned argc, Value *vp) {
     handler_args.infallibleAppend(args[i]);
   }
 
-  const uint32_t id = ScheduledTimers::add(handler, delay, handler_args, repeat);
+  const auto timer = new TimerTask(delay, repeat, handler, handler_args);
+  ENGINE->queue_async_task(timer);
+  args.rval().setInt32(timer->id());
 
-  args.rval().setInt32(id);
   return true;
 }
 
@@ -274,17 +140,16 @@ template <bool interval>
 bool clearTimeout_or_interval(JSContext *cx, unsigned argc, Value *vp) {
   REQUEST_HANDLER_ONLY(interval ? "clearInterval" : "clearTimeout");
   const CallArgs args = CallArgsFromVp(argc, vp);
-  if (!args.requireAtLeast(cx, interval ? "clearInterval" : "clearTimeout",
-                           1)) {
+  if (!args.requireAtLeast(cx, interval ? "clearInterval" : "clearTimeout", 1)) {
     return false;
   }
 
   int32_t id = 0;
-  if (!JS::ToInt32(cx, args[0], &id)) {
+  if (!ToInt32(cx, args[0], &id)) {
     return false;
   }
 
-  ScheduledTimers::remove(static_cast<uint32_t>(id));
+  ENGINE->cancel_async_task(id);
 
   args.rval().setUndefined();
   return true;
@@ -293,11 +158,12 @@ bool clearTimeout_or_interval(JSContext *cx, unsigned argc, Value *vp) {
 constexpr JSFunctionSpec methods[] = {
     JS_FN("setInterval", setTimeout_or_interval<true>, 1, JSPROP_ENUMERATE),
     JS_FN("setTimeout", setTimeout_or_interval<false>, 1, JSPROP_ENUMERATE),
+    JS_FN("clearInterval", clearTimeout_or_interval<true>, 1, JSPROP_ENUMERATE),
+    JS_FN("clearTimeout", clearTimeout_or_interval<false>, 1, JSPROP_ENUMERATE),
     JS_FS_END};
 
 bool install(core::Engine *engine) {
-  ScheduledTimers::init(engine);
-  TimersTask::init(engine);
+  ENGINE = engine;
   return JS_DefineFunctions(engine->cx(), engine->global(), methods);
 }
 

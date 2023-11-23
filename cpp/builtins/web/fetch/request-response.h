@@ -137,7 +137,6 @@ public:
     Headers = static_cast<int>(RequestOrResponse::Slots::Headers),
     URL = static_cast<int>(RequestOrResponse::Slots::URL),
     Method = static_cast<int>(RequestOrResponse::Slots::Count),
-    PendingRequest,
     ResponsePromise,
 #ifdef CAE
     Backend,
@@ -152,7 +151,6 @@ public:
   static host_api::HttpRequest *request_handle(JSObject *obj);
   static host_api::HttpOutgoingRequest *outgoing_handle(JSObject *obj);
   static host_api::HttpIncomingRequest *incoming_handle(JSObject *obj);
-  static host_api::FutureHttpIncomingResponse* pending_handle(JSObject *obj);
 
 #ifdef CAE
   static bool set_cache_key(JSContext *cx, JS::HandleObject self, JS::HandleValue cache_key_val);

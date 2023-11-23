@@ -1,19 +1,25 @@
 async function main(event) {
     try {
-        setTimeout(() => console.log(`1`), 1);
-        setTimeout(() => console.log(`10`), 10);
-        setTimeout(() => console.log(`100`), 100);
-        setTimeout(() => console.log(`1000`), 1000);
-        setTimeout(() => console.log(`2000`), 2000);
-        setTimeout(() => console.log(`3000`), 3000);
-        setTimeout(() => console.log(`3000`), 3000);
-        setTimeout(() => console.log(`4000`), 4000);
-        setTimeout(() => console.log(`5000`), 5000);
+        let now = Date.now();
+        let diff = () => Date.now() - now;
+        // setTimeout(() => console.log(`1`), 1);
+        // let id = setTimeout(() => console.log(`5000`), 5000);
+        // clearTimeout(id);
+        setTimeout(() => console.log(diff()), 10);
+        // clearTimeout(id);
+        setTimeout(() => console.log(diff()), 100);
+        setTimeout(() => console.log(diff()), 1000);
+        setTimeout(() => console.log(diff()), 2000);
+        setTimeout(() => console.log(diff()), 3000);
+        setTimeout(() => console.log(diff()), 3000);
+        setTimeout(() => console.log(diff()), 4000);
+        setTimeout(() => console.log(diff()), 5000);
         let url = new URL(event.request.url);
         url.host = "fermyon.com";
         url.protocol = "https";
         url.port = "";
         let p = fetch(url);
+        let p2 = fetch(url);
         let resolve, reject;
         let responsePromise = new Promise(async (res, rej) => {
             resolve = res;
@@ -21,6 +27,7 @@ async function main(event) {
         });
         event.respondWith(responsePromise);
         let response = await p;
+        console.log(response);
         let incomingBody = response.body;
         let body = null;
         if (incomingBody) {
@@ -66,4 +73,3 @@ async function main(event) {
 }
 
 addEventListener('fetch', main);
-console.log(1)

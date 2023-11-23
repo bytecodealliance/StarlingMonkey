@@ -2,6 +2,8 @@
 
 #include "host_api.h"
 
+#include <engine.h>
+
 typedef uint8_t bindings_string_t_ptr_t;
 typedef bindings_own_incoming_body_t http_body_t;
 static_assert(sizeof(bindings_own_incoming_body_t) ==
@@ -9,6 +11,22 @@ static_assert(sizeof(bindings_own_incoming_body_t) ==
 typedef bindings_own_future_incoming_response_t own_pending_request_t;
 typedef bindings_own_incoming_request_t own_request_t;
 typedef bindings_own_incoming_response_t own_response_t;
+
+size_t core::AsyncTask::select(std::vector<core::AsyncTask*>* tasks) {
+  auto count = tasks->size();
+  vector<bindings_borrow_pollable_t> handles;
+  for (const auto task : *tasks) {
+    handles.emplace_back(bindings_borrow_pollable_t{task->id()});
+  }
+  auto list = bindings_list_borrow_pollable_t{handles.data(), count};
+  bindings_list_u32_t result = {.ptr = nullptr,.len = 0};
+  wasi_io_0_2_0_rc_2023_10_18_poll_poll_list(&list, &result);
+  MOZ_ASSERT(result.len > 0);
+  const auto ready_index = result.ptr[0];
+  free(result.ptr);
+
+  return ready_index;
+}
 
 namespace host_api {
 
@@ -47,38 +65,6 @@ static_assert(sizeof(FutureHttpIncomingResponse::Handle) == sizeof(own_pending_r
 // static_assert(sizeof(HttpIncomingRequest::Handle) == sizeof(own_request_t));
 // static_assert(sizeof(HttpIncomingResponse::Handle) == sizeof(own_response_t));
 
-Result<std::optional<uint32_t>> AsyncHandle::select(std::vector<AsyncHandle> &handles,
-                                                    int64_t timeout_ns) {
-  Result<std::optional<uint32_t>> res;
-
-  static_assert(sizeof(AsyncHandle) == sizeof(bindings_borrow_pollable_t));
-
-  auto count = handles.size();
-  if (timeout_ns > 0) {
-    // WASI clock resolution is in us.
-    auto timer = wasi_clocks_0_2_0_rc_2023_10_18_monotonic_clock_subscribe(
-        timeout_ns, false);
-    count++;
-    handles.emplace_back(timer);
-  }
-  auto handles_ptr =
-      reinterpret_cast<bindings_borrow_pollable_t *>(handles.data());
-
-  auto list = bindings_list_borrow_pollable_t{handles_ptr, count};
-  bindings_list_u32_t result = {.ptr = nullptr,.len = 0};
-  wasi_io_0_2_0_rc_2023_10_18_poll_poll_list(&list, &result);
-  MOZ_ASSERT(result.len > 0);
-  if (timeout_ns > 0 && result.ptr[0] == count - 1) {
-    res.emplace(std::nullopt);
-  } else {
-    // TODO: remember all handles that are ready instead of just the first one.
-    res.emplace(result.ptr[0]);
-  }
-  free(result.ptr);
-
-  return res;
-}
-
 Result<HostBytes> Random::get_bytes(size_t num_bytes) {
   Result<HostBytes> res;
 
@@ -95,6 +81,22 @@ Result<HostBytes> Random::get_bytes(size_t num_bytes) {
 
 Result<uint32_t> Random::get_u32() {
   return Result<uint32_t>::ok(wasi_random_0_2_0_rc_2023_10_18_random_get_random_u64());
+}
+
+uint64_t MonotonicClock::now() {
+  return wasi_clocks_0_2_0_rc_2023_10_18_monotonic_clock_now();
+}
+
+uint64_t MonotonicClock::resolution() {
+  return wasi_clocks_0_2_0_rc_2023_10_18_monotonic_clock_resolution();
+}
+
+int32_t MonotonicClock::subscribe(const uint64_t when, const bool absolute) {
+  return wasi_clocks_0_2_0_rc_2023_10_18_monotonic_clock_subscribe(when, absolute).__handle;
+}
+
+void MonotonicClock::unsubscribe(const int32_t handle_id) {
+  wasi_io_0_2_0_rc_2023_10_18_poll_pollable_drop_own(bindings_own_pollable_t{handle_id});
 }
 
 using std::optional;

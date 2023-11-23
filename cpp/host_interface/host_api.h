@@ -1,8 +1,7 @@
-#ifndef JS_COMPUTE_RUNTIME_HOST_API_H
-#define JS_COMPUTE_RUNTIME_HOST_API_H
+#ifndef JS_RUNTIME_HOST_API_H
+#define JS_RUNTIME_HOST_API_H
 
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <span>
 #include <string>
@@ -10,8 +9,8 @@
 #include <variant>
 #include <vector>
 
-#include "allocator.h"
 #include "bindings.h"
+#include <engine.h>
 #include "js/TypeDecls.h"
 #include "rust-url/rust-url.h"
 
@@ -226,9 +225,9 @@ public:
   Handle handle = invalid;
 
   explicit AsyncHandle() : handle{invalid} {}
-  explicit AsyncHandle(Handle handle) : handle{handle} {}
+  explicit AsyncHandle(const Handle handle) : handle{handle} {}
 
-  bool valid() const { return this->handle.__handle != invalid.__handle; }
+  [[nodiscard]] bool valid() const { return this->handle.__handle != invalid.__handle; }
 
 #ifdef CAE
   // WASI pollables don't have a generic way to query readiness, and this is only used for debug asserts.
@@ -236,16 +235,6 @@ public:
   Result<bool> is_ready() const;
 #endif
 
-  /// Return the index in handles of the `AsyncHandle` that's ready. If the select call finishes
-  /// successfully and returns `std::nullopt`, the timeout has expired.
-  ///
-  /// If the timeout is `0`, two behaviors are possible
-  ///   * if handles is empty, an error will be returned immediately
-  ///   * otherwise, block until a handle is ready and return its index
-  ///
-  /// If the timeout is non-zero, two behaviors are possible
-  ///   * no handle becomes ready within timeout, and the successful `std::nullopt` is returned
-  ///   * a handle becomes ready within the timeout, and its index is returned.
   static Result<optional<uint32_t>> select(vector<AsyncHandle> &handles, int64_t timeout_ns);
 };
 
@@ -377,7 +366,7 @@ public:
   Handle handle = invalid;
 
   FutureHttpIncomingResponse() = delete;
-  explicit FutureHttpIncomingResponse(Handle handle) : handle(handle) {}
+  explicit FutureHttpIncomingResponse(const Handle handle) : handle(handle) { }
 
   /// Poll for the response to this request.
   Result<optional<HttpIncomingResponse*>> poll();
@@ -551,6 +540,17 @@ public:
   static Result<HostBytes> get_bytes(size_t num_bytes);
 
   static Result<uint32_t> get_u32();
+};
+
+class MonotonicClock final {
+public:
+  MonotonicClock() = delete;
+
+  static uint64_t now();
+  static uint64_t resolution();
+
+  static int32_t subscribe(uint64_t when, bool absolute);
+  static void unsubscribe(int32_t handle_id);
 };
 
 } // namespace host_api

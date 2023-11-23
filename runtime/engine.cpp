@@ -448,47 +448,8 @@ bool core::Engine::eval(char *code, size_t len, const char* filename, MutableHan
   return true;
 }
 
-static void process_pending_jobs(JSContext *cx, double *total_compute) {
-  auto pre_reactions = system_clock::now();
-  LOG("Running promise reactions\n");
-
-  while (js::HasJobsPending(cx)) {
-    js::RunJobs(cx);
-
-    if (JS_IsExceptionPending(cx))
-      abort(cx, "running Promise reactions");
-  }
-
-  double diff =
-      duration_cast<microseconds>(system_clock::now() -
-      pre_reactions).count();
-  *total_compute += diff;
-  LOG("Running promise reactions took %fms\n", diff / 1000);
-}
-
 bool core::Engine::run_event_loop(MutableHandleValue result) {
-
-    // // Loop until no more resolved promises or backend requests are pending.
-    // LOG("Start processing async jobs ...\n");
-
-    do {
-      // First, drain the promise reactions queue.
-      process_pending_jobs(cx(), &total_compute);
-
-      // TODO: add general mechanism for extending the event loop duration.
-      // Then, check if the fetch event is still active, i.e. had pending promises
-      // added to it using `respondWith` or `waitUntil`.
-      // if (!builtins::FetchEvent::is_active(fetch_event))
-      //   break;
-
-      // Process async tasks.
-      if (core::EventLoop::has_pending_async_tasks()) {
-        core::EventLoop::process_pending_async_tasks(cx());
-      }
-    } while (js::HasJobsPending(cx()) ||
-             core::EventLoop::has_pending_async_tasks());
-
-  return true;
+  return EventLoop::run_event_loop(this, 0, result);
 }
 
 bool core::Engine::dump_value(JS::Value val, FILE *fp) {
@@ -510,10 +471,9 @@ bool core::Engine::has_pending_async_tasks() {
   return EventLoop::has_pending_async_tasks();
 }
 
-void core::Engine::set_timeout_task(AsyncTask *task, int64_t timeout) {
-  EventLoop::set_timeout_task(task, timeout);
+void core::Engine::queue_async_task(AsyncTask* task) {
+  EventLoop::queue_async_task(task);
 }
-
-void core::Engine::remove_timeout_task() {
-  EventLoop::remove_timeout_task();
+bool core::Engine::cancel_async_task(int32_t id) {
+  return EventLoop::cancel_async_task(this, id);
 }
