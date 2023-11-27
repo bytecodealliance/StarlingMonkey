@@ -282,7 +282,6 @@ public:
 
 /// A convenience wrapper for the host calls involving outgoing http bodies.
 class HttpOutgoingBody final {
-private:
   /// Ensures that this body's stream is initialized.
   /// Returns the stream handle and its capacity, which might be 0.
   Result<tuple<bindings_borrow_output_stream_t, uint64_t>>
@@ -318,6 +317,9 @@ public:
   /// Returns true when this body handle is valid.
   bool valid() const { return this->handle.__handle != invalid.__handle; }
 
+  /// Get the body's stream's current capacity.
+  Result<uint64_t> capacity();
+
   /// Write a chunk to this handle.
   Result<uint32_t> write(const uint8_t *bytes, size_t len);
 
@@ -325,10 +327,11 @@ public:
   ///
   /// The host doesn't necessarily write all bytes in any particular call to
   /// `write`, so to ensure all bytes are written, we call it in a loop.
+  /// TODO: turn into an async task that writes chunks of the passed buffer until done.
   Result<Void> write_all(const uint8_t *bytes, size_t len);
 
   /// Append an HttpIncomingBody to this one.
-  Result<Void> append(HttpIncomingBody* other);
+  Result<Void> append(core::Engine* engine, HttpIncomingBody* other);
 
   /// Close this handle, and reset internal state to invalid.
   Result<Void> close();
@@ -457,7 +460,7 @@ public:
   HttpIncomingRequest() = delete;
   explicit HttpIncomingRequest(Handle handle) : handle(handle) {}
 
-  const string_view method() const;
+  string_view method() const;
 
   bool is_incoming() override { return true; }
   bool is_request() override { return true; }

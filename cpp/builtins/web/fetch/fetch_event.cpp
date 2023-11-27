@@ -220,7 +220,7 @@ bool response_promise_then_handler(JSContext *cx, JS::HandleObject event, JS::Ha
 
   // Ensure that all headers are stored client-side, so we retain access to them
   // after sending the response off.
-  // TODO: restore proper headers handling
+  // TODO(TS): restore proper headers handling
   // if (Response::is_upstream(response_obj)) {
   //   JS::RootedObject headers(cx);
   //   headers =

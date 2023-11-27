@@ -186,8 +186,8 @@ Result<optional<vector<HostString>>> HttpHeaders::get(string_view name) const {
 Result<Void> HttpHeaders::set(string_view name, string_view value) {
   MOZ_ASSERT(valid());
   auto hdr = string_view_to_world_string(name);
-  auto value_bytes = string_view_to_world_bytes(value);
-  auto fieldval = bindings_list_u8_t{value_bytes.ptr, value_bytes.len};
+  auto [ptr, len] = string_view_to_world_bytes(value);
+  auto fieldval = bindings_list_u8_t{ptr, len};
 
   bindings_list_list_u8_t host_values = {&fieldval, 1};
 
@@ -201,10 +201,10 @@ Result<Void> HttpHeaders::set(string_view name, string_view value) {
 Result<Void> HttpHeaders::append(string_view name, string_view value) {
   MOZ_ASSERT(valid());
   auto hdr = string_view_to_world_string(name);
-  auto bytes = string_view_to_world_bytes(value);
+  auto [ptr, len] = string_view_to_world_bytes(value);
 
   auto borrow = wasi_http_0_2_0_rc_2023_10_18_types_borrow_fields(handle);
-  auto fieldval = bindings_list_u8_t{bytes.ptr, bytes.len};
+  auto fieldval = bindings_list_u8_t{ptr, len};
   wasi_http_0_2_0_rc_2023_10_18_types_method_fields_append(borrow, &hdr, &fieldval);
 
   return {};
@@ -251,6 +251,7 @@ HttpOutgoingBody::ensure_stream() {
   return Res::ok(std::make_tuple(borrow, capacity));
 }
 
+// TODO: remove this function—we should never block on IO like this.
 Result<tuple<bindings_borrow_output_stream_t, uint64_t>>
 HttpOutgoingBody::ensure_stream_with_capacity() {
   MOZ_ASSERT(valid());
@@ -286,7 +287,18 @@ bool write_to_outgoing_body(bindings_borrow_output_stream_t borrow,
   return wasi_io_0_2_0_rc_2023_10_18_streams_method_output_stream_write(borrow, &list, &err);
 }
 
-Result<uint32_t> HttpOutgoingBody::write(const uint8_t *ptr, size_t len) {
+Result<uint64_t> HttpOutgoingBody::capacity() {
+  MOZ_ASSERT(valid());
+  auto res = ensure_stream();
+  if (res.is_err()) {
+    // TODO: proper error handling for all 154 error codes.
+      return Result<uint64_t>::err(154);
+  }
+  auto [_, capacity] = res.unwrap();
+  return Result<uint64_t>::ok(capacity);
+}
+
+Result<uint32_t> HttpOutgoingBody::write(const uint8_t *bytes, size_t len) {
   MOZ_ASSERT(valid());
   auto res = ensure_stream();
   if (res.is_err()) {
@@ -296,7 +308,7 @@ Result<uint32_t> HttpOutgoingBody::write(const uint8_t *ptr, size_t len) {
   auto [borrow, capacity] = res.unwrap();
 
   len = std::min(len, size_t(capacity));
-  if (!write_to_outgoing_body(borrow, ptr, len)) {
+  if (!write_to_outgoing_body(borrow, bytes, len)) {
     return Result<uint32_t>::err(154);
   }
 
@@ -340,12 +352,126 @@ Result<bindings_borrow_input_stream_t> HttpIncomingBody::ensure_stream() {
   return Res::ok(wasi_io_0_2_0_rc_2023_10_18_streams_borrow_input_stream(stream));
 }
 
-Result<Void> HttpOutgoingBody::append(HttpIncomingBody *other) {
-  MOZ_ASSERT_UNREACHABLE("Not implemented");
-  MOZ_ASSERT(valid());
-  Result<Void> res;
+class BodyAppendTask final : public core::AsyncTask {
+  enum class State {
+    BlockedOnBoth,
+    BlockedOnIncoming,
+    BlockedOnOutgoing,
+    Ready,
+    Done,
+  };
 
-  return res;
+  HttpIncomingBody* incoming_body_;
+  HttpOutgoingBody* outgoing_body_;
+  State state_;
+
+public:
+  explicit BodyAppendTask(HttpIncomingBody* incoming_body, HttpOutgoingBody* outgoing_body)
+    : incoming_body_(incoming_body), outgoing_body_(outgoing_body) {
+    state_ = State::BlockedOnBoth;
+  }
+
+  [[nodiscard]] bool run(core::Engine* engine) override {
+    // If run is called while we're blocked on the incoming stream, that means that stream's
+    // pollable has resolved, so the stream must be ready.
+    if (state_ == State::BlockedOnBoth || state_ == State::BlockedOnIncoming) {
+      auto res = incoming_body_->read(0, false);
+      MOZ_ASSERT(!res.is_err());
+      auto [bytes, done] = std::move(res.unwrap());
+      if (done) {
+        state_ = State::Done;
+        return true;
+      }
+      state_ = State::BlockedOnOutgoing;
+    }
+
+    uint64_t capacity = 0;
+    if (state_ == State::BlockedOnOutgoing) {
+      auto res = outgoing_body_->capacity();
+      if (res.is_err()) {
+        return false;
+      }
+      capacity = res.unwrap();
+      if (capacity > 0) {
+        state_ = State::Ready;
+      } else {
+        engine->queue_async_task(this);
+        return true;
+      }
+    }
+
+    MOZ_ASSERT(state_ == State::Ready);
+
+    // TODO: reuse a buffer for this loop
+    do {
+      auto res = incoming_body_->read(capacity, false);
+      if (res.is_err()) {
+        // TODO: proper error handling.
+        return false;
+      }
+      auto [bytes, done] = std::move(res.unwrap());
+      if (bytes.len == 0) {
+        state_ = State::BlockedOnIncoming;
+        return true;
+      }
+      if (done) {
+        state_ = State::Done;
+        return true;
+      }
+
+      auto offset = 0;
+      while (bytes.len - offset > 0) {
+        // TODO: remove double checking of write-readiness
+        // TODO: make this async by storing the remaining chunk in the task and marking it as being blocked on write
+        bindings_list_u8_t list = bytes;
+        auto write_res = outgoing_body_->write(list.ptr + offset, list.len - offset);
+        if (write_res.is_err()) {
+          // TODO: proper error handling.
+          return false;
+        }
+        offset += write_res.unwrap();
+      }
+      auto capacity_res = outgoing_body_->capacity();
+      if (capacity_res.is_err()) {
+        // TODO: proper error handling.
+        return false;
+      }
+      capacity = capacity_res.unwrap();
+    } while (capacity > 0);
+
+    state_ = State::BlockedOnOutgoing;
+    return true;
+  }
+
+  [[nodiscard]] bool cancel(core::Engine* engine) override {
+    MOZ_ASSERT_UNREACHABLE("BodyAppendTask's semantics don't allow for cancellation");
+    return true;
+  }
+
+  bool ready() override {
+    // TODO(TS): properly implement. This won't ever return `true` right now
+    return state_ == State::Ready;
+  }
+
+  [[nodiscard]] int32_t id() override {
+    if (state_ == State::BlockedOnBoth || state_ == State::BlockedOnIncoming) {
+      return incoming_body_->async_handle().handle.__handle;
+    }
+
+    MOZ_ASSERT(state_ == State::BlockedOnOutgoing, "BodyAppendTask should only be queued if it's not ready");
+    return outgoing_body_->async_handle().handle.__handle;
+  }
+
+  void trace(JSTracer *trc) override {
+    // Nothing to trace.
+  }
+};
+
+Result<Void> HttpOutgoingBody::append(core::Engine* engine, HttpIncomingBody *other) {
+  printf("piping started\n");
+  MOZ_ASSERT(valid());
+  engine->queue_async_task(new BodyAppendTask(other, this));
+  return {};
 }
 
 Result<Void> HttpOutgoingBody::close() {
@@ -356,8 +482,9 @@ Result<Void> HttpOutgoingBody::close() {
   wasi_http_0_2_0_rc_2023_10_18_types_static_outgoing_body_finish(handle, nullptr);
   handle = invalid;
   stream = invalid_stream;
+  _closed = true;
 
-  return Result<Void>();
+  return {};
 }
 
 bool HttpOutgoingBody::closed() { return _closed; }
@@ -396,9 +523,9 @@ wasi_http_0_2_0_rc_2023_10_18_types_method_t http_method_to_host(string_view met
 
 string_view http_method_from_host(wasi_http_0_2_0_rc_2023_10_18_types_method_t method) {
   if (method.tag != WASI_HTTP_0_2_0_RC_2023_10_18_TYPES_METHOD_OTHER) {
-    return string_view(http_method_names[method.tag]);
+    return {http_method_names[method.tag]};
   }
-  return string_view(reinterpret_cast<char *>(method.val.other.ptr), method.val.other.len);
+  return {reinterpret_cast<char *>(method.val.other.ptr), method.val.other.len};
 }
 
 HttpOutgoingRequest::HttpOutgoingRequest(string_view method_str,
@@ -414,7 +541,7 @@ HttpOutgoingRequest::HttpOutgoingRequest(string_view method_str,
 
   if (url_str) {
     jsurl::SpecString val = url_str.value();
-    jsurl::JSUrl* url = jsurl::new_jsurl(&val);
+    jsurl::JSUrl* url = new_jsurl(&val);
     jsurl::SpecSlice protocol = jsurl::protocol(url);
     if (std::memcmp(protocol.data, "http:", protocol.len) == 0) {
       scheme.tag = WASI_HTTP_0_2_0_RC_2023_10_18_TYPES_SCHEME_HTTP;
@@ -495,7 +622,8 @@ Result<tuple<HostString, bool>> HttpIncomingBody::read(uint32_t chunk_size, bool
   return Res::ok(tuple(HostString(ret), false));
 }
 
-Result<Void> HttpIncomingBody::close() { return Result<Void>(); }
+// TODO: implement
+Result<Void> HttpIncomingBody::close() { return {}; }
 
 AsyncHandle HttpIncomingBody::async_handle() {
   MOZ_ASSERT(valid());
@@ -518,18 +646,19 @@ Result<optional<HttpIncomingResponse *>> FutureHttpIncomingResponse::poll() {
 
   MOZ_ASSERT(!res.is_err, "FutureHttpIncomingResponse::poll must not be called again after succeeding once");
 
-  auto inner = res.val.ok;
-  if (inner.is_err) {
+  auto [is_err, val] = res.val.ok;
+  if (is_err) {
     return Res::err(154);
   }
 
-  auto handle = inner.val.ok;
+  auto handle = val.ok;
   return Res::ok(new HttpIncomingResponse(handle));
 }
 
 AsyncHandle FutureHttpIncomingResponse::async_handle() {
   if (!pollable.valid()) {
-    auto async_handle = wasi_http_0_2_0_rc_2023_10_18_types_method_future_incoming_response_subscribe(wasi_http_0_2_0_rc_2023_10_18_types_borrow_future_incoming_response(handle));
+    auto borrow = wasi_http_0_2_0_rc_2023_10_18_types_borrow_future_incoming_response(handle);
+    auto async_handle = wasi_http_0_2_0_rc_2023_10_18_types_method_future_incoming_response_subscribe(borrow);
     pollable.handle.__handle = async_handle.__handle;
   }
   return pollable;
@@ -595,7 +724,7 @@ Result<Void> HttpOutgoingResponse::send(ResponseOutparam *out_param) {
           false, {this->handle}};
   wasi_http_0_2_0_rc_2023_10_18_types_static_response_outparam_set(*out_param,
                                                                    &result);
-  return Result<Void>();
+  return {};
 }
 
 HostString* scheme_to_string(wasi_http_0_2_0_rc_2023_10_18_types_scheme_t scheme) {
@@ -639,7 +768,7 @@ void HttpIncomingRequest::ensure_url() {
   _url->append(string_view(HostString(path)));
 }
 
-const string_view HttpIncomingRequest::method() const {
+string_view HttpIncomingRequest::method() const {
   wasi_http_0_2_0_rc_2023_10_18_types_method_t method;
   wasi_http_0_2_0_rc_2023_10_18_types_method_incoming_request_method(
       wasi_http_0_2_0_rc_2023_10_18_types_borrow_incoming_request(handle), &method);

@@ -60,7 +60,7 @@ public:
   virtual bool cancel(Engine* engine) = 0;
   virtual bool ready() = 0;
 
-  [[nodiscard]] int32_t id() const {
+  [[nodiscard]] virtual int32_t id() {
     MOZ_ASSERT(handle_id_ > -1, "AsyncTask handle_id not initialized in subclass");
     return handle_id_;
   }

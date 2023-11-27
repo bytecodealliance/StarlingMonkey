@@ -310,7 +310,7 @@ host_api::HttpOutgoingBody* RequestOrResponse::outgoing_body_handle(JSObject *ob
     res = owner->body();
   }
   return res.unwrap();
-  }
+}
 
 JSObject *RequestOrResponse::body_stream(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
@@ -334,6 +334,10 @@ bool RequestOrResponse::mark_body_used(JSContext *cx, JS::HandleObject obj) {
 
   JS::RootedObject stream(cx, body_stream(obj));
   if (stream && streams::NativeStreamSource::stream_is_body(cx, stream)) {
+    RootedObject source(cx, streams::NativeStreamSource::get_stream_source(cx, stream));
+    if (streams::NativeStreamSource::piped_to_transform_stream(source)) {
+      return true;
+    }
     if (!streams::NativeStreamSource::lock_stream(cx, stream)) {
       // The only reason why marking the body as used could fail here is that
       // it's a disturbed ReadableStream. To improve error reporting, we clear
@@ -520,13 +524,16 @@ JSObject *RequestOrResponse::maybe_headers(JSObject *obj) {
 
 bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::HandleObject source) {
   MOZ_ASSERT(!body_used(source));
+  MOZ_ASSERT(!body_used(self));
   host_api::HttpIncomingBody* source_body = incoming_body_handle(source);
-  host_api::HttpOutgoingBody *dest_body = outgoing_body_handle(self);
-  auto res = dest_body->append(source_body);
+  host_api::HttpOutgoingBody* dest_body = outgoing_body_handle(self);
+  auto res = dest_body->append(ENGINE, source_body);
   if (auto *err = res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
   }
+  MOZ_ASSERT(mark_body_used(cx, source));
+  MOZ_ASSERT(mark_body_used(cx, self));
   return true;
 }
 
@@ -968,15 +975,18 @@ bool RequestOrResponse::body_source_pull_algorithm(JSContext *cx, CallArgs args,
     if (streams::TransformStream::readable_used_as_body(pipe_dest)) {
       RootedObject dest_owner(cx,
                               streams::TransformStream::owner(pipe_dest));
+      MOZ_ASSERT(!JS_IsExceptionPending(cx));
       if (!append_body(cx, dest_owner, body_owner)) {
         return false;
       }
 
+      MOZ_ASSERT(!JS_IsExceptionPending(cx));
       RootedObject stream(cx, streams::NativeStreamSource::stream(source));
       bool success = ReadableStreamClose(cx, stream);
       MOZ_RELEASE_ASSERT(success);
 
       args.rval().setUndefined();
+      MOZ_ASSERT(!JS_IsExceptionPending(cx));
       return true;
     }
   }
@@ -1114,15 +1124,22 @@ bool RequestOrResponse::body_reader_catch_handler(JSContext *cx, JS::HandleObjec
 
 bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_owner,
                                           bool *requires_streaming) {
-  JS::RootedObject stream(cx, RequestOrResponse::body_stream(body_owner));
+  JS::RootedObject stream(cx, body_stream(body_owner));
   if (!stream) {
     return true;
   }
 
-  if (RequestOrResponse::body_unusable(cx, stream)) {
+  if (body_unusable(cx, stream)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_RESPONSE_BODY_DISTURBED_OR_LOCKED);
     return false;
+  }
+
+  if (streams::TransformStream::is_ts_readable(cx, stream)) {
+    JSObject* ts = streams::TransformStream::ts_from_readable(cx, stream);
+    if (streams::TransformStream::readable_used_as_body(ts)) {
+      return true;
+    }
   }
 
   // If the body stream is backed by a C@E body handle, we can directly pipe
@@ -1134,7 +1151,7 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
         cx, streams::NativeStreamSource::get_stream_source(cx, stream));
     JS::RootedObject source_owner(
         cx, streams::NativeStreamSource::owner(stream_source));
-    if (!RequestOrResponse::move_body_handle(cx, source_owner, body_owner)) {
+    if (!move_body_handle(cx, source_owner, body_owner)) {
       return false;
     }
 

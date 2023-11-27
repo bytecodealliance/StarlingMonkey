@@ -1,19 +1,19 @@
 async function main(event) {
     try {
         let now = Date.now();
-        let diff = () => Date.now() - now;
-        // setTimeout(() => console.log(`1`), 1);
-        // let id = setTimeout(() => console.log(`5000`), 5000);
-        // clearTimeout(id);
-        setTimeout(() => console.log(diff()), 10);
-        // clearTimeout(id);
-        setTimeout(() => console.log(diff()), 100);
-        setTimeout(() => console.log(diff()), 1000);
-        setTimeout(() => console.log(diff()), 2000);
-        setTimeout(() => console.log(diff()), 3000);
-        setTimeout(() => console.log(diff()), 3000);
-        setTimeout(() => console.log(diff()), 4000);
-        setTimeout(() => console.log(diff()), 5000);
+        // let diff = () => Date.now() - now;
+        // // setTimeout(() => console.log(`1`), 1);
+        // // let id = setTimeout(() => console.log(`5000`), 5000);
+        // // clearTimeout(id);
+        // setTimeout(() => console.log(diff()), 10);
+        // // clearTimeout(id);
+        // setTimeout(() => console.log(diff()), 100);
+        // setTimeout(() => console.log(diff()), 1000);
+        // setTimeout(() => console.log(diff()), 2000);
+        // setTimeout(() => console.log(diff()), 3000);
+        // setTimeout(() => console.log(diff()), 3000);
+        // setTimeout(() => console.log(diff()), 4000);
+        // setTimeout(() => console.log(diff()), 5000);
         let url = new URL(event.request.url);
         url.host = "fermyon.com";
         url.protocol = "https";
@@ -31,32 +31,37 @@ async function main(event) {
         let incomingBody = response.body;
         let body = null;
         if (incomingBody) {
-            const reader = incomingBody.getReader();
-
-            body = new ReadableStream({
-                start(controller) {
-                    return pump();
-
-                    function pump() {
-                        return reader.read().then(({ done, value }) => {
-                            // When no more data needs to be consumed, close the stream
-                            if (done) {
-                                controller.close();
-                                return;
-                            }
-
-                            console.log(`piping ${value.byteLength} bytes`);
-
-                            // Enqueue the next data chunk into our target stream
-                            controller.enqueue(value);
-                            return pump();
-                        });
-                    }
-                },
-            });
+            let ts = new TransformStream();
+            incomingBody.pipeTo(ts.writable);
+            body = ts.readable;
+            // const reader = incomingBody.getReader();
+            //
+            // body = new ReadableStream({
+            //     start(controller) {
+            //         return pump();
+            //
+            //         function pump() {
+            //             return reader.read().then(({ done, value }) => {
+            //                 // When no more data needs to be consumed, close the stream
+            //                 if (done) {
+            //                     controller.close();
+            //                     return;
+            //                 }
+            //
+            //                 console.log(`piping ${value.byteLength} bytes`);
+            //
+            //                 // Enqueue the next data chunk into our target stream
+            //                 controller.enqueue(value);
+            //                 return pump();
+            //             });
+            //         }
+            //     },
+            // });
         }
 
-        resolve(new Response(body, {headers: response.headers}));
+        let resp = new Response(body, {headers: response.headers});
+        console.log(`post resp ${resp}`);
+        resolve(resp);
         // for (let [key, value] of response.headers.entries()) {
         //     console.log([key, value]);
         // }
