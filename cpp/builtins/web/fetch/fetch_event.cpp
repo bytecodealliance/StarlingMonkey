@@ -621,9 +621,7 @@ void exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_handle(
     return;
   }
 
-  if (FetchEvent::state(fetch_event) == FetchEvent::State::responseStreaming) {
-    MOZ_ASSERT(STREAMING_BODY);
+  if (STREAMING_BODY && !STREAMING_BODY->closed()) {
     STREAMING_BODY->close();
-    // TODO(TS): ensure the response body is closed.
   }
 }

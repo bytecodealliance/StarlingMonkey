@@ -298,6 +298,8 @@ Result<uint64_t> HttpOutgoingBody::capacity() {
   return Result<uint64_t>::ok(capacity);
 }
 
+static size_t written = 0;
+
 Result<uint32_t> HttpOutgoingBody::write(const uint8_t *bytes, size_t len) {
   MOZ_ASSERT(valid());
   auto res = ensure_stream();
@@ -307,12 +309,13 @@ Result<uint32_t> HttpOutgoingBody::write(const uint8_t *bytes, size_t len) {
   }
   auto [borrow, capacity] = res.unwrap();
 
-  len = std::min(len, size_t(capacity));
+  auto bytes_to_write = std::min(len, static_cast<size_t>(capacity));
   if (!write_to_outgoing_body(borrow, bytes, len)) {
     return Result<uint32_t>::err(154);
   }
 
-  return Result<uint32_t>::ok(len);
+  written += len;
+  return Result<uint32_t>::ok(bytes_to_write);
 }
 
 Result<Void> HttpOutgoingBody::write_all(const uint8_t *bytes, size_t len) {
@@ -365,6 +368,11 @@ class BodyAppendTask final : public core::AsyncTask {
   HttpOutgoingBody* outgoing_body_;
   State state_;
 
+  void set_state(const State state) {
+    MOZ_ASSERT(state_ != State::Done);
+    state_ = state;
+  }
+
 public:
   explicit BodyAppendTask(HttpIncomingBody* incoming_body, HttpOutgoingBody* outgoing_body)
     : incoming_body_(incoming_body), outgoing_body_(outgoing_body) {
@@ -379,10 +387,10 @@ public:
       MOZ_ASSERT(!res.is_err());
       auto [bytes, done] = std::move(res.unwrap());
       if (done) {
-        state_ = State::Done;
+        set_state(State::Done);
         return true;
       }
-      state_ = State::BlockedOnOutgoing;
+      set_state(State::BlockedOnOutgoing);
     }
 
     uint64_t capacity = 0;
@@ -393,7 +401,7 @@ public:
       }
       capacity = res.unwrap();
       if (capacity > 0) {
-        state_ = State::Ready;
+        set_state(State::Ready);
       } else {
         engine->queue_async_task(this);
         return true;
@@ -410,12 +418,9 @@ public:
         return false;
       }
       auto [bytes, done] = std::move(res.unwrap());
-      if (bytes.len == 0) {
-        state_ = State::BlockedOnIncoming;
-        return true;
-      }
-      if (done) {
-        state_ = State::Done;
+      if (bytes.len == 0 && !done) {
+        set_state(State::BlockedOnIncoming);
+        engine->queue_async_task(this);
         return true;
       }
 
@@ -431,6 +436,12 @@ public:
         }
         offset += write_res.unwrap();
       }
+
+      if (done) {
+        set_state(State::Done);
+        return true;
+      }
+
       auto capacity_res = outgoing_body_->capacity();
       if (capacity_res.is_err()) {
         // TODO: proper error handling.
@@ -439,7 +450,8 @@ public:
       capacity = capacity_res.unwrap();
     } while (capacity > 0);
 
-    state_ = State::BlockedOnOutgoing;
+    set_state(State::BlockedOnOutgoing);
+    engine->queue_async_task(this);
     return true;
   }
 
@@ -468,7 +480,6 @@ public:
 };
 
 Result<Void> HttpOutgoingBody::append(core::Engine* engine, HttpIncomingBody *other) {
-  printf("piping started\n");
   MOZ_ASSERT(valid());
   engine->queue_async_task(new BodyAppendTask(other, this));
   return {};
@@ -478,6 +489,13 @@ Result<Void> HttpOutgoingBody::close() {
   MOZ_ASSERT(valid());
   MOZ_ASSERT(!closed());
 
+  // A blocking flush is required here to ensure that all buffered contents are
+  // actually written before finishing the body.
+  // TODO: check if this is still needed in the 11-10 snapshot
+  auto borrow = wasi_io_0_2_0_rc_2023_10_18_streams_borrow_output_stream(stream);
+  wasi_io_0_2_0_rc_2023_10_18_streams_stream_error_t err;
+  bool success = wasi_io_0_2_0_rc_2023_10_18_streams_method_output_stream_blocking_flush(borrow, &err);
+  MOZ_RELEASE_ASSERT(success);
   wasi_io_0_2_0_rc_2023_10_18_streams_output_stream_drop_own(stream);
   wasi_http_0_2_0_rc_2023_10_18_types_static_outgoing_body_finish(handle, nullptr);
   handle = invalid;
@@ -487,7 +505,7 @@ Result<Void> HttpOutgoingBody::close() {
   return {};
 }
 
-bool HttpOutgoingBody::closed() { return _closed; }
+bool HttpOutgoingBody::closed() const { return _closed; }
 
 AsyncHandle HttpOutgoingBody::async_handle() {
   MOZ_ASSERT(valid());

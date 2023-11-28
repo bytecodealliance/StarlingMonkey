@@ -335,7 +335,7 @@ public:
 
   /// Close this handle, and reset internal state to invalid.
   Result<Void> close();
-  bool closed();
+  bool closed() const;
 
   AsyncHandle async_handle();
 };

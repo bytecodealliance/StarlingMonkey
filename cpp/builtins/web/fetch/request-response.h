@@ -39,7 +39,6 @@ public:
   static JSObject *body_source(JSContext *cx, JS::HandleObject obj);
   static bool body_used(JSObject *obj);
   static bool mark_body_used(JSContext *cx, JS::HandleObject obj);
-  static bool move_body_handle(JSContext *cx, JS::HandleObject from, JS::HandleObject to);
   static JS::Value url(JSObject *obj);
   static void set_url(JSObject *obj, JS::Value url);
   static bool body_unusable(JSContext *cx, JS::HandleObject body);

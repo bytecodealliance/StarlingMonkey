@@ -12,7 +12,7 @@ component = "js-component"
 
 [component.js-component]
 source = "build/js-component.wasm"
-allowed_outbound_hosts = ["https://fermyon.com:443"]
+allowed_outbound_hosts = ["https://fermyon.com/", "https://example.com/"]
 [component.js-component.build]
 command = "V=1 DEBUG=1 make all"
 watch = ["tests/smoke.js"]
