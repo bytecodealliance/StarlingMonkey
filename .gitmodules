@@ -1,3 +1,8 @@
 [submodule "deps/fmt"]
 	path = deps/fmt
 	url = https://github.com/fmtlib/fmt
+	shallow = true
+[submodule "deps/spidermonkey"]
+	path = deps/spidermonkey
+	url = https://github.com/tschneidereit/spidermonkey-wasi-embedding.git
+	shallow = true
