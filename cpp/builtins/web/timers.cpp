@@ -33,7 +33,7 @@ public:
       arguments_.emplace_back(arg);
     }
 
-    handle_id_ = host_api::MonotonicClock::subscribe(deadline_, true);
+    handle_ = host_api::MonotonicClock::subscribe(deadline_, true);
   }
 
   [[nodiscard]] bool run(core::Engine* engine) override {
@@ -66,7 +66,7 @@ public:
 
   [[nodiscard]] bool cancel(core::Engine* engine) override {
     host_api::MonotonicClock::unsubscribe(id());
-    handle_id_ = -1;
+    handle_ = -1;
     return true;
   }
 

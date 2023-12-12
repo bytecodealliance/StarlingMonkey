@@ -9,12 +9,14 @@ static core::Engine* ENGINE;
 
 class ResponseFutureTask final : public core::AsyncTask {
   Heap<JSObject *> request_;
-  host_api::FutureHttpIncomingResponse* pending_handle_;
+  host_api::FutureHttpIncomingResponse* future_;
 
 public:
-  explicit ResponseFutureTask(const HandleObject request, host_api::FutureHttpIncomingResponse* pending_handle)
-    : request_(request), pending_handle_(pending_handle) {
-    handle_id_ = pending_handle->async_handle().handle.__handle;
+  explicit ResponseFutureTask(const HandleObject request, host_api::FutureHttpIncomingResponse* future)
+    : request_(request), future_(future) {
+    auto res = future->subscribe();
+    MOZ_ASSERT(!res.is_err(), "Subscribing to a future should never fail");
+    handle_ = res.unwrap();
   }
 
   [[nodiscard]] bool run(core::Engine* engine) override {
@@ -25,7 +27,7 @@ public:
     RootedObject response_promise(cx, Request::response_promise(request));
 
 
-    auto res = pending_handle_->poll();
+    auto res = future_->maybe_response();
     if (res.is_err()) {
       JS_ReportErrorUTF8(cx, "NetworkError when attempting to fetch resource.");
       return RejectPromiseWithPendingError(cx, response_promise);
@@ -57,7 +59,7 @@ public:
 
   [[nodiscard]] bool cancel(core::Engine* engine) override {
     // TODO(TS): implement
-    handle_id_ = -1;
+    handle_ = -1;
     return true;
   }
 

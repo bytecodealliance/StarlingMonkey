@@ -4,7 +4,6 @@
 #include <fstream>
 #include <iostream>
 
-#include "bindings.h"
 #include "engine.h"
 #include "event_loop.h"
 #include "host_api.h"
@@ -14,8 +13,6 @@
 #ifdef MEM_STATS
 #include <string>
 #endif
-
-#include <wasi/libc-environ.h>
 
 // TODO: remove these once the warnings are fixed
 #pragma clang diagnostic push
@@ -98,15 +95,15 @@ bool initialize(std::string script_path) {
   return initialize(&code[0], len, script_path.c_str());
 }
 
-bool exports_wasi_cli_0_2_0_rc_2023_10_18_run_run(void) {
+extern "C" bool exports_wasi_cli_0_2_0_rc_2023_10_18_run_run() {
   __wasm_call_ctors();
 
-  auto args = bindings_list_string_t{};
-  wasi_cli_0_2_0_rc_2023_10_18_environment_get_arguments(&args);
-  auto [ptr, len] = args.ptr[1];
-  std::string filename(reinterpret_cast<const char *>(ptr), len);
+  // auto args = bindings_list_string_t{};
+  // wasi_cli_0_2_0_rc_2023_10_18_environment_get_arguments(&args);
+  // auto [ptr, len] = args.ptr[1];
+  // std::string filename(reinterpret_cast<const char *>(ptr), len);
 
-  if (!initialize(filename)) {
+  if (!initialize("filename")) {
     return false;
   }
 
@@ -119,7 +116,6 @@ int main(int argc, const char *argv[]) {
 }
 
 void wizen() {
-  printf("Wizening starting\n");
   std::string filename;
   std::getline(std::cin, filename);
 
@@ -127,7 +123,6 @@ void wizen() {
     exit(1);
   }
   markWizeningAsFinished();
-  printf("Wizening Done\n");
 
   WIZENED = true;
 }

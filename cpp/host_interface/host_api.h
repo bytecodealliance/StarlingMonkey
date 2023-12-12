@@ -9,7 +9,6 @@
 #include <variant>
 #include <vector>
 
-#include "bindings.h"
 #include <engine.h>
 #include "js/TypeDecls.h"
 #include "rust-url/rust-url.h"
@@ -27,8 +26,11 @@ using std::unique_ptr;
 using std::vector;
 
 namespace host_api {
+  class HttpOutgoingRequest;
+  class HttpOutgoingResponse;
+  class HttpIncomingRequest;
 
-/// A type to signal that a result produces no value.
+  /// A type to signal that a result produces no value.
 struct Void final {};
 
 /// The type of errors returned from the host.
@@ -107,8 +109,6 @@ struct HostString final {
   HostString(std::nullptr_t) : HostString() {}
   HostString(const char *c_str);
   HostString(JS::UniqueChars ptr, size_t len) : ptr{std::move(ptr)}, len{len} {}
-  HostString(bindings_list_u8_t list) : ptr{reinterpret_cast<char*>(list.ptr)}, len{list.len} {}
-  HostString(bindings_string_t list) : ptr{reinterpret_cast<char*>(list.ptr)}, len{list.len} {}
 
   HostString(const HostString &other) = delete;
   HostString &operator=(const HostString &other) = delete;
@@ -139,16 +139,6 @@ struct HostString final {
 
   /// Comparison against nullptr
   bool operator!=(std::nullptr_t) { return this->ptr != nullptr; }
-
-  /// Conversion to a `bindings_string_t`.
-  operator bindings_string_t() const {
-    return bindings_string_t { reinterpret_cast<uint8_t*>(this->ptr.get()), this->len };
-  }
-
-  /// Conversion to a `bindings_list_u8_t`.
-  operator bindings_list_u8_t() const {
-    return bindings_list_u8_t { reinterpret_cast<uint8_t *>(this->ptr.get()), this->len };
-  }
 
   /// Conversion to a `string_view`.
   operator string_view() const { return string_view(this->ptr.get(), this->len); }
@@ -211,116 +201,84 @@ struct HostBytes final {
   }
 };
 
-/// Common methods for async handles.
-class AsyncHandle {
+/// The type of handles used by the host interface.
+typedef int32_t Handle;
+
+/// An abstract base class to be used in classes representing host resources.
+///
+/// Some host resources have different requirements for their client-side representation
+/// depending on the host API. To accommodate this, we introduce a base class to use for
+/// all of them, which the API-specific implementation can subclass as needed.
+class HandleState {
 public:
-#ifdef CAE
-  using Handle = uint32_t;
-  static constexpr Handle invalid = UINT32_MAX - 1;
-#else
-  using Handle = bindings_own_pollable_t;
-  static constexpr Handle invalid = bindings_own_pollable_t { -1 };
-#endif // CAE
+  Handle handle;
+  HandleState() = delete;
+  explicit HandleState(Handle handle) : handle{handle} {}
+  virtual ~HandleState() = default;
 
-  Handle handle = invalid;
-
-  explicit AsyncHandle() : handle{invalid} {}
-  explicit AsyncHandle(const Handle handle) : handle{handle} {}
-
-  [[nodiscard]] bool valid() const { return this->handle.__handle != invalid.__handle; }
-
-#ifdef CAE
-  // WASI pollables don't have a generic way to query readiness, and this is only used for debug asserts.
-  /// Check to see if this handle is ready.
-  Result<bool> is_ready() const;
-#endif
-
-  static Result<optional<uint32_t>> select(vector<AsyncHandle> &handles, int64_t timeout_ns);
+  bool valid() const { return handle != -1; }
 };
 
-/// A convenience wrapper for the host calls involving incoming http bodies.
-class HttpIncomingBody final {
-#ifdef CAE
-public:
-  using Handle = uint32_t;
-  static constexpr Handle invalid = UINT32_MAX - 1;
-#else
-private:
-  /// Ensures that this body's stream is initialized and returns a borrowed handle to it.
-  Result<bindings_borrow_input_stream_t> ensure_stream();
+class Resource {
+protected:
+  HandleState* handle_state_;
 
 public:
-  using Handle = bindings_own_incoming_body_t;
-  static constexpr Handle invalid = Handle { -1 };
+  virtual ~Resource() = default;
 
-  using StreamHandle = bindings_own_input_stream_t;
-  static constexpr StreamHandle invalid_stream = StreamHandle { -1 };
-  StreamHandle stream = invalid_stream;
-#endif // CAE
+  /// Returns true when this resource handle is valid.
+  virtual bool valid() const { return handle_state_; }
+};
 
-  /// The handle to use when making host calls.
-  Handle handle = invalid;
+class Pollable : public Resource {
+protected:
+  Pollable() = default;
+public:
+  ~Pollable() override = default;
 
+  virtual Result<core::PollableHandle> subscribe() = 0;
+  virtual void unsubscribe() = 0;
+};
+
+class HttpIncomingBody final : public Pollable {
+public:
   HttpIncomingBody() = delete;
-  explicit HttpIncomingBody(Handle handle) : handle{handle} {}
+  explicit HttpIncomingBody(Handle handle);
 
-  /// Returns true when this body handle is valid.
-  bool valid() const { return this->handle.__handle != invalid.__handle; }
-
+  class ReadResult final {
+  public:
+    bool done = false;
+    HostBytes bytes;
+    ReadResult() = default;
+    ReadResult(const bool done, unique_ptr<uint8_t[]> ptr, size_t len)
+      : done{done}, bytes(std::move(ptr), len) {}
+  };
   /// Read a chunk of up to `chunk_size` bytes from this handle.
   ///
-  /// If the `blocking` flag is set, will block until at least one byte has been read.
-  /// Otherwise, might return an empty string.
-  // TODO: check why this doesn't return HostBytes.
-  Result<tuple<HostString, bool>> read(uint32_t chunk_size, bool blocking);
+  /// Might return an empty string if no data is available.
+  Result<ReadResult> read(uint32_t chunk_size);
 
   /// Close this handle, and reset internal state to invalid.
   Result<Void> close();
 
-  AsyncHandle async_handle();
+  Result<core::PollableHandle> subscribe() override;
+  void unsubscribe() override;
 };
 
 /// A convenience wrapper for the host calls involving outgoing http bodies.
-class HttpOutgoingBody final {
-  /// Ensures that this body's stream is initialized.
-  /// Returns the stream handle and its capacity, which might be 0.
-  Result<tuple<bindings_borrow_output_stream_t, uint64_t>>
-  ensure_stream();
-  /// Ensures that this body's stream is initialized.
-  /// Returns the stream handle and its capacity, blocking until the capacity is > 0.
-  Result<tuple<bindings_borrow_output_stream_t, uint64_t>>
-  ensure_stream_with_capacity();
-
-  bool _closed = false;
-
+class HttpOutgoingBody final : public Pollable {
 public:
-#ifdef CAE
-  using Handle = uint32_t;
-  static constexpr Handle invalid = UINT32_MAX - 1;
-#else
-  using Handle = bindings_own_outgoing_body_t;
-  static constexpr Handle invalid = Handle{-1};
-  using StreamHandle = bindings_own_output_stream_t;
-  static constexpr StreamHandle invalid_stream = StreamHandle{-1};
-#endif // CAE
-
-
-  /// The handle to use when making host calls.
-  Handle handle = invalid;
-#ifndef CAE
-  StreamHandle stream = invalid_stream;
-#endif
-
   HttpOutgoingBody() = delete;
-  explicit HttpOutgoingBody(Handle handle) : handle{handle} {}
-
-  /// Returns true when this body handle is valid.
-  bool valid() const { return this->handle.__handle != invalid.__handle; }
+  explicit HttpOutgoingBody(Handle handle);
 
   /// Get the body's stream's current capacity.
   Result<uint64_t> capacity();
 
   /// Write a chunk to this handle.
+  ///
+  /// Doesn't necessarily write the entire chunk, and doesn't take ownership of `bytes`.
+  ///
+  /// @return the number of bytes written.
   Result<uint32_t> write(const uint8_t *bytes, size_t len);
 
   /// Writes the given number of bytes from the given buffer to the given handle.
@@ -331,17 +289,16 @@ public:
   Result<Void> write_all(const uint8_t *bytes, size_t len);
 
   /// Append an HttpIncomingBody to this one.
-  Result<Void> append(core::Engine* engine, HttpIncomingBody* other);
+  Result<Void> append(core::Engine* engine, HttpIncomingBody* incoming);
 
   /// Close this handle, and reset internal state to invalid.
   Result<Void> close();
-  bool closed() const;
 
-  AsyncHandle async_handle();
+  Result<core::PollableHandle> subscribe() override;
+  void unsubscribe() override;
 };
 
 class HttpBodyPipe {
-private:
   HttpIncomingBody* incoming;
   HttpOutgoingBody* outgoing;
 
@@ -355,187 +312,156 @@ public:
 };
 
 class HttpIncomingResponse;
-class FutureHttpIncomingResponse final {
+class FutureHttpIncomingResponse final : public Pollable {
 public:
-#ifdef CAE
-  using Handle = uint32_t;
-  static constexpr Handle invalid = UINT32_MAX - 1;
-#else
-  using Handle = bindings_own_future_incoming_response_t;
-  static constexpr Handle invalid = Handle { -1 };
-  AsyncHandle pollable;
-#endif // CAE
-
-  Handle handle = invalid;
-
   FutureHttpIncomingResponse() = delete;
-  explicit FutureHttpIncomingResponse(const Handle handle) : handle(handle) { }
+  explicit FutureHttpIncomingResponse(Handle handle);
 
-  /// Poll for the response to this request.
-  Result<optional<HttpIncomingResponse*>> poll();
+  /// Returns the response if it is ready, or `nullopt` if it is not.
+  Result<optional<HttpIncomingResponse *>> maybe_response();
 
-  /// Block until the response is ready.
-  Result<HttpIncomingResponse*> wait();
-
-  /// Fetch the AsyncHandle for this pending request.
-  AsyncHandle async_handle();
+  Result<core::PollableHandle> subscribe() override;
+  void unsubscribe() override;
 };
 
-class HttpHeaders final {
-  using Handle = bindings_own_fields_t;
-  static constexpr Handle invalid = Handle{-1};
-
-private:
-  Handle handle = invalid;
+class HttpHeaders final : public Resource {
+  friend HttpIncomingResponse;
+  friend HttpIncomingRequest;
+  friend HttpOutgoingResponse;
+  friend HttpOutgoingRequest;
 
 public:
   HttpHeaders();
-  HttpHeaders(Handle handle) : handle(handle) {}
-  HttpHeaders(const vector<tuple<HostString, vector<HostString>>>& entries);
+  explicit HttpHeaders(Handle handle);
+  explicit HttpHeaders(const vector<tuple<string_view, vector<string_view>>>& entries);
   HttpHeaders(const HttpHeaders &headers);
-
-  bool valid() const { return this->handle.__handle != invalid.__handle; }
-
-  bindings_borrow_fields_t borrow() const {
-    return bindings_borrow_fields_t{handle.__handle};
-  }
 
   Result<vector<tuple<HostString, HostString>>> entries() const;
   Result<vector<HostString>> names() const;
-
   Result<optional<vector<HostString>>> get(string_view name) const;
+
   Result<Void> set(string_view name, string_view value);
   Result<Void> append(string_view name, string_view value);
   Result<Void> remove(string_view name);
 };
 
-class HttpRequestResponseBase {
+class HttpRequestResponseBase : public Resource {
 protected:
-  HttpHeaders* headers_handle = nullptr;
+  HttpHeaders* headers_ = nullptr;
   std::string* _url = nullptr;
-  virtual void ensure_url() {};
 
  public:
-  virtual HttpHeaders *headers() = 0;
+  ~HttpRequestResponseBase() override = default;
 
-  optional<string_view> url();
+  virtual Result<HttpHeaders*> headers() = 0;
+  virtual string_view url();
 
   virtual bool is_incoming() = 0;
+  bool is_outgoing() { return !is_incoming(); }
+
   virtual bool is_request() = 0;
-  virtual bool valid() = 0;
+  bool is_response() { return !is_request(); }
 };
 
 class HttpIncomingBodyOwner {
 protected:
-  HttpIncomingBody* body_handle = nullptr;
+  HttpIncomingBody* body_ = nullptr;
 
 public:
+  virtual ~HttpIncomingBodyOwner() = default;
+
   virtual Result<HttpIncomingBody *> body() = 0;
-  bool has_body() { return body_handle != nullptr; }
+  bool has_body() const { return body_ != nullptr; }
 };
 
 class HttpOutgoingBodyOwner {
 protected:
-  HttpOutgoingBody* body_handle = nullptr;
+  HttpOutgoingBody* body_ = nullptr;
 
 public:
+  virtual ~HttpOutgoingBodyOwner() = default;
+
   virtual Result<HttpOutgoingBody *> body() = 0;
-  bool has_body() { return body_handle != nullptr; }
+  bool has_body() { return body_ != nullptr; }
 };
 
-class HttpRequest : public HttpRequestResponseBase {};
-
-class HttpIncomingRequest : public HttpRequest,
-                            public HttpIncomingBodyOwner {
-  using Handle = bindings_own_incoming_request_t;
-  static constexpr Handle invalid = Handle{-1};
-
-private:
-  Handle handle = invalid;
-
+class HttpRequest : public HttpRequestResponseBase {
 protected:
-  virtual void ensure_url() override;
+  std::string method_ = std::string();
 
 public:
-  HttpIncomingRequest() = delete;
-  explicit HttpIncomingRequest(Handle handle) : handle(handle) {}
+  [[nodiscard]] virtual Result<string_view> method() = 0;
+};
 
-  string_view method() const;
+class HttpIncomingRequest final : public HttpRequest,
+                                  public HttpIncomingBodyOwner {
+public:
+  HttpIncomingRequest() = delete;
+  explicit HttpIncomingRequest(Handle handle);
 
   bool is_incoming() override { return true; }
   bool is_request() override { return true; }
-  bool valid() override { return handle.__handle != invalid.__handle; }
-  HttpHeaders *headers() override;
-  virtual Result<HttpIncomingBody*> body() override;
+
+  [[nodiscard]] Result<string_view> method() override;
+  Result<HttpHeaders*> headers() override;
+  Result<HttpIncomingBody*> body() override;
 };
 
-class HttpOutgoingRequest : public HttpRequest,
-                            public HttpOutgoingBodyOwner {
-private:
-  using Handle = bindings_own_outgoing_request_t;
-  static constexpr Handle invalid = Handle{-1};
-
-  Handle handle = invalid;
-
+class HttpOutgoingRequest final : public HttpRequest,
+                                  public HttpOutgoingBodyOwner {
 public:
   HttpOutgoingRequest() = delete;
   HttpOutgoingRequest(string_view method, optional<HostString> url, HttpHeaders *headers);
 
   bool is_incoming() override { return false; }
   bool is_request() override { return true; }
-  bool valid() override { return handle.__handle != invalid.__handle; }
-  HttpHeaders *headers() override;
-  virtual Result<HttpOutgoingBody *> body() override;
+
+  [[nodiscard]] Result<string_view> method() override;
+  Result<HttpHeaders*> headers() override;
+  Result<HttpOutgoingBody*> body() override;
 
   Result<FutureHttpIncomingResponse*> send();
 };
 
-class HttpResponse : public HttpRequestResponseBase {};
+class HttpResponse : public HttpRequestResponseBase {
+protected:
+  static constexpr uint16_t UNSET_STATUS = UINT16_MAX;
+  uint16_t status_ = UNSET_STATUS;
+
+public:
+  [[nodiscard]] virtual Result<uint16_t> status() = 0;
+};
 
 class HttpIncomingResponse final : public HttpResponse,
                                    public HttpIncomingBodyOwner {
-private:
-  using Handle = bindings_own_incoming_response_t;
-  static constexpr Handle invalid = Handle{-1};
-
-  Handle handle = invalid;
-
 public:
-  uint16_t status() const;
-
   HttpIncomingResponse() = delete;
-  explicit HttpIncomingResponse(Handle handle) : handle(handle) {}
+  explicit HttpIncomingResponse(Handle handle);
 
   bool is_incoming() override { return true; }
   bool is_request() override { return false; }
-  bool valid() override { return handle.__handle != invalid.__handle; }
-  HttpHeaders *headers() override;
-  virtual Result<HttpIncomingBody *> body() override;
+
+  Result<HttpHeaders*> headers() override;
+  Result<HttpIncomingBody *> body() override;
+  [[nodiscard]] Result<uint16_t> status() override;
 };
 
 class HttpOutgoingResponse final : public HttpResponse,
                                    public HttpOutgoingBodyOwner {
-private:
-  using Handle = bindings_own_outgoing_response_t;
-  static constexpr Handle invalid = Handle{-1};
-
-  Handle handle = invalid;
-
 public:
-  const uint16_t status;
-
-  using ResponseOutparam = bindings_own_response_outparam_t;
+  using ResponseOutparam = Handle;
 
   HttpOutgoingResponse() = delete;
   HttpOutgoingResponse(uint16_t status, HttpHeaders *headers);
 
   bool is_incoming() override { return false; }
   bool is_request() override { return false; }
-  bool valid() override { return handle.__handle != invalid.__handle; }
-  HttpHeaders *headers() override;
-  virtual Result<HttpOutgoingBody *> body() override;
 
-  Result<Void> send(ResponseOutparam* out_param);
+  Result<HttpHeaders*> headers() override;
+  Result<HttpOutgoingBody *> body() override;
+  [[nodiscard]] Result<uint16_t> status() override;
+
+  Result<Void> send(ResponseOutparam out_param);
 };
 
 class Random final {
@@ -552,8 +478,8 @@ public:
   static uint64_t now();
   static uint64_t resolution();
 
-  static int32_t subscribe(uint64_t when, bool absolute);
-  static void unsubscribe(int32_t handle_id);
+  static core::PollableHandle subscribe(uint64_t when, bool absolute);
+  static void unsubscribe(core::PollableHandle handle_id);
 };
 
 } // namespace host_api

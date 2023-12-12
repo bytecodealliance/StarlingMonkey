@@ -49,9 +49,12 @@ private:
   double total_compute;
 };
 
+typedef int32_t PollableHandle;
+constexpr PollableHandle INVALID_POLLABLE_HANDLE = -1;
+
 class AsyncTask {
 protected:
-  int32_t handle_id_ = -1;
+  PollableHandle handle_ = -1;
 
 public:
   virtual ~AsyncTask() = default;
@@ -60,9 +63,9 @@ public:
   virtual bool cancel(Engine* engine) = 0;
   virtual bool ready() = 0;
 
-  [[nodiscard]] virtual int32_t id() {
-    MOZ_ASSERT(handle_id_ > -1, "AsyncTask handle_id not initialized in subclass");
-    return handle_id_;
+  [[nodiscard]] virtual PollableHandle id() {
+    MOZ_ASSERT(handle_ != INVALID_POLLABLE_HANDLE);
+    return handle_;
   }
 
   virtual void trace(JSTracer *trc) = 0;

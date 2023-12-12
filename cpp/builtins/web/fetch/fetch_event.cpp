@@ -3,13 +3,13 @@
 #include "../worker-location.h"
 #include "encode.h"
 #include "request-response.h"
+
+#include <bindings.h>
 #include <iostream>
 
 using namespace std::literals::string_view_literals;
 
-namespace builtins {
-namespace web {
-namespace fetch_event {
+namespace builtins::web::fetch_event {
 
 using fetch::Request;
 using fetch::Response;
@@ -17,13 +17,13 @@ using fetch::RequestOrResponse;
 
 namespace {
 
-static core::Engine *ENGINE;
+core::Engine *ENGINE;
 
-JS::PersistentRooted<JSObject *> INSTANCE;
-static JS::PersistentRootedObjectVector *FETCH_HANDLERS;
+PersistentRooted<JSObject *> INSTANCE;
+JS::PersistentRootedObjectVector *FETCH_HANDLERS;
 
-static bindings_own_response_outparam_t* RESPONSE_OUT;
-static host_api::HttpOutgoingBody* STREAMING_BODY;
+host_api::HttpOutgoingResponse::ResponseOutparam RESPONSE_OUT;
+host_api::HttpOutgoingBody* STREAMING_BODY;
 
 void inc_pending_promise_count(JSObject *self) {
   MOZ_ASSERT(FetchEvent::is_instance(self));
@@ -84,7 +84,9 @@ bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
                       JS::PrivateValue(req));
 
   // Set the method.
-  auto method_str = req->method();
+  auto res = req->method();
+  MOZ_ASSERT(!res.is_err(), "TODO: proper error handling");
+  auto method_str = res.unwrap();
   bool is_get = method_str == "GET";
   bool is_head = !is_get && method_str == "HEAD";
 
@@ -106,13 +108,7 @@ bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
     JS::SetReservedSlot(request, static_cast<uint32_t>(Request::Slots::HasBody), JS::TrueValue());
   }
 
-  std::string uri_str = "http://";
-  auto uri = req->url();
-  if (!uri.has_value()) {
-    ENGINE->abort("Can't process incoming requests without a URL\n");
-  }
-
-  uri_str = uri.value();
+  auto uri_str = req->url();
   JS::RootedString url(cx, JS_NewStringCopyN(cx, uri_str.data(), uri_str.size()));
   if (!url) {
     return false;
@@ -551,9 +547,7 @@ bool install(core::Engine* engine) {
   return true;
 }
 
-} // namespace fetch_event
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::fetch_event
 
 // #define S_TO_NS(s) ((s) * 1000000000)
 // static int64_t now_ns() {
@@ -562,9 +556,10 @@ bool install(core::Engine* engine) {
 //   return S_TO_NS(now.tv_sec) + now.tv_nsec;
 // }
 using namespace builtins::web::fetch_event;
+// TODO: change this to fully work in terms of host_api.
 void exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_handle(
-    bindings_own_incoming_request_t request_handle,
-    bindings_own_response_outparam_t response_out) {
+    exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_own_incoming_request_t request_handle,
+    exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_own_response_outparam_t response_out) {
 
   // auto begin = now_ns();
   // auto id1 = host_api::MonotonicClock::subscribe(begin + 1, true);
@@ -584,9 +579,9 @@ void exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_handle(
   //
   // return;
 
-  RESPONSE_OUT = &response_out;
+  RESPONSE_OUT = response_out.__handle;
 
-  auto request = new host_api::HttpIncomingRequest(request_handle);
+  auto request = new host_api::HttpIncomingRequest(request_handle.__handle);
   HandleObject fetch_event = FetchEvent::instance();
   MOZ_ASSERT(FetchEvent::is_instance(fetch_event));
   if (!FetchEvent::init_incoming_request(ENGINE->cx(), fetch_event, request)) {
@@ -621,7 +616,7 @@ void exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_handle(
     return;
   }
 
-  if (STREAMING_BODY && !STREAMING_BODY->closed()) {
+  if (STREAMING_BODY && STREAMING_BODY->valid()) {
     STREAMING_BODY->close();
   }
 }

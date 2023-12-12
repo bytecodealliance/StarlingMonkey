@@ -92,7 +92,7 @@ async function main(event) {
 
     try {
         let now = Date.now();
-        // let diff = () => Date.now() - now;
+        let diff = () => Date.now() - now;
         // // setTimeout(() => console.log(`1`), 1);
         // // let id = setTimeout(() => console.log(`5000`), 5000);
         // // clearTimeout(id);
@@ -100,7 +100,7 @@ async function main(event) {
         // // clearTimeout(id);
         // setTimeout(() => console.log(diff()), 100);
         // setTimeout(() => console.log(diff()), 1000);
-        // setTimeout(() => console.log(diff()), 2000);
+        setTimeout(() => console.log(diff()), 2000);
         // setTimeout(() => console.log(diff()), 3000);
         // setTimeout(() => console.log(diff()), 3000);
         // setTimeout(() => console.log(diff()), 4000);

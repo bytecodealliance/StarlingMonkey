@@ -1,7 +1,6 @@
 #ifndef JS_COMPUTE_RUNTIME_EVENT_LOOP_H
 #define JS_COMPUTE_RUNTIME_EVENT_LOOP_H
 
-#include "bindings.h"
 #include "engine.h"
 
 // TODO: remove these once the warnings are fixed

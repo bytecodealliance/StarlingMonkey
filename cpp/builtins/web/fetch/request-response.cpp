@@ -57,7 +57,9 @@ public:
   explicit BodyFutureTask(const HandleObject body_source) : body_source_(body_source) {
     auto owner = streams::NativeStreamSource::owner(body_source_);
     incoming_body_ = RequestOrResponse::incoming_body_handle(owner);
-    handle_id_ = incoming_body_->async_handle().handle.__handle;
+    auto res = incoming_body_->subscribe();
+    MOZ_ASSERT(!res.is_err(), "Subscribing to a future should never fail");
+    handle_ = res.unwrap();
   }
 
   [[nodiscard]] bool run(core::Engine* engine) override {
@@ -67,14 +69,14 @@ public:
     RootedObject controller( cx, streams::NativeStreamSource::controller(body_source_));
     auto body = RequestOrResponse::incoming_body_handle(owner);
 
-    auto read_res = body->read(HANDLE_READ_CHUNK_SIZE, true);
+    auto read_res = body->read(HANDLE_READ_CHUNK_SIZE);
     if (auto *err = read_res.to_err()) {
       HANDLE_ERROR(cx, *err);
       return error_stream_controller_with_pending_exception(cx, controller);
     }
 
     auto &chunk = read_res.unwrap();
-    if (std::get<1>(chunk)) {
+    if (chunk.done) {
       RootedValue r(cx);
       return Call(cx, controller, "close", HandleValueArray::empty(), &r);
     }
@@ -82,7 +84,7 @@ public:
     // We don't release control of chunk's data until after we've checked that
     // the array buffer allocation has been successful, as that ensures that the
     // return path frees chunk automatically when necessary.
-    auto &bytes = std::get<0>(chunk);
+    auto &bytes = chunk.bytes;
     RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, bytes.len, bytes.ptr.get()));
     if (!buffer) {
       return error_stream_controller_with_pending_exception(cx, controller);
@@ -109,7 +111,7 @@ public:
 
   [[nodiscard]] bool cancel(core::Engine* engine) override {
     // TODO(TS): implement
-    handle_id_ = -1;
+    handle_ = -1;
     return true;
   }
 
@@ -125,12 +127,14 @@ public:
 
 class ResponseFutureTask final : public core::AsyncTask {
   Heap<JSObject *> request_;
-  host_api::FutureHttpIncomingResponse* pending_handle_;
+  host_api::FutureHttpIncomingResponse* future_;
 
 public:
-  explicit ResponseFutureTask(const HandleObject request, host_api::FutureHttpIncomingResponse* pending_handle)
-    : request_(request), pending_handle_(pending_handle) {
-    handle_id_ = pending_handle->async_handle().handle.__handle;
+  explicit ResponseFutureTask(const HandleObject request, host_api::FutureHttpIncomingResponse* future)
+    : request_(request), future_(future) {
+    auto res = future->subscribe();
+    MOZ_ASSERT(!res.is_err(), "Subscribing to a future should never fail");
+    handle_ = res.unwrap();
   }
 
   ResponseFutureTask(const RootedObject& rooted);
@@ -143,7 +147,7 @@ public:
     RootedObject response_promise(cx, Request::response_promise(request));
 
 
-    auto res = pending_handle_->poll();
+    auto res = future_->maybe_response();
     if (res.is_err()) {
       JS_ReportErrorUTF8(cx, "NetworkError when attempting to fetch resource.");
       return RejectPromiseWithPendingError(cx, response_promise);
@@ -175,7 +179,7 @@ public:
 
   [[nodiscard]] bool cancel(core::Engine* engine) override {
     // TODO(TS): implement
-    handle_id_ = -1;
+    handle_ = -1;
     return true;
   }
 
@@ -219,43 +223,41 @@ struct ReadResult {
 // Returns a UniqueChars and the length of that string. The UniqueChars value is not
 // null-terminated.
 ReadResult read_from_handle_all(JSContext *cx, host_api::HttpIncomingBody* body) {
-  std::vector<host_api::HostString> chunks;
+  std::vector<host_api::HostBytes> chunks;
   size_t bytes_read = 0;
   while (true) {
-    auto res = body->read(HANDLE_READ_CHUNK_SIZE, true);
+    auto res = body->read(HANDLE_READ_CHUNK_SIZE);
     if (auto *err = res.to_err()) {
       HANDLE_ERROR(cx, *err);
       return {nullptr, 0};
     }
 
     auto ret = &res.unwrap();
-    bool done = std::get<1>(*ret);
-    if (done) {
+    if (ret->done) {
       break;
     }
 
-    auto chunk = std::move(std::get<0>(*ret));
-    bytes_read += chunk.len;
-    chunks.emplace_back(std::move(chunk));
+    bytes_read += ret->bytes.len;
+    chunks.emplace_back(std::move(ret->bytes));
   }
 
-  JS::UniqueChars buf;
+  UniqueChars buf;
   if (chunks.size() == 1) {
     // If there was only one chunk read, reuse that allocation.
     auto &chunk = chunks.back();
-    buf = std::move(chunk.ptr);
-  } else {
-    // If there wasn't exactly one chunk read, we'll need to allocate a buffer to store the results.
-    buf.reset(static_cast<char *>(JS_string_malloc(cx, bytes_read)));
-    if (!buf) {
-      JS_ReportOutOfMemory(cx);
-      return {nullptr, 0};
-    }
+    return {UniqueChars(reinterpret_cast<char *>(chunk.ptr.release())), bytes_read};
+  }
 
-    char *end = buf.get();
-    for (auto &chunk : chunks) {
-      end = std::copy(chunk.ptr.get(), chunk.ptr.get() + chunk.len, end);
-    }
+  // If there wasn't exactly one chunk read, we'll need to allocate a buffer to store the results.
+  buf.reset(static_cast<char *>(JS_string_malloc(cx, bytes_read)));
+  if (!buf) {
+    JS_ReportOutOfMemory(cx);
+    return {nullptr, 0};
+  }
+
+  char *end = buf.get();
+  for (auto &chunk : chunks) {
+    end = std::copy(chunk.ptr.get(), chunk.ptr.get() + chunk.len, end);
   }
 
   return {std::move(buf), bytes_read};
@@ -282,7 +284,9 @@ bool RequestOrResponse::is_incoming(JSObject *obj) {
 
 host_api::HttpHeaders *RequestOrResponse::headers_handle(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
-  return handle(obj)->headers();
+  auto res = handle(obj)->headers();
+  MOZ_ASSERT(!res.is_err(), "TODO: proper error handling");
+  return res.unwrap();
 }
 
 bool RequestOrResponse::has_body(JSObject *obj) {
@@ -2966,7 +2970,9 @@ JSObject *Response::create(JSContext *cx, JS::HandleObject response,
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Redirected), JS::FalseValue());
 
   if (response_handle->is_incoming()) {
-    auto status = reinterpret_cast<host_api::HttpIncomingResponse*>(response_handle)->status();
+    auto res = reinterpret_cast<host_api::HttpIncomingResponse*>(response_handle)->status();
+    MOZ_ASSERT(!res.is_err(), "TODO: proper error handling");
+    auto status = res.unwrap();
     JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Status), JS::Int32Value(status));
     set_status_message_from_code(cx, response, status);
 
