@@ -46,7 +46,7 @@ include mk/commands.mk
 ifneq ($(CAE),)
 HOST_INTERFACE := $(ROOT)/compute-at-edge
 else
-HOST_INTERFACE :=$(ROOT)/wasi-preview2
+HOST_INTERFACE :=$(ROOT)/wasi-0.2.0-rc-2023-10-18
 endif
 
 # The wasi-sdk provided c++ compiler wrapper.
@@ -394,4 +394,3 @@ compile_commands.json: .vscode/compile_commands.json
 		echo; \
 		echo ']' \
 	) > "$@"
-
