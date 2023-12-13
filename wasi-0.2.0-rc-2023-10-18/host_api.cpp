@@ -586,8 +586,10 @@ wasi_http_0_2_0_rc_2023_10_18_types_method_t http_method_to_host(string_view met
       WASI_HTTP_0_2_0_RC_2023_10_18_TYPES_METHOD_OTHER, {val}};
 }
 
-HttpOutgoingRequest::HttpOutgoingRequest(string_view method_str, optional<HostString> url_str,
-                                         HttpHeaders *headers) {
+HttpOutgoingRequest::HttpOutgoingRequest(HandleState *state) { this->handle_state_ = state; }
+
+HttpOutgoingRequest *HttpOutgoingRequest::make(string_view method_str, optional<HostString> url_str,
+                                               HttpHeaders *headers) {
   bindings_string_t path_with_query;
   wasi_http_0_2_0_rc_2023_10_18_types_scheme_t scheme;
   bindings_string_t authority;
@@ -625,7 +627,13 @@ HttpOutgoingRequest::HttpOutgoingRequest(string_view method_str, optional<HostSt
                     &method, maybe_path_with_query, maybe_scheme, maybe_authority,
                     {headers->handle_state_->handle})
                     .__handle;
-  handle_state_ = new HandleState(handle);
+
+  auto *state = new HandleState(handle);
+  auto *resp = new HttpOutgoingRequest(state);
+
+  resp->headers_ = headers;
+
+  return resp;
 }
 
 Result<string_view> HttpOutgoingRequest::method() {
@@ -803,13 +811,20 @@ Result<HttpIncomingBody *> HttpIncomingResponse::body() {
   return Result<HttpIncomingBody *>::ok(body_);
 }
 
-HttpOutgoingResponse::HttpOutgoingResponse(const uint16_t status, HttpHeaders *headers) {
-  status_ = status;
-  headers_ = headers;
+HttpOutgoingResponse::HttpOutgoingResponse(HandleState *state) { this->handle_state_ = state; }
+
+HttpOutgoingResponse *HttpOutgoingResponse::make(const uint16_t status, HttpHeaders *headers) {
   auto borrow =
-      wasi_http_0_2_0_rc_2023_10_18_types_borrow_headers_t({headers_->handle_state_->handle});
+      wasi_http_0_2_0_rc_2023_10_18_types_borrow_headers_t({headers->handle_state_->handle});
   auto handle = wasi_http_0_2_0_rc_2023_10_18_types_constructor_outgoing_response(status, borrow);
-  handle_state_ = new HandleState(handle.__handle);
+
+  auto *state = new HandleState(handle.__handle);
+  auto *resp = new HttpOutgoingResponse(state);
+
+  resp->status_ = status;
+  resp->headers_ = headers;
+
+  return resp;
 }
 
 Result<HttpHeaders *> HttpOutgoingResponse::headers() {

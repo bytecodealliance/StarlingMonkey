@@ -301,8 +301,8 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool FetchEvent::respondWithError(JSContext *cx, JS::HandleObject self) {
   MOZ_RELEASE_ASSERT(state(self) == State::unhandled || state(self) == State::waitToRespond);
 
-  auto headers = new host_api::HttpHeaders();
-  auto response = new host_api::HttpOutgoingResponse(500, headers);
+  auto *headers = new host_api::HttpHeaders();
+  auto *response = host_api::HttpOutgoingResponse::make(500, headers);
   delete headers;
 
   auto body_res = response->body();
@@ -581,7 +581,7 @@ void exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_handle(
 
   RESPONSE_OUT = response_out.__handle;
 
-  auto request = new host_api::HttpIncomingRequest(request_handle.__handle);
+  auto *request = new host_api::HttpIncomingRequest(request_handle.__handle);
   HandleObject fetch_event = FetchEvent::instance();
   MOZ_ASSERT(FetchEvent::is_instance(fetch_event));
   if (!FetchEvent::init_incoming_request(ENGINE->cx(), fetch_event, request)) {

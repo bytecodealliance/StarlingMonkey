@@ -218,7 +218,7 @@ public:
 
 class Resource {
 protected:
-  HandleState* handle_state_;
+  HandleState *handle_state_;
 
 public:
   virtual ~Resource() = default;
@@ -405,9 +405,12 @@ public:
 };
 
 class HttpOutgoingRequest final : public HttpRequest, public HttpOutgoingBodyOwner {
+  HttpOutgoingRequest(HandleState *state);
+
 public:
   HttpOutgoingRequest() = delete;
-  HttpOutgoingRequest(string_view method, optional<HostString> url, HttpHeaders *headers);
+
+  static HttpOutgoingRequest *make(string_view method, optional<HostString> url, HttpHeaders *headers);
 
   bool is_incoming() override { return false; }
   bool is_request() override { return true; }
@@ -442,11 +445,14 @@ public:
 };
 
 class HttpOutgoingResponse final : public HttpResponse, public HttpOutgoingBodyOwner {
+  HttpOutgoingResponse(HandleState *state);
+
 public:
   using ResponseOutparam = Handle;
 
   HttpOutgoingResponse() = delete;
-  HttpOutgoingResponse(uint16_t status, HttpHeaders *headers);
+
+  static HttpOutgoingResponse *make(uint16_t status, HttpHeaders *headers);
 
   bool is_incoming() override { return false; }
   bool is_request() override { return false; }
