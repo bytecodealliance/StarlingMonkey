@@ -9,9 +9,9 @@
 #include <variant>
 #include <vector>
 
-#include <engine.h>
 #include "js/TypeDecls.h"
 #include "rust-url/rust-url.h"
+#include <engine.h>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
@@ -26,11 +26,11 @@ using std::unique_ptr;
 using std::vector;
 
 namespace host_api {
-  class HttpOutgoingRequest;
-  class HttpOutgoingResponse;
-  class HttpIncomingRequest;
+class HttpOutgoingRequest;
+class HttpOutgoingResponse;
+class HttpIncomingRequest;
 
-  /// A type to signal that a result produces no value.
+/// A type to signal that a result produces no value.
 struct Void final {};
 
 /// The type of errors returned from the host.
@@ -76,9 +76,7 @@ public:
   }
 
   /// Construct an error in-place.
-  APIError &emplace_err(APIError err) & {
-    return this->result.template emplace<Error>(err).value;
-  }
+  APIError &emplace_err(APIError err) & { return this->result.template emplace<Error>(err).value; }
 
   /// Construct a value of T in-place.
   template <typename... Args> T &emplace(Args &&...args) {
@@ -145,7 +143,8 @@ struct HostString final {
 
   /// Conversion to a `jsurl::SpecString`.
   operator jsurl::SpecString() {
-    return jsurl::SpecString(reinterpret_cast<uint8_t *>(this->ptr.release()), this->len, this->len);
+    return jsurl::SpecString(reinterpret_cast<uint8_t *>(this->ptr.release()), this->len,
+                             this->len);
   }
 };
 
@@ -196,9 +195,7 @@ struct HostBytes final {
   bool operator!=(std::nullptr_t) { return this->ptr != nullptr; }
 
   /// Conversion to a `std::span<uint8_t>`.
-  operator std::span<uint8_t>() const {
-    return std::span<uint8_t>(this->ptr.get(), this->len);
-  }
+  operator std::span<uint8_t>() const { return std::span<uint8_t>(this->ptr.get(), this->len); }
 };
 
 /// The type of handles used by the host interface.
@@ -227,12 +224,13 @@ public:
   virtual ~Resource() = default;
 
   /// Returns true when this resource handle is valid.
-  virtual bool valid() const { return handle_state_; }
+  virtual bool valid() const { return this->handle_state_ != nullptr; }
 };
 
 class Pollable : public Resource {
 protected:
   Pollable() = default;
+
 public:
   ~Pollable() override = default;
 
@@ -251,7 +249,7 @@ public:
     HostBytes bytes;
     ReadResult() = default;
     ReadResult(const bool done, unique_ptr<uint8_t[]> ptr, size_t len)
-      : done{done}, bytes(std::move(ptr), len) {}
+        : done{done}, bytes(std::move(ptr), len) {}
   };
   /// Read a chunk of up to `chunk_size` bytes from this handle.
   ///
@@ -289,7 +287,7 @@ public:
   Result<Void> write_all(const uint8_t *bytes, size_t len);
 
   /// Append an HttpIncomingBody to this one.
-  Result<Void> append(core::Engine* engine, HttpIncomingBody* incoming);
+  Result<Void> append(core::Engine *engine, HttpIncomingBody *incoming);
 
   /// Close this handle, and reset internal state to invalid.
   Result<Void> close();
@@ -299,11 +297,11 @@ public:
 };
 
 class HttpBodyPipe {
-  HttpIncomingBody* incoming;
-  HttpOutgoingBody* outgoing;
+  HttpIncomingBody *incoming;
+  HttpOutgoingBody *outgoing;
 
 public:
-  HttpBodyPipe(HttpIncomingBody *incoming, HttpOutgoingBody * outgoing)
+  HttpBodyPipe(HttpIncomingBody *incoming, HttpOutgoingBody *outgoing)
       : incoming(incoming), outgoing(outgoing) {}
 
   Result<uint8_t> pump();
@@ -333,7 +331,7 @@ class HttpHeaders final : public Resource {
 public:
   HttpHeaders();
   explicit HttpHeaders(Handle handle);
-  explicit HttpHeaders(const vector<tuple<string_view, vector<string_view>>>& entries);
+  explicit HttpHeaders(const vector<tuple<string_view, vector<string_view>>> &entries);
   HttpHeaders(const HttpHeaders &headers);
 
   Result<vector<tuple<HostString, HostString>>> entries() const;
@@ -347,13 +345,13 @@ public:
 
 class HttpRequestResponseBase : public Resource {
 protected:
-  HttpHeaders* headers_ = nullptr;
-  std::string* _url = nullptr;
+  HttpHeaders *headers_ = nullptr;
+  std::string *_url = nullptr;
 
- public:
+public:
   ~HttpRequestResponseBase() override = default;
 
-  virtual Result<HttpHeaders*> headers() = 0;
+  virtual Result<HttpHeaders *> headers() = 0;
   virtual string_view url();
 
   virtual bool is_incoming() = 0;
@@ -365,7 +363,7 @@ protected:
 
 class HttpIncomingBodyOwner {
 protected:
-  HttpIncomingBody* body_ = nullptr;
+  HttpIncomingBody *body_ = nullptr;
 
 public:
   virtual ~HttpIncomingBodyOwner() = default;
@@ -376,7 +374,7 @@ public:
 
 class HttpOutgoingBodyOwner {
 protected:
-  HttpOutgoingBody* body_ = nullptr;
+  HttpOutgoingBody *body_ = nullptr;
 
 public:
   virtual ~HttpOutgoingBodyOwner() = default;
@@ -393,8 +391,7 @@ public:
   [[nodiscard]] virtual Result<string_view> method() = 0;
 };
 
-class HttpIncomingRequest final : public HttpRequest,
-                                  public HttpIncomingBodyOwner {
+class HttpIncomingRequest final : public HttpRequest, public HttpIncomingBodyOwner {
 public:
   HttpIncomingRequest() = delete;
   explicit HttpIncomingRequest(Handle handle);
@@ -403,12 +400,11 @@ public:
   bool is_request() override { return true; }
 
   [[nodiscard]] Result<string_view> method() override;
-  Result<HttpHeaders*> headers() override;
-  Result<HttpIncomingBody*> body() override;
+  Result<HttpHeaders *> headers() override;
+  Result<HttpIncomingBody *> body() override;
 };
 
-class HttpOutgoingRequest final : public HttpRequest,
-                                  public HttpOutgoingBodyOwner {
+class HttpOutgoingRequest final : public HttpRequest, public HttpOutgoingBodyOwner {
 public:
   HttpOutgoingRequest() = delete;
   HttpOutgoingRequest(string_view method, optional<HostString> url, HttpHeaders *headers);
@@ -417,10 +413,10 @@ public:
   bool is_request() override { return true; }
 
   [[nodiscard]] Result<string_view> method() override;
-  Result<HttpHeaders*> headers() override;
-  Result<HttpOutgoingBody*> body() override;
+  Result<HttpHeaders *> headers() override;
+  Result<HttpOutgoingBody *> body() override;
 
-  Result<FutureHttpIncomingResponse*> send();
+  Result<FutureHttpIncomingResponse *> send();
 };
 
 class HttpResponse : public HttpRequestResponseBase {
@@ -432,8 +428,7 @@ public:
   [[nodiscard]] virtual Result<uint16_t> status() = 0;
 };
 
-class HttpIncomingResponse final : public HttpResponse,
-                                   public HttpIncomingBodyOwner {
+class HttpIncomingResponse final : public HttpResponse, public HttpIncomingBodyOwner {
 public:
   HttpIncomingResponse() = delete;
   explicit HttpIncomingResponse(Handle handle);
@@ -441,13 +436,12 @@ public:
   bool is_incoming() override { return true; }
   bool is_request() override { return false; }
 
-  Result<HttpHeaders*> headers() override;
+  Result<HttpHeaders *> headers() override;
   Result<HttpIncomingBody *> body() override;
   [[nodiscard]] Result<uint16_t> status() override;
 };
 
-class HttpOutgoingResponse final : public HttpResponse,
-                                   public HttpOutgoingBodyOwner {
+class HttpOutgoingResponse final : public HttpResponse, public HttpOutgoingBodyOwner {
 public:
   using ResponseOutparam = Handle;
 
@@ -457,7 +451,7 @@ public:
   bool is_incoming() override { return false; }
   bool is_request() override { return false; }
 
-  Result<HttpHeaders*> headers() override;
+  Result<HttpHeaders *> headers() override;
   Result<HttpOutgoingBody *> body() override;
   [[nodiscard]] Result<uint16_t> status() override;
 
