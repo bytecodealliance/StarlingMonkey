@@ -6,6 +6,7 @@
 
 #include <bindings.h>
 #include <iostream>
+#include <memory>
 
 using namespace std::literals::string_view_literals;
 
@@ -301,9 +302,8 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool FetchEvent::respondWithError(JSContext *cx, JS::HandleObject self) {
   MOZ_RELEASE_ASSERT(state(self) == State::unhandled || state(self) == State::waitToRespond);
 
-  auto *headers = new host_api::HttpHeaders();
-  auto *response = host_api::HttpOutgoingResponse::make(500, headers);
-  delete headers;
+  auto headers = std::make_unique<host_api::HttpHeaders>();
+  auto *response = host_api::HttpOutgoingResponse::make(500, headers.get());
 
   auto body_res = response->body();
   if (auto *err = body_res.to_err()) {
