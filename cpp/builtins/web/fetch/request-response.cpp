@@ -528,7 +528,7 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
       return nullptr;
     }
 
-    auto headers_handle = RequestOrResponse::headers_handle(obj);
+    auto *headers_handle = RequestOrResponse::headers_handle(obj);
     if (!headers_handle) {
       headers_handle = new host_api::HttpHeaders();
     }
@@ -1535,7 +1535,7 @@ JSString *GET_atom;
 //   }
 // #endif
 
-//   auto request_handle_res = new host_api::HttpOutgoingRequest()
+//   auto *request_handle_res = new host_api::HttpOutgoingRequest()
 //   if (auto *err = request_handle_res.to_err()) {
 //     HANDLE_ERROR(cx, *err);
 //     return false;
@@ -1952,7 +1952,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance,
   // `init["headers"]` exists, create the request's `headers` from that,
   // otherwise create it from the `init` object's `headers`, or create a new,
   // empty one.
-  auto headers_handle = new host_api::HttpHeaders();
+  auto *headers_handle = new host_api::HttpHeaders();
   JS::RootedObject headers(cx);
 
   if (headers_val.isUndefined() && input_headers) {
@@ -1999,7 +1999,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance,
   // Actually create the instance, now that we have all the parts required for
   // it. We have to delay this step to here because the wasi-http API requires
   // that all the request's properties are provided to the constructor.
-  auto request_handle = new host_api::HttpOutgoingRequest(method, std::move(url), headers_handle);
+  auto request_handle = host_api::HttpOutgoingRequest::make(method, std::move(url), headers_handle);
   RootedObject request(cx, create(cx, requestInstance, request_handle));
   if (!request) {
     return nullptr;
@@ -2859,13 +2859,13 @@ bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!headersInstance)
     return false;
 
-  auto headers_handle = new host_api::HttpHeaders();
+  auto *headers_handle = new host_api::HttpHeaders();
   headers = Headers::create(cx, headersInstance, headers_handle, headers_val);
   if (!headers) {
     return false;
   }
 
-  auto response_handle = new host_api::HttpOutgoingResponse(status, headers_handle);
+  auto *response_handle = host_api::HttpOutgoingResponse::make(status, headers_handle);
 
   JS::RootedObject responseInstance(cx, JS_NewObjectForConstructor(cx, &class_, args));
   if (!responseInstance) {
