@@ -6,7 +6,7 @@ add_library(host_api STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/host_api.h
 )
 
-target_link_libraries(host_api PRIVATE spidermonkey)
+target_link_libraries(host_api PRIVATE jsapi)
 target_include_directories(host_api PRIVATE include)
 target_include_directories(host_api INTERFACE ${HOST_API}/include)
 

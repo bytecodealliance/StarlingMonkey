@@ -48,13 +48,3 @@ JSObject *PromiseRejectedWithPendingError(JSContext *cx) {
   }
   return promise;
 }
-
-enum class Mode { PreWizening, PostWizening };
-
-Mode execution_mode = Mode::PreWizening;
-
-bool hasWizeningFinished() { return execution_mode == Mode::PostWizening; }
-
-bool isWizening() { return execution_mode == Mode::PreWizening; }
-
-void markWizeningAsFinished() { execution_mode = Mode::PostWizening; }

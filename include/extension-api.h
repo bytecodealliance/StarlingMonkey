@@ -34,6 +34,10 @@ class AsyncTask;
 class Engine {
 public:
   Engine();
+
+  bool is_initializing();
+  void set_init_finished();
+
   JSContext *cx();
   HandleObject global();
   bool eval(char *code, size_t len, const char* filename, MutableHandleValue result);

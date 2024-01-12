@@ -144,3 +144,5 @@ async function main(event) {
 }
 
 addEventListener('fetch', main);
+
+console.log("yep!");

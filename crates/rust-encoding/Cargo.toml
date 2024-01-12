@@ -8,10 +8,3 @@ crate-type = ["staticlib"]
 
 [dependencies]
 encoding_c = { version = "0.9.8", features = [] }
-
-[profile.release]
-lto = true
-panic = 'abort'
-
-[profile.dev]
-panic = 'abort'

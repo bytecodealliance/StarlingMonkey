@@ -26,6 +26,7 @@ ExternalProject_Add(
         -DNO_SYSLOG
         -DNO_CHMOD
         -DOPENSSL_NO_SECURE_MEMORY
+        -fPIC
         --with-rand-seed=getrandom
         --prefix=${OPENSSL_INSTALL_DIR}
         --cross-compile-prefix=${WASI_SDK_PREFIX}/bin/

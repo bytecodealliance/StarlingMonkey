@@ -25,26 +25,25 @@ include("toolchain")
 
 project(js_wasm)
 
-include("init-corrosion")
+include("spidermonkey")
 
 include("wasm-tools")
 include("wizer")
 include("wasmtime")
 
 include("fmt")
-include("spidermonkey")
 include("openssl")
 include("host_api")
 include("build-crates")
 
 add_library(extension_api INTERFACE include/extension-api.h runtime/encode.h)
-target_link_libraries(extension_api INTERFACE rust-url rust-encoding spidermonkey)
+target_link_libraries(extension_api INTERFACE rust-url rust-encoding jsapi)
 target_include_directories(extension_api INTERFACE include deps/include runtime)
 
 include("builtins")
 
-add_executable(js.wasm
-        runtime/js.cpp
+add_library(js
+        runtime/libjs.cpp
         runtime/allocator.cpp
         runtime/encode.cpp
         runtime/engine.cpp
@@ -53,9 +52,44 @@ add_executable(js.wasm
 
 
 # TODO: remove this once the runtime doesn't need to explicitly include the builtins anymore.
-target_include_directories(js.wasm PRIVATE cpp)
+#target_include_directories(js PRIVATE cpp)
+target_link_libraries(js PRIVATE host_api extension_api builtins spidermonkey-shared)
 
-target_link_libraries(js.wasm PRIVATE host_api extension_api builtins spidermonkey rust-url)
+add_library(js-shared SHARED js-shared/js-shared.cpp)
+target_link_libraries(js-shared PUBLIC js extension_api host_api)
+#target_link_libraries(js-shared PUBLIC
+#        "${WASI_LIBS_DIR}/libc.so"
+#        "${WASI_LIBS_DIR}/libc++.so"
+#        "${WASI_LIBS_DIR}/libc++abi.so"
+#        "${WASI_LIBS_DIR}/libwasi-emulated-mman.so"
+#        "${WASI_LIBS_DIR}/libwasi-emulated-process-clocks.so"
+#        "${WASI_LIBS_DIR}/libwasi-emulated-getpid.so"
+#        "${WASI_LIBS_DIR}/libwasi-emulated-signal.so")
+
+set(SO_FILES "${WASI_LIBS_DIR}/libc.so"
+        "${WASI_LIBS_DIR}/libc++.so"
+        "${WASI_LIBS_DIR}/libc++abi.so"
+        "libjs-shared.so"
+        "librust-url.so"
+        "librust-encoding.so"
+        "libspidermonkey-shared.so"
+        "${WASI_LIBS_DIR}/libwasi-emulated-getpid.so")
+#list(JOIN SO_FILES " " SO_FILES)
+
+add_custom_command(
+        OUTPUT js-linked.wasm
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR}:$ENV{PATH}" wasm-tools component link ${SO_FILES} --adapt wasi_snapshot_preview1=preview1-adapter.wasm -o js-linked.wasm --stub-missing-functions
+        DEPENDS js-shared
+        COMMAND_EXPAND_LISTS
+        VERBATIM
+)
+
+add_custom_target(js-linked DEPENDS js-linked.wasm)
+
+add_executable(js.wasm wizer-app/wizer_app.cpp)
+#set_property(TARGET js.wasm PROPERTY LINK_FLAGS "-Wl,--allow-undefined")
+target_link_libraries(js.wasm PRIVATE js extension_api host_api)
 
 set(RUNTIME_FILE "js.wasm")
 set(ADAPTER_FILE "preview1-adapter.wasm")
@@ -66,7 +100,7 @@ configure_file(spin.toml spin.toml COPYONLY)
 add_custom_command(
         OUTPUT smoke.js.wasm
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR};${WIZER_DIR};$ENV{PATH}" ./componentize.sh ${CMAKE_CURRENT_SOURCE_DIR}/tests/smoke.js
+        COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR}:${WIZER_DIR}:$ENV{PATH}" ./componentize.sh ${CMAKE_CURRENT_SOURCE_DIR}/tests/smoke.js
         DEPENDS js.wasm componentize.sh spin.toml
         VERBATIM
 )

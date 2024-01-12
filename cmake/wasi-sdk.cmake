@@ -9,3 +9,4 @@ else ()
 endif ()
 
 set(CMAKE_TOOLCHAIN_FILE ${WASI_SDK_PREFIX}/share/cmake/wasi-sdk.cmake)
+set(WASI_LIBS_DIR ${WASI_SDK_PREFIX}/share/wasi-sysroot/lib/wasm32-wasi)

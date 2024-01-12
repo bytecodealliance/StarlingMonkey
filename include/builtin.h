@@ -57,10 +57,6 @@ enum JSErrNum {
   JSErrNum_Limit
 };
 
-bool hasWizeningFinished();
-bool isWizening();
-void markWizeningAsFinished();
-
 const JSErrorFormatString js_ErrorFormatString[JSErrNum_Limit] = {
 #define MSG_DEF(name, count, exception, format)                                \
   {#name, format, count, exception},
@@ -115,7 +111,7 @@ const JSErrorFormatString *GetErrorMessage(void *userRef, unsigned errorNumber);
   }
 
 #define REQUEST_HANDLER_ONLY(name)                                             \
-  if (isWizening()) {                                                          \
+  if (ENGINE->is_initializing()) {                                                          \
     JS_ReportErrorUTF8(cx,                                                     \
                        "%s can only be used during request handling, "         \
                        "not during initialization",                            \
@@ -124,7 +120,7 @@ const JSErrorFormatString *GetErrorMessage(void *userRef, unsigned errorNumber);
   }
 
 #define INIT_ONLY(name)                                                        \
-  if (hasWizeningFinished()) {                                                 \
+  if (!is_initializing()) {                                                    \
     JS_ReportErrorUTF8(cx,                                                     \
                        "%s can only be used during initialization, "           \
                        "not during request handling",                          \

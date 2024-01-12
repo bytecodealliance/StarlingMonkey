@@ -15,7 +15,7 @@ function(add_builtin)
     message(STATUS "Adding builtin ${LIB_NAME}")
 
     add_library(${LIB_NAME} STATIC ${SRC})
-    target_link_libraries(${LIB_NAME} PRIVATE spidermonkey extension_api)
+    target_link_libraries(${LIB_NAME} PRIVATE extension_api)
     target_link_libraries(builtins PRIVATE ${LIB_NAME})
     file(APPEND $CACHE{INSTALL_BUILTINS} "NS_DEF(${NS})\n")
 endfunction()

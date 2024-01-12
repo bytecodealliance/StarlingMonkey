@@ -13,10 +13,8 @@
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include "allocator.h"
-#include "encode.h"
 #include "event_loop.h"
 #include "js/CompilationAndEvaluation.h"
-#include "js/ContextOptions.h"
 #include "js/ForOfIterator.h"
 #include "js/Initialization.h"
 #include "js/Promise.h"
@@ -31,6 +29,7 @@
 
 // #include "builtins/shared/performance.h"
 #include "extension-api.h"
+#include "host_api.h"
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
@@ -91,17 +90,17 @@ bool dump_value(JSContext *cx, JS::Value val, FILE *fp) {
 }
 
 bool print_stack(JSContext *cx, HandleObject stack, FILE *fp) {
-  RootedString stackStr(cx);
-  if (!BuildStackString(cx, nullptr, stack, &stackStr, 2)) {
-    return false;
-  }
-
-  auto utf8chars = core::encode(cx, stackStr);
-  if (!utf8chars) {
-    return false;
-  }
-
-  fprintf(fp, "%s\n", utf8chars.begin());
+  // RootedString stackStr(cx);
+  // if (!BuildStackString(cx, nullptr, stack, &stackStr, 2)) {
+  //   return false;
+  // }
+  //
+  // auto utf8chars = core::encode(cx, stackStr);
+  // if (!utf8chars) {
+  //   return false;
+  // }
+  //
+  // fprintf(fp, "%s\n", utf8chars.begin());
   return true;
 }
 
@@ -339,6 +338,17 @@ api::Engine::Engine() {
   JS::EnterRealm(cx(), global());
   core::EventLoop::init(cx());
 }
+
+enum class Mode { Initializing, PostInit };
+
+Mode execution_mode = Mode::Initializing;
+
+bool api::Engine::is_initializing() { return execution_mode == Mode::Initializing; }
+void api::Engine::set_init_finished() {
+  MOZ_ASSERT(execution_mode == Mode::Initializing);
+  execution_mode = Mode::PostInit;
+}
+
 
 JSContext *api::Engine::cx() { return CONTEXT; }
 
