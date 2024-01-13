@@ -1,3 +1,8 @@
+if (DEFINED ENV{WASM_TOOLS_DIR})
+    set(WASM_TOOLS_DIR $ENV{WASM_TOOLS_DIR})
+    return()
+endif ()
+
 set(WASM_TOOLS_VERSION 1.0.54)
 
 set(WASM_TOOLS_URL https://github.com/bytecodealliance/wasm-tools/releases/download/wasm-tools-${WASM_TOOLS_VERSION}/wasm-tools-${WASM_TOOLS_VERSION}-${HOST_ARCH}-${HOST_OS}.tar.gz)

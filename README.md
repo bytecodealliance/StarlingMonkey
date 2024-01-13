@@ -5,18 +5,32 @@
 The runtime's build is managed by [cmake](https://cmake.org/), which also takes care of downloading the build dependencies.
 To properly manage the Rust toolchain, the build script expects [rustup](https://rustup.rs/) to be installed in the system.
 
+### Overriding requirements
+
+The build script automatically manages all requirements except those mentioned above, but it's possible to override some of them using environment variables.
+
+Note that the build script will not check whether the requirements are satisfied, so it's up to the user to ensure that the overrides are valid. Additionally, requirements are checked and set at configuration time (i.e. during step 2 below), so it's up to the developer stay valid after configuration, or to reconfigure the build after making changes to locally installed dependencies.
+
+The following environment variables can be used to override the build script's default behavior:
+
+- `HOST_API` — use a specific implementation of the `host-api.h` API. The default is the `wasi-0.2.0` implementation. See the [dedicated section](#providing-a-custom-host-api-implementation) on specifying a custom host API implementation below for more details
+ - `WASI_SDK_PREFIX` — use a locally installed [WASI SDK](https://github.com/WebAssembly/wasi-sdk/)
+ - `WASM_TOOLS_DIR` — use a locally installed [wasm-tools](https://github.com/bytecodealliance/wasm-tools/)
+ - `WIZER_DIR` — use a locally installed [wizer](https://github.com/bytecodealliance/wizer)
+ - `SM_SOURCE_DIR` — use a local SpiderMonkey build. Note that the layout needs to match the one produced by the [spidermonkey-wasi-embedding](https://github.com/tschneidereit/spidermonkey-wasi-embedding/) project, and that you need to ensure that you provide a path to the right build type—i.e. a `debug` build for Debug configurations, and a `release` build for Release configurations.
+
 ## Building and Running
 
 With sufficiently new versions of `cmake` and `rustup` installed, the build process is as follows:
 
-1. Clone the repo
+### 1. Clone the repo
 
 ```bash
 git clone https://github.com/fermyon/js.wasm
 cd js.wasm
 ```
 
-2. Run the configuration script
+### 2. Run the configuration script
 
 For a release configuration, run
 ```bash
@@ -28,7 +42,7 @@ For a debug configuration, run
 cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
 ```
 
-3. Build the runtime
+### 3. Build the runtime
 
 The following command will build the `js.wasm` runtime module in the `cmake-build-release` directory:
 ```bash
@@ -37,8 +51,7 @@ The following command will build the `js.wasm` runtime module in the `cmake-buil
 cmake --build cmake-build-release --parallel 8
 ```
 
-
-4. Testing the build 
+### 4. Testing the build 
 
 A simple test script is provided in `tests/smoke.js`. To run it using [`Spin`](https://github.com/fermyon/spin), use the following command:
 ```bash
@@ -49,7 +62,7 @@ spin up
 
 Then visit https://localhost:3000 
 
-5. Using the runtime with other JS applications
+### 5. Using the runtime with other JS applications
 
 The build directory contains a shell script `componentize.sh` that can be used to create components from JS applications. `componentize.sh` takes a single argument, the path to the JS application, and creates a component with a name of the form `[input-file-name].wasm` in the current working directory.
 
