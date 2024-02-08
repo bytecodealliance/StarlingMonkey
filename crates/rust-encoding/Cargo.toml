@@ -1,0 +1,18 @@
+[package]
+name = "rust-encoding"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+encoding_c = { version = "0.9.8", features = [] }
+
+
+[profile.release]
+lto = true
+panic = 'abort'
+
+[profile.dev]
+panic = 'abort'

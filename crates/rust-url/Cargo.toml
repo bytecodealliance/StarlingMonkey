@@ -1,0 +1,17 @@
+[package]
+name = "rust-url"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+url = "2.4.1"
+
+[profile.release]
+lto = true
+panic = 'abort'
+
+[profile.dev]
+panic = 'abort'
