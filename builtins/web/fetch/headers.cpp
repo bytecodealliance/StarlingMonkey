@@ -1,15 +1,17 @@
-#include "builtins/headers.h"
-#include "builtins/request-response.h"
-#include "core/encode.h"
-#include "core/sequence.hpp"
-#include "host_interface/host_api.h"
-#include "js-compute-builtins.h"
+#include "headers.h"
+// #include "request-response.h"
+#include "encode.h"
+#include "sequence.hpp"
 
 #include "js/Conversions.h"
 
 namespace builtins {
+namespace web {
+namespace fetch {
 
 namespace {
+
+using Handle = host_api::HttpHeaders;
 
 #define HEADERS_ITERATION_METHOD(argc)                                                             \
   METHOD_HEADER(argc)                                                                              \
@@ -59,22 +61,17 @@ JSObject *get_backing_map(JSObject *self) {
   return &JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::BackingMap)).toObject();
 }
 
-Headers::Mode get_mode(JSObject *self) {
-  MOZ_ASSERT(Headers::is_instance(self));
-  return static_cast<Headers::Mode>(
-      JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Mode)).toInt32());
-}
-
 bool lazy_values(JSObject *self) {
   MOZ_ASSERT(Headers::is_instance(self));
   return JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::HasLazyValues))
       .toBoolean();
 }
 
-uint32_t get_handle(JSObject *self) {
+Handle *get_handle(JSObject *self) {
   MOZ_ASSERT(Headers::is_instance(self));
-  return static_cast<uint32_t>(
-      JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Handle)).toInt32());
+  auto handle =
+      JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Handle)).toPrivate();
+  return static_cast<Handle *>(handle);
 }
 
 /**
@@ -236,12 +233,9 @@ bool append_header_value_to_map(JSContext *cx, JS::HandleObject self,
   return JS::MapSet(cx, map, normalized_name, normalized_value);
 }
 
-bool get_header_names_from_handle(JSContext *cx, uint32_t handle, Headers::Mode mode,
-                                  JS::HandleObject backing_map) {
+bool get_header_names_from_handle(JSContext *cx, Handle *handle, JS::HandleObject backing_map) {
 
-  auto names = mode == Headers::Mode::ProxyToRequest
-                   ? host_api::HttpReq{handle}.get_header_names()
-                   : host_api::HttpResp{handle}.get_header_names();
+  auto names = handle->names();
   if (auto *err = names.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
@@ -265,16 +259,11 @@ bool get_header_names_from_handle(JSContext *cx, uint32_t handle, Headers::Mode 
 
 bool retrieve_value_for_header_from_handle(JSContext *cx, JS::HandleObject self,
                                            JS::HandleValue name, JS::MutableHandleValue value) {
-  auto mode = get_mode(self);
-  MOZ_ASSERT(mode != Headers::Mode::Standalone);
-  uint32_t handle = get_handle(self);
+  auto handle = get_handle(self);
 
   JS::RootedString name_str(cx, name.toString());
   auto name_chars = core::encode(cx, name_str);
-
-  auto ret = mode == Headers::Mode::ProxyToRequest
-                 ? host_api::HttpReq{handle}.get_header_values(name_chars)
-                 : host_api::HttpResp{handle}.get_header_values(name_chars);
+  auto ret = handle->get(name_chars);
 
   if (auto *err = ret.to_err()) {
     HANDLE_ERROR(cx, *err);
@@ -447,25 +436,21 @@ bool Headers::append_header_value(JSContext *cx, JS::HandleObject self, JS::Hand
     return false;
   }
 
-  auto mode = get_mode(self);
-  if (mode != Headers::Mode::Standalone) {
-    auto handle = get_handle(self);
+  auto handle = get_handle(self);
+  if (handle) {
     std::string_view name = name_chars;
-    std::string_view value = value_chars;
     if (name == "set-cookie") {
+      std::string_view value = value_chars;
       for (auto value : splitCookiesString(value)) {
-        auto res = mode == Headers::Mode::ProxyToRequest
-                       ? host_api::HttpReq{handle}.append_header(name, value)
-                       : host_api::HttpResp{handle}.append_header(name, value);
+        auto res = handle->append(name, value);
         if (auto *err = res.to_err()) {
           HANDLE_ERROR(cx, *err);
           return false;
         }
       }
     } else {
-      auto res = mode == Headers::Mode::ProxyToRequest
-                     ? host_api::HttpReq{handle}.append_header(name, value)
-                     : host_api::HttpResp{handle}.append_header(name, value);
+      std::string_view value = value_chars;
+      auto res = handle->append(name, value);
       if (auto *err = res.to_err()) {
         HANDLE_ERROR(cx, *err);
         return false;
@@ -481,9 +466,9 @@ bool Headers::delazify(JSContext *cx, JS::HandleObject headers) {
   return ensure_all_header_values_from_handle(cx, headers, backing_map);
 }
 
-JSObject *Headers::create(JSContext *cx, JS::HandleObject self, Headers::Mode mode,
-                          JS::HandleObject owner, JS::HandleObject init_headers) {
-  JS::RootedObject headers(cx, create(cx, self, mode, owner));
+JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle,
+                          JS::HandleObject init_headers) {
+  JS::RootedObject headers(cx, create(cx, self, handle));
   if (!headers) {
     return nullptr;
   }
@@ -535,9 +520,9 @@ JSObject *Headers::create(JSContext *cx, JS::HandleObject self, Headers::Mode mo
   return headers;
 }
 
-JSObject *Headers::create(JSContext *cx, JS::HandleObject self, Headers::Mode mode,
-                          JS::HandleObject owner, JS::HandleValue initv) {
-  JS::RootedObject headers(cx, create(cx, self, mode, owner));
+JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle,
+                          JS::HandleValue initv) {
+  JS::RootedObject headers(cx, create(cx, self, handle));
   if (!headers)
     return nullptr;
 
@@ -569,13 +554,11 @@ bool Headers::set(JSContext *cx, unsigned argc, JS::Value *vp) {
   NORMALIZE_NAME(args[0], "Headers.set")
   NORMALIZE_VALUE(args[1], "Headers.set")
 
-  auto mode = get_mode(self);
-  if (mode != Mode::Standalone) {
-    auto handle = get_handle(self);
+  auto handle = get_handle(self);
+  if (handle) {
     std::string_view name = name_chars;
     std::string_view val = value_chars;
-    auto res = mode == Mode::ProxyToRequest ? host_api::HttpReq{handle}.insert_header(name, val)
-                                            : host_api::HttpResp{handle}.insert_header(name, val);
+    auto res = handle->set(name, val);
     if (auto *err = res.to_err()) {
       HANDLE_ERROR(cx, *err);
       return false;
@@ -659,12 +642,10 @@ bool Headers::delete_(JSContext *cx, unsigned argc, JS::Value *vp) {
     return true;
   }
 
-  auto mode = get_mode(self);
-  if (mode != Headers::Mode::Standalone) {
-    auto handle = get_handle(self);
+  auto handle = get_handle(self);
+  if (handle) {
     std::string_view name = name_chars;
-    auto res = mode == Mode::ProxyToRequest ? host_api::HttpReq{handle}.remove_header(name)
-                                            : host_api::HttpResp{handle}.remove_header(name);
+    auto res = handle->remove(name);
     if (auto *err = res.to_err()) {
       HANDLE_ERROR(cx, *err);
       return false;
@@ -763,7 +744,7 @@ const JSPropertySpec Headers::properties[] = {
 bool Headers::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("Headers", 0);
   JS::RootedObject headersInstance(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  JS::RootedObject headers(cx, create(cx, headersInstance, Mode::Standalone, nullptr, args.get(0)));
+  JS::RootedObject headers(cx, create(cx, headersInstance, nullptr, args.get(0)));
   if (!headers) {
     return false;
   }
@@ -786,16 +767,8 @@ bool Headers::init_class(JSContext *cx, JS::HandleObject global) {
   return JS_DefinePropertyById(cx, proto_obj, iteratorId, entries, 0);
 }
 
-JSObject *Headers::create(JSContext *cx, JS::HandleObject self, Headers::Mode mode,
-                          JS::HandleObject owner) {
-  JS_SetReservedSlot(self, static_cast<uint32_t>(Slots::Mode),
-                     JS::Int32Value(static_cast<int32_t>(mode)));
-  uint32_t handle = UINT32_MAX - 1;
-  if (mode != Headers::Mode::Standalone) {
-    handle = RequestOrResponse::handle(owner);
-  }
-  JS_SetReservedSlot(self, static_cast<uint32_t>(Slots::Handle),
-                     JS::Int32Value(static_cast<int32_t>(handle)));
+JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle) {
+  JS_SetReservedSlot(self, static_cast<uint32_t>(Slots::Handle), JS::PrivateValue(handle));
 
   JS::RootedObject backing_map(cx, JS::NewMapObject(cx));
   if (!backing_map) {
@@ -805,10 +778,9 @@ JSObject *Headers::create(JSContext *cx, JS::HandleObject self, Headers::Mode mo
                       JS::ObjectValue(*backing_map));
 
   bool lazy = false;
-  if ((mode == Mode::ProxyToRequest && Request::is_downstream(owner)) ||
-      (mode == Mode::ProxyToResponse && Response::is_upstream(owner))) {
+  if (handle) {
     lazy = true;
-    if (!get_header_names_from_handle(cx, handle, mode, backing_map)) {
+    if (!get_header_names_from_handle(cx, handle, backing_map)) {
       return nullptr;
     }
   }
@@ -818,4 +790,6 @@ JSObject *Headers::create(JSContext *cx, JS::HandleObject self, Headers::Mode mo
   return self;
 }
 
+} // namespace fetch
+} // namespace web
 } // namespace builtins

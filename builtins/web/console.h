@@ -1,9 +1,9 @@
-#ifndef JS_COMPUTE_RUNTIME_BUILTIN_CONSOLE_H
-#define JS_COMPUTE_RUNTIME_BUILTIN_CONSOLE_H
+#ifndef BUILTINS_WEB_CONSOLE_H
+#define BUILTINS_WEB_CONSOLE_H
 
-#include "builtin.h"
+#include "extension-api.h"
 
-namespace builtins {
+namespace builtins::web::console {
 
 class Console : public BuiltinNoConstructor<Console> {
 private:
@@ -19,12 +19,10 @@ public:
   enum Slots { Count };
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
-
-  static bool create(JSContext *cx, JS::HandleObject global);
 };
 
-} // namespace builtins
+bool install(api::Engine *engine);
 
-void builtin_impl_console_log(builtins::Console::LogType log_ty, const char *msg);
+} // namespace builtins::web::console
 
 #endif

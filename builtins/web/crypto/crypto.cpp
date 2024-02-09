@@ -5,8 +5,9 @@
 #include "js/experimental/TypedData.h" // used in "js/Conversions.h"
 #pragma clang diagnostic pop
 
-#include "builtins/shared/dom-exception.h"
+#include "../dom-exception.h"
 #include "crypto.h"
+#include "host_api.h"
 #include "subtle-crypto.h"
 
 bool is_int_typed_array(JSObject *obj) {
@@ -15,7 +16,10 @@ bool is_int_typed_array(JSObject *obj) {
          JS_IsUint8ClampedArray(obj) || JS_IsBigInt64Array(obj) || JS_IsBigUint64Array(obj);
 }
 
-namespace builtins {
+namespace builtins::web::crypto {
+
+using dom_exception::DOMException;
+
 #define MAX_BYTE_LENGTH 65536
 /**
  * Implementation of
@@ -182,8 +186,8 @@ JS::PersistentRooted<JSObject *> crypto;
 bool Crypto::subtle_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
   if (self != crypto.get()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessageBuiltin, nullptr, JSMSG_INVALID_INTERFACE,
-                              "subtle get", "Crypto");
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_INTERFACE, "subtle get",
+                              "Crypto");
     return false;
   }
 
@@ -208,7 +212,7 @@ const JSPropertySpec Crypto::properties[] = {
     JS_STRING_SYM_PS(toStringTag, "Crypto", JSPROP_READONLY), JS_PS_END};
 
 bool Crypto::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
-  JS_ReportErrorNumberASCII(cx, GetErrorMessageBuiltin, nullptr, JSMSG_ILLEGAL_CTOR);
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ILLEGAL_CTOR);
   return false;
 }
 
@@ -217,8 +221,8 @@ bool crypto_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
   auto thisv = args.thisv();
   if (thisv != JS::UndefinedHandleValue && thisv != JS::ObjectValue(*global)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessageBuiltin, nullptr, JSMSG_INVALID_INTERFACE,
-                              "crypto get", "Window");
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_INTERFACE, "crypto get",
+                              "Window");
     return false;
   }
   args.rval().setObject(*crypto);
@@ -242,4 +246,15 @@ bool Crypto::init_class(JSContext *cx, JS::HandleObject global) {
   subtle.init(cx, subtleCrypto);
   return JS_DefineProperty(cx, global, "crypto", crypto_get, nullptr, JSPROP_ENUMERATE);
 }
-} // namespace builtins
+
+bool install(api::Engine *engine) {
+  if (!SubtleCrypto::init_class(engine->cx(), engine->global()))
+    return false;
+  if (!Crypto::init_class(engine->cx(), engine->global()))
+    return false;
+  if (!CryptoKey::init_class(engine->cx(), engine->global()))
+    return false;
+  return true;
+}
+
+} // namespace builtins::web::crypto

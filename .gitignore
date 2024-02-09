@@ -1,0 +1,23 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+.DS_Store
+
+# Editor-based HTTP Client requests
+/httpRequests/
+
+# CMake generated files
+/cmake-build-*/
+/deps/cpm_cache/
+
+# IDEA project files
+/.idea/
+
+# VSCode project files
+/.vscode/
+
+# Spin runtime files
+/.spin
+
+# Rust compilation output
+/target

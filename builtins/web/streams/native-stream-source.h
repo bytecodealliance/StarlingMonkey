@@ -2,9 +2,10 @@
 #define JS_COMPUTE_RUNTIME_NATIVE_STREAM_SOURCE_H
 
 #include "builtin.h"
-#include "js-compute-builtins.h"
 
 namespace builtins {
+namespace web {
+namespace streams {
 class NativeStreamSource : public BuiltinNoConstructor<NativeStreamSource> {
 private:
 public:
@@ -52,5 +53,7 @@ public:
   static JSObject *create(JSContext *cx, JS::HandleObject owner, JS::HandleValue startPromise,
                           PullAlgorithmImplementation *pull, CancelAlgorithmImplementation *cancel);
 };
+} // namespace streams
+} // namespace web
 } // namespace builtins
 #endif

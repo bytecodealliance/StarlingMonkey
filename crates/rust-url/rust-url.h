@@ -93,6 +93,10 @@ JSUrl *new_jsurl(const SpecString *spec);
 
 JSUrl *new_jsurl_with_base(const SpecString *spec, const JSUrl *base);
 
+SpecSlice authority(const JSUrl *url);
+
+SpecSlice path_with_query(const JSUrl *url);
+
 SpecSlice hash(const JSUrl *url);
 
 void set_hash(JSUrl *url, const SpecString *hash);

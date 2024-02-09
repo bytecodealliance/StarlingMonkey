@@ -1,16 +1,17 @@
 #include "js/Array.h"
 
-#include "builtin.h"
-#include "builtins/shared/url.h"
-#include "core/encode.h"
-#include "core/sequence.hpp"
-#include "rust-url/rust-url.h"
+#include "encode.h"
+#include "rust-url.h"
+#include "sequence.hpp"
+#include "url.h"
 
 constexpr int ITERTYPE_ENTRIES = 0;
 constexpr int ITERTYPE_KEYS = 1;
 constexpr int ITERTYPE_VALUES = 2;
 
 namespace builtins {
+namespace web {
+namespace url {
 
 bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
@@ -380,7 +381,7 @@ bool URLSearchParams::forEach(JSContext *cx, unsigned argc, JS::Value *vp) {
   bool URLSearchParams::name(JSContext *cx, unsigned argc, JS::Value *vp) {                        \
     METHOD_HEADER(0)                                                                               \
                                                                                                    \
-    JS::RootedObject iter(cx, builtins::URLSearchParamsIterator::create(cx, self, type));          \
+    JS::RootedObject iter(cx, URLSearchParamsIterator::create(cx, self, type));                    \
     if (!iter)                                                                                     \
       return false;                                                                                \
     args.rval().setObject(*iter);                                                                  \
@@ -565,11 +566,10 @@ bool URL::searchParams_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (params_val.isNullOrUndefined()) {
     auto *url = static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(self, Slots::Url).toPrivate());
     JS::RootedObject url_search_params_instance(
-        cx, JS_NewObjectWithGivenProto(cx, &builtins::URLSearchParams::class_,
-                                       builtins::URLSearchParams::proto_obj));
+        cx, JS_NewObjectWithGivenProto(cx, &URLSearchParams::class_, URLSearchParams::proto_obj));
     if (!url_search_params_instance)
       return false;
-    params = builtins::URLSearchParams::create(cx, url_search_params_instance, url);
+    params = URLSearchParams::create(cx, url_search_params_instance, url);
     if (!params)
       return false;
     JS::SetReservedSlot(self, Slots::Params, JS::ObjectValue(*params));
@@ -670,4 +670,16 @@ bool URL::init_class(JSContext *cx, JS::HandleObject global) {
   return URL::init_class_impl(cx, global);
 }
 
+bool install(api::Engine *engine) {
+  if (!URL::init_class(engine->cx(), engine->global()))
+    return false;
+  if (!URLSearchParams::init_class(engine->cx(), engine->global()))
+    return false;
+  if (!URLSearchParamsIterator::init_class(engine->cx(), engine->global()))
+    return false;
+  return true;
+}
+
+} // namespace url
+} // namespace web
 } // namespace builtins

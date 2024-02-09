@@ -1,5 +1,4 @@
 #include "performance.h"
-#include "builtin.h"
 #include <chrono>
 
 namespace {
@@ -7,16 +6,18 @@ using FpMilliseconds = std::chrono::duration<float, std::chrono::milliseconds::p
 } // namespace
 
 namespace builtins {
+namespace web {
+namespace performance {
 
 std::optional<std::chrono::steady_clock::time_point> Performance::timeOrigin;
 
 // https://w3c.github.io/hr-time/#dom-performance-now
 bool Performance::now(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
-  MOZ_ASSERT(builtins::Performance::timeOrigin.has_value());
+  MOZ_ASSERT(Performance::timeOrigin.has_value());
 
   auto finish = std::chrono::high_resolution_clock::now();
-  auto duration = FpMilliseconds(finish - builtins::Performance::timeOrigin.value()).count();
+  auto duration = FpMilliseconds(finish - Performance::timeOrigin.value()).count();
 
   JS::RootedValue elapsed(cx, JS::Float32Value(duration));
   args.rval().set(elapsed);
@@ -24,9 +25,9 @@ bool Performance::now(JSContext *cx, unsigned argc, JS::Value *vp) {
 }
 
 bool Performance::timeOrigin_get(JSContext *cx, unsigned argc, JS::Value *vp) {
-  MOZ_ASSERT(builtins::Performance::timeOrigin.has_value());
+  MOZ_ASSERT(Performance::timeOrigin.has_value());
   METHOD_HEADER(0);
-  auto time = FpMilliseconds(builtins::Performance::timeOrigin.value().time_since_epoch()).count();
+  auto time = FpMilliseconds(Performance::timeOrigin.value().time_since_epoch()).count();
   JS::RootedValue elapsed(cx, JS::Float32Value(time));
   args.rval().set(elapsed);
   return true;
@@ -42,8 +43,8 @@ const JSFunctionSpec Performance::static_methods[] = {JS_FS_END};
 const JSPropertySpec Performance::static_properties[] = {JS_PS_END};
 
 bool Performance::create(JSContext *cx, JS::HandleObject global) {
-  JS::RootedObject performance(cx, JS_NewObjectWithGivenProto(cx, &builtins::Performance::class_,
-                                                              builtins::Performance::proto_obj));
+  JS::RootedObject performance(
+      cx, JS_NewObjectWithGivenProto(cx, &Performance::class_, Performance::proto_obj));
   if (!performance) {
     return false;
   }
@@ -64,4 +65,11 @@ bool Performance::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool Performance::init_class(JSContext *cx, JS::HandleObject global) {
   return init_class_impl(cx, global);
 }
+
+bool install(api::Engine *engine) {
+  return Performance::init_class(engine->cx(), engine->global());
+}
+
+} // namespace performance
+} // namespace web
 } // namespace builtins

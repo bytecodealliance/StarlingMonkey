@@ -1,8 +1,12 @@
+#ifndef BUILTINS_WEB_URL_H
+#define BUILTINS_WEB_URL_H
 
 #include "builtin.h"
-#include "rust-url/rust-url.h"
+#include "rust-url.h"
 
 namespace builtins {
+namespace web {
+namespace url {
 
 class URLSearchParamsIterator : public BuiltinNoConstructor<URLSearchParamsIterator> {
 public:
@@ -128,4 +132,10 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 };
 
+bool install(api::Engine *engine);
+
+} // namespace url
+} // namespace web
 } // namespace builtins
+
+#endif

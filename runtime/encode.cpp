@@ -1,16 +1,17 @@
-#include "core/encode.h"
+#include "encode.h"
 
 // TODO: remove these once the warnings are fixed
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #include "js/Conversions.h"
-#include "rust-url/rust-url.h"
 #pragma clang diagnostic pop
 
 namespace core {
 
-host_api::HostString encode(JSContext *cx, JS::HandleString str) {
-  host_api::HostString res;
+using host_api::HostString;
+
+HostString encode(JSContext *cx, JS::HandleString str) {
+  HostString res;
   res.ptr = JS_EncodeStringToUTF8(cx, str);
   if (res.ptr) {
     // This shouldn't fail, since the encode operation ensured `str` is linear.
@@ -21,10 +22,10 @@ host_api::HostString encode(JSContext *cx, JS::HandleString str) {
   return res;
 }
 
-host_api::HostString encode(JSContext *cx, JS::HandleValue val) {
+HostString encode(JSContext *cx, JS::HandleValue val) {
   JS::RootedString str(cx, JS::ToString(cx, val));
   if (!str) {
-    return host_api::HostString{};
+    return HostString{};
   }
 
   return encode(cx, str);

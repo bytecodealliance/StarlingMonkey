@@ -2,8 +2,11 @@
 #define BUILTINS_HEADERS_H
 
 #include "builtin.h"
+#include "host_api.h"
 
 namespace builtins {
+namespace web {
+namespace fetch {
 
 class Headers final : public BuiltinImpl<Headers> {
   static bool get(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -17,18 +20,11 @@ class Headers final : public BuiltinImpl<Headers> {
   static bool values(JSContext *cx, unsigned argc, JS::Value *vp);
 
 public:
-  enum class Mode : int32_t {
-    Standalone,
-    ProxyToRequest,
-    ProxyToResponse,
-  };
-
   static constexpr const char *class_name = "Headers";
 
   enum class Slots {
     BackingMap,
     Handle,
-    Mode,
     HasLazyValues,
     Count,
   };
@@ -62,14 +58,15 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 
-  static JSObject *create(JSContext *cx, JS::HandleObject headers, enum Mode mode,
-                          JS::HandleObject owner, JS::HandleObject init_headers);
-  static JSObject *create(JSContext *cx, JS::HandleObject headers, enum Mode mode,
-                          JS::HandleObject owner, JS::HandleValue initv);
-  static JSObject *create(JSContext *cx, JS::HandleObject self, enum Mode mode,
-                          JS::HandleObject owner);
+  static JSObject *create(JSContext *cx, JS::HandleObject headers, host_api::HttpHeaders *handle,
+                          JS::HandleObject init_headers);
+  static JSObject *create(JSContext *cx, JS::HandleObject headers, host_api::HttpHeaders *handle,
+                          JS::HandleValue initv);
+  static JSObject *create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle);
 };
 
+} // namespace fetch
+} // namespace web
 } // namespace builtins
 
 #endif

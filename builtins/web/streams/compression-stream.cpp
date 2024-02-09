@@ -7,14 +7,14 @@
 
 #include "zlib.h"
 
-#include "builtin.h"
-#include "builtins/compression-stream.h"
-#include "builtins/transform-stream-default-controller.h"
-#include "builtins/transform-stream.h"
-#include "core/encode.h"
-#include "js-compute-builtins.h"
+#include "compression-stream.h"
+#include "encode.h"
+#include "transform-stream-default-controller.h"
+#include "transform-stream.h"
 
 namespace builtins {
+namespace web {
+namespace streams {
 
 namespace {
 
@@ -92,7 +92,7 @@ bool deflate_chunk(JSContext *cx, JS::HandleObject self, JS::HandleValue chunk, 
     zstream->next_in = nullptr;
   }
 
-  JS::RootedObject controller(cx, builtins::TransformStream::controller(transform(self)));
+  JS::RootedObject controller(cx, TransformStream::controller(transform(self)));
 
   // Steps 3-5 of transform are identical to steps 2-4 of flush, so numbers
   // below refer to the former for those. Also, the compression happens in
@@ -135,7 +135,7 @@ bool deflate_chunk(JSContext *cx, JS::HandleObject self, JS::HandleValue chunk, 
       }
 
       JS::RootedValue out_chunk(cx, JS::ObjectValue(*out_obj));
-      if (!builtins::TransformStreamDefaultController::Enqueue(cx, controller, out_chunk)) {
+      if (!TransformStreamDefaultController::Enqueue(cx, controller, out_chunk)) {
         return false;
       }
     }
@@ -184,13 +184,13 @@ bool CompressionStream::flushAlgorithm(JSContext *cx, unsigned argc, JS::Value *
 
 bool CompressionStream::readable_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER_WITH_NAME(0, "get readable")
-  args.rval().setObject(*builtins::TransformStream::readable(transform(self)));
+  args.rval().setObject(*TransformStream::readable(transform(self)));
   return true;
 }
 
 bool CompressionStream::writable_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER_WITH_NAME(0, "get writable")
-  args.rval().setObject(*builtins::TransformStream::writable(transform(self)));
+  args.rval().setObject(*TransformStream::writable(transform(self)));
   return true;
 }
 
@@ -234,14 +234,13 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   // 6.  [Set up](https://streams.spec.whatwg.org/#transformstream-set-up)
   // this's transform with _transformAlgorithm_ set to _transformAlgorithm_ and
   // _flushAlgorithm_ set to _flushAlgorithm_.
-  JS::RootedObject transform(cx, builtins::TransformStream::create(cx, 1, nullptr, 0, nullptr,
-                                                                   stream_val, nullptr,
-                                                                   transformAlgo, flushAlgo));
+  JS::RootedObject transform(cx, TransformStream::create(cx, 1, nullptr, 0, nullptr, stream_val,
+                                                         nullptr, transformAlgo, flushAlgo));
   if (!transform) {
     return nullptr;
   }
 
-  builtins::TransformStream::set_used_as_mixin(transform);
+  TransformStream::set_used_as_mixin(transform);
   JS::SetReservedSlot(stream, CompressionStream::Slots::Transform, JS::ObjectValue(*transform));
 
   // The remainder of the function deals with setting up the deflate state used
@@ -341,4 +340,6 @@ bool CompressionStream::init_class(JSContext *cx, JS::HandleObject global) {
   return true;
 }
 
+} // namespace streams
+} // namespace web
 } // namespace builtins

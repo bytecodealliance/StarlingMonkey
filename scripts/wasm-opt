@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+# We use this script to hide wasm-opt from clang, which will unconditionally run
+# wasm-opt when linking if it's discovered in your path. We'd like tighter
+# control over if wasm-opt is run at all, and this script makes it a concrete
+# choice in our build system instead.

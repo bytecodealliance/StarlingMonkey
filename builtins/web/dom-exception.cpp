@@ -1,16 +1,15 @@
 #include "dom-exception.h"
 #include "builtin.h"
-#include "core/encode.h"
-#include "js-compute-builtins.h"
+#include "encode.h"
 #include "js/Context.h"
 
-namespace builtins {
+namespace builtins::web::dom_exception {
 
 bool DOMException::name_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
   if (self == proto_obj) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSBuiltinErrNum::JSMSG_INVALID_INTERFACE, "name get", "DOMException");
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_INTERFACE, "name get",
+                              "DOMException");
     return false;
   }
   args.rval().setString(JS::GetReservedSlot(self, Slots::Name).toString());
@@ -20,8 +19,8 @@ bool DOMException::name_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool DOMException::message_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
   if (self == proto_obj) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSBuiltinErrNum::JSMSG_INVALID_INTERFACE, "name get", "DOMException");
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_INTERFACE, "name get",
+                              "DOMException");
     return false;
   }
   args.rval().setString(JS::GetReservedSlot(self, Slots::Message).toString());
@@ -31,8 +30,8 @@ bool DOMException::message_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool DOMException::code_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
   if (self == proto_obj) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSBuiltinErrNum::JSMSG_INVALID_INTERFACE, "name get", "DOMException");
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_INTERFACE, "name get",
+                              "DOMException");
     return false;
   }
   JS::RootedString name_string(cx, JS::GetReservedSlot(self, Slots::Name).toString());
@@ -233,4 +232,8 @@ bool DOMException::init_class(JSContext *cx, JS::HandleObject global) {
   return init_class_impl(cx, global, proto);
 }
 
-} // namespace builtins
+bool install(api::Engine *engine) {
+  return DOMException::init_class(engine->cx(), engine->global());
+}
+
+} // namespace builtins::web::dom_exception

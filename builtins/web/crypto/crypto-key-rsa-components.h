@@ -1,5 +1,6 @@
 #ifndef JS_COMPUTE_RUNTIME_CRYPTO_KEY_RSA_COMPONENTS_H
 #define JS_COMPUTE_RUNTIME_CRYPTO_KEY_RSA_COMPONENTS_H
+#include <optional>
 #include <string>
 #include <vector>
 

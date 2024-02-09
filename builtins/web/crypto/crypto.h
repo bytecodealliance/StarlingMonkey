@@ -2,9 +2,10 @@
 #define JS_COMPUTE_RUNTIME_BUILTIN_CRYPTO_H
 
 #include "builtin.h"
-#include "js-compute-builtins.h"
 
 namespace builtins {
+namespace web {
+namespace crypto {
 
 class Crypto : public BuiltinImpl<Crypto> {
 private:
@@ -28,6 +29,10 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
 };
 
+bool install(api::Engine *engine);
+
+} // namespace crypto
+} // namespace web
 } // namespace builtins
 
 #endif

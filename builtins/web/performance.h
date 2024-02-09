@@ -4,6 +4,8 @@
 #include "builtin.h"
 
 namespace builtins {
+namespace web {
+namespace performance {
 
 class Performance : public BuiltinImpl<Performance> {
 private:
@@ -25,6 +27,10 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
 };
 
+bool install(api::Engine *engine);
+
+} // namespace performance
+} // namespace web
 } // namespace builtins
 
 #endif

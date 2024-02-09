@@ -7,15 +7,15 @@
 
 #include "js/Stream.h"
 
-#include "builtin.h"
-#include "builtins/native-stream-sink.h"
-#include "builtins/native-stream-source.h"
-#include "builtins/request-response.h"
-#include "js-compute-builtins.h"
+#include "../fetch/request-response.h"
+#include "native-stream-sink.h"
+#include "native-stream-source.h"
 
 // A JS class to use as the underlying source for native readable streams, used
 // for Request/Response bodies and TransformStream.
 namespace builtins {
+namespace web {
+namespace streams {
 
 JSObject *NativeStreamSource::owner(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
@@ -23,7 +23,7 @@ JSObject *NativeStreamSource::owner(JSObject *self) {
 }
 
 JSObject *NativeStreamSource::stream(JSObject *self) {
-  return RequestOrResponse::body_stream(owner(self));
+  return web::fetch::RequestOrResponse::body_stream(owner(self));
 }
 
 JS::Value NativeStreamSource::startPromise(JSObject *self) {
@@ -74,7 +74,7 @@ bool NativeStreamSource::stream_has_native_source(JSContext *cx, JS::HandleObjec
 bool NativeStreamSource::stream_is_body(JSContext *cx, JS::HandleObject stream) {
   JSObject *stream_source = get_stream_source(cx, stream);
   return NativeStreamSource::is_instance(stream_source) &&
-         RequestOrResponse::is_instance(owner(stream_source));
+         web::fetch::RequestOrResponse::is_instance(owner(stream_source));
 }
 
 void NativeStreamSource::set_stream_piped_to_ts_writable(JSContext *cx, JS::HandleObject stream,
@@ -183,4 +183,6 @@ JSObject *NativeStreamSource::create(JSContext *cx, JS::HandleObject owner,
   JS::SetReservedSlot(source, Slots::PipedToTransformStream, JS::NullValue());
   return source;
 }
+} // namespace streams
+} // namespace web
 } // namespace builtins

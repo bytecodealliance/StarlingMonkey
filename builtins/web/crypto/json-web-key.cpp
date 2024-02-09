@@ -4,17 +4,17 @@
 #pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include "js/ArrayBuffer.h"
 #include "js/Conversions.h"
+#include "js/experimental/TypedData.h"
 #include "js/ForOfIterator.h"
 #include "js/Object.h"
 #include "js/Promise.h"
-#include "js/experimental/TypedData.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #pragma clang diagnostic pop
 
 #include "builtin.h"
-#include "json-web-key.h"
 #include "encode.h"
+#include "json-web-key.h"
 
 namespace builtins {
 namespace web {

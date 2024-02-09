@@ -6,16 +6,18 @@
 #include <span>
 #include <vector>
 
-#include "builtins/shared/dom-exception.h"
-#include "core/encode.h"
+#include "../base64.h"
+#include "../dom-exception.h"
 #include "crypto-algorithm.h"
 #include "crypto-key-ec-components.h"
 #include "crypto-key-rsa-components.h"
-#include "js-compute-builtins.h"
+#include "encode.h"
 
-namespace builtins {
+namespace builtins::web::crypto {
 
-namespace {
+using dom_exception::DOMException;
+
+// namespace {
 
 const EVP_MD *createDigestAlgorithm(JSContext *cx, JS::HandleObject key) {
 
@@ -106,8 +108,7 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPublicKeyFromJWK(JSContext *cx,
                         "DataError");
     return nullptr;
   }
-  auto modulusResult = GlobalProperties::forgivingBase64Decode(
-      jwk->n.value(), GlobalProperties::base64URLDecodeTable);
+  auto modulusResult = base64::forgivingBase64Decode(jwk->n.value(), base64::base64URLDecodeTable);
   if (modulusResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'n' could not be base64url decoded or contained padding", "DataError");
@@ -119,15 +120,14 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPublicKeyFromJWK(JSContext *cx,
   if (modulus.starts_with('0')) {
     modulus = modulus.erase(0, 1);
   }
-  auto dataResult = GlobalProperties::convertJSValueToByteString(cx, jwk->e.value());
+  auto dataResult = base64::convertJSValueToByteString(cx, jwk->e.value());
   if (dataResult.isErr()) {
     DOMException::raise(cx, "Data provided to an operation does not meet requirements",
                         "DataError");
     return nullptr;
   }
   auto data = dataResult.unwrap();
-  auto exponentResult =
-      GlobalProperties::forgivingBase64Decode(data, GlobalProperties::base64URLDecodeTable);
+  auto exponentResult = base64::forgivingBase64Decode(data, base64::base64URLDecodeTable);
   if (exponentResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'e' could not be base64url decoded or contained padding", "DataError");
@@ -146,16 +146,14 @@ std::unique_ptr<CryptoKeyECComponents> createECPublicKeyFromJWK(JSContext *cx, J
                         "DataError");
     return nullptr;
   }
-  auto xResult = GlobalProperties::forgivingBase64Decode(jwk->x.value(),
-                                                         GlobalProperties::base64URLDecodeTable);
+  auto xResult = base64::forgivingBase64Decode(jwk->x.value(), base64::base64URLDecodeTable);
   if (xResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'x' could not be base64url decoded or contained padding", "DataError");
     return nullptr;
   }
   auto x = xResult.unwrap();
-  auto yResult = GlobalProperties::forgivingBase64Decode(jwk->y.value(),
-                                                         GlobalProperties::base64URLDecodeTable);
+  auto yResult = base64::forgivingBase64Decode(jwk->y.value(), base64::base64URLDecodeTable);
   if (yResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'y' could not be base64url decoded or contained padding", "DataError");
@@ -172,24 +170,21 @@ std::unique_ptr<CryptoKeyECComponents> createECPrivateKeyFromJWK(JSContext *cx, 
                         "DataError");
     return nullptr;
   }
-  auto xResult = GlobalProperties::forgivingBase64Decode(jwk->x.value(),
-                                                         GlobalProperties::base64URLDecodeTable);
+  auto xResult = base64::forgivingBase64Decode(jwk->x.value(), base64::base64URLDecodeTable);
   if (xResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'x' could not be base64url decoded or contained padding", "DataError");
     return nullptr;
   }
   auto x = xResult.unwrap();
-  auto yResult = GlobalProperties::forgivingBase64Decode(jwk->y.value(),
-                                                         GlobalProperties::base64URLDecodeTable);
+  auto yResult = base64::forgivingBase64Decode(jwk->y.value(), base64::base64URLDecodeTable);
   if (yResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'y' could not be base64url decoded or contained padding", "DataError");
     return nullptr;
   }
   auto y = yResult.unwrap();
-  auto dResult = GlobalProperties::forgivingBase64Decode(jwk->d.value(),
-                                                         GlobalProperties::base64URLDecodeTable);
+  auto dResult = base64::forgivingBase64Decode(jwk->d.value(), base64::base64URLDecodeTable);
   if (dResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'd' could not be base64url decoded or contained padding", "DataError");
@@ -206,8 +201,7 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPrivateKeyFromJWK(JSContext *cx
   // then throw a DataError. 2.10.2 Let privateKey represents the RSA private key identified by
   // interpreting jwk according to Section 6.3.2 of JSON Web Algorithms [JWA]. 2.10.3 If privateKey
   // is not a valid RSA private key according to [RFC3447], then throw a DataError.
-  auto modulusResult = GlobalProperties::forgivingBase64Decode(
-      jwk->n.value(), GlobalProperties::base64URLDecodeTable);
+  auto modulusResult = base64::forgivingBase64Decode(jwk->n.value(), base64::base64URLDecodeTable);
   if (modulusResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'n' could not be base64url decoded or contained padding", "DataError");
@@ -218,22 +212,21 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPrivateKeyFromJWK(JSContext *cx
   if (modulus.starts_with('0')) {
     modulus = modulus.erase(0, 1);
   }
-  auto dataResult = GlobalProperties::convertJSValueToByteString(cx, jwk->e.value());
+  auto dataResult = base64::convertJSValueToByteString(cx, jwk->e.value());
   if (dataResult.isErr()) {
     DOMException::raise(cx, "Data provided to an operation does not meet requirements",
                         "DataError");
   }
   auto data = dataResult.unwrap();
-  auto exponentResult =
-      GlobalProperties::forgivingBase64Decode(data, GlobalProperties::base64URLDecodeTable);
+  auto exponentResult = base64::forgivingBase64Decode(data, base64::base64URLDecodeTable);
   if (exponentResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'e' could not be base64url decoded or contained padding", "DataError");
     return nullptr;
   }
   auto exponent = exponentResult.unwrap();
-  auto privateExponentResult = GlobalProperties::forgivingBase64Decode(
-      jwk->d.value(), GlobalProperties::base64URLDecodeTable);
+  auto privateExponentResult =
+      base64::forgivingBase64Decode(jwk->d.value(), base64::base64URLDecodeTable);
   if (privateExponentResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'd' could not be base64url decoded or contained padding", "DataError");
@@ -254,40 +247,40 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPrivateKeyFromJWK(JSContext *cx
     return nullptr;
   }
 
-  auto firstPrimeFactorResult = GlobalProperties::forgivingBase64Decode(
-      jwk->p.value(), GlobalProperties::base64URLDecodeTable);
+  auto firstPrimeFactorResult =
+      base64::forgivingBase64Decode(jwk->p.value(), base64::base64URLDecodeTable);
   if (firstPrimeFactorResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'p' could not be base64url decoded or contained padding", "DataError");
     return nullptr;
   }
   auto firstPrimeFactor = firstPrimeFactorResult.unwrap();
-  auto firstFactorCRTExponentResult = GlobalProperties::forgivingBase64Decode(
-      jwk->dp.value(), GlobalProperties::base64URLDecodeTable);
+  auto firstFactorCRTExponentResult =
+      base64::forgivingBase64Decode(jwk->dp.value(), base64::base64URLDecodeTable);
   if (firstFactorCRTExponentResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'dp' could not be base64url decoded or contained padding", "DataError");
     return nullptr;
   }
   auto firstFactorCRTExponent = firstFactorCRTExponentResult.unwrap();
-  auto secondPrimeFactorResult = GlobalProperties::forgivingBase64Decode(
-      jwk->q.value(), GlobalProperties::base64URLDecodeTable);
+  auto secondPrimeFactorResult =
+      base64::forgivingBase64Decode(jwk->q.value(), base64::base64URLDecodeTable);
   if (secondPrimeFactorResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'q' could not be base64url decoded or contained padding", "DataError");
     return nullptr;
   }
   auto secondPrimeFactor = secondPrimeFactorResult.unwrap();
-  auto secondFactorCRTExponentResult = GlobalProperties::forgivingBase64Decode(
-      jwk->dq.value(), GlobalProperties::base64URLDecodeTable);
+  auto secondFactorCRTExponentResult =
+      base64::forgivingBase64Decode(jwk->dq.value(), base64::base64URLDecodeTable);
   if (secondFactorCRTExponentResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'dq' could not be base64url decoded or contained padding", "DataError");
     return nullptr;
   }
   auto secondFactorCRTExponent = secondFactorCRTExponentResult.unwrap();
-  auto secondFactorCRTCoefficientResult = GlobalProperties::forgivingBase64Decode(
-      jwk->qi.value(), GlobalProperties::base64URLDecodeTable);
+  auto secondFactorCRTCoefficientResult =
+      base64::forgivingBase64Decode(jwk->qi.value(), base64::base64URLDecodeTable);
   if (secondFactorCRTCoefficientResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'qi' could not be base64url decoded or contained padding", "DataError");
@@ -308,20 +301,19 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPrivateKeyFromJWK(JSContext *cx
 
   std::vector<CryptoKeyRSAComponents::PrimeInfo> otherPrimeInfos;
   for (const auto &value : jwk->oth) {
-    auto primeFactorResult =
-        GlobalProperties::forgivingBase64Decode(value.r, GlobalProperties::base64URLDecodeTable);
+    auto primeFactorResult = base64::forgivingBase64Decode(value.r, base64::base64URLDecodeTable);
     if (primeFactorResult.isErr()) {
       return nullptr;
     }
     auto primeFactor = primeFactorResult.unwrap();
     auto factorCRTExponentResult =
-        GlobalProperties::forgivingBase64Decode(value.d, GlobalProperties::base64URLDecodeTable);
+        base64::forgivingBase64Decode(value.d, base64::base64URLDecodeTable);
     if (factorCRTExponentResult.isErr()) {
       return nullptr;
     }
     auto factorCRTExponent = factorCRTExponentResult.unwrap();
     auto factorCRTCoefficientResult =
-        GlobalProperties::forgivingBase64Decode(value.t, GlobalProperties::base64URLDecodeTable);
+        base64::forgivingBase64Decode(value.t, base64::base64URLDecodeTable);
     if (factorCRTCoefficientResult.isErr()) {
       return nullptr;
     }
@@ -335,16 +327,15 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPrivateKeyFromJWK(JSContext *cx
   return privateKeyComponents;
 }
 
-JS::Result<builtins::CryptoAlgorithmIdentifier> toHashIdentifier(JSContext *cx,
-                                                                 JS::HandleValue value) {
+JS::Result<CryptoAlgorithmIdentifier> toHashIdentifier(JSContext *cx, JS::HandleValue value) {
   auto normalizedHashAlgorithm = CryptoAlgorithmDigest::normalize(cx, value);
   if (!normalizedHashAlgorithm) {
-    return JS::Result<builtins::CryptoAlgorithmIdentifier>(JS::Error());
+    return JS::Result<CryptoAlgorithmIdentifier>(JS::Error());
   }
   return normalizedHashAlgorithm->identifier();
 }
 
-std::optional<builtins::NamedCurve> toNamedCurve(std::string_view name) {
+std::optional<NamedCurve> toNamedCurve(std::string_view name) {
   if (name == "P-256") {
     return NamedCurve::P256;
   } else if (name == "P-384") {
@@ -356,7 +347,7 @@ std::optional<builtins::NamedCurve> toNamedCurve(std::string_view name) {
   return std::nullopt;
 }
 
-JS::Result<builtins::NamedCurve> toNamedCurve(JSContext *cx, JS::HandleValue value) {
+JS::Result<NamedCurve> toNamedCurve(JSContext *cx, JS::HandleValue value) {
   auto nameChars = core::encode(cx, value);
   auto name = toNamedCurve(nameChars);
   if (name.has_value()) {
@@ -466,9 +457,9 @@ JS::Result<CryptoAlgorithmIdentifier> normalizeIdentifier(JSContext *cx, JS::Han
     return JS::Result<CryptoAlgorithmIdentifier>(JS::Error());
   }
 }
-} // namespace
+// } // namespace
 
-const char *curveName(builtins::NamedCurve curve) {
+const char *curveName(NamedCurve curve) {
   switch (curve) {
   case NamedCurve::P256: {
     return "P-256";
@@ -551,7 +542,7 @@ const char *algorithmName(CryptoAlgorithmIdentifier algorithm) {
 // |	RSA-PSS         	|					|					|		✔		|		✔			|					|			✔				|						|							|			✔			|			✔			|					|						|
 // |	RSA-OAEP					|		✔			|		✔			|				|					|					|			✔				|						|							|			✔			|			✔			|		✔			|		✔				|
 // |	ECDSA						 	|					|					|		✔		|		✔			|					|			✔				| 					|							|			✔			|			✔			|					|						|
-// |	ECDH							|					|					|				|					|					|			✔				|			✔			|			✔				|			✔			|			✔			|					|						| 		
+// |	ECDH							|					|					|				|					|					|			✔				|			✔			|			✔				|			✔			|			✔			|					|						|
 // |	AES-CTR						|		✔			|		✔			|				|					|					|			✔				|						|							|			✔			|			✔			|		✔			|		✔				|
 // |	AES-CBC						|		✔			|		✔			|				|					|					|			✔				|						|							|			✔			|			✔			|		✔			|		✔				|
 // |	AES-GCM						|		✔			|		✔			|				|					|					|			✔				|						|							|			✔			|			✔			|		✔			|		✔				|
@@ -787,7 +778,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify::sign(JSContext *cx, JS::
     return nullptr;
   }
 
-  auto digest = ::builtins::rawDigest(cx, data, algorithm, EVP_MD_size(algorithm));
+  auto digest = rawDigest(cx, data, algorithm, EVP_MD_size(algorithm));
   if (!digest.has_value()) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return nullptr;
@@ -864,7 +855,7 @@ JS::Result<bool> CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify::verify(JSContext 
   }
   const EVP_MD *algorithm = createDigestAlgorithm(cx, key);
 
-  auto digestOption = ::builtins::rawDigest(cx, data, algorithm, EVP_MD_size(algorithm));
+  auto digestOption = rawDigest(cx, data, algorithm, EVP_MD_size(algorithm));
   if (!digestOption.has_value()) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return JS::Result<bool>(JS::Error());
@@ -1028,8 +1019,8 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
     // 6.5 If jwk does not meet the requirements of Section 6.4 of JSON Web Algorithms [JWA], then throw a DataError.
 
     // 6.6 Let data be the octet string obtained by decoding the k field of jwk.
-    auto dataResult = GlobalProperties::forgivingBase64Decode(
-      jwk->k.value(), GlobalProperties::base64URLDecodeTable);
+    auto dataResult = base64::forgivingBase64Decode(
+      jwk->k.value(), base64::base64URLDecodeTable);
     if (dataResult.isErr()) {
       DOMException::raise(cx,
                          "The JWK member 'k' could not be base64url decoded or contained padding", "DataError");
@@ -1200,7 +1191,7 @@ JSObject *CryptoAlgorithmHMAC_Import::toObject(JSContext *cx) {
   // Set the hash attribute of algorithm to the hash member of normalizedAlgorithm.
   JS::RootedObject hash(cx, JS_NewObject(cx, nullptr));
 
-  auto hash_name = JS_NewStringCopyZ(cx, builtins::algorithmName(this->hashIdentifier));
+  auto hash_name = JS_NewStringCopyZ(cx, algorithmName(this->hashIdentifier));
   if (!hash_name) {
     return nullptr;
   }
@@ -1315,8 +1306,8 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
           // in Section 2.3.7 of SEC1 [SEC1].  The length of this octet string
           // MUST be ceiling(log-base-2(n)/8) octets (where n is the order of the
           // curve).
-          auto dResult = GlobalProperties::forgivingBase64Decode(
-              jwk->d.value(), GlobalProperties::base64URLDecodeTable);
+          auto dResult = base64::forgivingBase64Decode(
+              jwk->d.value(), base64::base64URLDecodeTable);
           if (dResult.isErr()) {
             DOMException::raise(
                 cx, "The JWK member 'd' could not be base64url decoded or contained padding", "DataError");
@@ -1431,7 +1422,7 @@ JSObject *CryptoAlgorithmECDSA_Import::toObject(JSContext *cx) {
   // Set the hash attribute of algorithm to the hash member of normalizedAlgorithm.
   JS::RootedObject hash(cx, JS_NewObject(cx, nullptr));
 
-  auto curve_name = JS_NewStringCopyZ(cx, builtins::curveName(this->namedCurve));
+  auto curve_name = JS_NewStringCopyZ(cx, curveName(this->namedCurve));
   if (!curve_name) {
     return nullptr;
   }
@@ -1522,7 +1513,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
     }
 
     // 2.3 If the kty field of jwk is not a case-sensitive string match to "RSA", then throw a DataError.
-    
+
     // Step 2.3 has already been done in the other implementation of
     // CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey which is called before this one.
 
@@ -1546,7 +1537,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
       }
     }
 
-    // 2.6 If the ext field of jwk is present and has the value false and 
+    // 2.6 If the ext field of jwk is present and has the value false and
     // extractable is true, then throw a DataError.
     if (jwk->ext && !jwk->ext.value() && extractable) {
       DOMException::raise(cx, "Data provided to an operation does not meet requirements", "DataError");
@@ -1689,7 +1680,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::toObject(JSContext *cx) {
   // Set the hash attribute of algorithm to the hash member of normalizedAlgorithm.
   JS::RootedObject hash(cx, JS_NewObject(cx, nullptr));
 
-  auto hash_name = JS_NewStringCopyZ(cx, builtins::algorithmName(this->hashIdentifier));
+  auto hash_name = JS_NewStringCopyZ(cx, algorithmName(this->hashIdentifier));
   if (!hash_name) {
     return nullptr;
   }
@@ -1705,19 +1696,19 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::toObject(JSContext *cx) {
 }
 
 JSObject *CryptoAlgorithmMD5::digest(JSContext *cx, std::span<uint8_t> data) {
-  return ::builtins::digest(cx, data, EVP_md5(), MD5_DIGEST_LENGTH);
+  return builtins::web::crypto::digest(cx, data, EVP_md5(), MD5_DIGEST_LENGTH);
 }
 JSObject *CryptoAlgorithmSHA1::digest(JSContext *cx, std::span<uint8_t> data) {
-  return ::builtins::digest(cx, data, EVP_sha1(), SHA_DIGEST_LENGTH);
+  return builtins::web::crypto::digest(cx, data, EVP_sha1(), SHA_DIGEST_LENGTH);
 }
 JSObject *CryptoAlgorithmSHA256::digest(JSContext *cx, std::span<uint8_t> data) {
-  return ::builtins::digest(cx, data, EVP_sha256(), SHA256_DIGEST_LENGTH);
+  return builtins::web::crypto::digest(cx, data, EVP_sha256(), SHA256_DIGEST_LENGTH);
 }
 JSObject *CryptoAlgorithmSHA384::digest(JSContext *cx, std::span<uint8_t> data) {
-  return ::builtins::digest(cx, data, EVP_sha384(), SHA384_DIGEST_LENGTH);
+  return builtins::web::crypto::digest(cx, data, EVP_sha384(), SHA384_DIGEST_LENGTH);
 }
 JSObject *CryptoAlgorithmSHA512::digest(JSContext *cx, std::span<uint8_t> data) {
-  return ::builtins::digest(cx, data, EVP_sha512(), SHA512_DIGEST_LENGTH);
+  return builtins::web::crypto::digest(cx, data, EVP_sha512(), SHA512_DIGEST_LENGTH);
 }
 
-} // namespace builtins
+} // namespace builtins::web::crypto
