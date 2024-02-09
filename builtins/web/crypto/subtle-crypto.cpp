@@ -1,9 +1,11 @@
 #include "subtle-crypto.h"
-#include "builtins/shared/dom-exception.h"
-#include "core/encode.h"
-#include "js-compute-builtins.h"
+#include "builtin.h"
+#include "../dom-exception.h"
+#include "encode.h"
 
-namespace builtins {
+namespace builtins::web::crypto {
+
+using dom_exception::DOMException;
 
 // digest(algorithm, data)
 // https://w3c.github.io/webcrypto/#SubtleCrypto-method-digest
@@ -114,7 +116,7 @@ bool SubtleCrypto::importKey(JSContext *cx, unsigned argc, JS::Value *vp) {
     auto usages_arg = args.get(4);
 
     std::string_view error_message("SubtleCrypto.importKey: Invalid keyUsages argument");
-    auto keyUsageMaskResult = builtins::CryptoKeyUsages::from(cx, usages_arg, error_message);
+    auto keyUsageMaskResult = CryptoKeyUsages::from(cx, usages_arg, error_message);
     if (keyUsageMaskResult.isErr()) {
       return ReturnPromiseRejectedWithPendingError(cx, args);
     }
@@ -372,11 +374,11 @@ const JSPropertySpec SubtleCrypto::properties[] = {
     JS_STRING_SYM_PS(toStringTag, "SubtleCrypto", JSPROP_READONLY), JS_PS_END};
 
 bool SubtleCrypto::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
-  JS_ReportErrorNumberASCII(cx, GetErrorMessageBuiltin, nullptr, JSMSG_ILLEGAL_CTOR);
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ILLEGAL_CTOR);
   return false;
 }
 
 bool SubtleCrypto::init_class(JSContext *cx, JS::HandleObject global) {
   return BuiltinImpl<SubtleCrypto>::init_class_impl(cx, global);
 }
-} // namespace builtins
+} // namespace builtins::web::crypto

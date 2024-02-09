@@ -4,6 +4,8 @@
 #include "builtin.h"
 
 namespace builtins {
+namespace web {
+namespace text_codec {
 
 class TextDecoder final : public BuiltinImpl<TextDecoder> {
   static bool decode(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -33,6 +35,8 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 };
 
+} // namespace text_codec
+} // namespace web
 } // namespace builtins
 
 #endif

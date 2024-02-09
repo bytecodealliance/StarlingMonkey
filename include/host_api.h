@@ -1,8 +1,7 @@
-#ifndef JS_COMPUTE_RUNTIME_HOST_API_H
-#define JS_COMPUTE_RUNTIME_HOST_API_H
+#ifndef JS_RUNTIME_HOST_API_H
+#define JS_RUNTIME_HOST_API_H
 
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <span>
 #include <string>
@@ -10,8 +9,9 @@
 #include <variant>
 #include <vector>
 
-#include "core/allocator.h"
+#include "../crates/rust-url/rust-url.h"
 #include "js/TypeDecls.h"
+#include "extension-api.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
@@ -19,32 +19,41 @@
 #include "jsapi.h"
 #pragma clang diagnostic pop
 
+using std::optional;
+using std::string_view;
+using std::tuple;
+using std::unique_ptr;
+using std::vector;
+
 namespace host_api {
+class HttpOutgoingRequest;
+class HttpOutgoingResponse;
+class HttpIncomingRequest;
 
 /// A type to signal that a result produces no value.
 struct Void final {};
 
-/// The type of erros returned from the host.
-using FastlyError = uint8_t;
+/// The type of errors returned from the host.
+using APIError = uint8_t;
 
-bool error_is_generic(FastlyError e);
-bool error_is_invalid_argument(FastlyError e);
-bool error_is_optional_none(FastlyError e);
-bool error_is_bad_handle(FastlyError e);
+bool error_is_generic(APIError e);
+bool error_is_invalid_argument(APIError e);
+bool error_is_optional_none(APIError e);
+bool error_is_bad_handle(APIError e);
 
 /// Generate an error in the JSContext.
-void handle_fastly_error(JSContext *cx, FastlyError err, int line, const char *func);
+void handle_api_error(JSContext *cx, APIError err, int line, const char *func);
 
-/// Wrap up a call to handle_fastly_error with the current line and function.
-#define HANDLE_ERROR(cx, err) ::host_api::handle_fastly_error(cx, err, __LINE__, __func__)
+/// Wrap up a call to handle_api_error with the current line and function.
+#define HANDLE_ERROR(cx, err) ::host_api::handle_api_error(cx, err, __LINE__, __func__)
 
 template <typename T> class Result final {
   /// A private wrapper to distinguish `fastly_compute_at_edge_types_error_t` in the private
   /// variant.
   struct Error {
-    FastlyError value;
+    APIError value;
 
-    explicit Error(FastlyError value) : value{value} {}
+    explicit Error(APIError value) : value{value} {}
   };
 
   std::variant<T, Error> result;
@@ -53,7 +62,7 @@ public:
   Result() = default;
 
   /// Explicitly construct an error.
-  static Result err(FastlyError err) {
+  static Result err(APIError err) {
     Result res;
     res.emplace_err(err);
     return res;
@@ -67,9 +76,7 @@ public:
   }
 
   /// Construct an error in-place.
-  FastlyError &emplace_err(FastlyError err) & {
-    return this->result.template emplace<Error>(err).value;
-  }
+  APIError &emplace_err(APIError err) & { return this->result.template emplace<Error>(err).value; }
 
   /// Construct a value of T in-place.
   template <typename... Args> T &emplace(Args &&...args) {
@@ -80,21 +87,25 @@ public:
   bool is_err() const { return std::holds_alternative<Error>(this->result); }
 
   /// Return a pointer to the error value of this result, if the call failed.
-  const FastlyError *to_err() const {
-    return reinterpret_cast<const FastlyError *>(std::get_if<Error>(&this->result));
+  const APIError *to_err() const {
+    return reinterpret_cast<const APIError *>(std::get_if<Error>(&this->result));
   }
 
   /// Assume the call was successful, and return a reference to the result.
-  T &unwrap() { return std::get<T>(this->result); }
+  T &unwrap() {
+    MOZ_ASSERT(!is_err());
+    return std::get<T>(this->result);
+  }
 };
 
 /// A string allocated by the host interface. Holds ownership of the data.
 struct HostString final {
   JS::UniqueChars ptr;
-  size_t len;
+  size_t len = 0;
 
   HostString() = default;
   HostString(std::nullptr_t) : HostString() {}
+  HostString(const char *c_str);
   HostString(JS::UniqueChars ptr, size_t len) : ptr{std::move(ptr)}, len{len} {}
 
   HostString(const HostString &other) = delete;
@@ -127,17 +138,23 @@ struct HostString final {
   /// Comparison against nullptr
   bool operator!=(std::nullptr_t) { return this->ptr != nullptr; }
 
-  /// Conversion to a `std::string_view`.
-  operator std::string_view() const { return std::string_view(this->ptr.get(), this->len); }
+  /// Conversion to a `string_view`.
+  operator string_view() const { return string_view(this->ptr.get(), this->len); }
+
+  /// Conversion to a `jsurl::SpecString`.
+  operator jsurl::SpecString() {
+    return jsurl::SpecString(reinterpret_cast<uint8_t *>(this->ptr.release()), this->len,
+                             this->len);
+  }
 };
 
 struct HostBytes final {
-  std::unique_ptr<uint8_t[]> ptr;
+  unique_ptr<uint8_t[]> ptr;
   size_t len;
 
   HostBytes() = default;
   HostBytes(std::nullptr_t) : HostBytes() {}
-  HostBytes(std::unique_ptr<uint8_t[]> ptr, size_t len) : ptr{std::move(ptr)}, len{len} {}
+  HostBytes(unique_ptr<uint8_t[]> ptr, size_t len) : ptr{std::move(ptr)}, len{len} {}
 
   HostBytes(const HostBytes &other) = delete;
   HostBytes &operator=(const HostBytes &other) = delete;
@@ -177,363 +194,274 @@ struct HostBytes final {
   /// Comparison against nullptr
   bool operator!=(std::nullptr_t) { return this->ptr != nullptr; }
 
-  /// Converstion to a `std::span<uint8_t>`.
-  operator std::span<uint8_t>() const { return std::span{this->ptr.get(), this->len}; }
+  /// Conversion to a `std::span<uint8_t>`.
+  operator std::span<uint8_t>() const { return std::span<uint8_t>(this->ptr.get(), this->len); }
 };
 
-/// Common methods for async handles.
-class AsyncHandle {
+/// The type of handles used by the host interface.
+typedef int32_t Handle;
+
+/// An abstract base class to be used in classes representing host resources.
+///
+/// Some host resources have different requirements for their client-side representation
+/// depending on the host API. To accommodate this, we introduce a base class to use for
+/// all of them, which the API-specific implementation can subclass as needed.
+class HandleState {
 public:
-  using Handle = uint32_t;
-
-  static constexpr Handle invalid = UINT32_MAX - 1;
-
   Handle handle;
+  HandleState() = delete;
+  explicit HandleState(Handle handle) : handle{handle} {}
+  virtual ~HandleState() = default;
 
-  AsyncHandle() = default;
-  explicit AsyncHandle(Handle handle) : handle{handle} {}
-
-  /// Check to see if this handle is ready.
-  Result<bool> is_ready() const;
-
-  /// Return the index in handles of the `AsyncHandle` that's ready. If the select call finishes
-  /// successfully and returns `std::nullopt`, the timeout has expired.
-  ///
-  /// If the timeout is `0`, two behaviors are possible
-  ///   * if handles is empty, an error will be returned immediately
-  ///   * otherwise, block until a handle is ready and return its index
-  ///
-  /// If the timeout is non-zero, two behaviors are possible
-  ///   * no handle becomes ready within timeout, and the successful `std::nullopt` is returned
-  ///   * a handle becomes ready within the timeout, and its index is returned.
-  static Result<std::optional<uint32_t>> select(const std::vector<AsyncHandle> &handles,
-                                                uint32_t timeout_ms);
+  bool valid() const { return handle != -1; }
 };
 
-/// A convenience wrapper for the host calls involving http bodies.
-class HttpBody final {
+class Resource {
+protected:
+  HandleState *handle_state_;
+
 public:
-  using Handle = uint32_t;
+  virtual ~Resource() = default;
 
-  static constexpr Handle invalid = UINT32_MAX - 1;
+  /// Returns true when this resource handle is valid.
+  virtual bool valid() const { return this->handle_state_ != nullptr; }
+};
 
-  /// The handle to use when making host calls, initialized to the special invalid value used by
-  /// executed.
-  Handle handle = invalid;
+class Pollable : public Resource {
+protected:
+  Pollable() = default;
 
-  HttpBody() = default;
-  explicit HttpBody(Handle handle) : handle{handle} {}
-  explicit HttpBody(AsyncHandle async) : handle{async.handle} {}
+public:
+  ~Pollable() override = default;
 
-  /// Returns true when this body handle is valid.
-  bool valid() const { return this->handle != invalid; }
+  virtual Result<PollableHandle> subscribe() = 0;
+  virtual void unsubscribe() = 0;
+};
 
-  /// Make a new body handle.
-  static Result<HttpBody> make();
+class HttpIncomingBody final : public Pollable {
+public:
+  HttpIncomingBody() = delete;
+  explicit HttpIncomingBody(Handle handle);
 
-  /// Read a chunk from this handle.
-  Result<HostString> read(uint32_t chunk_size) const;
+  class ReadResult final {
+  public:
+    bool done = false;
+    HostBytes bytes;
+    ReadResult() = default;
+    ReadResult(const bool done, unique_ptr<uint8_t[]> ptr, size_t len)
+        : done{done}, bytes(std::move(ptr), len) {}
+  };
+  /// Read a chunk of up to `chunk_size` bytes from this handle.
+  ///
+  /// Might return an empty string if no data is available.
+  Result<ReadResult> read(uint32_t chunk_size);
+
+  /// Close this handle, and reset internal state to invalid.
+  Result<Void> close();
+
+  Result<PollableHandle> subscribe() override;
+  void unsubscribe() override;
+};
+
+/// A convenience wrapper for the host calls involving outgoing http bodies.
+class HttpOutgoingBody final : public Pollable {
+public:
+  HttpOutgoingBody() = delete;
+  explicit HttpOutgoingBody(Handle handle);
+
+  /// Get the body's stream's current capacity.
+  Result<uint64_t> capacity();
 
   /// Write a chunk to this handle.
-  Result<uint32_t> write(const uint8_t *bytes, size_t len) const;
+  ///
+  /// Doesn't necessarily write the entire chunk, and doesn't take ownership of `bytes`.
+  ///
+  /// @return the number of bytes written.
+  Result<uint32_t> write(const uint8_t *bytes, size_t len);
 
   /// Writes the given number of bytes from the given buffer to the given handle.
   ///
   /// The host doesn't necessarily write all bytes in any particular call to
   /// `write`, so to ensure all bytes are written, we call it in a loop.
-  Result<Void> write_all(const uint8_t *bytes, size_t len) const;
+  /// TODO: turn into an async task that writes chunks of the passed buffer until done.
+  Result<Void> write_all(const uint8_t *bytes, size_t len);
 
-  /// Append another HttpBody to this one.
-  Result<Void> append(HttpBody other) const;
+  /// Append an HttpIncomingBody to this one.
+  Result<Void> append(api::Engine *engine, HttpIncomingBody *incoming);
 
   /// Close this handle, and reset internal state to invalid.
   Result<Void> close();
 
-  AsyncHandle async_handle() const;
+  Result<PollableHandle> subscribe() override;
+  void unsubscribe() override;
 };
 
-struct Response;
-
-class HttpPendingReq final {
-public:
-  using Handle = uint32_t;
-
-  static constexpr Handle invalid = UINT32_MAX - 1;
-
-  Handle handle = invalid;
-
-  HttpPendingReq() = default;
-  explicit HttpPendingReq(Handle handle) : handle{handle} {}
-  explicit HttpPendingReq(AsyncHandle async) : handle{async.handle} {}
-
-  /// Poll for the response to this request.
-  Result<std::optional<Response>> poll();
-
-  /// Block until the response is ready.
-  Result<Response> wait();
-
-  /// Fetch the AsyncHandle for this pending request.
-  AsyncHandle async_handle() const;
-};
-
-using HttpVersion = uint8_t;
-
-class HttpBase {
-public:
-  virtual ~HttpBase() = default;
-
-  virtual bool is_valid() const = 0;
-
-  /// Get the http version used for this request.
-  virtual Result<HttpVersion> get_version() const = 0;
-
-  virtual Result<std::vector<HostString>> get_header_names() = 0;
-  virtual Result<std::optional<std::vector<HostString>>>
-  get_header_values(std::string_view name) = 0;
-  virtual Result<Void> insert_header(std::string_view name, std::string_view value) = 0;
-  virtual Result<Void> append_header(std::string_view name, std::string_view value) = 0;
-  virtual Result<Void> remove_header(std::string_view name) = 0;
-};
-
-struct TlsVersion {
-  uint8_t value = 0;
-
-  explicit TlsVersion(uint8_t raw);
-
-  static TlsVersion version_1();
-  static TlsVersion version_1_1();
-  static TlsVersion version_1_2();
-  static TlsVersion version_1_3();
-};
-
-struct BackendConfig {
-  std::optional<HostString> host_override;
-  std::optional<uint32_t> connect_timeout;
-  std::optional<uint32_t> first_byte_timeout;
-  std::optional<uint32_t> between_bytes_timeout;
-  std::optional<bool> use_ssl;
-  std::optional<bool> dont_pool;
-  std::optional<TlsVersion> ssl_min_version;
-  std::optional<TlsVersion> ssl_max_version;
-  std::optional<HostString> cert_hostname;
-  std::optional<HostString> ca_cert;
-  std::optional<HostString> ciphers;
-  std::optional<HostString> sni_hostname;
-};
-
-struct CacheOverrideTag final {
-  uint8_t value = 0;
-
-  void set_pass();
-  void set_ttl();
-  void set_stale_while_revalidate();
-  void set_pci();
-};
-
-struct Request;
-
-class HttpReq final : public HttpBase {
-public:
-  using Handle = uint32_t;
-
-  static constexpr Handle invalid = UINT32_MAX - 1;
-
-  Handle handle = invalid;
-
-  HttpReq() = default;
-  explicit HttpReq(Handle handle) : handle{handle} {}
-
-  static Result<HttpReq> make();
-
-  static Result<Void> redirect_to_grip_proxy(std::string_view backend);
-
-  static Result<Void> register_dynamic_backend(std::string_view name, std::string_view target,
-                                               const BackendConfig &config);
-
-  /// Fetch the downstream request/body pair
-  static Result<Request> downstream_get();
-
-  /// Get the downstream ip address.
-  static Result<HostBytes> downstream_client_ip_addr();
-
-  static Result<HostString> http_req_downstream_tls_cipher_openssl_name();
-
-  static Result<HostString> http_req_downstream_tls_protocol();
-
-  static Result<HostBytes> http_req_downstream_tls_client_hello();
-
-  static Result<HostBytes> http_req_downstream_tls_raw_client_certificate();
-
-  static Result<HostBytes> http_req_downstream_tls_ja3_md5();
-
-  Result<Void> auto_decompress_gzip();
-
-  /// Send this request synchronously, and wait for the response.
-  Result<Response> send(HttpBody body, std::string_view backend);
-
-  /// Send this request asynchronously.
-  Result<HttpPendingReq> send_async(HttpBody body, std::string_view backend);
-
-  /// Send this request asynchronously, and allow sending additional data through the body.
-  Result<HttpPendingReq> send_async_streaming(HttpBody body, std::string_view backend);
-
-  /// Get the http version used for this request.
-
-  /// Set the request method.
-  Result<Void> set_method(std::string_view method);
-
-  /// Get the request method.
-  Result<HostString> get_method() const;
-
-  /// Set the request uri.
-  Result<Void> set_uri(std::string_view str);
-
-  /// Get the request uri.
-  Result<HostString> get_uri() const;
-
-  /// Configure cache-override settings.
-  Result<Void> cache_override(CacheOverrideTag tag, std::optional<uint32_t> ttl,
-                              std::optional<uint32_t> stale_while_revalidate,
-                              std::optional<std::string_view> surrogate_key);
-
-  bool is_valid() const override;
-
-  Result<HttpVersion> get_version() const override;
-
-  Result<std::vector<HostString>> get_header_names() override;
-  Result<std::optional<std::vector<HostString>>> get_header_values(std::string_view name) override;
-  Result<Void> insert_header(std::string_view name, std::string_view value) override;
-  Result<Void> append_header(std::string_view name, std::string_view value) override;
-  Result<Void> remove_header(std::string_view name) override;
-};
-
-class HttpResp final : public HttpBase {
-public:
-  using Handle = uint32_t;
-
-  static constexpr Handle invalid = UINT32_MAX - 1;
-
-  Handle handle = invalid;
-
-  HttpResp() = default;
-  explicit HttpResp(Handle handle) : handle{handle} {}
-
-  static Result<HttpResp> make();
-
-  /// Get the http status for the response.
-  Result<uint16_t> get_status() const;
-
-  /// Set the http status for the response.
-  Result<Void> set_status(uint16_t status);
-
-  /// Immediately begin sending this response to the downstream client.
-  Result<Void> send_downstream(HttpBody body, bool streaming);
-
-  bool is_valid() const override;
-
-  Result<HttpVersion> get_version() const override;
-
-  Result<std::vector<HostString>> get_header_names() override;
-  Result<std::optional<std::vector<HostString>>> get_header_values(std::string_view name) override;
-  Result<Void> insert_header(std::string_view name, std::string_view value) override;
-  Result<Void> append_header(std::string_view name, std::string_view value) override;
-  Result<Void> remove_header(std::string_view name) override;
-};
-
-/// The pair of a response and its body.
-struct Response {
-  HttpResp resp;
-  HttpBody body;
-
-  Response() = default;
-  Response(HttpResp resp, HttpBody body) : resp{resp}, body{body} {}
-};
-
-/// The pair of a request and its body.
-struct Request {
-  HttpReq req;
-  HttpBody body;
-
-  Request() = default;
-  Request(HttpReq req, HttpBody body) : req{req}, body{body} {}
-};
-
-class GeoIp final {
-  ~GeoIp() = delete;
+class HttpBodyPipe {
+  HttpIncomingBody *incoming;
+  HttpOutgoingBody *outgoing;
 
 public:
-  /// Lookup information about the ip address provided.
-  static Result<HostString> lookup(std::span<uint8_t> bytes);
+  HttpBodyPipe(HttpIncomingBody *incoming, HttpOutgoingBody *outgoing)
+      : incoming(incoming), outgoing(outgoing) {}
+
+  Result<uint8_t> pump();
+  bool ready();
+  bool done();
 };
 
-class LogEndpoint final {
+class HttpIncomingResponse;
+class FutureHttpIncomingResponse final : public Pollable {
 public:
-  using Handle = uint32_t;
+  FutureHttpIncomingResponse() = delete;
+  explicit FutureHttpIncomingResponse(Handle handle);
 
-  Handle handle = UINT32_MAX - 1;
+  /// Returns the response if it is ready, or `nullopt` if it is not.
+  Result<optional<HttpIncomingResponse *>> maybe_response();
 
-  LogEndpoint() = default;
-  explicit LogEndpoint(Handle handle) : handle{handle} {}
-
-  static Result<LogEndpoint> get(std::string_view name);
-
-  Result<Void> write(std::string_view msg);
+  Result<PollableHandle> subscribe() override;
+  void unsubscribe() override;
 };
 
-class Dict final {
+class HttpHeaders final : public Resource {
+  friend HttpIncomingResponse;
+  friend HttpIncomingRequest;
+  friend HttpOutgoingResponse;
+  friend HttpOutgoingRequest;
+
 public:
-  using Handle = uint32_t;
+  HttpHeaders();
+  explicit HttpHeaders(Handle handle);
+  explicit HttpHeaders(const vector<tuple<string_view, vector<string_view>>> &entries);
+  HttpHeaders(const HttpHeaders &headers);
 
-  Handle handle = UINT32_MAX - 1;
+  Result<vector<tuple<HostString, HostString>>> entries() const;
+  Result<vector<HostString>> names() const;
+  Result<optional<vector<HostString>>> get(string_view name) const;
 
-  Dict() = default;
-  explicit Dict(Handle handle) : handle{handle} {}
-
-  static Result<Dict> open(std::string_view name);
-
-  Result<std::optional<HostString>> get(std::string_view name);
+  Result<Void> set(string_view name, string_view value);
+  Result<Void> append(string_view name, string_view value);
+  Result<Void> remove(string_view name);
 };
 
-class ObjectStore final {
+class HttpRequestResponseBase : public Resource {
+protected:
+  HttpHeaders *headers_ = nullptr;
+  std::string *_url = nullptr;
+
 public:
-  using Handle = uint32_t;
+  ~HttpRequestResponseBase() override = default;
 
-  Handle handle = UINT32_MAX - 1;
+  virtual Result<HttpHeaders *> headers() = 0;
+  virtual string_view url();
 
-  ObjectStore() = default;
-  explicit ObjectStore(Handle handle) : handle{handle} {}
+  virtual bool is_incoming() = 0;
+  bool is_outgoing() { return !is_incoming(); }
 
-  static Result<ObjectStore> open(std::string_view name);
-
-  Result<std::optional<HttpBody>> lookup(std::string_view name);
-
-  Result<Void> insert(std::string_view name, HttpBody body);
+  virtual bool is_request() = 0;
+  bool is_response() { return !is_request(); }
 };
 
-class Secret final {
+class HttpIncomingBodyOwner {
+protected:
+  HttpIncomingBody *body_ = nullptr;
+
 public:
-  using Handle = uint32_t;
+  virtual ~HttpIncomingBodyOwner() = default;
 
-  Handle handle = UINT32_MAX - 1;
-
-  Secret() = default;
-  explicit Secret(Handle handle) : handle{handle} {}
-
-  Result<std::optional<HostString>> plaintext() const;
+  virtual Result<HttpIncomingBody *> body() = 0;
+  bool has_body() const { return body_ != nullptr; }
 };
 
-class SecretStore final {
+class HttpOutgoingBodyOwner {
+protected:
+  HttpOutgoingBody *body_ = nullptr;
+
 public:
-  using Handle = uint32_t;
+  virtual ~HttpOutgoingBodyOwner() = default;
 
-  Handle handle = UINT32_MAX - 1;
+  virtual Result<HttpOutgoingBody *> body() = 0;
+  bool has_body() { return body_ != nullptr; }
+};
 
-  SecretStore() = default;
-  explicit SecretStore(Handle handle) : handle{handle} {}
+class HttpRequest : public HttpRequestResponseBase {
+protected:
+  std::string method_ = std::string();
 
-  static Result<SecretStore> open(std::string_view name);
+public:
+  [[nodiscard]] virtual Result<string_view> method() = 0;
+};
 
-  Result<std::optional<Secret>> get(std::string_view name);
+class HttpIncomingRequest final : public HttpRequest, public HttpIncomingBodyOwner {
+public:
+  HttpIncomingRequest() = delete;
+  explicit HttpIncomingRequest(Handle handle);
+
+  bool is_incoming() override { return true; }
+  bool is_request() override { return true; }
+
+  [[nodiscard]] Result<string_view> method() override;
+  Result<HttpHeaders *> headers() override;
+  Result<HttpIncomingBody *> body() override;
+};
+
+class HttpOutgoingRequest final : public HttpRequest, public HttpOutgoingBodyOwner {
+  HttpOutgoingRequest(HandleState *state);
+
+public:
+  HttpOutgoingRequest() = delete;
+
+  static HttpOutgoingRequest *make(string_view method, optional<HostString> url, HttpHeaders *headers);
+
+  bool is_incoming() override { return false; }
+  bool is_request() override { return true; }
+
+  [[nodiscard]] Result<string_view> method() override;
+  Result<HttpHeaders *> headers() override;
+  Result<HttpOutgoingBody *> body() override;
+
+  Result<FutureHttpIncomingResponse *> send();
+};
+
+class HttpResponse : public HttpRequestResponseBase {
+protected:
+  static constexpr uint16_t UNSET_STATUS = UINT16_MAX;
+  uint16_t status_ = UNSET_STATUS;
+
+public:
+  [[nodiscard]] virtual Result<uint16_t> status() = 0;
+};
+
+class HttpIncomingResponse final : public HttpResponse, public HttpIncomingBodyOwner {
+public:
+  HttpIncomingResponse() = delete;
+  explicit HttpIncomingResponse(Handle handle);
+
+  bool is_incoming() override { return true; }
+  bool is_request() override { return false; }
+
+  Result<HttpHeaders *> headers() override;
+  Result<HttpIncomingBody *> body() override;
+  [[nodiscard]] Result<uint16_t> status() override;
+};
+
+class HttpOutgoingResponse final : public HttpResponse, public HttpOutgoingBodyOwner {
+  HttpOutgoingResponse(HandleState *state);
+
+public:
+  using ResponseOutparam = Handle;
+
+  HttpOutgoingResponse() = delete;
+
+  static HttpOutgoingResponse *make(uint16_t status, HttpHeaders *headers);
+
+  bool is_incoming() override { return false; }
+  bool is_request() override { return false; }
+
+  Result<HttpHeaders *> headers() override;
+  Result<HttpOutgoingBody *> body() override;
+  [[nodiscard]] Result<uint16_t> status() override;
+
+  Result<Void> send(ResponseOutparam out_param);
 };
 
 class Random final {
@@ -543,86 +471,15 @@ public:
   static Result<uint32_t> get_u32();
 };
 
-struct CacheLookupOptions final {
-  /// A full request handle, used only for its headers.
-  HttpReq request_headers;
-};
-
-struct CacheGetBodyOptions final {
-  uint64_t start = 0;
-  uint64_t end = 0;
-};
-
-struct CacheWriteOptions final {
-  uint64_t max_age_ns = 0;
-  HttpReq req;
-  std::string_view vary_rule;
-
-  uint64_t initial_age_ns = 0;
-  uint64_t stale_while_revalidate_ns = 0;
-
-  std::string_view surrogate_keys;
-
-  uint64_t length = 0;
-
-  std::span<uint8_t> metadata;
-
-  bool sensitive = false;
-};
-
-struct CacheState final {
-  uint8_t state = 0;
-
-  CacheState() = default;
-  CacheState(uint8_t state) : state{state} {}
-
-  bool is_found() const;
-  bool is_usable() const;
-  bool is_stale() const;
-  bool must_insert_or_update() const;
-};
-
-class CacheHandle final {
+class MonotonicClock final {
 public:
-  using Handle = uint32_t;
+  MonotonicClock() = delete;
 
-  static constexpr Handle invalid = UINT32_MAX - 1;
+  static uint64_t now();
+  static uint64_t resolution();
 
-  Handle handle = invalid;
-
-  CacheHandle() = default;
-  explicit CacheHandle(Handle handle) : handle{handle} {}
-
-  /// Lookup a cached object.
-  static Result<CacheHandle> lookup(std::string_view key, const CacheLookupOptions &opts);
-
-  static Result<CacheHandle> transaction_lookup(std::string_view key,
-                                                const CacheLookupOptions &opts);
-
-  /// Insert a cache object.
-  static Result<HttpBody> insert(std::string_view key, const CacheWriteOptions &opts);
-
-  /// Insert this cached object and stream it back.
-  Result<std::tuple<HttpBody, CacheHandle>> insert_and_stream_back(const CacheWriteOptions &opts);
-
-  bool is_valid() const { return this->handle != invalid; }
-
-  /// Cancel a transaction.
-  Result<Void> transaction_cancel();
-
-  /// Fetch the body handle for the cached data.
-  Result<HttpBody> get_body(const CacheGetBodyOptions &opts);
-
-  /// Fetch the state for this cache handle.
-  Result<CacheState> get_state();
-};
-
-class Fastly final {
-  ~Fastly() = delete;
-
-public:
-  /// Purge the given surrogate key.
-  static Result<std::optional<HostString>> purge_surrogate_key(std::string_view key);
+  static PollableHandle subscribe(uint64_t when, bool absolute);
+  static void unsubscribe(PollableHandle handle_id);
 };
 
 } // namespace host_api

@@ -1,17 +1,24 @@
 #ifndef BUILTIN_REQUEST_RESPONSE
 #define BUILTIN_REQUEST_RESPONSE
 
-#include "builtin.h"
-#include "builtins/headers.h"
-#include "host_interface/host_api.h"
+#include "headers.h"
+#include "host_api.h"
 
 namespace builtins {
+namespace web {
+namespace fetch {
+
+namespace request_response {
+
+bool install(api::Engine *engine);
+
+}
 
 class RequestOrResponse final {
+
 public:
   enum class Slots {
     RequestOrResponse,
-    Body,
     BodyStream,
     BodyAllPromise,
     HasBody,
@@ -22,14 +29,16 @@ public:
   };
 
   static bool is_instance(JSObject *obj);
-  static uint32_t handle(JSObject *obj);
+  static bool is_incoming(JSObject *obj);
+  static host_api::HttpRequestResponseBase *handle(JSObject *obj);
+  static host_api::HttpHeaders* headers_handle(JSObject *obj);
   static bool has_body(JSObject *obj);
-  static host_api::HttpBody body_handle(JSObject *obj);
+  static host_api::HttpIncomingBody* incoming_body_handle(JSObject *obj);
+  static host_api::HttpOutgoingBody* outgoing_body_handle(JSObject *obj);
   static JSObject *body_stream(JSObject *obj);
   static JSObject *body_source(JSContext *cx, JS::HandleObject obj);
   static bool body_used(JSObject *obj);
   static bool mark_body_used(JSContext *cx, JS::HandleObject obj);
-  static bool move_body_handle(JSContext *cx, JS::HandleObject from, JS::HandleObject to);
   static JS::Value url(JSObject *obj);
   static void set_url(JSObject *obj, JS::Value url);
   static bool body_unusable(JSContext *cx, JS::HandleObject body);
@@ -44,7 +53,7 @@ public:
   /**
    * Returns the RequestOrResponse's Headers, reifying it if necessary.
    */
-  template <Headers::Mode mode> static JSObject *headers(JSContext *cx, JS::HandleObject obj);
+  static JSObject *headers(JSContext *cx, JS::HandleObject obj);
 
   static bool append_body(JSContext *cx, JS::HandleObject self, JS::HandleObject source);
 
@@ -101,7 +110,6 @@ class Request final : public BuiltinImpl<Request> {
   static bool method_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool headers_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool url_get(JSContext *cx, unsigned argc, JS::Value *vp);
-  static bool version_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
   template <RequestOrResponse::BodyReadResult result_type>
   static bool bodyAll(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -109,8 +117,6 @@ class Request final : public BuiltinImpl<Request> {
   static bool body_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool bodyUsed_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
-  static bool setCacheOverride(JSContext *cx, unsigned argc, JS::Value *vp);
-  static bool setCacheKey(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool clone(JSContext *cx, unsigned argc, JS::Value *vp);
 
 public:
@@ -118,34 +124,22 @@ public:
 
   enum class Slots {
     Request = static_cast<int>(RequestOrResponse::Slots::RequestOrResponse),
-    Body = static_cast<int>(RequestOrResponse::Slots::Body),
     BodyStream = static_cast<int>(RequestOrResponse::Slots::BodyStream),
     HasBody = static_cast<int>(RequestOrResponse::Slots::HasBody),
     BodyUsed = static_cast<int>(RequestOrResponse::Slots::BodyUsed),
     Headers = static_cast<int>(RequestOrResponse::Slots::Headers),
     URL = static_cast<int>(RequestOrResponse::Slots::URL),
-    Backend = static_cast<int>(RequestOrResponse::Slots::Count),
-    Method,
-    CacheOverride,
-    PendingRequest,
+    Method = static_cast<int>(RequestOrResponse::Slots::Count),
     ResponsePromise,
-    IsDownstream,
-    AutoDecompressGzip,
     Count,
   };
 
   static JSObject *response_promise(JSObject *obj);
   static JSString *method(JSContext *cx, JS::HandleObject obj);
-  static bool set_cache_key(JSContext *cx, JS::HandleObject self, JS::HandleValue cache_key_val);
-  static bool set_cache_override(JSContext *cx, JS::HandleObject self,
-                                 JS::HandleValue cache_override_val);
-  static bool apply_cache_override(JSContext *cx, JS::HandleObject self);
-  static bool apply_auto_decompress_gzip(JSContext *cx, JS::HandleObject self);
+  static host_api::HttpRequest *request_handle(JSObject *obj);
+  static host_api::HttpOutgoingRequest *outgoing_handle(JSObject *obj);
+  static host_api::HttpIncomingRequest *incoming_handle(JSObject *obj);
 
-  static host_api::HttpReq request_handle(JSObject *obj);
-  static host_api::HttpPendingReq pending_handle(JSObject *obj);
-  static bool is_downstream(JSObject *obj);
-  static JSString *backend(JSObject *obj);
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
@@ -157,8 +151,7 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 
   static JSObject *create(JSContext *cx, JS::HandleObject requestInstance,
-                          host_api::HttpReq request_handle, host_api::HttpBody body_handle,
-                          bool is_downstream);
+                          host_api::HttpRequest* request_handle);
   static JSObject *create(JSContext *cx, JS::HandleObject requestInstance, JS::HandleValue input,
                           JS::HandleValue init_val);
 
@@ -171,7 +164,6 @@ class Response final : public BuiltinImpl<Response> {
   static bool status_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool statusText_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool url_get(JSContext *cx, unsigned argc, JS::Value *vp);
-  static bool version_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool type_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool headers_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool redirected_get(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -189,17 +181,13 @@ public:
 
   enum class Slots {
     Response = static_cast<int>(RequestOrResponse::Slots::RequestOrResponse),
-    Body = static_cast<int>(RequestOrResponse::Slots::Body),
     BodyStream = static_cast<int>(RequestOrResponse::Slots::BodyStream),
     HasBody = static_cast<int>(RequestOrResponse::Slots::HasBody),
     BodyUsed = static_cast<int>(RequestOrResponse::Slots::BodyUsed),
     Headers = static_cast<int>(RequestOrResponse::Slots::Headers),
-    IsUpstream = static_cast<int>(RequestOrResponse::Slots::Count),
-    Status,
+    Status = static_cast<int>(RequestOrResponse::Slots::Count),
     StatusMessage,
     Redirected,
-    IsGripUpgrade,
-    GripBackend,
     Count,
   };
   static const JSFunctionSpec static_methods[];
@@ -213,18 +201,17 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 
   static JSObject *create(JSContext *cx, JS::HandleObject response,
-                          host_api::HttpResp response_handle, host_api::HttpBody body_handle,
-                          bool is_upstream, bool is_grip_upgrade, JS::UniqueChars backend);
+                          host_api::HttpResponse* response_handle);
 
-  static host_api::HttpResp response_handle(JSObject *obj);
-  static bool is_upstream(JSObject *obj);
-  static bool is_grip_upgrade(JSObject *obj);
-  static const char *grip_backend(JSObject *obj);
+  static host_api::HttpResponse* response_handle(JSObject *obj);
   static uint16_t status(JSObject *obj);
   static JSString *status_message(JSObject *obj);
   static void set_status_message_from_code(JSContext *cx, JSObject *obj, uint16_t code);
+
 };
 
+} // namespace fetch
+} // namespace web
 } // namespace builtins
 
 #endif

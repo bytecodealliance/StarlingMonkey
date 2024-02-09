@@ -3,7 +3,7 @@
 
 #include "builtin.h"
 
-namespace builtins {
+namespace builtins::web::dom_exception {
 
 class DOMException : public BuiltinImpl<DOMException> {
 private:
@@ -27,6 +27,8 @@ public:
   static void raise(JSContext *cx, std::string_view message, std::string_view name);
 };
 
-} // namespace builtins
+bool install(api::Engine *engine);
+
+} // namespace builtins::web::dom_exception
 
 #endif

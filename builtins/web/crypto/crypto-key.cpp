@@ -1,13 +1,14 @@
 #include "crypto-key.h"
-#include "core/encode.h"
+#include "encode.h"
 #include "crypto-algorithm.h"
-#include "js-compute-builtins.h"
 #include "openssl/rsa.h"
 #include <iostream>
 #include <openssl/ec.h>
 #include <utility>
 
 namespace builtins {
+namespace web {
+namespace crypto {
 
 CryptoKeyUsages::CryptoKeyUsages(uint8_t mask) { this->mask = mask; };
 CryptoKeyUsages::CryptoKeyUsages(bool encrypt, bool decrypt, bool sign, bool verify,
@@ -139,7 +140,7 @@ bool CryptoKey::algorithm_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   // instance of CryptoKey. We check if `self` is `CryptoKey.prototype` and if it is, we throw a JS
   // Error.
   if (self == proto_obj.get()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessageBuiltin, nullptr, JSMSG_INCOMPATIBLE_INSTANCE,
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INCOMPATIBLE_INSTANCE,
                               __func__, CryptoKey::class_.name);
     return false;
   }
@@ -757,4 +758,6 @@ bool CryptoKey::canVerify(JS::HandleObject self) {
   return usage.canVerify();
 }
 
+} // namespace crypto
+} // namespace web
 } // namespace builtins

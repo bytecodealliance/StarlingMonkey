@@ -1,7 +1,5 @@
-#include "builtins/worker-location.h"
-#include "builtin.h"
-#include "builtins/shared/url.h"
-#include "js-compute-builtins.h"
+#include "worker-location.h"
+#include "url.h"
 
 /**
  * The `WorkerLocation` builtin, added to the global object as the data property
@@ -9,6 +7,9 @@
  * https://html.spec.whatwg.org/multipage/workers.html#worker-locations
  */
 namespace builtins {
+namespace web {
+namespace worker_location {
+
 JS::PersistentRooted<JSObject *> WorkerLocation::url;
 
 #define WorkerLocation_ACCESSOR_GET(field)                                                         \
@@ -19,7 +20,7 @@ JS::PersistentRooted<JSObject *> WorkerLocation::url;
     }                                                                                              \
     auto [args, self] = result.unwrap();                                                           \
     REQUEST_HANDLER_ONLY("location." #field)                                                       \
-    return URL::field(cx, WorkerLocation::url, args.rval());                                       \
+    return url::URL::field(cx, WorkerLocation::url, args.rval());                                  \
   }
 
 WorkerLocation_ACCESSOR_GET(href);
@@ -83,4 +84,10 @@ bool WorkerLocation::init_class(JSContext *cx, JS::HandleObject global) {
   return JS_DefineProperty(cx, global, "location", location, JSPROP_ENUMERATE);
 }
 
+bool install(api::Engine* engine) {
+  return WorkerLocation::init_class(engine->cx(), engine->global());
+}
+
+} // namespace worker_location
+} // namespace web
 } // namespace builtins

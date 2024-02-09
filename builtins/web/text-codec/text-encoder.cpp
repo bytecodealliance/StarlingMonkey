@@ -1,6 +1,5 @@
-#include "builtins/shared/text-encoder.h"
-#include "core/encode.h"
-#include "js-compute-builtins.h"
+#include "text-encoder.h"
+#include "encode.h"
 #include <iostream>
 #include <tuple>
 
@@ -13,6 +12,8 @@
 #pragma clang diagnostic pop
 
 namespace builtins {
+namespace web {
+namespace text_codec {
 
 bool TextEncoder::encode(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
@@ -116,7 +117,7 @@ bool TextEncoder::encoding_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
   if (result != TextEncoder::proto_obj) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessageBuiltin, nullptr, JSMSG_INVALID_INTERFACE,
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_INTERFACE,
                               "encoding get", "TextEncoder");
     return false;
   }
@@ -166,4 +167,6 @@ bool TextEncoder::init_class(JSContext *cx, JS::HandleObject global) {
   return init_class_impl(cx, global);
 }
 
+} // namespace text_codec
+} // namespace web
 } // namespace builtins

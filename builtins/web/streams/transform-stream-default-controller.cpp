@@ -7,9 +7,8 @@
 
 #include "js/Stream.h"
 
-#include "builtin.h"
-#include "builtins/transform-stream-default-controller.h"
-#include "builtins/transform-stream.h"
+#include "transform-stream-default-controller.h"
+#include "transform-stream.h"
 
 /**
  * Implementation of the WHATWG TransformStream builtin.
@@ -20,6 +19,8 @@
 // A JS class to use as the underlying sink for native writable streams, used
 // for TransformStream.
 namespace builtins {
+namespace web {
+namespace streams {
 JSObject *TransformStreamDefaultController::stream(JSObject *controller) {
   MOZ_ASSERT(is_instance(controller));
   return &JS::GetReservedSlot(controller, Slots::Stream).toObject();
@@ -463,4 +464,6 @@ void TransformStreamDefaultController::ClearAlgorithms(JSObject *controller) {
   JS::SetReservedSlot(controller, Slots::FlushAlgorithm, JS::PrivateValue(nullptr));
   JS::SetReservedSlot(controller, Slots::FlushInput, JS::UndefinedValue());
 }
+} // namespace streams
+} // namespace web
 } // namespace builtins

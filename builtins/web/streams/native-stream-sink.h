@@ -2,9 +2,10 @@
 #define JS_COMPUTE_RUNTIME_NATIVE_STREAM_SINK_H
 
 #include "builtin.h"
-#include "js-compute-builtins.h"
 
 namespace builtins {
+namespace web {
+namespace streams {
 
 class NativeStreamSink : public BuiltinNoConstructor<NativeStreamSink> {
 private:
@@ -61,5 +62,7 @@ public:
                           AbortAlgorithmImplementation *abort);
 };
 
+} // namespace streams
+} // namespace web
 } // namespace builtins
 #endif

@@ -9,6 +9,8 @@
 #include <openssl/md5.h>
 
 namespace builtins {
+namespace web {
+namespace crypto {
 
 // We are defining all the algorithms from
 // https://w3c.github.io/webcrypto/#issue-container-generatedID-15
@@ -236,5 +238,7 @@ public:
   JSObject *digest(JSContext *cx, std::span<uint8_t>) override;
 };
 
+} // namespace crypto
+} // namespace web
 } // namespace builtins
 #endif

@@ -2,9 +2,10 @@
 #define JS_COMPUTE_RUNTIME_WORKER_LOCATION_H
 
 #include "builtin.h"
-#include "js-compute-builtins.h"
 
 namespace builtins {
+namespace web {
+namespace worker_location {
 
 class WorkerLocation : public BuiltinImpl<WorkerLocation> {
 private:
@@ -25,6 +26,10 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
 };
 
+bool install(api::Engine* engine);
+
+} // namespace worker_location
+} // namespace web
 } // namespace builtins
 
 #endif

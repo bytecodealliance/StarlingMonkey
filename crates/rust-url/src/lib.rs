@@ -82,6 +82,20 @@ pub unsafe extern "C" fn new_jsurl_with_base(spec: &SpecString, base: &JSUrl) ->
 }
 
 #[no_mangle]
+pub extern "C" fn authority(url: &JSUrl) -> SpecSlice {
+    url.url.authority().into()
+}
+
+#[no_mangle]
+pub extern "C" fn path_with_query(url: &JSUrl) -> SpecSlice {
+    let mut slice: SpecSlice = url.url.path().into();
+    if let Some(query) = url.url.query() {
+        slice.len += 1 + query.len();
+    }
+    slice
+}
+
+#[no_mangle]
 pub extern "C" fn hash(url: &JSUrl) -> SpecSlice {
     quirks::hash(&url.url).into()
 }

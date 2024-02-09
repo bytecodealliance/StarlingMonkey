@@ -2,9 +2,10 @@
 #define JS_COMPUTE_RUNTIME_COMPRESSION_STREAM_H
 
 #include "builtin.h"
-#include "js-compute-builtins.h"
 
 namespace builtins {
+namespace web {
+namespace streams {
 
 /**
  * Implementation of the WICG CompressionStream builtin.
@@ -34,6 +35,8 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 };
 
+} // namespace streams
+} // namespace web
 } // namespace builtins
 
 #endif

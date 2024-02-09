@@ -2,9 +2,10 @@
 #define JS_COMPUTE_RUNTIME_TRANSFORM_STREAM_DEFAULT_CONTROLLER_H
 
 #include "builtin.h"
-#include "js-compute-builtins.h"
 
 namespace builtins {
+namespace web {
+namespace streams {
 
 class TransformStreamDefaultController
     : public BuiltinNoConstructor<TransformStreamDefaultController> {
@@ -68,6 +69,8 @@ public:
   static void ClearAlgorithms(JSObject *controller);
 };
 
+} // namespace streams
+} // namespace web
 } // namespace builtins
 
 #endif

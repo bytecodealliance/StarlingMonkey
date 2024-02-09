@@ -1,5 +1,5 @@
 #include "console.h"
-#include "core/encode.h"
+#include "encode.h"
 #include <chrono>
 #include <map>
 
@@ -12,23 +12,28 @@
 #pragma clang diagnostic pop
 
 namespace {
-using FpMilliseconds = std::chrono::duration<float, std::chrono::milliseconds::period>;
+using FpMilliseconds =
+    std::chrono::duration<float, std::chrono::milliseconds::period>;
 auto count_map = std::map<std::string, size_t>{};
 auto timer_map = std::map<std::string, std::chrono::steady_clock::time_point>{};
 } // namespace
-JS::Result<mozilla::Ok> ToSource(JSContext *cx, std::string &sourceOut, JS::HandleValue val,
+JS::Result<mozilla::Ok> ToSource(JSContext *cx, std::string &sourceOut,
+                                 JS::HandleValue val,
                                  JS::MutableHandleObjectVector visitedObjects);
 
 /**
  * Turn a handle of a Promise into a string which represents the promise.
  * - If the promise is pending this will return "Promise { <pending> }"
- * - If the promise is rejected this will return "Promise { <rejected> (rejected-value)}"
- *  where rejected-value would be the ToSource representation of the rejected value.
+ * - If the promise is rejected this will return "Promise { <rejected>
+ * (rejected-value)}" where rejected-value would be the ToSource representation
+ * of the rejected value.
  * - If the promise is resolved this will return "Promise { resolved-value}"
- *  where resolved-value would be the ToSource representation of the resolved value.
+ *  where resolved-value would be the ToSource representation of the resolved
+ * value.
  */
-JS::Result<mozilla::Ok> PromiseToSource(JSContext *cx, std::string &sourceOut, JS::HandleObject obj,
-                                        JS::MutableHandleObjectVector visitedObjects) {
+JS::Result<mozilla::Ok>
+PromiseToSource(JSContext *cx, std::string &sourceOut, JS::HandleObject obj,
+                JS::MutableHandleObjectVector visitedObjects) {
   sourceOut += "Promise { ";
   JS::PromiseState state = JS::GetPromiseState(obj);
   switch (state) {
@@ -55,10 +60,12 @@ JS::Result<mozilla::Ok> PromiseToSource(JSContext *cx, std::string &sourceOut, J
 
 /**
  * Turn a handle of a Map into a string which represents the map.
- * Each key and value within the map will be converted into it's ToSource representation.
+ * Each key and value within the map will be converted into it's ToSource
+ * representation.
  */
-JS::Result<mozilla::Ok> MapToSource(JSContext *cx, std::string &sourceOut, JS::HandleObject obj,
-                                    JS::MutableHandleObjectVector visitedObjects) {
+JS::Result<mozilla::Ok>
+MapToSource(JSContext *cx, std::string &sourceOut, JS::HandleObject obj,
+            JS::MutableHandleObjectVector visitedObjects) {
   sourceOut += "Map(";
   uint32_t size = JS::MapSize(cx, obj);
   sourceOut += std::to_string(size);
@@ -105,10 +112,12 @@ JS::Result<mozilla::Ok> MapToSource(JSContext *cx, std::string &sourceOut, JS::H
 
 /**
  * Turn a handle of a Set into a string which represents the set.
- * Each value within the set will be converted into it's ToSource representation.
+ * Each value within the set will be converted into it's ToSource
+ * representation.
  */
-JS::Result<mozilla::Ok> SetToSource(JSContext *cx, std::string &sourceOut, JS::HandleObject obj,
-                                    JS::MutableHandleObjectVector visitedObjects) {
+JS::Result<mozilla::Ok>
+SetToSource(JSContext *cx, std::string &sourceOut, JS::HandleObject obj,
+            JS::MutableHandleObjectVector visitedObjects) {
   sourceOut += "Set(";
   uint32_t size = JS::SetSize(cx, obj);
   sourceOut += std::to_string(size);
@@ -144,8 +153,9 @@ JS::Result<mozilla::Ok> SetToSource(JSContext *cx, std::string &sourceOut, JS::H
   return mozilla::Ok();
 }
 
-JS::Result<mozilla::Ok> ArrayToSource(JSContext *cx, std::string &sourceOut, JS::HandleObject obj,
-                                      JS::MutableHandleObjectVector visitedObjects) {
+JS::Result<mozilla::Ok>
+ArrayToSource(JSContext *cx, std::string &sourceOut, JS::HandleObject obj,
+              JS::MutableHandleObjectVector visitedObjects) {
   sourceOut += "[";
   uint32_t len;
   if (!JS::GetArrayLength(cx, obj, &len)) {
@@ -168,8 +178,9 @@ JS::Result<mozilla::Ok> ArrayToSource(JSContext *cx, std::string &sourceOut, JS:
  * Logs all enumerable properties, except non-own function and symbol properties
  * Includes handling for getters and setters
  */
-JS::Result<mozilla::Ok> ObjectToSource(JSContext *cx, std::string &sourceOut, JS::HandleObject obj,
-                                       JS::MutableHandleObjectVector visitedObjects) {
+JS::Result<mozilla::Ok>
+ObjectToSource(JSContext *cx, std::string &sourceOut, JS::HandleObject obj,
+               JS::MutableHandleObjectVector visitedObjects) {
   JS::RootedIdVector ids(cx);
 
   if (!js::GetPropertyKeys(cx, obj, 0, &ids)) {
@@ -187,7 +198,8 @@ JS::Result<mozilla::Ok> ObjectToSource(JSContext *cx, std::string &sourceOut, JS
     JS::Rooted<mozilla::Maybe<JS::PropertyDescriptor>> desc(cx);
     JS_GetOwnPropertyDescriptorById(cx, obj, id, &desc);
 
-    bool getter_setter = !desc.isNothing() && (desc->hasGetter() || desc->hasSetter());
+    bool getter_setter =
+        !desc.isNothing() && (desc->hasGetter() || desc->hasSetter());
 
     // retrive the value if not a getter or setter
     if (!getter_setter) {
@@ -197,7 +209,8 @@ JS::Result<mozilla::Ok> ObjectToSource(JSContext *cx, std::string &sourceOut, JS
     }
 
     // Skip logging non-own function or getter and setter keys
-    if (getter_setter || (value.isObject() && JS_ObjectIsFunction(&value.toObject()))) {
+    if (getter_setter ||
+        (value.isObject() && JS_ObjectIsFunction(&value.toObject()))) {
       bool own_prop;
       if (!JS_HasOwnPropertyById(cx, obj, id, &own_prop)) {
         return JS::Result<mozilla::Ok>(JS::Error());
@@ -245,10 +258,12 @@ JS::Result<mozilla::Ok> ObjectToSource(JSContext *cx, std::string &sourceOut, JS
   return mozilla::Ok();
 }
 
-mozilla::Maybe<std::string> get_class_name(JSContext *cx, JS::HandleObject obj) {
+mozilla::Maybe<std::string> get_class_name(JSContext *cx,
+                                           JS::HandleObject obj) {
   mozilla::Maybe<std::string> result = {};
   JS::RootedValue constructorVal(cx);
-  if (JS_GetProperty(cx, obj, "constructor", &constructorVal) && constructorVal.isObject()) {
+  if (JS_GetProperty(cx, obj, "constructor", &constructorVal) &&
+      constructorVal.isObject()) {
     JS::RootedValue name(cx);
     JS::RootedObject constructorObj(cx, &constructorVal.toObject());
     if (JS_GetProperty(cx, constructorObj, "name", &name) && name.isString()) {
@@ -266,7 +281,8 @@ mozilla::Maybe<std::string> get_class_name(JSContext *cx, JS::HandleObject obj) 
 /**
  * Turn a handle of any value into a string which represents it.
  */
-JS::Result<mozilla::Ok> ToSource(JSContext *cx, std::string &sourceOut, JS::HandleValue val,
+JS::Result<mozilla::Ok> ToSource(JSContext *cx, std::string &sourceOut,
+                                 JS::HandleValue val,
                                  JS::MutableHandleObjectVector visitedObjects) {
 
   auto type = val.type();
@@ -401,7 +417,30 @@ JS::Result<mozilla::Ok> ToSource(JSContext *cx, std::string &sourceOut, JS::Hand
   }
 }
 
-namespace builtins {
+namespace builtins::web::console {
+
+void builtin_impl_console_log(Console::LogType log_ty, const char *msg) {
+  const char *prefix = "";
+  switch (log_ty) {
+  case Console::LogType::Log:
+    prefix = "Log";
+    break;
+  case Console::LogType::Debug:
+    prefix = "Debug";
+    break;
+  case Console::LogType::Info:
+    prefix = "Info";
+    break;
+  case Console::LogType::Warn:
+    prefix = "Warn";
+    break;
+  case Console::LogType::Error:
+    prefix = "Error";
+    break;
+  }
+  fprintf(stdout, "%s: %s\n", prefix, msg);
+  fflush(stdout);
+}
 
 template <Console::LogType log_ty>
 static bool console_out(JSContext *cx, unsigned argc, JS::Value *vp) {
@@ -445,16 +484,16 @@ static bool assert(JSContext *cx, unsigned argc, JS::Value *vp) {
     return true;
   }
 
-  // 2. Let message be a string without any formatting specifiers indicating generically an
-  // assertion failure (such as "Assertion failed").
+  // 2. Let message be a string without any formatting specifiers indicating
+  // generically an assertion failure (such as "Assertion failed").
   std::string message = "Assertion failed";
   // 3. If data is empty, append message to data.
   // 4. Otherwise:
   // 4.1. Let first be data[0].
   // 4.2. If Type(first) is not String, then prepend message to data.
   // 4.3. Otherwise:
-  // 4.3.1. Let concat be the concatenation of message, U+003A (:), U+0020 SPACE, and first.
-  // 4.3.2. Set data[0] to concat.
+  // 4.3.1. Let concat be the concatenation of message, U+003A (:), U+0020
+  // SPACE, and first. 4.3.2. Set data[0] to concat.
   auto length = args.length();
   if (length > 1) {
     message += ": ";
@@ -538,9 +577,9 @@ static bool countReset(JSContext *cx, unsigned argc, JS::Value *vp) {
     it->second = 0;
   } else {
     // 3. Otherwise:
-    // 3.1. Let message be a string without any formatting specifiers indicating generically that
-    // the given label does not have an associated count. 3.2. Perform Logger("countReset", «
-    // message »);
+    // 3.1. Let message be a string without any formatting specifiers indicating
+    // generically that the given label does not have an associated count. 3.2.
+    // Perform Logger("countReset", « message »);
     std::string message = "Count for '";
     message += label;
     message += "' does not exist";
@@ -570,11 +609,12 @@ static bool time(JSContext *cx, unsigned argc, JS::Value *vp) {
   } else {
     label = "default";
   }
-  // 1. If the associated timer table contains an entry with key label, return, optionally reporting
-  // a warning to the console indicating that a timer with label label has already been started.
+  // 1. If the associated timer table contains an entry with key label, return,
+  // optionally reporting a warning to the console indicating that a timer with
+  // label label has already been started.
   if (!timer_map.contains(label)) {
-    // 2. Otherwise, set the value of the entry with key label in the associated timer table to the
-    // current time.
+    // 2. Otherwise, set the value of the entry with key label in the associated
+    // timer table to the current time.
     timer_map[label] = std::chrono::high_resolution_clock::now();
   }
 
@@ -608,12 +648,13 @@ static bool timeLog(JSContext *cx, unsigned argc, JS::Value *vp) {
   // 2. Let startTime be timerTable[label].
   auto startTime = timer_map[label];
 
-  // 3. Let duration be a string representing the difference between the current time and startTime,
-  // in an implementation-defined format.
+  // 3. Let duration be a string representing the difference between the current
+  // time and startTime, in an implementation-defined format.
   auto finish = std::chrono::high_resolution_clock::now();
   auto duration = FpMilliseconds(finish - startTime).count();
 
-  // 4. Let concat be the concatenation of label, U+003A (:), U+0020 SPACE, and duration.
+  // 4. Let concat be the concatenation of label, U+003A (:), U+0020 SPACE, and
+  // duration.
   std::string concat = label;
   concat += ": ";
   concat += std::to_string(duration);
@@ -681,11 +722,12 @@ static bool timeEnd(JSContext *cx, unsigned argc, JS::Value *vp) {
   // 3. Remove timerTable[label].
   auto startTime = timer_map.extract(label).mapped();
 
-  // 4. Let duration be a string representing the difference between the current time and startTime,
-  // in an implementation-defined format.
+  // 4. Let duration be a string representing the difference between the current
+  // time and startTime, in an implementation-defined format.
   auto finish = std::chrono::high_resolution_clock::now();
   auto duration = FpMilliseconds(finish - startTime).count();
-  // 5. Let concat be the concatenation of label, U+003A (:), U+0020 SPACE, and duration.
+  // 5. Let concat be the concatenation of label, U+003A (:), U+0020 SPACE, and
+  // duration.
   std::string concat = label;
   concat += ": ";
   concat += std::to_string(duration);
@@ -727,11 +769,12 @@ static bool dir(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 static bool trace(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::CallArgs args = CallArgsFromVp(argc, vp);
-  // 1. Let trace be some implementation-specific, potentially-interactive representation of the
-  // callstack from where this function was called.
+  // 1. Let trace be some implementation-specific, potentially-interactive
+  // representation of the callstack from where this function was called.
 
   JS::RootedObject stack(cx);
-  if (!CaptureCurrentStack(cx, &stack, JS::StackCapture(JS::MaxFrames(1u << 7)))) {
+  if (!CaptureCurrentStack(cx, &stack,
+                           JS::StackCapture(JS::MaxFrames(1u << 7)))) {
     return false;
   }
   auto principals = JS::GetRealmPrincipals(JS::GetCurrentRealmOrNull(cx));
@@ -744,8 +787,8 @@ static bool trace(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  // 2. Optionally, let formattedData be the result of Formatter(data), and incorporate
-  // formattedData as a label for trace.
+  // 2. Optionally, let formattedData be the result of Formatter(data), and
+  // incorporate formattedData as a label for trace.
   std::string fullLogLine = "";
   JS::RootedObjectVector visitedObjects(cx);
   for (int i = 0; i < args.length(); i++) {
@@ -785,7 +828,8 @@ const JSFunctionSpec Console::methods[] = {
     JS_FN("dirxml", (console_out<Console::LogType::Log>), 0, JSPROP_ENUMERATE),
     JS_FN("error", (console_out<Console::LogType::Error>), 0, JSPROP_ENUMERATE),
     JS_FN("group", (console_out<Console::LogType::Log>), 0, JSPROP_ENUMERATE),
-    JS_FN("groupCollapsed", (console_out<Console::LogType::Log>), 0, JSPROP_ENUMERATE),
+    JS_FN("groupCollapsed", (console_out<Console::LogType::Log>), 0,
+          JSPROP_ENUMERATE),
     JS_FN("groupEnd", no_op, 0, JSPROP_ENUMERATE),
     JS_FN("info", (console_out<Console::LogType::Info>), 0, JSPROP_ENUMERATE),
     JS_FN("log", (console_out<Console::LogType::Log>), 0, JSPROP_ENUMERATE),
@@ -800,18 +844,18 @@ const JSFunctionSpec Console::methods[] = {
 const JSPropertySpec Console::properties[] = {
     JS_STRING_SYM_PS(toStringTag, "console", JSPROP_READONLY), JS_PS_END};
 
-bool Console::create(JSContext *cx, JS::HandleObject global) {
-  JS::RootedObject proto(cx, JS_NewPlainObject(cx));
-  JS::RootedObject console(cx, JS_NewObjectWithGivenProto(cx, &builtins::Console::class_, proto));
+bool install(api::Engine* engine) {
+  JS::RootedObject proto(engine->cx(), JS_NewPlainObject(engine->cx()));
+  JS::RootedObject console(engine->cx(), JS_NewObjectWithGivenProto(engine->cx(), &Console::class_, proto));
   if (!console) {
     return false;
   }
-  if (!JS_DefineProperty(cx, global, "console", console, 0)) {
+  if (!JS_DefineProperty(engine->cx(), engine->global(), "console", console, 0)) {
     return false;
   }
-  if (!JS_DefineProperties(cx, console, properties)) {
+  if (!JS_DefineProperties(engine->cx(), console, Console::properties)) {
     return false;
   }
-  return JS_DefineFunctions(cx, console, methods);
+  return JS_DefineFunctions(engine->cx(), console, Console::methods);
 }
-} // namespace builtins
+} // namespace web::builtins::console

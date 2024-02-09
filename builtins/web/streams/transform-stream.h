@@ -2,9 +2,11 @@
 #define JS_COMPUTE_RUNTIME_TRANSFORM_STREAM_H
 
 #include "builtin.h"
-#include "js-compute-builtins.h"
+// #include "js-compute-builtins.h"
 
 namespace builtins {
+namespace web {
+namespace streams {
 
 class TransformStream : public BuiltinImpl<TransformStream> {
 private:
@@ -91,6 +93,8 @@ public:
   static JSObject *create_rs_proxy(JSContext *cx, JS::HandleObject input_readable);
 };
 
+} // namespace streams
+} // namespace web
 } // namespace builtins
 
 #endif

@@ -1,7 +1,7 @@
 #ifndef JS_COMPUTE_RUNTIME_EVENT_LOOP_H
 #define JS_COMPUTE_RUNTIME_EVENT_LOOP_H
 
-#include "host_interface/host_api.h"
+#include "extension-api.h"
 
 // TODO: remove these once the warnings are fixed
 #pragma clang diagnostic push
@@ -25,25 +25,25 @@ public:
   static bool has_pending_async_tasks();
 
   /**
-   * Process any outstanding requests.
+   * Run the event loop until all async tasks have completed.
+   *
+   * Concretely, that means running a loop, whose body does two things:
+   * 1. Run all micro-tasks, i.e. pending Promise reactions
+   * 2. Run the next ready async task
+   *
+   * The loop terminates once both of these steps are null-ops.
    */
-  static bool process_pending_async_tasks(JSContext *cx);
+  static bool run_event_loop(api::Engine * engine, double total_compute, MutableHandleValue result);
 
   /**
    * Queue a new async task.
    */
-  static bool queue_async_task(JS::HandleObject task);
+  static void queue_async_task(api::AsyncTask * task);
 
   /**
-   * Register a timer.
+   * Remove a queued async task.
    */
-  static uint32_t add_timer(JS::HandleObject callback, uint32_t delay,
-                            JS::HandleValueVector arguments, bool repeat);
-
-  /**
-   * Remove an active timer
-   */
-  static void remove_timer(uint32_t id);
+  static bool cancel_async_task(api::Engine * engine, int32_t id);
 };
 
 } // namespace core
