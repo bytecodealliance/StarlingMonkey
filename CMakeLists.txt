@@ -63,9 +63,28 @@ target_link_libraries(js.wasm PRIVATE host_api extension_api builtins spidermonk
 
 set(RUNTIME_FILE "js.wasm")
 set(ADAPTER_FILE "preview1-adapter.wasm")
-configure_file("componentize.sh" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh")
+configure_file("componentize.sh" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh" COPYONLY)
 configure_file(${ADAPTER} "${CMAKE_CURRENT_BINARY_DIR}/${ADAPTER_FILE}" COPYONLY)
 configure_file(spin.toml spin.toml COPYONLY)
+
+function(componentize OUTPUT)
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs SOURCES)
+    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    list(TRANSFORM ARG_SOURCES PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/)
+    list(JOIN ARG_SOURCES " " SOURCES)
+    get_target_property(RUNTIME_DIR js.wasm BINARY_DIR)
+
+    add_custom_command(
+            OUTPUT ${OUTPUT}.js.wasm
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR};${WIZER_DIR};$ENV{PATH}" ${RUNTIME_DIR}/componentize.sh ${SOURCES} ${OUTPUT}.js.wasm
+            DEPENDS ${ARG_SOURCES} ${RUNTIME_DIR}/componentize.sh js.wasm
+            VERBATIM
+    )
+    add_custom_target(${OUTPUT} DEPENDS ${OUTPUT}.js.wasm)
+endfunction()
 
 add_custom_command(
         OUTPUT smoke.js.wasm
