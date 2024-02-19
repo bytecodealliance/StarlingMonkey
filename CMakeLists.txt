@@ -18,8 +18,6 @@ else()
 endif()
 message(STATUS "Using host API: ${HOST_API}")
 
-set(CPM_SOURCE_CACHE ${CMAKE_CURRENT_SOURCE_DIR}/deps/cpm_cache)
-set(CPM_USE_NAMED_CACHE_DIRECTORIES ON)
 include("CPM")
 include("toolchain")
 
