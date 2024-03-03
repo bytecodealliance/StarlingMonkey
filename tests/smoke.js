@@ -1,3 +1,7 @@
+import { Foo } from './smoke-dependency.js';
+import "./nested-smoke-dependency.js";
+
+
 function readAll(response) {
     return response.text();
 }
@@ -89,6 +93,7 @@ function embeddedBody() {
 }
 
 async function main(event) {
+    let resolve, reject;
 
     try {
         // let now = Date.now();

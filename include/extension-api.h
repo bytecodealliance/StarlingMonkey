@@ -36,7 +36,18 @@ public:
   Engine();
   JSContext *cx();
   HandleObject global();
-  bool eval(char *code, size_t len, const char *filename, MutableHandleValue result);
+
+  /**
+   * Treat the top-level script as a module or classic JS script.
+   *
+   * By default, the engine treats the top-level script as a module.
+   * Since not all content can be run as a module, this method allows
+   * changing this default, and will impact all subsequent top-level
+   * evaluations.
+   */
+  void enable_module_mode(bool enable);
+  bool eval_toplevel(const char *path, MutableHandleValue result);
+
   bool run_event_loop(MutableHandleValue result);
 
   bool has_pending_async_tasks();

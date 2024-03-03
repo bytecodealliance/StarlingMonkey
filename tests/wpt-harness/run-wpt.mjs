@@ -429,7 +429,7 @@ async function runTests(testPaths, wasmtime, resultCallback, errorCallback) {
     let results;
     try {
       results = JSON.parse(body);
-      if (response.statusCode == 500) {
+      if (response.status == 500) {
         throw {message: results.error.message, stack: results.error.stack};
       }
 

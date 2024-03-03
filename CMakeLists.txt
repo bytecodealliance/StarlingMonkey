@@ -51,7 +51,9 @@ add_executable(js.wasm
         runtime/encode.cpp
         runtime/engine.cpp
         runtime/event_loop.cpp
-        runtime/builtin.cpp)
+        runtime/builtin.cpp
+        runtime/script_loader.cpp
+)
 
 
 # TODO: remove this once the runtime doesn't need to explicitly include the builtins anymore.
@@ -84,12 +86,4 @@ function(componentize OUTPUT)
     add_custom_target(${OUTPUT} DEPENDS ${OUTPUT}.js.wasm)
 endfunction()
 
-add_custom_command(
-        OUTPUT smoke.js.wasm
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR};${WIZER_DIR};$ENV{PATH}" ./componentize.sh ${CMAKE_CURRENT_SOURCE_DIR}/tests/smoke.js
-        DEPENDS js.wasm componentize.sh spin.toml tests/smoke.js
-        VERBATIM
-)
-
-add_custom_target(smoke-test DEPENDS smoke.js.wasm)
+componentize(smoke-test SOURCES tests/smoke.js)

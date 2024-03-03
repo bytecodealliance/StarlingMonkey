@@ -27,7 +27,7 @@ static bool trap(JSContext *cx, unsigned argc, JS::Value *vp) {
 }
 #endif
 
-bool initialize(char *script_src, size_t len, const char *filename) {
+bool initialize(const char *filename) {
   auto engine = api::Engine();
 
   if (!install_builtins(&engine)) {
@@ -41,43 +41,23 @@ bool initialize(char *script_src, size_t len, const char *filename) {
 #endif
 
   RootedValue result(engine.cx());
-  if (!engine.eval(script_src, len, filename, &result)) {
-    fflush(stdout);
-    if (JS_IsExceptionPending(engine.cx())) {
-      engine.dump_pending_exception("Error evaluating code: ");
-    }
-    return false;
+  bool success = engine.eval_toplevel(filename, &result);
+  success = success && engine.run_event_loop(&result);
+
+  if (JS_IsExceptionPending(engine.cx())) {
+    engine.dump_pending_exception("Error evaluating code: ");
   }
 
-  if (!engine.run_event_loop(&result)) {
+  if (!success) {
     fflush(stdout);
     fprintf(stderr, "Error running event loop: ");
     engine.dump_value(result, stderr);
     return false;
   }
-  if (JS_IsExceptionPending(engine.cx())) {
-    engine.dump_pending_exception("Error evaluating code: ");
-  }
 
   js::ResetMathRandomSeed(engine.cx());
 
   return true;
-}
-
-// using namespace std::literals;
-bool initialize(const std::string &script_path) {
-  std::ifstream is(script_path);
-  if (!is.is_open()) {
-    std::cerr << "Error reading file " << script_path << std::endl;
-    return false;
-  }
-
-  std::string code;
-  std::getline(is, code, '\0');
-  auto len = code.size();
-  is.seekg(0);
-  is.read(&code[0], len);
-  return initialize(&code[0], len, script_path.c_str());
 }
 
 extern "C" bool exports_wasi_cli_run_run() {
@@ -104,7 +84,7 @@ void wizen() {
   std::string filename;
   std::getline(std::cin, filename);
 
-  if (!initialize(filename)) {
+  if (!initialize(filename.c_str())) {
     exit(1);
   }
   markWizeningAsFinished();

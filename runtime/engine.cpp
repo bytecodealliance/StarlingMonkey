@@ -1,12 +1,9 @@
+#include "extension-api.h"
+
 #include <cassert>
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
-#ifdef MEM_STATS
-#include <string>
-#endif
-
-#include <wasi/libc-environ.h>
 
 // TODO: remove these once the warnings are fixed
 #pragma clang diagnostic push
@@ -16,29 +13,19 @@
 #include "encode.h"
 #include "event_loop.h"
 #include "js/CompilationAndEvaluation.h"
-#include "js/ContextOptions.h"
+#include "js/Modules.h"
 #include "js/ForOfIterator.h"
 #include "js/Initialization.h"
 #include "js/Promise.h"
-#include "js/SourceText.h"
 #include "jsfriendapi.h"
-
 #pragma clang diagnostic pop
 
+#include "script_loader.h"
+
 #ifdef MEM_STATS
+#include <string>
 #include "memory-reporting.h"
-#endif
 
-// #include "builtins/shared/performance.h"
-#include "extension-api.h"
-
-using std::chrono::duration_cast;
-using std::chrono::microseconds;
-using std::chrono::system_clock;
-
-using JS::Value;
-
-#ifdef MEM_STATS
 size_t size_of_cb(const void *ptr) { return ptr ? sizeof(ptr) : 0; }
 
 static bool dump_mem_stats(JSContext *cx) {
@@ -63,6 +50,12 @@ static bool dump_mem_stats(JSContext *cx) {
 #ifndef DEBUG_LOGGING
 #define DEBUG_LOGGING false
 #endif
+
+using std::chrono::duration_cast;
+using std::chrono::microseconds;
+using std::chrono::system_clock;
+
+using JS::Value;
 
 bool debug_logging_enabled() { return DEBUG_LOGGING; }
 #define LOG(...)                                                                                   \
@@ -153,6 +146,7 @@ void dump_promise_rejection(JSContext *cx, HandleValue reason, HandleObject prom
 static JSClass global_class = {"global", JSCLASS_GLOBAL_FLAGS, &JS::DefaultGlobalClassOps};
 
 JS::PersistentRootedObject GLOBAL;
+static ScriptLoader* scriptLoader;
 JS::PersistentRootedObject unhandledRejectedPromises;
 
 void gc_callback(JSContext *cx, JSGCStatus status, JS::GCReason reason, void *data) {
@@ -213,6 +207,8 @@ bool init_js() {
   if (!cx) {
     return false;
   }
+  CONTEXT = cx;
+
   if (!js::UseInternalJobQueues(cx) || !JS::InitSelfHostedCode(cx)) {
     return false;
   }
@@ -238,6 +234,7 @@ bool init_js() {
   if (!global) {
     return false;
   }
+  GLOBAL.init(cx, global);
 
   JSAutoRealm ar(cx, global);
   if (!JS::InitRealmStandardClasses(cx) || !fix_math_random(cx, global)) {
@@ -245,13 +242,18 @@ bool init_js() {
   }
 
   JS::SetPromiseRejectionTrackerCallback(cx, rejection_tracker);
-
-  CONTEXT = cx;
-  GLOBAL.init(cx, global);
   unhandledRejectedPromises.init(cx, JS::NewSetObject(cx));
   if (!unhandledRejectedPromises) {
     return false;
   }
+
+  auto opts = new JS::CompileOptions(cx);
+
+  // This ensures that we're eagerly loading the sript, and not lazily
+  // generating bytecode for functions.
+  // https://searchfox.org/mozilla-central/rev/5b2d2863bd315f232a3f769f76e0eb16cdca7cb0/js/public/CompileOptions.h#571-574
+  opts->setForceFullParse();
+  scriptLoader = new ScriptLoader(cx, opts);
 
   //   builtins::Performance::timeOrigin.emplace(
   //       std::chrono::high_resolution_clock::now());
@@ -336,62 +338,15 @@ api::Engine::Engine() {
 JSContext *api::Engine::cx() { return CONTEXT; }
 
 HandleObject api::Engine::global() { return GLOBAL; }
+void api::Engine::enable_module_mode(bool enable) {
+  scriptLoader->enable_module_mode(enable);
+}
 
 void api::Engine::abort(const char *reason) { ::abort(CONTEXT, reason); }
 
-bool api::Engine::eval(char *code, size_t len, const char *filename, MutableHandleValue result) {
+bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
   JSContext *cx = CONTEXT;
-  RootedObject global(cx, GLOBAL);
-  JS::CompileOptions opts(cx);
-
-  // This ensures that we're eagerly loading the sript, and not lazily
-  // generating bytecode for functions.
-  // https://searchfox.org/mozilla-central/rev/5b2d2863bd315f232a3f769f76e0eb16cdca7cb0/js/public/CompileOptions.h#571-574
-  opts.setForceFullParse();
-
-  // TODO: investigate passing a filename to Wizer and using that here to
-  // improve diagnostics.
-  // TODO: furthermore, investigate whether Wizer by now allows us to pass an
-  // actual path and open that, instead of having to redirect `stdin` for a
-  // subprocess of `js-compute-runtime`.
-  opts.setFileAndLine(filename, 1);
-
-  JS::SourceText<mozilla::Utf8Unit> srcBuf;
-  if (!srcBuf.init(cx, code, len, JS::SourceOwnership::TakeOwnership)) {
-    return false;
-  }
-
-  JS::RootedScript script(cx);
-  {
-    // Disabling GGC during compilation seems to slightly reduce the number of
-    // pages touched post-deploy.
-    // (Whereas disabling it during execution below meaningfully increases it,
-    // which is why this is scoped to just compilation.)
-    JS::AutoDisableGenerationalGC noGGC(cx);
-    script = JS::Compile(cx, opts, srcBuf);
-    if (!script) {
-      return false;
-    }
-  }
-
-  // TODO(performance): verify that it's better to perform a shrinking GC here,
-  // as manual testing indicates. Running a shrinking GC here causes *fewer* 4kb
-  // pages to be written to when processing a request, at least for one fairly
-  // large input script.
-  //
-  // A hypothesis for why this is the case could be that the objects allocated
-  // by parsing the script (but not evaluating it) tend to be read-only, so
-  // optimizing them for compactness makes sense and doesn't fragment writes
-  // later on.
-  // https://github.com/fastly/js-compute-runtime/issues/222
-  JS::PrepareForFullGC(cx);
-  JS::NonIncrementalGC(cx, JS::GCOptions::Shrink, JS::GCReason::API);
-
-  // Execute the top-level script.
-  if (!JS_ExecuteScript(cx, script, result)) {
-    if (JS::SetSize(cx, unhandledRejectedPromises) > 0) {
-      report_unhandled_promise_rejections(cx);
-    }
+  if (!scriptLoader->load_top_level_script(path, result)) {
     return false;
   }
 
