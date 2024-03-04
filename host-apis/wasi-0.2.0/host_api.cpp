@@ -483,7 +483,7 @@ public:
     if (state_ == State::BlockedOnBoth || state_ == State::BlockedOnIncoming) {
       auto res = incoming_body_->read(0);
       MOZ_ASSERT(!res.is_err());
-      auto [bytes, done] = std::move(res.unwrap());
+      auto [done, _] = std::move(res.unwrap());
       if (done) {
         set_state(State::Done);
         return true;

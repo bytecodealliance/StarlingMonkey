@@ -446,6 +446,7 @@ bool api::Engine::run_event_loop(MutableHandleValue result) {
 }
 
 bool api::Engine::dump_value(JS::Value val, FILE *fp) { return ::dump_value(CONTEXT, val, fp); }
+bool api::Engine::print_stack(FILE *fp) { return ::print_stack(CONTEXT, fp); }
 
 void api::Engine::dump_pending_exception(const char *description) {
   DumpPendingException(CONTEXT, description);

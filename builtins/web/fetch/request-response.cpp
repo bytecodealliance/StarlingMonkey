@@ -208,49 +208,6 @@ struct ReadResult {
   size_t length;
 };
 
-// Returns a UniqueChars and the length of that string. The UniqueChars value is not
-// null-terminated.
-ReadResult read_from_handle_all(JSContext *cx, host_api::HttpIncomingBody *body) {
-  std::vector<host_api::HostBytes> chunks;
-  size_t bytes_read = 0;
-  while (true) {
-    auto res = body->read(HANDLE_READ_CHUNK_SIZE);
-    if (auto *err = res.to_err()) {
-      HANDLE_ERROR(cx, *err);
-      return {nullptr, 0};
-    }
-
-    auto ret = &res.unwrap();
-    if (ret->done) {
-      break;
-    }
-
-    bytes_read += ret->bytes.len;
-    chunks.emplace_back(std::move(ret->bytes));
-  }
-
-  UniqueChars buf;
-  if (chunks.size() == 1) {
-    // If there was only one chunk read, reuse that allocation.
-    auto &chunk = chunks.back();
-    return {UniqueChars(reinterpret_cast<char *>(chunk.ptr.release())), bytes_read};
-  }
-
-  // If there wasn't exactly one chunk read, we'll need to allocate a buffer to store the results.
-  buf.reset(static_cast<char *>(JS_string_malloc(cx, bytes_read)));
-  if (!buf) {
-    JS_ReportOutOfMemory(cx);
-    return {nullptr, 0};
-  }
-
-  char *end = buf.get();
-  for (auto &chunk : chunks) {
-    end = std::copy(chunk.ptr.get(), chunk.ptr.get() + chunk.len, end);
-  }
-
-  return {std::move(buf), bytes_read};
-}
-
 } // namespace
 
 host_api::HttpRequestResponseBase *RequestOrResponse::handle(JSObject *obj) {
@@ -467,8 +424,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
 
   // Step 36.3 of Request constructor / 8.4 of Response constructor.
   if (content_type) {
-    JS::RootedObject headers(
-        cx, &JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::Headers)).toObject());
+    JS::RootedObject headers(cx, RequestOrResponse::headers(cx, self));
     if (!Headers::maybe_add(cx, headers, "content-type", content_type)) {
       return false;
     }
@@ -849,25 +805,6 @@ bool RequestOrResponse::consume_content_stream_for_bodyAll(JSContext *cx, JS::Ha
   return JS::AddPromiseReactions(cx, promise, then_handler, catch_handler);
 }
 
-bool RequestOrResponse::consume_body_handle_for_bodyAll(JSContext *cx, JS::HandleObject self,
-                                                        JS::HandleValue body_parser,
-                                                        JS::CallArgs args) {
-  auto body = incoming_body_handle(self);
-  auto *parse_body = reinterpret_cast<ParseBodyCB *>(body_parser.toPrivate());
-  // todo: change this from a blocking operation to an async one that happens concurrently with
-  // other async tasks.
-  auto [buf, bytes_read] = read_from_handle_all(cx, body);
-  if (!buf) {
-    JS::RootedObject result_promise(cx);
-    result_promise =
-        &JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise)).toObject();
-    JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise), JS::UndefinedValue());
-    return RejectPromiseWithPendingError(cx, result_promise);
-  }
-
-  return parse_body(cx, self, std::move(buf), bytes_read);
-}
-
 template <RequestOrResponse::BodyReadResult result_type>
 bool RequestOrResponse::bodyAll(JSContext *cx, JS::CallArgs args, JS::HandleObject self) {
   // TODO: mark body as consumed when operating on stream, too.
@@ -901,24 +838,21 @@ bool RequestOrResponse::bodyAll(JSContext *cx, JS::CallArgs args, JS::HandleObje
 
   JS::RootedValue body_parser(cx, JS::PrivateValue((void *)parse_body<result_type>));
 
-  // If the body is a ReadableStream that's not backed by a body handle, we need to
-  // manually read all chunks from the stream.
-  // TODO(performance): ensure that we're properly shortcutting reads from TransformStream
-  // readables.
-  // https://github.com/fastly/js-compute-runtime/issues/218
+  // TODO(performance): don't reify a ReadableStream for body handles—use an AsyncTask instead
   JS::RootedObject stream(cx, body_stream(self));
-  if (stream && !streams::NativeStreamSource::stream_is_body(cx, stream)) {
-    if (!JS_SetElement(cx, stream, 1, body_parser)) {
+  if (!stream) {
+    stream = create_body_stream(cx, self);
+    if (!stream)
       return false;
-    }
-    JS::RootedValue extra(cx, JS::ObjectValue(*stream));
-    if (!enqueue_internal_method<consume_content_stream_for_bodyAll>(cx, self, extra)) {
-      return ReturnPromiseRejectedWithPendingError(cx, args);
-    }
-  } else {
-    if (!enqueue_internal_method<consume_body_handle_for_bodyAll>(cx, self, body_parser)) {
-      return ReturnPromiseRejectedWithPendingError(cx, args);
-    }
+  }
+
+  if (!JS_SetElement(cx, stream, 1, body_parser)) {
+    return false;
+  }
+
+  JS::RootedValue extra(cx, JS::ObjectValue(*stream));
+  if (!enqueue_internal_method<consume_content_stream_for_bodyAll>(cx, self, extra)) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
   args.rval().setObject(*bodyAll_promise);

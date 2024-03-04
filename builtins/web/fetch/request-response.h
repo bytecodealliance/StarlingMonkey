@@ -74,8 +74,6 @@ public:
                                                 JS::HandleValue extra, JS::CallArgs args);
   static bool consume_content_stream_for_bodyAll(JSContext *cx, JS::HandleObject self,
                                                  JS::HandleValue stream_val, JS::CallArgs args);
-  static bool consume_body_handle_for_bodyAll(JSContext *cx, JS::HandleObject self,
-                                              JS::HandleValue body_parser, JS::CallArgs args);
   template <RequestOrResponse::BodyReadResult result_type>
   static bool bodyAll(JSContext *cx, JS::CallArgs args, JS::HandleObject self);
   static bool body_source_cancel_algorithm(JSContext *cx, JS::CallArgs args,
