@@ -49,7 +49,11 @@ static char* resolve_path(const char* path, const char* base) {
   return resolved_path;
 }
 
-static JSObject* get_module(JSContext* cx, const char* path, const JS::CompileOptions &opts) {
+static bool load_script(JSContext *cx, const char *script_path, const char* resolved_path,
+                        JS::SourceText<mozilla::Utf8Unit> &script);
+
+static JSObject* get_module(JSContext* cx, const char* path, const char* resolved_path,
+                            const JS::CompileOptions &opts) {
   RootedString path_str(cx, JS_NewStringCopyZ(cx, path));
   if (!path_str) {
     return nullptr;
@@ -66,7 +70,7 @@ static JSObject* get_module(JSContext* cx, const char* path, const JS::CompileOp
   }
 
   JS::SourceText<mozilla::Utf8Unit> source;
-  if (!SCRIPT_LOADER->load_script(cx, path, source)) {
+  if (!load_script(cx, path, resolved_path, source)) {
     return nullptr;
   }
 
@@ -116,7 +120,8 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
   }
   JS::CompileOptions opts(cx, *COMPILE_OPTS);
   opts.setFileAndLine(path.get(), 1);
-  return get_module(cx, path.get(), opts);
+  auto resolved_path = resolve_path(path.get(), BASE_PATH);
+  return get_module(cx, path.get(), resolved_path, opts);
 }
 
  ScriptLoader::ScriptLoader(JSContext *cx, JS::CompileOptions *opts) {
@@ -134,9 +139,8 @@ void ScriptLoader::enable_module_mode(bool enable) {
   MODULE_MODE = enable;
 }
 
-bool ScriptLoader::load_script(JSContext *cx, const char *script_path,
+static bool load_script(JSContext *cx, const char *script_path, const char* resolved_path,
                                JS::SourceText<mozilla::Utf8Unit> &script) {
-  auto resolved_path = resolve_path(script_path, BASE_PATH);
   FILE *file = fopen(resolved_path, "r");
   if (!file) {
     std::cerr << "Error opening file " << script_path << " (resolved to " << resolved_path << ")"
@@ -169,9 +173,13 @@ bool ScriptLoader::load_script(JSContext *cx, const char *script_path,
   return script.init(cx, std::move(buf), len);
 }
 
-bool ScriptLoader::load_top_level_script(const char *path, MutableHandleValue result) {
-  DBG("path: %s\n", path);
+bool ScriptLoader::load_script(JSContext *cx, const char *script_path,
+                               JS::SourceText<mozilla::Utf8Unit> &script) {
+  auto resolved_path = resolve_path(script_path, BASE_PATH);
+  return ::load_script(cx, script_path, resolved_path, script);
+}
 
+bool ScriptLoader::load_top_level_script(const char *path, MutableHandleValue result) {
   JSContext *cx = CONTEXT;
 
   MOZ_ASSERT(!BASE_PATH);
@@ -198,13 +206,13 @@ bool ScriptLoader::load_top_level_script(const char *path, MutableHandleValue re
     // (Whereas disabling it during execution below meaningfully increases it,
     // which is why this is scoped to just compilation.)
     JS::AutoDisableGenerationalGC noGGC(cx);
-    module = get_module(cx, path, opts);
+    module = get_module(cx, path, path, opts);
     if (!module) {
       return false;
     }
   } else {
     JS::SourceText<mozilla::Utf8Unit> source;
-    if (!load_script(cx, path, source)) {
+    if (!::load_script(cx, path, path, source)) {
       return false;
     }
     // See comment above about disabling GGC during compilation.
