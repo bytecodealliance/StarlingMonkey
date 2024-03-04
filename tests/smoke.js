@@ -106,6 +106,11 @@ async function main(event) {
         // // setTimeout(() => console.log(diff()), 4000);
         // // setTimeout(() => console.log(diff()), 5000);
         let url = new URL(event.request.url);
+        if (url.pathname === "/") {
+            console.log(`chaining from ${url} to /chained`);
+            return event.respondWith(fetch("https://example.com/"));
+        }
+
         url.host = "example.com";
         url.protocol = "https";
         url.port = "";
@@ -120,10 +125,10 @@ async function main(event) {
         let response = await p;
         // console.log(response);
         // let body = await readAll(response);
-        // let body = passBody(response);
+        let body = passBody(response);
         // let body = pipeBody(response);
         // let body = pumpBody(response);
-        let body = embeddedBody();
+        // let body = embeddedBody();
 
         let resp = new Response(body, {headers: typeof response != "undefined" ? response.headers : undefined});
         console.log(`post resp ${resp}`);

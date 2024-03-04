@@ -67,7 +67,7 @@ add_custom_command(
         OUTPUT smoke.js.wasm
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR};${WIZER_DIR};$ENV{PATH}" ./componentize.sh ${CMAKE_CURRENT_SOURCE_DIR}/tests/smoke.js
-        DEPENDS js.wasm componentize.sh spin.toml
+        DEPENDS js.wasm componentize.sh spin.toml tests/smoke.js
         VERBATIM
 )
 

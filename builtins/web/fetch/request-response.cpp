@@ -492,10 +492,15 @@ bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::Ha
     HANDLE_ERROR(cx, *err);
     return false;
   }
-  MOZ_ASSERT(mark_body_used(cx, source));
+
+  bool success = mark_body_used(cx, source);
+  MOZ_ASSERT(success);
   if (body_stream(source) != body_stream(self)) {
-    MOZ_ASSERT(mark_body_used(cx, self));
+    success = mark_body_used(cx, self);
+    MOZ_ASSERT(success);
   }
+  (void)success;
+
   return true;
 }
 
@@ -1085,6 +1090,11 @@ bool RequestOrResponse::body_reader_catch_handler(JSContext *cx, JS::HandleObjec
 
 bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_owner,
                                           bool *requires_streaming) {
+  if (is_incoming(body_owner) && has_body(body_owner)) {
+    *requires_streaming = true;
+    return true;
+  }
+
   JS::RootedObject stream(cx, body_stream(body_owner));
   if (!stream) {
     return true;
@@ -1107,6 +1117,7 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
   // If the body stream is backed by an HTTP body handle, we can directly pipe
   // that handle into the body we're about to send.
   if (streams::NativeStreamSource::stream_is_body(cx, stream)) {
+    MOZ_ASSERT(!is_incoming(body_owner));
     // First, directly append the source's body to the target's and lock the stream.
     JS::RootedObject stream_source(cx, streams::NativeStreamSource::get_stream_source(cx, stream));
     JS::RootedObject source_owner(cx, streams::NativeStreamSource::owner(stream_source));

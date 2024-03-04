@@ -173,16 +173,31 @@ bool send_response(host_api::HttpOutgoingResponse *response, JS::HandleObject se
 
 bool start_response(JSContext *cx, JS::HandleObject response_obj, bool streaming) {
   auto generic_response = Response::response_handle(response_obj);
+  host_api::HttpOutgoingResponse* response;
 
   if (generic_response->is_incoming()) {
-    // TODO(TS): implement, including support for forwarding bodies
-    MOZ_ASSERT_UNREACHABLE("Incoming responses are not supported as outgoing ones yet");
+    auto incoming_response = static_cast<host_api::HttpIncomingResponse *>(generic_response);
+    auto status = incoming_response->status();
+    MOZ_RELEASE_ASSERT(!status.is_err(), "Incoming response must have a status code");
+    auto headers = new host_api::HttpHeaders(*incoming_response->headers().unwrap());
+    response = host_api::HttpOutgoingResponse::make(status.unwrap(), headers);
+    auto *source_body = incoming_response->body().unwrap();
+    auto *dest_body = response->body().unwrap();
+
+    auto res = dest_body->append(ENGINE, source_body);
+    if (auto *err = res.to_err()) {
+      HANDLE_ERROR(cx, *err);
+      return false;
+    }
+    MOZ_RELEASE_ASSERT(RequestOrResponse::mark_body_used(cx, response_obj));
+  } else {
+    response = static_cast<host_api::HttpOutgoingResponse *>(generic_response);
   }
 
-  auto response = static_cast<host_api::HttpOutgoingResponse *>(generic_response);
   if (streaming && response->has_body()) {
     STREAMING_BODY = response->body().unwrap();
   }
+
   return send_response(response, FetchEvent::instance(),
                        streaming ? FetchEvent::State::responseStreaming
                                  : FetchEvent::State::responseDone);
