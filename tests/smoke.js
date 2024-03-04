@@ -108,7 +108,7 @@ async function main(event) {
         let url = new URL(event.request.url);
         if (url.pathname === "/") {
             console.log(`chaining from ${url} to /chained`);
-            return event.respondWith(fetch("https://example.com/"));
+            return event.respondWith(fetch("/chained"));
         }
 
         url.host = "example.com";

@@ -21,6 +21,7 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
+#include "../worker-location.h"
 #include "js/experimental/TypedData.h"
 #pragma clang diagnostic pop
 
@@ -1556,8 +1557,8 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     if (!url_instance)
       return nullptr;
 
-    // TODO: support use of baseURL
-    JS::RootedObject parsedURL(cx, url::URL::create(cx, url_instance, input));
+    JS::RootedObject parsedURL(cx, url::URL::create(cx, url_instance, input,
+                               worker_location::WorkerLocation::url));
 
     // 2.  If `parsedURL` is failure, then throw a `TypeError`.
     if (!parsedURL) {
@@ -2201,7 +2202,6 @@ bool Response::bodyUsed_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 //   if (!args.requireAtLeast(cx, "redirect", 1)) {
 //     return false;
 //   }
-//   // TODO: support use of baseURL
 //   // auto url = args.get(0);
 //   // // 1. Let parsedURL be the result of parsing url with current settings object’s API base
 //   URL.
@@ -2211,7 +2211,7 @@ bool Response::bodyUsed_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 //   //   return false;
 //   // }
 //   // JS::RootedObject parsedURL(
-//   //     cx, url::URL::create(cx, urlInstance, url, builtins::Fastly::baseURL));
+//   //     cx, url::URL::create(cx, urlInstance, url, worker_location::WorkerLocation::url));
 //   // // 2. If parsedURL is failure, then throw a TypeError.
 //   // if (!parsedURL) {
 //   //   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
