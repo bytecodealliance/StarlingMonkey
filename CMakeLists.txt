@@ -26,6 +26,7 @@ project(js_wasm)
 include("init-corrosion")
 
 include("wasm-tools")
+include("binaryen")
 include("wizer")
 include("wasmtime")
 
@@ -54,6 +55,16 @@ add_executable(js.wasm
         runtime/builtin.cpp
         runtime/script_loader.cpp
 )
+
+# For release builds, use wasm-opt to optimize the generated wasm file.
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_custom_command(
+            TARGET js.wasm
+            POST_BUILD
+            COMMAND ${WASM_OPT} --strip-debug -O3 -o js.wasm js.wasm
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+endif()
 
 
 # TODO: remove this once the runtime doesn't need to explicitly include the builtins anymore.
