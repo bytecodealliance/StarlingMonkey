@@ -1,4 +1,7 @@
-# JS.wasm
+# The StarlingMonkey JS Runtime
+
+StarlingMonkey is a [SpiderMonkey](https://spidermonkey.dev/) based JS runtime optimized for use in [WebAssembly Components](https://component-model.bytecodealliance.org/).
+StarlingMonkey's core builtins target WASI 0.2.0 to support a Component Model based event loop and standards-compliant implementations of key web builtins, including the fetch API, WHATWG Streams, text encoding, and others. To support tailoring for specific use cases, it's designed to be highly modular, and can be readily extended with custom builtins and host APIs.
 
 ## Requirements
 
@@ -12,8 +15,8 @@ With sufficiently new versions of `cmake` and `rustup` installed, the build proc
 1. Clone the repo
 
 ```bash
-git clone https://github.com/fermyon/js.wasm
-cd js.wasm
+git clone https://github.com/fermyon/StarlingMonkey
+cd StarlingMonkey
 ```
 
 2. Run the configuration script
@@ -30,7 +33,7 @@ cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
 
 3. Build the runtime
 
-The following command will build the `js.wasm` runtime module in the `cmake-build-release` directory:
+The following command will build the `starling.wasm` runtime module in the `cmake-build-release` directory:
 ```bash
 # Use cmake-build-debug for the debug build
 # Change the value for `--parallel` to match the number of CPU cores in your system
@@ -44,7 +47,7 @@ A simple test script is provided in `tests/smoke.js`. To run it using [`Wasmtime
 ```bash
 cmake --build cmake-build-release --parallel 8 --target smoke-test
 cd cmake-build-release
-wasmtime serve -S common smoke.js.wasm
+wasmtime serve -S common smoke.starling.wasm
 ```
 
 Then visit http://0.0.0.0:8080/
@@ -53,7 +56,7 @@ Then visit http://0.0.0.0:8080/
 
 The build directory contains a shell script `componentize.sh` that can be used to create components from JS applications. `componentize.sh` takes a single argument, the path to the JS application, and creates a component with a name of the form `[input-file-name].wasm` in the current working directory.
 
-For example, the following command is equivalent to the `cmake` invocation from step 5, and will create the component `cmake-build-release/smoke.js.wasm`:
+For example, the following command is equivalent to the `cmake` invocation from step 5, and will create the component `cmake-build-release/smoke.wasm`:
 
 ```bash
 cd cmake-build-release
@@ -63,7 +66,7 @@ cd cmake-build-release
 
 ## Thorough testing with the Web Platform Tests suite
 
-`js.wasm` includes a test runner for the [Web Platform Tests](https://web-platform-tests.org/) suite. The test runner is built as part of the `js.wasm` runtime, and can be run using the `wpt-test` target.
+StarlingMonkey includes a test runner for the [Web Platform Tests](https://web-platform-tests.org/) suite. The test runner is built as part of the `starling.wasm` runtime, and can be run using the `wpt-test` target.
 
 ### Requirements
 
@@ -79,21 +82,21 @@ ctest --verbose # Note: some of the tests run fairly slowly in debug builds, so 
 ```
 
 
-## Using js.wasm as a CMake sub-project
+## Using StarlingMonkey as a CMake sub-project
 
-The `js.wasm` runtime can be used as a subproject in a larger CMake project.
+StarlingMonkey can be used as a subproject in a larger CMake project.
 
 The importing project must at a minimum contain the following line in its `CMakeLists.txt`:
 
 ```cmake
-include("${PATH_TO_JS_WASM}/cmake/add_as_subproject.cmake")
+include("${PATH_TO_STARLING_MONKEY}/cmake/add_as_subproject.cmake")
 ```
 
-With that line added (and `${PATH_TO_JS_WASM}` replaced with the actual path to js.wasm), the importing project will have all the build targets of `js.wasm` available to it.
+With that line added (and `${PATH_TO_STARLING_MONKEY}` replaced with the actual path to StarlingMonkey), the importing project will have all the build targets of StarlingMonkey available to it.
 
-Note that building the `js.wasm` target itself will result in the linked `js.wasm` file being created in the `js.wasm` sub-directory of the importing project's build directory.
+Note that building the `starling.wasm` target itself will result in the linked `starling.wasm` file being created in the `starling.wasm` sub-directory of the importing project's build directory.
 
-To make use of importing js.wasm in this way, you'll probably want to add additional builtins, or provide your own implementation of the host interface.
+To make use of importing StarlingMonkey in this way, you'll probably want to add additional builtins, or provide your own implementation of the host interface.
 
 ### Adding custom builtins
 

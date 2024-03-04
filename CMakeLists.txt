@@ -11,7 +11,7 @@ if (DEFINED ENV{HOST_API})
     if (NOT EXISTS ${HOST_API})
         message(FATAL_ERROR "Host API `$ENV{HOST_API}` not found. The HOST_API environment \
             variable must be the name of a host API implementation provided in the `host-apis` \
-            folder of js.wasm, or be an absolute path pointing to custom host API implementation.")
+            folder of StarlingMonkey, or be an absolute path pointing to custom host API implementation.")
     endif()
 else()
     set(HOST_API ${CMAKE_CURRENT_SOURCE_DIR}/host-apis/wasi-0.2.0)
@@ -21,7 +21,7 @@ message(STATUS "Using host API: ${HOST_API}")
 include("CPM")
 include("toolchain")
 
-project(js_wasm)
+project(StarlingMonkey)
 
 include("init-corrosion")
 
@@ -46,7 +46,7 @@ if (DEFINED ENV{WPT})
     include("tests/wpt-harness/wpt.cmake")
 endif()
 
-add_executable(js.wasm
+add_executable(starling.wasm
         runtime/js.cpp
         runtime/allocator.cpp
         runtime/encode.cpp
@@ -59,20 +59,17 @@ add_executable(js.wasm
 # For release builds, use wasm-opt to optimize the generated wasm file.
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     add_custom_command(
-            TARGET js.wasm
+            TARGET starling.wasm
             POST_BUILD
-            COMMAND ${WASM_OPT} --strip-debug -O3 -o js.wasm js.wasm
+            COMMAND ${WASM_OPT} --strip-debug -O3 -o starling.wasm starling.wasm
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
 endif()
 
 
-# TODO: remove this once the runtime doesn't need to explicitly include the builtins anymore.
-target_include_directories(js.wasm PRIVATE cpp)
+target_link_libraries(starling.wasm PRIVATE host_api extension_api builtins spidermonkey rust-url)
 
-target_link_libraries(js.wasm PRIVATE host_api extension_api builtins spidermonkey rust-url)
-
-set(RUNTIME_FILE "js.wasm")
+set(RUNTIME_FILE "starling.wasm")
 set(ADAPTER_FILE "preview1-adapter.wasm")
 configure_file("componentize.sh" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh" COPYONLY)
 configure_file(${ADAPTER} "${CMAKE_CURRENT_BINARY_DIR}/${ADAPTER_FILE}" COPYONLY)
@@ -85,16 +82,16 @@ function(componentize OUTPUT)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
     list(TRANSFORM ARG_SOURCES PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/)
     list(JOIN ARG_SOURCES " " SOURCES)
-    get_target_property(RUNTIME_DIR js.wasm BINARY_DIR)
+    get_target_property(RUNTIME_DIR starling.wasm BINARY_DIR)
 
     add_custom_command(
-            OUTPUT ${OUTPUT}.js.wasm
+            OUTPUT ${OUTPUT}.wasm
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR};${WIZER_DIR};$ENV{PATH}" ${RUNTIME_DIR}/componentize.sh ${SOURCES} ${OUTPUT}.js.wasm
-            DEPENDS ${ARG_SOURCES} ${RUNTIME_DIR}/componentize.sh js.wasm
+            COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR};${WIZER_DIR};$ENV{PATH}" ${RUNTIME_DIR}/componentize.sh ${SOURCES} ${OUTPUT}.wasm
+            DEPENDS ${ARG_SOURCES} ${RUNTIME_DIR}/componentize.sh starling.wasm
             VERBATIM
     )
-    add_custom_target(${OUTPUT} DEPENDS ${OUTPUT}.js.wasm)
+    add_custom_target(${OUTPUT} DEPENDS ${OUTPUT}.wasm)
 endfunction()
 
 componentize(smoke-test SOURCES tests/smoke.js)

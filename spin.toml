@@ -11,8 +11,8 @@ route = "/..."
 component = "js-component"
 
 [component.js-component]
-source = "smoke-test.js.wasm"
+source = "smoke-test.wasm"
 allowed_outbound_hosts = ["https://fermyon.com/", "https://example.com:443"]
 [component.js-component.build]
 command = ""
-watch = ["smoke-test.js.wasm"]
+watch = ["smoke-test.wasm"]
