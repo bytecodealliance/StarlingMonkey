@@ -1,0 +1,11 @@
+{
+  "Can construct a writable stream with a valid CountQueuingStrategy": {
+    "status": "PASS"
+  },
+  "Correctly governs the value of a WritableStream's state property (HWM = 0)": {
+    "status": "PASS"
+  },
+  "Correctly governs the value of a WritableStream's state property (HWM = 4)": {
+    "status": "PASS"
+  }
+}

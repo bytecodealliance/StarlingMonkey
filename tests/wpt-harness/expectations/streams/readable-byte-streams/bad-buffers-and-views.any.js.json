@@ -1,0 +1,74 @@
+{
+  "ReadableStream with byte source: read()ing from a closed stream still transfers the buffer": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: read()ing from a stream with queued chunks still transfers the buffer": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: enqueuing an already-detached buffer throws": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: enqueuing a zero-length buffer throws": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: enqueuing a zero-length view on a non-zero-length buffer throws": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: reading into an already-detached buffer rejects": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: reading into a zero-length buffer rejects": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: reading into a zero-length view on a non-zero-length buffer rejects": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respond() throws if the BYOB request's buffer has been detached (in the readable state)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respond() throws if the BYOB request's buffer has been detached (in the closed state)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respondWithNewView() throws if the supplied view's buffer has been detached (in the readable state)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respondWithNewView() throws if the supplied view's buffer is zero-length (in the readable state)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respondWithNewView() throws if the supplied view is zero-length on a non-zero-length buffer (in the readable state)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respondWithNewView() throws if the supplied view has a different offset (in the readable state)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respondWithNewView() throws if the supplied view has a different offset (in the closed state)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respondWithNewView() throws if the supplied view's buffer has a different length (in the readable state)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respondWithNewView() throws if the supplied view's buffer has a different length (autoAllocateChunkSize)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respondWithNewView() throws if the supplied view has a larger length (in the readable state)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respondWithNewView() throws if the supplied view's buffer has been detached (in the closed state)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respondWithNewView() throws if the supplied view's buffer is zero-length (in the closed state)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respondWithNewView() throws if the supplied view is non-zero-length (in the closed state)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respondWithNewView() throws if the supplied view's buffer has a different length (in the closed state)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: enqueue() throws if the BYOB request's buffer has been detached (in the readable state)": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: enqueue() throws if the BYOB request's buffer has been detached (in the closed state)": {
+    "status": "PASS"
+  }
+}

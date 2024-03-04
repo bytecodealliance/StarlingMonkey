@@ -1,0 +1,38 @@
+{
+  "Getting a body reader after consuming as blob (body source: fetch)": {
+    "status": "FAIL"
+  },
+  "Getting a body reader after consuming as text (body source: fetch)": {
+    "status": "FAIL"
+  },
+  "Getting a body reader after consuming as json (body source: fetch)": {
+    "status": "FAIL"
+  },
+  "Getting a body reader after consuming as arrayBuffer (body source: fetch)": {
+    "status": "FAIL"
+  },
+  "Getting a body reader after consuming as blob (body source: stream)": {
+    "status": "FAIL"
+  },
+  "Getting a body reader after consuming as text (body source: stream)": {
+    "status": "FAIL"
+  },
+  "Getting a body reader after consuming as json (body source: stream)": {
+    "status": "FAIL"
+  },
+  "Getting a body reader after consuming as arrayBuffer (body source: stream)": {
+    "status": "FAIL"
+  },
+  "Getting a body reader after consuming as blob (body source: string)": {
+    "status": "FAIL"
+  },
+  "Getting a body reader after consuming as text (body source: string)": {
+    "status": "FAIL"
+  },
+  "Getting a body reader after consuming as json (body source: string)": {
+    "status": "FAIL"
+  },
+  "Getting a body reader after consuming as arrayBuffer (body source: string)": {
+    "status": "FAIL"
+  }
+}

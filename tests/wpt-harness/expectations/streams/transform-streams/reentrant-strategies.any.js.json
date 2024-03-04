@@ -1,0 +1,35 @@
+{
+  "enqueue() inside size() should work": {
+    "status": "PASS"
+  },
+  "terminate() inside size() should work": {
+    "status": "PASS"
+  },
+  "error() inside size() should work": {
+    "status": "PASS"
+  },
+  "desiredSize inside size() should work": {
+    "status": "PASS"
+  },
+  "readable cancel() inside size() should work": {
+    "status": "PASS"
+  },
+  "pipeTo() inside size() should work": {
+    "status": "PASS"
+  },
+  "read() inside of size() should work": {
+    "status": "PASS"
+  },
+  "writer.write() inside size() should work": {
+    "status": "PASS"
+  },
+  "synchronous writer.write() inside size() should work": {
+    "status": "PASS"
+  },
+  "writer.close() inside size() should work": {
+    "status": "PASS"
+  },
+  "writer.abort() inside size() should work": {
+    "status": "PASS"
+  }
+}

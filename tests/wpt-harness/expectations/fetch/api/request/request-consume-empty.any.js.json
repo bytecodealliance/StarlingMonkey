@@ -1,0 +1,44 @@
+{
+  "Consume request's body as text": {
+    "status": "PASS"
+  },
+  "Consume request's body as blob": {
+    "status": "FAIL"
+  },
+  "Consume request's body as arrayBuffer": {
+    "status": "PASS"
+  },
+  "Consume request's body as json (error case)": {
+    "status": "PASS"
+  },
+  "Consume request's body as formData with correct multipart type (error case)": {
+    "status": "FAIL"
+  },
+  "Consume request's body as formData with correct urlencoded type": {
+    "status": "FAIL"
+  },
+  "Consume request's body as formData without correct type (error case)": {
+    "status": "FAIL"
+  },
+  "Consume empty blob request body as arrayBuffer": {
+    "status": "FAIL"
+  },
+  "Consume empty text request body as arrayBuffer": {
+    "status": "PASS"
+  },
+  "Consume empty blob request body as text": {
+    "status": "FAIL"
+  },
+  "Consume empty text request body as text": {
+    "status": "PASS"
+  },
+  "Consume empty URLSearchParams request body as text": {
+    "status": "PASS"
+  },
+  "Consume empty FormData request body as text": {
+    "status": "FAIL"
+  },
+  "Consume empty ArrayBuffer request body as text": {
+    "status": "PASS"
+  }
+}

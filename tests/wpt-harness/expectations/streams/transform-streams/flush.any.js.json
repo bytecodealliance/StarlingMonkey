@@ -1,0 +1,17 @@
+{
+  "TransformStream flush is called immediately when the writable is closed, if no writes are queued": {
+    "status": "PASS"
+  },
+  "TransformStream flush is called after all queued writes finish, once the writable is closed": {
+    "status": "PASS"
+  },
+  "TransformStream flush gets a chance to enqueue more into the readable": {
+    "status": "PASS"
+  },
+  "TransformStream flush gets a chance to enqueue more into the readable, and can then async close": {
+    "status": "PASS"
+  },
+  "error() during flush should cause writer.close() to reject": {
+    "status": "PASS"
+  }
+}

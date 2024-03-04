@@ -1,0 +1,761 @@
+{
+  "setup": {
+    "status": "PASS"
+  },
+  "generate wrong key step: ECDSA P-256 with SHA-1 signing with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-256 with SHA-256 signing with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-256 with SHA-384 signing with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-256 with SHA-512 signing with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-384 with SHA-1 signing with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-384 with SHA-256 signing with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-384 with SHA-384 signing with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-384 with SHA-512 signing with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-521 with SHA-1 signing with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-521 with SHA-256 signing with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-521 with SHA-384 signing with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-521 with SHA-512 signing with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-256 with SHA-1 verifying with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-256 with SHA-256 verifying with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-256 with SHA-384 verifying with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-256 with SHA-512 verifying with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-384 with SHA-1 verifying with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-384 with SHA-256 verifying with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-384 with SHA-384 verifying with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-384 with SHA-512 verifying with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-521 with SHA-1 verifying with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-521 with SHA-256 verifying with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-521 with SHA-384 verifying with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "generate wrong key step: ECDSA P-521 with SHA-512 verifying with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 verification with altered signature after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 verification with altered signature after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 verification with altered signature after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 verification with altered signature after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 verification with altered signature after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 verification with altered signature after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 verification with altered signature after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 verification with altered signature after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 verification with altered signature after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 verification with altered signature after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 verification with altered signature after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 verification with altered signature after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 with altered plaintext after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 with altered plaintext after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 with altered plaintext after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 with altered plaintext after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 with altered plaintext after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 with altered plaintext after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 with altered plaintext after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 with altered plaintext after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 with altered plaintext after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 with altered plaintext after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 with altered plaintext after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 with altered plaintext after call": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 using privateKey to verify": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 using privateKey to verify": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 using privateKey to verify": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 using privateKey to verify": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 using privateKey to verify": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 using privateKey to verify": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 using privateKey to verify": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 using privateKey to verify": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 using privateKey to verify": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 using privateKey to verify": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 using privateKey to verify": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 using privateKey to verify": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 using publicKey to sign": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 using publicKey to sign": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 using publicKey to sign": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 using publicKey to sign": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 using publicKey to sign": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 using publicKey to sign": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 using publicKey to sign": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 using publicKey to sign": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 using publicKey to sign": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 using publicKey to sign": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 using publicKey to sign": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 using publicKey to sign": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 no verify usage": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 no verify usage": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 no verify usage": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 no verify usage": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 no verify usage": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 no verify usage": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 no verify usage": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 no verify usage": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 no verify usage": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 no verify usage": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 no verify usage": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 no verify usage": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 round trip": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 round trip": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 round trip": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 round trip": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 round trip": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 round trip": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 round trip": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 round trip": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 round trip": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 round trip": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 round trip": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 round trip": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 verification failure due to altered signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 verification failure due to altered signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 verification failure due to altered signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 verification failure due to altered signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 verification failure due to altered signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 verification failure due to altered signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 verification failure due to altered signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 verification failure due to altered signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 verification failure due to altered signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 verification failure due to altered signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 verification failure due to altered signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 verification failure due to altered signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 verification failure due to wrong hash": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 verification failure due to wrong hash": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 verification failure due to wrong hash": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 verification failure due to wrong hash": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 verification failure due to wrong hash": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 verification failure due to wrong hash": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 verification failure due to wrong hash": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 verification failure due to wrong hash": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 verification failure due to wrong hash": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 verification failure due to wrong hash": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 verification failure due to wrong hash": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 verification failure due to wrong hash": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 verification failure due to bad hash name": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 verification failure due to bad hash name": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 verification failure due to bad hash name": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 verification failure due to bad hash name": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 verification failure due to bad hash name": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 verification failure due to bad hash name": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 verification failure due to bad hash name": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 verification failure due to bad hash name": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 verification failure due to bad hash name": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 verification failure due to bad hash name": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 verification failure due to bad hash name": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 verification failure due to bad hash name": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 verification failure due to shortened signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 verification failure due to shortened signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 verification failure due to shortened signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 verification failure due to shortened signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 verification failure due to shortened signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 verification failure due to shortened signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 verification failure due to shortened signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 verification failure due to shortened signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 verification failure due to shortened signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 verification failure due to shortened signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 verification failure due to shortened signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 verification failure due to shortened signature": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 verification failure due to altered plaintext": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 verification failure due to altered plaintext": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 verification failure due to altered plaintext": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 verification failure due to altered plaintext": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 verification failure due to altered plaintext": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 verification failure due to altered plaintext": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 verification failure due to altered plaintext": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 verification failure due to altered plaintext": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 verification failure due to altered plaintext": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 verification failure due to altered plaintext": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 verification failure due to altered plaintext": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 verification failure due to altered plaintext": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 - The signature was truncated by 1 byte verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 - The signature was made using SHA-1, however verification is being done using SHA-256 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 - The signature was made using SHA-1, however verification is being done using SHA-384 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 - The signature was made using SHA-1, however verification is being done using SHA-512 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 - Signature has excess padding verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 - The signature is empty verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-1 - The signature is all zeroes verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 - The signature was truncated by 1 byte verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 - The signature was made using SHA-256, however verification is being done using SHA-1 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 - The signature was made using SHA-256, however verification is being done using SHA-384 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 - The signature was made using SHA-256, however verification is being done using SHA-512 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 - Signature has excess padding verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 - The signature is empty verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-256 - The signature is all zeroes verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 - The signature was truncated by 1 byte verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 - The signature was made using SHA-384, however verification is being done using SHA-1 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 - The signature was made using SHA-384, however verification is being done using SHA-256 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 - The signature was made using SHA-384, however verification is being done using SHA-512 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 - Signature has excess padding verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 - The signature is empty verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-384 - The signature is all zeroes verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 - The signature was truncated by 1 byte verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 - The signature was made using SHA-512, however verification is being done using SHA-1 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 - The signature was made using SHA-512, however verification is being done using SHA-256 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 - The signature was made using SHA-512, however verification is being done using SHA-384 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 - Signature has excess padding verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 - The signature is empty verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-256 with SHA-512 - The signature is all zeroes verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 - The signature was truncated by 1 byte verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 - The signature was made using SHA-1, however verification is being done using SHA-256 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 - The signature was made using SHA-1, however verification is being done using SHA-384 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 - The signature was made using SHA-1, however verification is being done using SHA-512 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 - Signature has excess padding verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 - The signature is empty verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-1 - The signature is all zeroes verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 - The signature was truncated by 1 byte verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 - The signature was made using SHA-256, however verification is being done using SHA-1 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 - The signature was made using SHA-256, however verification is being done using SHA-384 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 - The signature was made using SHA-256, however verification is being done using SHA-512 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 - Signature has excess padding verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 - The signature is empty verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-256 - The signature is all zeroes verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 - The signature was truncated by 1 byte verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 - The signature was made using SHA-384, however verification is being done using SHA-1 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 - The signature was made using SHA-384, however verification is being done using SHA-256 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 - The signature was made using SHA-384, however verification is being done using SHA-512 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 - Signature has excess padding verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 - The signature is empty verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-384 - The signature is all zeroes verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 - The signature was truncated by 1 byte verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 - The signature was made using SHA-512, however verification is being done using SHA-1 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 - The signature was made using SHA-512, however verification is being done using SHA-256 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 - The signature was made using SHA-512, however verification is being done using SHA-384 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 - Signature has excess padding verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 - The signature is empty verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-384 with SHA-512 - The signature is all zeroes verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 - The signature was truncated by 1 byte verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 - The signature was made using SHA-1, however verification is being done using SHA-256 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 - The signature was made using SHA-1, however verification is being done using SHA-384 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 - The signature was made using SHA-1, however verification is being done using SHA-512 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 - Signature has excess padding verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 - The signature is empty verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-1 - The signature is all zeroes verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 - The signature was truncated by 1 byte verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 - The signature was made using SHA-256, however verification is being done using SHA-1 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 - The signature was made using SHA-256, however verification is being done using SHA-384 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 - The signature was made using SHA-256, however verification is being done using SHA-512 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 - Signature has excess padding verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 - The signature is empty verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-256 - The signature is all zeroes verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 - The signature was truncated by 1 byte verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 - The signature was made using SHA-384, however verification is being done using SHA-1 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 - The signature was made using SHA-384, however verification is being done using SHA-256 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 - The signature was made using SHA-384, however verification is being done using SHA-512 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 - Signature has excess padding verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 - The signature is empty verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-384 - The signature is all zeroes verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 - The signature was truncated by 1 byte verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 - The signature was made using SHA-512, however verification is being done using SHA-1 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 - The signature was made using SHA-512, however verification is being done using SHA-256 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 - The signature was made using SHA-512, however verification is being done using SHA-384 verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 - Signature has excess padding verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 - The signature is empty verification": {
+    "status": "FAIL"
+  },
+  "importVectorKeys step: ECDSA P-521 with SHA-512 - The signature is all zeroes verification": {
+    "status": "FAIL"
+  }
+}

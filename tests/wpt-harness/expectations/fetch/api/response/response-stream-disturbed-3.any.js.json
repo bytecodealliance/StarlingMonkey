@@ -1,0 +1,38 @@
+{
+  "Getting blob after reading the Response body (body source: fetch)": {
+    "status": "FAIL"
+  },
+  "Getting text after reading the Response body (body source: fetch)": {
+    "status": "FAIL"
+  },
+  "Getting json after reading the Response body (body source: fetch)": {
+    "status": "FAIL"
+  },
+  "Getting arrayBuffer after reading the Response body (body source: fetch)": {
+    "status": "FAIL"
+  },
+  "Getting blob after reading the Response body (body source: stream)": {
+    "status": "FAIL"
+  },
+  "Getting text after reading the Response body (body source: stream)": {
+    "status": "PASS"
+  },
+  "Getting json after reading the Response body (body source: stream)": {
+    "status": "PASS"
+  },
+  "Getting arrayBuffer after reading the Response body (body source: stream)": {
+    "status": "PASS"
+  },
+  "Getting blob after reading the Response body (body source: string)": {
+    "status": "FAIL"
+  },
+  "Getting text after reading the Response body (body source: string)": {
+    "status": "FAIL"
+  },
+  "Getting json after reading the Response body (body source: string)": {
+    "status": "FAIL"
+  },
+  "Getting arrayBuffer after reading the Response body (body source: string)": {
+    "status": "FAIL"
+  }
+}

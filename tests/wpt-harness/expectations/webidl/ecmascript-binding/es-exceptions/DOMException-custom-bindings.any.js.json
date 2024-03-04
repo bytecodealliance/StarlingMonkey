@@ -1,0 +1,47 @@
+{
+  "Cannot construct without new": {
+    "status": "PASS"
+  },
+  "inherits from Error: prototype-side": {
+    "status": "PASS"
+  },
+  "does not inherit from Error: class-side": {
+    "status": "PASS"
+  },
+  "message property descriptor": {
+    "status": "PASS"
+  },
+  "message getter performs brand checks (i.e. is not [LegacyLenientThis])": {
+    "status": "PASS"
+  },
+  "name property descriptor": {
+    "status": "PASS"
+  },
+  "name getter performs brand checks (i.e. is not [LegacyLenientThis])": {
+    "status": "PASS"
+  },
+  "code property descriptor": {
+    "status": "PASS"
+  },
+  "code getter performs brand checks (i.e. is not [LegacyLenientThis])": {
+    "status": "PASS"
+  },
+  "code property is not affected by shadowing the name property": {
+    "status": "PASS"
+  },
+  "Object.prototype.toString behavior is like other interfaces": {
+    "status": "PASS"
+  },
+  "Inherits its toString() from Error.prototype": {
+    "status": "PASS"
+  },
+  "toString() behavior from Error.prototype applies as expected": {
+    "status": "PASS"
+  },
+  "DOMException.prototype.toString() applied to DOMException.prototype throws because of name/message brand checks": {
+    "status": "PASS"
+  },
+  "If the implementation has a stack property on normal errors, it also does on DOMExceptions": {
+    "status": "PASS"
+  }
+}

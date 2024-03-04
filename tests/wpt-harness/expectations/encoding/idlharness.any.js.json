@@ -1,0 +1,173 @@
+{
+  "idl_test setup": {
+    "status": "PASS"
+  },
+  "idl_test validation": {
+    "status": "PASS"
+  },
+  "TextDecoder includes TextDecoderCommon: member names are unique": {
+    "status": "PASS"
+  },
+  "TextEncoder includes TextEncoderCommon: member names are unique": {
+    "status": "PASS"
+  },
+  "TextDecoderStream includes TextDecoderCommon: member names are unique": {
+    "status": "PASS"
+  },
+  "TextDecoderStream includes GenericTransformStream: member names are unique": {
+    "status": "PASS"
+  },
+  "TextEncoderStream includes TextEncoderCommon: member names are unique": {
+    "status": "PASS"
+  },
+  "TextEncoderStream includes GenericTransformStream: member names are unique": {
+    "status": "PASS"
+  },
+  "TextDecoder interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "TextDecoder interface object length": {
+    "status": "PASS"
+  },
+  "TextDecoder interface object name": {
+    "status": "PASS"
+  },
+  "TextDecoder interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "TextDecoder interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "TextDecoder interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "TextDecoder interface: operation decode(optional BufferSource, optional TextDecodeOptions)": {
+    "status": "PASS"
+  },
+  "TextDecoder interface: attribute encoding": {
+    "status": "PASS"
+  },
+  "TextDecoder interface: attribute fatal": {
+    "status": "PASS"
+  },
+  "TextDecoder interface: attribute ignoreBOM": {
+    "status": "PASS"
+  },
+  "TextDecoder must be primary interface of new TextDecoder()": {
+    "status": "PASS"
+  },
+  "Stringification of new TextDecoder()": {
+    "status": "PASS"
+  },
+  "TextDecoder interface: new TextDecoder() must inherit property \"decode(optional BufferSource, optional TextDecodeOptions)\" with the proper type": {
+    "status": "PASS"
+  },
+  "TextDecoder interface: calling decode(optional BufferSource, optional TextDecodeOptions) on new TextDecoder() with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "TextDecoder interface: new TextDecoder() must inherit property \"encoding\" with the proper type": {
+    "status": "PASS"
+  },
+  "TextDecoder interface: new TextDecoder() must inherit property \"fatal\" with the proper type": {
+    "status": "PASS"
+  },
+  "TextDecoder interface: new TextDecoder() must inherit property \"ignoreBOM\" with the proper type": {
+    "status": "PASS"
+  },
+  "TextEncoder interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "TextEncoder interface object length": {
+    "status": "PASS"
+  },
+  "TextEncoder interface object name": {
+    "status": "PASS"
+  },
+  "TextEncoder interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "TextEncoder interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "TextEncoder interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "TextEncoder interface: operation encode(optional USVString)": {
+    "status": "PASS"
+  },
+  "TextEncoder interface: operation encodeInto(USVString, Uint8Array)": {
+    "status": "PASS"
+  },
+  "TextEncoder interface: attribute encoding": {
+    "status": "PASS"
+  },
+  "TextEncoder must be primary interface of new TextEncoder()": {
+    "status": "PASS"
+  },
+  "Stringification of new TextEncoder()": {
+    "status": "PASS"
+  },
+  "TextEncoder interface: new TextEncoder() must inherit property \"encode(optional USVString)\" with the proper type": {
+    "status": "PASS"
+  },
+  "TextEncoder interface: calling encode(optional USVString) on new TextEncoder() with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "TextEncoder interface: new TextEncoder() must inherit property \"encodeInto(USVString, Uint8Array)\" with the proper type": {
+    "status": "PASS"
+  },
+  "TextEncoder interface: calling encodeInto(USVString, Uint8Array) on new TextEncoder() with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "TextEncoder interface: new TextEncoder() must inherit property \"encoding\" with the proper type": {
+    "status": "PASS"
+  },
+  "TextDecoderStream interface: existence and properties of interface object": {
+    "status": "FAIL"
+  },
+  "TextDecoderStream interface object length": {
+    "status": "FAIL"
+  },
+  "TextDecoderStream interface object name": {
+    "status": "FAIL"
+  },
+  "TextDecoderStream interface: existence and properties of interface prototype object": {
+    "status": "FAIL"
+  },
+  "TextDecoderStream interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "FAIL"
+  },
+  "TextDecoderStream interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "FAIL"
+  },
+  "TextDecoderStream interface: attribute encoding": {
+    "status": "FAIL"
+  },
+  "TextDecoderStream interface: attribute fatal": {
+    "status": "FAIL"
+  },
+  "TextDecoderStream interface: attribute ignoreBOM": {
+    "status": "FAIL"
+  },
+  "TextEncoderStream interface: existence and properties of interface object": {
+    "status": "FAIL"
+  },
+  "TextEncoderStream interface object length": {
+    "status": "FAIL"
+  },
+  "TextEncoderStream interface object name": {
+    "status": "FAIL"
+  },
+  "TextEncoderStream interface: existence and properties of interface prototype object": {
+    "status": "FAIL"
+  },
+  "TextEncoderStream interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "FAIL"
+  },
+  "TextEncoderStream interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "FAIL"
+  },
+  "TextEncoderStream interface: attribute encoding": {
+    "status": "FAIL"
+  }
+}

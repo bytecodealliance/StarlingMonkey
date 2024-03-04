@@ -1,0 +1,14 @@
+{
+  "Request through fetch should have 'accept' header with value '*/*'": {
+    "status": "FAIL"
+  },
+  "Request through fetch should have 'accept' header with value 'custom/*'": {
+    "status": "FAIL"
+  },
+  "Request through fetch should have a 'accept-language' header": {
+    "status": "FAIL"
+  },
+  "Request through fetch should have 'accept-language' header with value 'bzh'": {
+    "status": "FAIL"
+  }
+}

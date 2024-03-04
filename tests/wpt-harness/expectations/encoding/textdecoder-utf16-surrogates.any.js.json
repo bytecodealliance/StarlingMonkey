@@ -1,0 +1,32 @@
+{
+  "utf-16le - lone surrogate lead": {
+    "status": "PASS"
+  },
+  "utf-16le - lone surrogate lead (fatal flag set)": {
+    "status": "PASS"
+  },
+  "utf-16le - lone surrogate trail": {
+    "status": "PASS"
+  },
+  "utf-16le - lone surrogate trail (fatal flag set)": {
+    "status": "PASS"
+  },
+  "utf-16le - unmatched surrogate lead": {
+    "status": "PASS"
+  },
+  "utf-16le - unmatched surrogate lead (fatal flag set)": {
+    "status": "PASS"
+  },
+  "utf-16le - unmatched surrogate trail": {
+    "status": "PASS"
+  },
+  "utf-16le - unmatched surrogate trail (fatal flag set)": {
+    "status": "PASS"
+  },
+  "utf-16le - swapped surrogate pair": {
+    "status": "PASS"
+  },
+  "utf-16le - swapped surrogate pair (fatal flag set)": {
+    "status": "PASS"
+  }
+}

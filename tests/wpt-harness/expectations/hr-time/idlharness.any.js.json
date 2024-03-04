@@ -1,0 +1,89 @@
+{
+  "idl_test setup": {
+    "status": "PASS"
+  },
+  "idl_test validation": {
+    "status": "PASS"
+  },
+  "Partial interface mixin WindowOrWorkerGlobalScope: original interface mixin defined": {
+    "status": "PASS"
+  },
+  "Partial interface mixin WindowOrWorkerGlobalScope: member names are unique": {
+    "status": "PASS"
+  },
+  "Partial interface Window: member names are unique": {
+    "status": "PASS"
+  },
+  "Window includes GlobalEventHandlers: member names are unique": {
+    "status": "PASS"
+  },
+  "Window includes WindowEventHandlers: member names are unique": {
+    "status": "PASS"
+  },
+  "Window includes WindowOrWorkerGlobalScope: member names are unique": {
+    "status": "PASS"
+  },
+  "WorkerGlobalScope includes WindowOrWorkerGlobalScope: member names are unique": {
+    "status": "PASS"
+  },
+  "Window includes AnimationFrameProvider: member names are unique": {
+    "status": "PASS"
+  },
+  "Window includes WindowSessionStorage: member names are unique": {
+    "status": "PASS"
+  },
+  "Window includes WindowLocalStorage: member names are unique": {
+    "status": "PASS"
+  },
+  "Performance interface: existence and properties of interface object": {
+    "status": "FAIL"
+  },
+  "Performance interface object length": {
+    "status": "PASS"
+  },
+  "Performance interface object name": {
+    "status": "PASS"
+  },
+  "Performance interface: existence and properties of interface prototype object": {
+    "status": "FAIL"
+  },
+  "Performance interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "Performance interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "Performance interface: operation now()": {
+    "status": "PASS"
+  },
+  "Performance interface: attribute timeOrigin": {
+    "status": "FAIL"
+  },
+  "Performance interface: operation toJSON()": {
+    "status": "FAIL"
+  },
+  "Performance must be primary interface of performance": {
+    "status": "PASS"
+  },
+  "Stringification of performance": {
+    "status": "FAIL"
+  },
+  "Performance interface: performance must inherit property \"now()\" with the proper type": {
+    "status": "FAIL"
+  },
+  "Performance interface: performance must inherit property \"timeOrigin\" with the proper type": {
+    "status": "FAIL"
+  },
+  "Performance interface: performance must inherit property \"toJSON()\" with the proper type": {
+    "status": "FAIL"
+  },
+  "Performance interface: default toJSON operation on performance": {
+    "status": "FAIL"
+  },
+  "Window interface: attribute performance": {
+    "status": "FAIL"
+  },
+  "WorkerGlobalScope interface: self must not have property \"performance\"": {
+    "status": "FAIL"
+  }
+}

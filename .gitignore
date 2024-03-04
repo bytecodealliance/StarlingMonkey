@@ -6,9 +6,11 @@
 # Editor-based HTTP Client requests
 /httpRequests/
 
-# CMake generated files
+# CMake/CTest generated files
 /cmake-build-*/
 /deps/cpm_cache/
+/Testing/Temporary/CTestCostData.txt
+/Testing/Temporary/LastTest.log
 
 # IDEA project files
 /.idea/

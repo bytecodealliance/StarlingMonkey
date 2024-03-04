@@ -1,0 +1,110 @@
+{
+  "Fatal flag: utf-8 - invalid code": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - ends early": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - ends early 2": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - invalid trail": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - invalid trail 2": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - invalid trail 3": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - invalid trail 4": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - invalid trail 5": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - invalid trail 6": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - > 0x10FFFF": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - obsolete lead byte": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+0000 - 2 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+0000 - 3 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+0000 - 4 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+0000 - 5 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+0000 - 6 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+007F - 2 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+007F - 3 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+007F - 4 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+007F - 5 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+007F - 6 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+07FF - 3 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+07FF - 4 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+07FF - 5 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+07FF - 6 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+FFFF - 4 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+FFFF - 5 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+FFFF - 6 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+10FFFF - 5 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - overlong U+10FFFF - 6 bytes": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - lead surrogate": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - trail surrogate": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-8 - surrogate pair": {
+    "status": "PASS"
+  },
+  "Fatal flag: utf-16le - truncated code unit": {
+    "status": "PASS"
+  },
+  "The fatal attribute of TextDecoder": {
+    "status": "PASS"
+  },
+  "Error seen with fatal does not prevent future decodes": {
+    "status": "PASS"
+  }
+}

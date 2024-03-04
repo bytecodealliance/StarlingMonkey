@@ -105,30 +105,36 @@ async function main(event) {
         // // setTimeout(() => console.log(diff()), 3000);
         // // setTimeout(() => console.log(diff()), 4000);
         // // setTimeout(() => console.log(diff()), 5000);
-        let url = new URL(event.request.url);
-        if (url.pathname === "/") {
-            console.log(`chaining from ${url} to /chained`);
-            return event.respondWith(fetch("/chained"));
-        }
 
-        url.host = "example.com";
-        url.protocol = "https";
-        url.port = "";
-        let p = fetch("https://example.com");
-        // let p2 = fetch(url);
-        // let resolve, reject;
         let responsePromise = new Promise(async (res, rej) => {
             resolve = res;
             reject = rej;
         });
         event.respondWith(responsePromise);
-        let response = await p;
+
+        let url = new URL(event.request.url);
+        if (url.pathname === "/") {
+            console.log(`chaining from ${url} to /chained`);
+            let response = await fetch("/chained");
+            let body = await response.text();
+            resolve(new Response(body));
+            return;
+        }
+
+        url.host = "example.com";
+        url.protocol = "https";
+        url.port = "";
+        // let p2 = fetch(url);
+        // let resolve, reject;
+
+        // let p = fetch("https://example.com");
+        // let response = await p;
         // console.log(response);
         // let body = await readAll(response);
-        let body = passBody(response);
+        // let body = passBody(response);
         // let body = pipeBody(response);
         // let body = pumpBody(response);
-        // let body = embeddedBody();
+        let body = embeddedBody();
 
         let resp = new Response(body, {headers: typeof response != "undefined" ? response.headers : undefined});
         console.log(`post resp ${resp}`);

@@ -1,0 +1,17 @@
+{
+  "self.performance.now() is a function that returns a number": {
+    "status": "PASS"
+  },
+  "self.performance.now() returns a positive number": {
+    "status": "PASS"
+  },
+  "self.performance.now() difference is not negative": {
+    "status": "PASS"
+  },
+  "High resolution time has approximately the right relative magnitude": {
+    "status": "PASS"
+  },
+  "Performance interface extends EventTarget.": {
+    "status": "FAIL"
+  }
+}

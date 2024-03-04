@@ -1,0 +1,62 @@
+{
+  "CountQueuingStrategy: Can construct a with a valid high water mark": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy: Constructor behaves as expected with strange arguments": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy: highWaterMark constructor values are converted per the unrestricted double rules": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy: size is the same function across all instances": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy: size should have the right name": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy: subclassing should work correctly": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy: size should not have a prototype property": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy: Can construct a with a valid high water mark": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy: Constructor behaves as expected with strange arguments": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy: highWaterMark constructor values are converted per the unrestricted double rules": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy: size is the same function across all instances": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy: size should have the right name": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy: subclassing should work correctly": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy: size should not have a prototype property": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy: size should not be a constructor": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy: size should not be a constructor": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy: size should have the right length": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy: size should have the right length": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy: size behaves as expected with strange arguments": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy: size behaves as expected with strange arguments": {
+    "status": "PASS"
+  }
+}

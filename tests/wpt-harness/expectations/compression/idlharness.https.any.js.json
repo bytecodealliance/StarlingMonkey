@@ -1,0 +1,62 @@
+{
+  "idl_test setup": {
+    "status": "PASS"
+  },
+  "idl_test validation": {
+    "status": "PASS"
+  },
+  "CompressionStream includes GenericTransformStream: member names are unique": {
+    "status": "PASS"
+  },
+  "DecompressionStream includes GenericTransformStream: member names are unique": {
+    "status": "PASS"
+  },
+  "CompressionStream interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "CompressionStream interface object length": {
+    "status": "PASS"
+  },
+  "CompressionStream interface object name": {
+    "status": "PASS"
+  },
+  "CompressionStream interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "CompressionStream interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "CompressionStream interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "CompressionStream must be primary interface of new CompressionStream(\"deflate\")": {
+    "status": "PASS"
+  },
+  "Stringification of new CompressionStream(\"deflate\")": {
+    "status": "PASS"
+  },
+  "DecompressionStream interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "DecompressionStream interface object length": {
+    "status": "PASS"
+  },
+  "DecompressionStream interface object name": {
+    "status": "PASS"
+  },
+  "DecompressionStream interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "DecompressionStream interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "DecompressionStream interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "DecompressionStream must be primary interface of new DecompressionStream(\"deflate\")": {
+    "status": "PASS"
+  },
+  "Stringification of new DecompressionStream(\"deflate\")": {
+    "status": "PASS"
+  }
+}

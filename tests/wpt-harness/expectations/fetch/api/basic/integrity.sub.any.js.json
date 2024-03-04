@@ -1,0 +1,56 @@
+{
+  "Empty string integrity": {
+    "status": "PASS"
+  },
+  "SHA-256 integrity": {
+    "status": "PASS"
+  },
+  "SHA-384 integrity": {
+    "status": "PASS"
+  },
+  "SHA-512 integrity": {
+    "status": "PASS"
+  },
+  "SHA-512 integrity with missing padding": {
+    "status": "PASS"
+  },
+  "SHA-512 integrity base64url encoded": {
+    "status": "PASS"
+  },
+  "SHA-512 integrity base64url encoded with missing padding": {
+    "status": "PASS"
+  },
+  "Invalid integrity": {
+    "status": "FAIL"
+  },
+  "Multiple integrities: valid stronger than invalid": {
+    "status": "PASS"
+  },
+  "Multiple integrities: invalid stronger than valid": {
+    "status": "FAIL"
+  },
+  "Multiple integrities: invalid as strong as valid": {
+    "status": "PASS"
+  },
+  "Multiple integrities: both are valid": {
+    "status": "PASS"
+  },
+  "Multiple integrities: both are invalid": {
+    "status": "FAIL"
+  },
+  "CORS empty integrity": {
+    "status": "PASS"
+  },
+  "CORS SHA-512 integrity": {
+    "status": "PASS"
+  },
+  "CORS invalid integrity": {
+    "status": "FAIL"
+  },
+  "Empty string integrity for opaque response": {
+    "status": "FAIL"
+  },
+  "SHA-* integrity for opaque response": {
+    "status": "FAIL"
+  }
+}

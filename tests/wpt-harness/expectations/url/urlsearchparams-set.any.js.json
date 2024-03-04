@@ -1,0 +1,8 @@
+{
+  "Set basics": {
+    "status": "PASS"
+  },
+  "URLSearchParams.set": {
+    "status": "PASS"
+  }
+}

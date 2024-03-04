@@ -1,0 +1,239 @@
+{
+  "Encoding argument supported for decode: UTF-8": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: UTF-8": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: IBM866": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: IBM866": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: ISO-8859-2": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: ISO-8859-2": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: ISO-8859-3": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: ISO-8859-3": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: ISO-8859-4": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: ISO-8859-4": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: ISO-8859-5": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: ISO-8859-5": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: ISO-8859-6": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: ISO-8859-6": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: ISO-8859-7": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: ISO-8859-7": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: ISO-8859-8": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: ISO-8859-8": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: ISO-8859-8-I": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: ISO-8859-8-I": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: ISO-8859-10": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: ISO-8859-10": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: ISO-8859-13": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: ISO-8859-13": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: ISO-8859-14": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: ISO-8859-14": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: ISO-8859-15": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: ISO-8859-15": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: ISO-8859-16": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: ISO-8859-16": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: KOI8-R": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: KOI8-R": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: KOI8-U": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: KOI8-U": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: macintosh": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: macintosh": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: windows-874": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: windows-874": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: windows-1250": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: windows-1250": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: windows-1251": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: windows-1251": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: windows-1252": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: windows-1252": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: windows-1253": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: windows-1253": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: windows-1254": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: windows-1254": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: windows-1255": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: windows-1255": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: windows-1256": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: windows-1256": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: windows-1257": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: windows-1257": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: windows-1258": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: windows-1258": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: x-mac-cyrillic": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: x-mac-cyrillic": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: GBK": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: GBK": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: gb18030": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: gb18030": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: Big5": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: Big5": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: EUC-JP": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: EUC-JP": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: ISO-2022-JP": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: ISO-2022-JP": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: Shift_JIS": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: Shift_JIS": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: EUC-KR": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: EUC-KR": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: replacement": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: UTF-16BE": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: UTF-16BE": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: UTF-16LE": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: UTF-16LE": {
+    "status": "PASS"
+  },
+  "Encoding argument supported for decode: x-user-defined": {
+    "status": "PASS"
+  },
+  "Encoding argument not considered for encode: x-user-defined": {
+    "status": "PASS"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "'timeline' function should not exist on the console object": {
+    "status": "PASS"
+  },
+  "'timelineEnd' function should not exist on the console object": {
+    "status": "PASS"
+  },
+  "'markTimeline' function should not exist on the console object": {
+    "status": "PASS"
+  }
+}

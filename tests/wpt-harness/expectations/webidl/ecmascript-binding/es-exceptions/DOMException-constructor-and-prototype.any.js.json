@@ -1,0 +1,11 @@
+{
+  "existence and property descriptor of DOMException": {
+    "status": "PASS"
+  },
+  "existence and property descriptor of DOMException.prototype": {
+    "status": "PASS"
+  },
+  "existence and property descriptor of DOMException.prototype.constructor": {
+    "status": "PASS"
+  }
+}

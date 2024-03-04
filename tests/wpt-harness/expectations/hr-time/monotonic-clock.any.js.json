@@ -1,0 +1,8 @@
+{
+  "self.performance.now() returns a positive number": {
+    "status": "PASS"
+  },
+  "self.performance.now() difference is not negative": {
+    "status": "PASS"
+  }
+}

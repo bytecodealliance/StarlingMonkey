@@ -1,0 +1,767 @@
+{
+  "Loading data…": {
+    "status": "PASS"
+  },
+  "URL: Setting <a://example.net>.protocol = '' The empty string is not a valid scheme. Setter leaves the URL unchanged.": {
+    "status": "PASS"
+  },
+  "URL: Setting <a://example.net>.protocol = 'b'": {
+    "status": "PASS"
+  },
+  "URL: Setting <javascript:alert(1)>.protocol = 'defuse'": {
+    "status": "PASS"
+  },
+  "URL: Setting <a://example.net>.protocol = 'B' Upper-case ASCII is lower-cased": {
+    "status": "PASS"
+  },
+  "URL: Setting <a://example.net>.protocol = 'é' Non-ASCII is rejected": {
+    "status": "PASS"
+  },
+  "URL: Setting <a://example.net>.protocol = '0b' No leading digit": {
+    "status": "PASS"
+  },
+  "URL: Setting <a://example.net>.protocol = '+b' No leading punctuation": {
+    "status": "PASS"
+  },
+  "URL: Setting <a://example.net>.protocol = 'bC0+-.'": {
+    "status": "PASS"
+  },
+  "URL: Setting <a://example.net>.protocol = 'b,c' Only some punctuation is acceptable": {
+    "status": "PASS"
+  },
+  "URL: Setting <a://example.net>.protocol = 'bé' Non-ASCII is rejected": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://test@example.net>.protocol = 'file' Can’t switch from URL containing username/password/port to file": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net:1234>.protocol = 'file'": {
+    "status": "PASS"
+  },
+  "URL: Setting <wss://x:x@example.net:1234>.protocol = 'file'": {
+    "status": "PASS"
+  },
+  "URL: Setting <file://localhost/>.protocol = 'http' Can’t switch from file URL with no host": {
+    "status": "PASS"
+  },
+  "URL: Setting <file:///test>.protocol = 'https'": {
+    "status": "PASS"
+  },
+  "URL: Setting <file:>.protocol = 'wss'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.protocol = 'b' Can’t switch from special scheme to non-special": {
+    "status": "PASS"
+  },
+  "URL: Setting <file://hi/path>.protocol = 's'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net>.protocol = 's'": {
+    "status": "PASS"
+  },
+  "URL: Setting <ftp://example.net>.protocol = 'test'": {
+    "status": "PASS"
+  },
+  "URL: Setting <mailto:me@example.net>.protocol = 'http' Cannot-be-a-base URL doesn’t have a host, but URL in a special scheme must.": {
+    "status": "PASS"
+  },
+  "URL: Setting <ssh://me@example.net>.protocol = 'http' Can’t switch from non-special scheme to special": {
+    "status": "PASS"
+  },
+  "URL: Setting <ssh://me@example.net>.protocol = 'https'": {
+    "status": "PASS"
+  },
+  "URL: Setting <ssh://me@example.net>.protocol = 'file'": {
+    "status": "PASS"
+  },
+  "URL: Setting <ssh://example.net>.protocol = 'file'": {
+    "status": "PASS"
+  },
+  "URL: Setting <nonsense:///test>.protocol = 'https'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.protocol = 'https:foo : bar' Stuff after the first ':' is ignored": {
+    "status": "PASS"
+  },
+  "URL: Setting <data:text/html,<p>Test>.protocol = 'view-source+data:foo : bar' Stuff after the first ':' is ignored": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://foo.com:443/>.protocol = 'https' Port is set to null if it is the default for new scheme.": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://test/>.protocol = 'h\r\ntt\tps' Tab and newline are stripped": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://test/>.protocol = 'https\r'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://test/>.protocol = 'https\u0000' Non-tab/newline C0 controls result in no-op": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://test/>.protocol = 'https\f'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://test/>.protocol = 'https\u000e'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://test/>.protocol = 'https '": {
+    "status": "PASS"
+  },
+  "URL: Setting <file:///home/you/index.html>.username = 'me' No host means no username": {
+    "status": "PASS"
+  },
+  "URL: Setting <unix:/run/foo.socket>.username = 'me' No host means no username": {
+    "status": "PASS"
+  },
+  "URL: Setting <mailto:you@example.net>.username = 'me' Cannot-be-a-base means no username": {
+    "status": "PASS"
+  },
+  "URL: Setting <javascript:alert(1)>.username = 'wario'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.username = 'me'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://:secret@example.net>.username = 'me'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://me@example.net>.username = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://me:secret@example.net>.username = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.username = '\u0000\u0001\t\n\r\u001f !\"#$%&'()*+,-./09:;<=>?@AZ[\\]^_`az{|}~Éé' UTF-8 percent encoding with the userinfo encode set.": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.username = '%c3%89té' Bytes already percent-encoded are left as-is.": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc:///>.username = 'x'": {
+    "status": "PASS"
+  },
+  "URL: Setting <javascript://x/>.username = 'wario'": {
+    "status": "PASS"
+  },
+  "URL: Setting <file://test/>.username = 'test'": {
+    "status": "PASS"
+  },
+  "URL: Setting <file:///home/me/index.html>.password = 'secret' No host means no password": {
+    "status": "PASS"
+  },
+  "URL: Setting <unix:/run/foo.socket>.password = 'secret' No host means no password": {
+    "status": "PASS"
+  },
+  "URL: Setting <mailto:me@example.net>.password = 'secret' Cannot-be-a-base means no password": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.password = 'secret'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://me@example.net>.password = 'secret'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://:secret@example.net>.password = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://me:secret@example.net>.password = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.password = '\u0000\u0001\t\n\r\u001f !\"#$%&'()*+,-./09:;<=>?@AZ[\\]^_`az{|}~Éé' UTF-8 percent encoding with the userinfo encode set.": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.password = '%c3%89té' Bytes already percent-encoded are left as-is.": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc:///>.password = 'x'": {
+    "status": "PASS"
+  },
+  "URL: Setting <javascript://x/>.password = 'bowser'": {
+    "status": "PASS"
+  },
+  "URL: Setting <file://test/>.password = 'test'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.host = '\u0000' Non-special scheme": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.host = '\t'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.host = '\n'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.host = '\r'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.host = ' '": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.host = '#'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.host = '/'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.host = '?'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.host = '@'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.host = 'ß'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://x/>.host = 'ß' IDNA Nontransitional_Processing": {
+    "status": "PASS"
+  },
+  "URL: Setting <mailto:me@example.net>.host = 'example.com' Cannot-be-a-base means no host": {
+    "status": "PASS"
+  },
+  "URL: Setting <data:text/plain,Stuff>.host = 'example.net' Cannot-be-a-base means no host": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.host = 'example.com:8080'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net:8080>.host = 'example.com' Port number is unchanged if not specified in the new value": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net:8080>.host = 'example.com:' Port number is unchanged if not specified": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.host = '' The empty host is not valid for special schemes": {
+    "status": "PASS"
+  },
+  "URL: Setting <view-source+http://example.net/foo>.host = '' The empty host is OK for non-special schemes": {
+    "status": "PASS"
+  },
+  "URL: Setting <a:/foo>.host = 'example.net' Path-only URLs can gain a host": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.host = '0x7F000001:8080' IPv4 address syntax is normalized": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.host = '[::0:01]:2' IPv6 address syntax is normalized": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.host = '[2001:db8::2]:4002' IPv6 literal address with port, crbug.com/1012416": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.host = 'example.com:80' Default port number is removed": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net>.host = 'example.com:443' Default port number is removed": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net>.host = 'example.com:80' Default port number is only removed for the relevant scheme": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net:8080>.host = 'example.com:80' Port number is removed if new port is scheme default and existing URL has a non-default port": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.host = 'example.com/stuff' Stuff after a / delimiter is ignored": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.host = 'example.com:8080/stuff' Stuff after a / delimiter is ignored": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.host = 'example.com?stuff' Stuff after a ? delimiter is ignored": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.host = 'example.com:8080?stuff' Stuff after a ? delimiter is ignored": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.host = 'example.com#stuff' Stuff after a # delimiter is ignored": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.host = 'example.com:8080#stuff' Stuff after a # delimiter is ignored": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.host = 'example.com\\stuff' Stuff after a \\ delimiter is ignored for special schemes": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.host = 'example.com:8080\\stuff' Stuff after a \\ delimiter is ignored for special schemes": {
+    "status": "PASS"
+  },
+  "URL: Setting <view-source+http://example.net/path>.host = 'example.com\\stuff' \\ is not a delimiter for non-special schemes, but still forbidden in hosts": {
+    "status": "PASS"
+  },
+  "URL: Setting <view-source+http://example.net/path>.host = 'example.com:8080stuff2' Anything other than ASCII digit stops the port parser in a setter but is not an error": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.host = 'example.com:8080stuff2' Anything other than ASCII digit stops the port parser in a setter but is not an error": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.host = 'example.com:8080+2' Anything other than ASCII digit stops the port parser in a setter but is not an error": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.host = 'example.com:65535' Port numbers are 16 bit integers": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.host = 'example.com:65536' Port numbers are 16 bit integers, overflowing is an error. Hostname is still set, though.": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/>.host = '[google.com]' Broken IPv6": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/>.host = '[::1.2.3.4x]'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/>.host = '[::1.2.3.]'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/>.host = '[::1.2.]'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/>.host = '[::1.]'": {
+    "status": "PASS"
+  },
+  "URL: Setting <file://y/>.host = 'x:123'": {
+    "status": "PASS"
+  },
+  "URL: Setting <file://y/>.host = 'loc%41lhost'": {
+    "status": "PASS"
+  },
+  "URL: Setting <file://hi/x>.host = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://test@test/>.host = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://test:12/>.host = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.com/>.host = '///bad.com' Leading / is not stripped": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://example.com/>.host = '///bad.com' Leading / is not stripped": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.com/>.host = 'a%C2%ADb'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.com/>.host = '­'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.com/>.host = '%C2%AD'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.com/>.host = 'xn--'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.hostname = '\u0000' Non-special scheme": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.hostname = '\t'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.hostname = '\n'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.hostname = '\r'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.hostname = ' '": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.hostname = '#'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.hostname = '/'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.hostname = '?'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.hostname = '@'": {
+    "status": "PASS"
+  },
+  "URL: Setting <mailto:me@example.net>.hostname = 'example.com' Cannot-be-a-base means no host": {
+    "status": "PASS"
+  },
+  "URL: Setting <data:text/plain,Stuff>.hostname = 'example.net' Cannot-be-a-base means no host": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net:8080>.hostname = 'example.com'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.hostname = '' The empty host is not valid for special schemes": {
+    "status": "PASS"
+  },
+  "URL: Setting <view-source+http://example.net/foo>.hostname = '' The empty host is OK for non-special schemes": {
+    "status": "PASS"
+  },
+  "URL: Setting <a:/foo>.hostname = 'example.net' Path-only URLs can gain a host": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net:8080>.hostname = '0x7F000001' IPv4 address syntax is normalized": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.hostname = '[::0:01]' IPv6 address syntax is normalized": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.hostname = 'example.com:8080' : delimiter invalidates entire value": {
+    "status": "FAIL"
+  },
+  "URL: Setting <http://example.net:8080/path>.hostname = 'example.com:' : delimiter invalidates entire value": {
+    "status": "FAIL"
+  },
+  "URL: Setting <http://example.net/path>.hostname = 'example.com/stuff' Stuff after a / delimiter is ignored": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.hostname = 'example.com?stuff' Stuff after a ? delimiter is ignored": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.hostname = 'example.com#stuff' Stuff after a # delimiter is ignored": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.hostname = 'example.com\\stuff' Stuff after a \\ delimiter is ignored for special schemes": {
+    "status": "PASS"
+  },
+  "URL: Setting <view-source+http://example.net/path>.hostname = 'example.com\\stuff' \\ is not a delimiter for non-special schemes, but still forbidden in hosts": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/>.hostname = '[google.com]' Broken IPv6": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/>.hostname = '[::1.2.3.4x]'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/>.hostname = '[::1.2.3.]'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/>.hostname = '[::1.2.]'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/>.hostname = '[::1.]'": {
+    "status": "PASS"
+  },
+  "URL: Setting <file://y/>.hostname = 'x:123'": {
+    "status": "PASS"
+  },
+  "URL: Setting <file://y/>.hostname = 'loc%41lhost'": {
+    "status": "PASS"
+  },
+  "URL: Setting <file://hi/x>.hostname = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://test@test/>.hostname = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://test:12/>.hostname = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <non-spec:/.//p>.hostname = 'h' Drop /. from path": {
+    "status": "FAIL"
+  },
+  "URL: Setting <non-spec:/.//p>.hostname = ''": {
+    "status": "FAIL"
+  },
+  "URL: Setting <http://example.com/>.hostname = '///bad.com' Leading / is not stripped": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://example.com/>.hostname = '///bad.com' Leading / is not stripped": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.com/>.hostname = 'a%C2%ADb'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.com/>.hostname = '­'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.com/>.hostname = '%C2%AD'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.com/>.hostname = 'xn--'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.port = '8080'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net:8080>.port = '' Port number is removed if empty is the new value": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net:8080>.port = '80' Default port number is removed": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net:4433>.port = '443' Default port number is removed": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net>.port = '80' Default port number is only removed for the relevant scheme": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.port = '8080/stuff' Stuff after a / delimiter is ignored": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.port = '8080?stuff' Stuff after a ? delimiter is ignored": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.port = '8080#stuff' Stuff after a # delimiter is ignored": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.port = '8080\\stuff' Stuff after a \\ delimiter is ignored for special schemes": {
+    "status": "PASS"
+  },
+  "URL: Setting <view-source+http://example.net/path>.port = '8080stuff2' Anything other than ASCII digit stops the port parser in a setter but is not an error": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.port = '8080stuff2' Anything other than ASCII digit stops the port parser in a setter but is not an error": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.port = '8080+2' Anything other than ASCII digit stops the port parser in a setter but is not an error": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/path>.port = '65535' Port numbers are 16 bit integers": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net:8080/path>.port = '65536' Port numbers are 16 bit integers, overflowing is an error": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net:8080/path>.port = 'randomstring' Setting port to a string that doesn't parse as a number": {
+    "status": "FAIL"
+  },
+  "URL: Setting <non-special://example.net:8080/path>.port = '65536' Port numbers are 16 bit integers, overflowing is an error": {
+    "status": "PASS"
+  },
+  "URL: Setting <file://test/>.port = '12'": {
+    "status": "PASS"
+  },
+  "URL: Setting <file://localhost/>.port = '12'": {
+    "status": "PASS"
+  },
+  "URL: Setting <non-base:value>.port = '12'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc:///>.port = '12'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://x/>.port = '12'": {
+    "status": "PASS"
+  },
+  "URL: Setting <javascript://x/>.port = '12'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://domain.com:443>.port = '\t8080' Leading u0009 on special scheme": {
+    "status": "PASS"
+  },
+  "URL: Setting <wpt++://domain.com:443>.port = '\t8080' Leading u0009 on non-special scheme": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://www.google.com:4343>.port = '4wpt' Should use all ascii prefixed characters as port": {
+    "status": "PASS"
+  },
+  "URL: Setting <mailto:me@example.net>.pathname = '/foo' Opaque paths cannot be set": {
+    "status": "PASS"
+  },
+  "URL: Setting <data:original>.pathname = 'new value'": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc:original>.pathname = 'new value'": {
+    "status": "PASS"
+  },
+  "URL: Setting <file:///some/path>.pathname = '' Special URLs cannot have their paths erased": {
+    "status": "PASS"
+  },
+  "URL: Setting <foo://somehost/some/path>.pathname = '' Non-special URLs can have their paths erased": {
+    "status": "FAIL"
+  },
+  "URL: Setting <foo:///some/path>.pathname = '' Non-special URLs with an empty host can have their paths erased": {
+    "status": "FAIL"
+  },
+  "URL: Setting <foo:/some/path>.pathname = '' Path-only URLs cannot have their paths erased": {
+    "status": "PASS"
+  },
+  "URL: Setting <foo:/some/path>.pathname = 'test' Path-only URLs always have an initial slash": {
+    "status": "PASS"
+  },
+  "URL: Setting <unix:/run/foo.socket?timeout=10>.pathname = '/var/log/../run/bar.socket'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net#nav>.pathname = 'home'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net#nav>.pathname = '../home'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net/home?lang=fr#nav>.pathname = '\\a\\%2E\\b\\%2e.\\c' \\ is a segment delimiter for 'special' URLs": {
+    "status": "PASS"
+  },
+  "URL: Setting <view-source+http://example.net/home?lang=fr#nav>.pathname = '\\a\\%2E\\b\\%2e.\\c' \\ is *not* a segment delimiter for non-'special' URLs": {
+    "status": "PASS"
+  },
+  "URL: Setting <a:/>.pathname = '\u0000\u0001\t\n\r\u001f !\"#$%&'()*+,-./09:;<=>?@AZ[\\]^_`az{|}~Éé' UTF-8 percent encoding with the default encode set. Tabs and newlines are removed.": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.pathname = '%2e%2E%c3%89té' Bytes already percent-encoded are left as-is, including %2E outside dotted segments.": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.pathname = '?' ? needs to be encoded": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.pathname = '#' # needs to be encoded": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://example.net>.pathname = '?' ? needs to be encoded, non-special scheme": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc://example.net>.pathname = '#' # needs to be encoded, non-special scheme": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.pathname = '/?é' ? doesn't mess up encoding": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.pathname = '/#é' # doesn't mess up encoding": {
+    "status": "PASS"
+  },
+  "URL: Setting <file://monkey/>.pathname = '\\\\' File URLs and (back)slashes": {
+    "status": "FAIL"
+  },
+  "URL: Setting <file:///unicorn>.pathname = '//\\/' File URLs and (back)slashes": {
+    "status": "FAIL"
+  },
+  "URL: Setting <file:///unicorn>.pathname = '//monkey/..//' File URLs and (back)slashes": {
+    "status": "FAIL"
+  },
+  "URL: Setting <non-spec:/>.pathname = '/.//p' Serialize /. in path": {
+    "status": "FAIL"
+  },
+  "URL: Setting <non-spec:/>.pathname = '/..//p'": {
+    "status": "FAIL"
+  },
+  "URL: Setting <non-spec:/>.pathname = '//p'": {
+    "status": "FAIL"
+  },
+  "URL: Setting <non-spec:/.//>.pathname = 'p' Drop /. from path": {
+    "status": "FAIL"
+  },
+  "URL: Setting <data:/nospace>.pathname = 'space ' Non-special URLs with non-opaque paths percent-encode U+0020": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc:/nospace>.pathname = 'space '": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.pathname = ' ' Trailing space should be encoded": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.pathname = '\u0000' Trailing C0 control should be encoded": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net#nav>.search = 'lang=fr'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net?lang=en-US#nav>.search = 'lang=fr'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net?lang=en-US#nav>.search = '?lang=fr'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net?lang=en-US#nav>.search = '??lang=fr'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net?lang=en-US#nav>.search = '?'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net?lang=en-US#nav>.search = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net?lang=en-US>.search = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net>.search = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <a:/>.search = '\u0000\u0001\t\n\r\u001f !\"#$%&'()*+,-./09:;<=>?@AZ[\\]^_`az{|}~Éé' UTF-8 percent encoding with the query encode set. Tabs and newlines are removed.": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.search = '%c3%89té' Bytes already percent-encoded are left as-is": {
+    "status": "PASS"
+  },
+  "URL: Setting <data:space ?query>.search = '' Drop trailing spaces from trailing opaque paths": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc:space ?query>.search = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <data:space  ?query#fragment>.search = '' Do not drop trailing spaces from non-trailing opaque paths": {
+    "status": "FAIL"
+  },
+  "URL: Setting <sc:space  ?query#fragment>.search = ''": {
+    "status": "FAIL"
+  },
+  "URL: Setting <http://example.net>.search = ' ' Trailing space should be encoded": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.search = '\u0000' Trailing C0 control should be encoded": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net>.hash = 'main'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net#nav>.hash = 'main'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net?lang=en-US>.hash = '##nav'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net?lang=en-US#nav>.hash = '#main'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net?lang=en-US#nav>.hash = '#'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://example.net?lang=en-US#nav>.hash = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.hash = '#foo bar'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.hash = '#foo\"bar'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.hash = '#foo<bar'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.hash = '#foo>bar'": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.hash = '#foo`bar'": {
+    "status": "PASS"
+  },
+  "URL: Setting <a:/>.hash = '\u0000\u0001\t\n\r\u001f !\"#$%&'()*+,-./09:;<=>?@AZ[\\]^_`az{|}~Éé' Simple percent-encoding; tabs and newlines are removed": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.hash = 'a\u0000b' Percent-encode NULLs in fragment": {
+    "status": "PASS"
+  },
+  "URL: Setting <non-spec:/>.hash = 'a\u0000b' Percent-encode NULLs in fragment": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.hash = '%c3%89té' Bytes already percent-encoded are left as-is": {
+    "status": "PASS"
+  },
+  "URL: Setting <javascript:alert(1)>.hash = 'castle'": {
+    "status": "PASS"
+  },
+  "URL: Setting <data:space                                                                                                                                  #fragment>.hash = '' Drop trailing spaces from trailing opaque paths": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc:space    #fragment>.hash = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <data:space  ?query#fragment>.hash = '' Do not drop trailing spaces from non-trailing opaque paths": {
+    "status": "PASS"
+  },
+  "URL: Setting <sc:space  ?query#fragment>.hash = ''": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.hash = ' ' Trailing space should be encoded": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net>.hash = '\u0000' Trailing C0 control should be encoded": {
+    "status": "PASS"
+  },
+  "URL: Setting <file:///var/log/system.log>.href = 'http://0300.168.0xF0'": {
+    "status": "PASS"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "@@toStringTag exists on the namespace object with the appropriate descriptor": {
+    "status": "PASS"
+  },
+  "Object.prototype.toString applied to the namespace object": {
+    "status": "PASS"
+  },
+  "Object.prototype.toString applied after modifying the namespace object's @@toStringTag": {
+    "status": "PASS"
+  },
+  "Object.prototype.toString applied after deleting @@toStringTag": {
+    "status": "PASS"
+  }
+}

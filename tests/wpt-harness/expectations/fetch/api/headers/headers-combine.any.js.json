@@ -1,0 +1,20 @@
+{
+  "Create headers using same name for different values": {
+    "status": "PASS"
+  },
+  "Check delete and has methods when using same name for different values": {
+    "status": "PASS"
+  },
+  "Check set methods when called with already used name": {
+    "status": "PASS"
+  },
+  "Check append methods when called with already used name": {
+    "status": "PASS"
+  },
+  "Iterate combined values": {
+    "status": "PASS"
+  },
+  "Iterate combined values in sorted order": {
+    "status": "FAIL"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "ReadableStreamController methods should continue working properly when scripts lose their reference to the readable stream": {
+    "status": "PASS"
+  },
+  "ReadableStream closed promise should fulfill even if the stream and reader JS references are lost": {
+    "status": "PASS"
+  },
+  "ReadableStream closed promise should reject even if stream and reader JS references are lost": {
+    "status": "PASS"
+  },
+  "Garbage-collecting a ReadableStreamDefaultReader should not unlock its stream": {
+    "status": "PASS"
+  }
+}

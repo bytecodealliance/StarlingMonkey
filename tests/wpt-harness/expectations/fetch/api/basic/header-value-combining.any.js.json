@@ -1,0 +1,20 @@
+{
+  "response.headers.get('content-length') expects 0": {
+    "status": "FAIL"
+  },
+  "response.headers.get('content-length') expects 0, 0": {
+    "status": "FAIL"
+  },
+  "response.headers.get('double-trouble') expects , ": {
+    "status": "FAIL"
+  },
+  "response.headers.get('foo-test') expects 1, 2, 3": {
+    "status": "FAIL"
+  },
+  "response.headers.get('heya') expects , \u000b\f, 1, , , 2": {
+    "status": "FAIL"
+  },
+  "response.headers.get('www-authenticate') expects 1, 2, 3, 4": {
+    "status": "FAIL"
+  }
+}

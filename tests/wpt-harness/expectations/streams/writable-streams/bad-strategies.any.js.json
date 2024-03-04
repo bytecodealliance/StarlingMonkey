@@ -1,0 +1,23 @@
+{
+  "Writable stream: throwing strategy.size getter": {
+    "status": "PASS"
+  },
+  "reject any non-function value for strategy.size": {
+    "status": "PASS"
+  },
+  "Writable stream: throwing strategy.highWaterMark getter": {
+    "status": "PASS"
+  },
+  "Writable stream: invalid strategy.highWaterMark": {
+    "status": "PASS"
+  },
+  "Writable stream: throwing strategy.size method": {
+    "status": "PASS"
+  },
+  "Writable stream: invalid strategy.size return value": {
+    "status": "PASS"
+  },
+  "Writable stream: invalid size beats invalid highWaterMark": {
+    "status": "PASS"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "Getting blob after getting a locked Response body (body source: fetch)": {
+    "status": "FAIL"
+  },
+  "Getting text after getting a locked Response body (body source: fetch)": {
+    "status": "FAIL"
+  },
+  "Getting json after getting a locked Response body (body source: fetch)": {
+    "status": "FAIL"
+  },
+  "Getting arrayBuffer after getting a locked Response body (body source: fetch)": {
+    "status": "FAIL"
+  },
+  "Getting blob after getting a locked Response body (body source: stream)": {
+    "status": "FAIL"
+  },
+  "Getting text after getting a locked Response body (body source: stream)": {
+    "status": "PASS"
+  },
+  "Getting json after getting a locked Response body (body source: stream)": {
+    "status": "PASS"
+  },
+  "Getting arrayBuffer after getting a locked Response body (body source: stream)": {
+    "status": "PASS"
+  },
+  "Getting blob after getting a locked Response body (body source: string)": {
+    "status": "FAIL"
+  },
+  "Getting text after getting a locked Response body (body source: string)": {
+    "status": "FAIL"
+  },
+  "Getting json after getting a locked Response body (body source: string)": {
+    "status": "FAIL"
+  },
+  "Getting arrayBuffer after getting a locked Response body (body source: string)": {
+    "status": "FAIL"
+  }
+}

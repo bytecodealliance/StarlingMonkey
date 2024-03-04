@@ -1,0 +1,14 @@
+{
+  "Floating point arithmetic must manifest near NUMBER.MAX_SAFE_INTEGER (total ends up positive)": {
+    "status": "PASS"
+  },
+  "Floating point arithmetic must manifest near 0 (total ends up positive, but clamped)": {
+    "status": "PASS"
+  },
+  "Floating point arithmetic must manifest near 0 (total ends up positive, and not clamped)": {
+    "status": "PASS"
+  },
+  "Floating point arithmetic must manifest near 0 (total ends up zero)": {
+    "status": "PASS"
+  }
+}

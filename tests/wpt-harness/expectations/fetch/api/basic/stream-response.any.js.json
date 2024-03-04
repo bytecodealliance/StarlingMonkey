@@ -1,0 +1,8 @@
+{
+  "Stream response's body when content-type is present": {
+    "status": "PASS"
+  },
+  "Stream response's body when content-type is not present": {
+    "status": "PASS"
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "ReadableStreamDefaultReader constructor should get a ReadableStream object as argument": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader closed should always return the same promise object": {
+    "status": "PASS"
+  },
+  "Constructing a ReadableStreamDefaultReader directly should fail if the stream is already locked (via direct construction)": {
+    "status": "PASS"
+  },
+  "Getting a ReadableStreamDefaultReader via getReader should fail if the stream is already locked (via direct construction)": {
+    "status": "PASS"
+  },
+  "Constructing a ReadableStreamDefaultReader directly should fail if the stream is already locked (via getReader)": {
+    "status": "PASS"
+  },
+  "Getting a ReadableStreamDefaultReader via getReader should fail if the stream is already locked (via getReader)": {
+    "status": "PASS"
+  },
+  "Constructing a ReadableStreamDefaultReader directly should be OK if the stream is closed": {
+    "status": "PASS"
+  },
+  "Constructing a ReadableStreamDefaultReader directly should be OK if the stream is errored": {
+    "status": "PASS"
+  },
+  "Reading from a reader for an empty stream will wait until a chunk is available": {
+    "status": "PASS"
+  },
+  "cancel() on a reader does not release the reader": {
+    "status": "PASS"
+  },
+  "closed should be fulfilled after stream is closed (.closed access before acquiring)": {
+    "status": "PASS"
+  },
+  "closed should be rejected after reader releases its lock (multiple stream locks)": {
+    "status": "PASS"
+  },
+  "closed is replaced when stream closes and reader releases its lock": {
+    "status": "PASS"
+  },
+  "closed is replaced when stream errors and reader releases its lock": {
+    "status": "PASS"
+  },
+  "Multiple readers can access the stream in sequence": {
+    "status": "PASS"
+  },
+  "Cannot use an already-released reader to unlock a stream again": {
+    "status": "PASS"
+  },
+  "cancel() on a released reader is a no-op and does not pass through": {
+    "status": "PASS"
+  },
+  "Getting a second reader after erroring the stream and releasing the reader should succeed": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader closed promise should be rejected with undefined if that is the error": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader: if start rejects with no parameter, it should error the stream with an undefined error": {
+    "status": "PASS"
+  },
+  "Erroring a ReadableStream after checking closed should reject ReadableStreamDefaultReader closed promise": {
+    "status": "PASS"
+  },
+  "Erroring a ReadableStream before checking closed should reject ReadableStreamDefaultReader closed promise": {
+    "status": "PASS"
+  },
+  "Reading twice on a stream that gets closed": {
+    "status": "PASS"
+  },
+  "Reading twice on a closed stream": {
+    "status": "PASS"
+  },
+  "Reading twice on an errored stream": {
+    "status": "PASS"
+  },
+  "Reading twice on a stream that gets errored": {
+    "status": "PASS"
+  },
+  "getReader() should call ToString() on mode": {
+    "status": "PASS"
+  },
+  "controller.close() should clear the list of pending read requests": {
+    "status": "PASS"
+  },
+  "Second reader can read chunks after first reader was released with pending read requests": {
+    "status": "PASS"
+  }
+}

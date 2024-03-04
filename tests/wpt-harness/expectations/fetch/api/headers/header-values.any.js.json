@@ -1,0 +1,14 @@
+{
+  "fetch() with value x%00x needs to throw": {
+    "status": "FAIL"
+  },
+  "fetch() with value x%0Ax needs to throw": {
+    "status": "FAIL"
+  },
+  "fetch() with value x%0Dx needs to throw": {
+    "status": "FAIL"
+  },
+  "fetch() with all valid values": {
+    "status": "FAIL"
+  }
+}

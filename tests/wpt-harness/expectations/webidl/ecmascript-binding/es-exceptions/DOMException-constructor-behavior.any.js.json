@@ -1,0 +1,140 @@
+{
+  "new DOMException()": {
+    "status": "PASS"
+  },
+  "new DOMException(): inherited-ness": {
+    "status": "PASS"
+  },
+  "new DOMException(null)": {
+    "status": "PASS"
+  },
+  "new DOMException(undefined)": {
+    "status": "PASS"
+  },
+  "new DOMException(undefined): inherited-ness": {
+    "status": "PASS"
+  },
+  "new DOMException(\"foo\")": {
+    "status": "PASS"
+  },
+  "new DOMException(\"foo\"): inherited-ness": {
+    "status": "PASS"
+  },
+  "new DOMException(\"bar\", undefined)": {
+    "status": "PASS"
+  },
+  "new DOMException(\"bar\", \"NotSupportedError\")": {
+    "status": "PASS"
+  },
+  "new DOMException(\"bar\", \"NotSupportedError\"): inherited-ness": {
+    "status": "PASS"
+  },
+  "new DOMException(\"bar\", \"foo\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"IndexSizeError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"HierarchyRequestError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"WrongDocumentError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"InvalidCharacterError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"NoModificationAllowedError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"NotFoundError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"NotSupportedError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"InUseAttributeError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"InvalidStateError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"SyntaxError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"InvalidModificationError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"NamespaceError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"InvalidAccessError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"TypeMismatchError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"SecurityError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"NetworkError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"AbortError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"URLMismatchError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"QuotaExceededError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"TimeoutError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"InvalidNodeTypeError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"DataCloneError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"DOMStringSizeError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"NoDataAllowedError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"ValidationError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"EncodingError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"NotReadableError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"UnknownError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"ConstraintError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"DataError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"TransactionInactiveError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"ReadOnlyError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"VersionError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"OperationError\")": {
+    "status": "PASS"
+  },
+  "new DOMexception(\"msg\", \"NotAllowedError\")": {
+    "status": "PASS"
+  }
+}

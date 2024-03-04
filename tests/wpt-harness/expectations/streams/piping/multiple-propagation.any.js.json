@@ -1,0 +1,29 @@
+{
+  "Piping from an errored readable stream to an erroring writable stream": {
+    "status": "PASS"
+  },
+  "Piping from an errored readable stream to an errored writable stream": {
+    "status": "PASS"
+  },
+  "Piping from an errored readable stream to an erroring writable stream; preventAbort = true": {
+    "status": "PASS"
+  },
+  "Piping from an errored readable stream to an errored writable stream; preventAbort = true": {
+    "status": "PASS"
+  },
+  "Piping from an errored readable stream to a closing writable stream": {
+    "status": "PASS"
+  },
+  "Piping from an errored readable stream to a closed writable stream": {
+    "status": "PASS"
+  },
+  "Piping from a closed readable stream to an erroring writable stream": {
+    "status": "PASS"
+  },
+  "Piping from a closed readable stream to an errored writable stream": {
+    "status": "PASS"
+  },
+  "Piping from a closed readable stream to a closed writable stream": {
+    "status": "PASS"
+  }
+}

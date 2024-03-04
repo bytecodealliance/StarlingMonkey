@@ -1,0 +1,32 @@
+{
+  "enqueue() inside size() should work": {
+    "status": "PASS"
+  },
+  "close() inside size() should not crash": {
+    "status": "PASS"
+  },
+  "close request inside size() should work": {
+    "status": "PASS"
+  },
+  "error() inside size() should work": {
+    "status": "PASS"
+  },
+  "desiredSize inside size() should work": {
+    "status": "PASS"
+  },
+  "cancel() inside size() should work": {
+    "status": "PASS"
+  },
+  "pipeTo() inside size() should behave as expected": {
+    "status": "PASS"
+  },
+  "read() inside of size() should behave as expected": {
+    "status": "PASS"
+  },
+  "getReader() inside size() should work": {
+    "status": "PASS"
+  },
+  "tee() inside size() should work": {
+    "status": "PASS"
+  }
+}

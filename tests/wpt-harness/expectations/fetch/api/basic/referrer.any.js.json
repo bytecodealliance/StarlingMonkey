@@ -1,0 +1,20 @@
+{
+  "origin-when-cross-origin policy on a same-origin URL": {
+    "status": "FAIL"
+  },
+  "origin-when-cross-origin policy on a cross-origin URL": {
+    "status": "FAIL"
+  },
+  "origin-when-cross-origin policy on a cross-origin URL after same-origin redirection": {
+    "status": "FAIL"
+  },
+  "origin-when-cross-origin policy on a same-origin URL after cross-origin redirection": {
+    "status": "FAIL"
+  },
+  "Referrer with credentials should be stripped": {
+    "status": "FAIL"
+  },
+  "Referrer with fragment ID should be stripped": {
+    "status": "FAIL"
+  }
+}

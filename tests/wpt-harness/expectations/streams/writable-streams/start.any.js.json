@@ -1,0 +1,26 @@
+{
+  "underlying sink's write should not be called until start finishes": {
+    "status": "PASS"
+  },
+  "underlying sink's close should not be called until start finishes": {
+    "status": "PASS"
+  },
+  "underlying sink's write or close should not be called if start throws": {
+    "status": "PASS"
+  },
+  "underlying sink's write or close should not be invoked if the promise returned by start is rejected": {
+    "status": "PASS"
+  },
+  "returning a thenable from start() should work": {
+    "status": "PASS"
+  },
+  "controller.error() during start should cause writes to fail": {
+    "status": "PASS"
+  },
+  "controller.error() during async start should cause existing writes to fail": {
+    "status": "PASS"
+  },
+  "when start() rejects, writer promises should reject in standard order": {
+    "status": "PASS"
+  }
+}

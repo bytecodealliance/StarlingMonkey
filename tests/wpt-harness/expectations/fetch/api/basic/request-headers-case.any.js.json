@@ -1,0 +1,8 @@
+{
+  "Multiple headers with the same name, different case (THIS-is-A-test first)": {
+    "status": "FAIL"
+  },
+  "Multiple headers with the same name, different case (THIS-IS-A-TEST first)": {
+    "status": "FAIL"
+  }
+}

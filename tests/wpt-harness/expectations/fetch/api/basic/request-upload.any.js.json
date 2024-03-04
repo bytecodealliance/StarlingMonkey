@@ -1,0 +1,56 @@
+{
+  "Fetch with PUT with body": {
+    "status": "PASS"
+  },
+  "Fetch with POST with text body": {
+    "status": "PASS"
+  },
+  "Fetch with POST with URLSearchParams body": {
+    "status": "PASS"
+  },
+  "Fetch with POST with Blob body": {
+    "status": "FAIL"
+  },
+  "Fetch with POST with ArrayBuffer body": {
+    "status": "PASS"
+  },
+  "Fetch with POST with Uint8Array body": {
+    "status": "PASS"
+  },
+  "Fetch with POST with Int8Array body": {
+    "status": "PASS"
+  },
+  "Fetch with POST with Float32Array body": {
+    "status": "PASS"
+  },
+  "Fetch with POST with Float64Array body": {
+    "status": "PASS"
+  },
+  "Fetch with POST with DataView body": {
+    "status": "PASS"
+  },
+  "Fetch with POST with Blob body with mime type": {
+    "status": "FAIL"
+  },
+  "Fetch with POST with ReadableStream containing String": {
+    "status": "FAIL"
+  },
+  "Fetch with POST with ReadableStream containing null": {
+    "status": "FAIL"
+  },
+  "Fetch with POST with ReadableStream containing number": {
+    "status": "FAIL"
+  },
+  "Fetch with POST with ReadableStream containing ArrayBuffer": {
+    "status": "FAIL"
+  },
+  "Fetch with POST with ReadableStream containing Blob": {
+    "status": "FAIL"
+  },
+  "Fetch with POST with text body on 421 response should be retried once on new connection.": {
+    "status": "FAIL"
+  },
+  "Streaming upload shouldn't work on Http/1.1.": {
+    "status": "FAIL"
+  }
+}

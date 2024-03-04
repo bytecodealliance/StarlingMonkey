@@ -1,0 +1,20 @@
+{
+  "Request() with a forbidden method CONNECT must throw.": {
+    "status": "FAIL"
+  },
+  "Request() with a forbidden method TRACE must throw.": {
+    "status": "FAIL"
+  },
+  "Request() with a forbidden method TRACK must throw.": {
+    "status": "FAIL"
+  },
+  "Request() with a forbidden method connect must throw.": {
+    "status": "FAIL"
+  },
+  "Request() with a forbidden method trace must throw.": {
+    "status": "FAIL"
+  },
+  "Request() with a forbidden method track must throw.": {
+    "status": "FAIL"
+  }
+}

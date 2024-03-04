@@ -1,0 +1,14 @@
+{
+  "Append same name": {
+    "status": "PASS"
+  },
+  "Append empty strings": {
+    "status": "PASS"
+  },
+  "Append null": {
+    "status": "PASS"
+  },
+  "Append multiple": {
+    "status": "FAIL"
+  }
+}

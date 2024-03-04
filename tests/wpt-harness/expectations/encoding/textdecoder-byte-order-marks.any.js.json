@@ -1,0 +1,11 @@
+{
+  "Byte-order marks: utf-8": {
+    "status": "PASS"
+  },
+  "Byte-order marks: utf-16le": {
+    "status": "PASS"
+  },
+  "Byte-order marks: utf-16be": {
+    "status": "PASS"
+  }
+}

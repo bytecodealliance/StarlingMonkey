@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta content='text/html; charset=UTF-8' http-equiv='Content-Type'/>
+<title>Results</title>
+<style>
+body {
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+#meta {
+  margin-bottom: 20px;
+}
+
+#results table {
+  max-width: 100%;
+}
+
+.expected {
+  display: none;
+}
+.pass .grade {
+  background: #7fc883;
+}
+.fail .grade {
+  background: #e67171;
+}
+
+.show-expected .expected {
+  display: revert;
+}
+
+.show-expected-fail .expected.fail {
+  display: revert;
+}
+
+.show-expected-pass .expected.pass {
+  display: revert;
+}
+
+.show-none .result {
+  display: none;
+}
+
+th {
+  text-align: left;
+}
+
+td {
+  padding: 5px;
+}
+
+td.name, td.message {
+  max-width: 40%;
+}
+
+#summary {
+  display: none;
+}
+</style>
+
+</head>
+<body>
+  <section id="meta">
+  <h1>Running tests matching pattern "{pattern}"</h1>
+  <div id="pending">
+    Running {count} tests ...
+  </div>
+  <div id="summary"></div>
+  <hr>
+  <div>
+    <p>Type of results to show:</p>
+    <input type="radio" name="result-visibility" id="show-none">
+    <label for="show-none">None</label>
+    <input type="radio" name="result-visibility" id="show-unexpected" checked>
+    <label for="show-unexpected">Unexpected</label>
+    <input type="radio" name="result-visibility" id="show-expected">
+    <label for="show-expected">All</label>
+    <input type="radio" name="result-visibility" id="show-expected-fail">
+    <label for="show-expected-fail">Unexpected + expected failures</label>
+    <input type="radio" name="result-visibility" id="show-expected-pass">
+    <label for="show-expected-pass">Unexpected + expected passes</label>
+  </div>
+</section>
+
+<hr>
+
+<section id="results" class="unexpected">
+  <h2>Results</h2>
+  <script>
+    let currentValue = "unexpected";
+
+    function applyVisibility(visibility) {
+        document.querySelector("#results").classList.toggle(currentValue);
+        currentValue = visibility;
+        document.querySelector("#results").classList.toggle(currentValue);
+    }
+  document.querySelectorAll('input[name="result-visibility"]').forEach(input => {
+      if (input.checked) {
+        applyVisibility(input.id);
+      }
+      input.addEventListener("change", event => applyVisibility(event.target.id))
+  });
+  </script>
+<table>
+<thead>
+    <tr>
+        <th>Test</th>
+        <th>Result</th>
+        <th>Message</th>
+    </tr>
+</thead>
+<tbody>
+{results}
+</tbody>
+</table>
+</section>
+</body>
+<script>
+  document.getElementById("pending").style.display = "none";
+  let summary = document.getElementById("summary");
+  summary.textContent = "Done. Pass rate: {pass} / {total} (took {duration}ms)";
+  summary.style.display = "block";
+</script>
+</html>

@@ -1,0 +1,188 @@
+{
+  "Adding valid request header \"Content-Type: OK\"": {
+    "status": "PASS"
+  },
+  "Adding valid request header \"Potato: OK\"": {
+    "status": "PASS"
+  },
+  "Adding valid request header \"proxy: OK\"": {
+    "status": "PASS"
+  },
+  "Adding valid request header \"proxya: OK\"": {
+    "status": "PASS"
+  },
+  "Adding valid request header \"sec: OK\"": {
+    "status": "PASS"
+  },
+  "Adding valid request header \"secb: OK\"": {
+    "status": "PASS"
+  },
+  "Adding valid request header \"Set-Cookie2: OK\"": {
+    "status": "PASS"
+  },
+  "Adding valid request header \"User-Agent: OK\"": {
+    "status": "PASS"
+  },
+  "Adding invalid request header \"Accept-Charset: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"accept-charset: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"ACCEPT-ENCODING: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Accept-Encoding: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Access-Control-Request-Headers: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Access-Control-Request-Method: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Access-Control-Request-Private-Network: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Connection: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Content-Length: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Cookie: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Cookie2: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Date: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"DNT: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Expect: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Host: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Keep-Alive: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Origin: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Referer: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Set-Cookie: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"TE: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Trailer: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Transfer-Encoding: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Upgrade: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Via: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Proxy-: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"proxy-a: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"Sec-: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid request header \"sec-b: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding valid no-cors request header \"Accept: OK\"": {
+    "status": "PASS"
+  },
+  "Adding valid no-cors request header \"Accept-Language: OK\"": {
+    "status": "PASS"
+  },
+  "Adding valid no-cors request header \"content-language: OK\"": {
+    "status": "PASS"
+  },
+  "Adding valid no-cors request header \"content-type: application/x-www-form-urlencoded\"": {
+    "status": "PASS"
+  },
+  "Adding valid no-cors request header \"content-type: application/x-www-form-urlencoded;charset=UTF-8\"": {
+    "status": "PASS"
+  },
+  "Adding valid no-cors request header \"content-type: multipart/form-data\"": {
+    "status": "PASS"
+  },
+  "Adding valid no-cors request header \"content-type: multipart/form-data;charset=UTF-8\"": {
+    "status": "PASS"
+  },
+  "Adding valid no-cors request header \"content-TYPE: text/plain\"": {
+    "status": "PASS"
+  },
+  "Adding valid no-cors request header \"CONTENT-type: text/plain;charset=UTF-8\"": {
+    "status": "PASS"
+  },
+  "Adding invalid no-cors request header \"Content-Type: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid no-cors request header \"Potato: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid no-cors request header \"proxy: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid no-cors request header \"proxya: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid no-cors request header \"sec: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid no-cors request header \"secb: KO\"": {
+    "status": "FAIL"
+  },
+  "Adding invalid no-cors request header \"Empty-Value: \"": {
+    "status": "FAIL"
+  },
+  "Check that request constructor is filtering headers provided as init parameter": {
+    "status": "FAIL"
+  },
+  "Check that no-cors request constructor is filtering headers provided as init parameter": {
+    "status": "FAIL"
+  },
+  "Check that no-cors request constructor is filtering headers provided as part of request parameter": {
+    "status": "FAIL"
+  },
+  "Request should get its content-type from the init request": {
+    "status": "PASS"
+  },
+  "Request should not get its content-type from the init request if init headers are provided": {
+    "status": "PASS"
+  },
+  "Request should get its content-type from the body if none is provided": {
+    "status": "PASS"
+  },
+  "Request should get its content-type from init headers if one is provided": {
+    "status": "PASS"
+  },
+  "Testing request header creations with various objects": {
+    "status": "PASS"
+  },
+  "Testing empty Request Content-Type header": {
+    "status": "FAIL"
+  },
+  "Test that Request.headers has the [SameObject] extended attribute": {
+    "status": "PASS"
+  }
+}

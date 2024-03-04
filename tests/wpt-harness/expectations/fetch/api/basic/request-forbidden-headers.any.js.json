@@ -1,0 +1,293 @@
+{
+  "Accept-Charset is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Accept-Encoding is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Access-Control-Request-Headers is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Access-Control-Request-Method is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Access-Control-Request-Private-Network is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Connection is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Content-Length is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Cookie is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Cookie2 is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Date is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "DNT is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Expect is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Host is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Keep-Alive is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Origin is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Referer is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "TE is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Trailer is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Transfer-Encoding is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Upgrade is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Via is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Proxy- is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Proxy-Test is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Sec- is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "Sec-Test is a forbidden request header": {
+    "status": "FAIL"
+  },
+  "header x-http-method-override is forbidden to use value TRACE": {
+    "status": "FAIL"
+  },
+  "header x-http-method is forbidden to use value TRACE": {
+    "status": "FAIL"
+  },
+  "header x-method-override is forbidden to use value TRACE": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD-OVERRIDE is forbidden to use value TRACE": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD is forbidden to use value TRACE": {
+    "status": "FAIL"
+  },
+  "header X-METHOD-OVERRIDE is forbidden to use value TRACE": {
+    "status": "FAIL"
+  },
+  "header x-http-method-override is forbidden to use value TRACK": {
+    "status": "FAIL"
+  },
+  "header x-http-method is forbidden to use value TRACK": {
+    "status": "FAIL"
+  },
+  "header x-method-override is forbidden to use value TRACK": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD-OVERRIDE is forbidden to use value TRACK": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD is forbidden to use value TRACK": {
+    "status": "FAIL"
+  },
+  "header X-METHOD-OVERRIDE is forbidden to use value TRACK": {
+    "status": "FAIL"
+  },
+  "header x-http-method-override is forbidden to use value CONNECT": {
+    "status": "FAIL"
+  },
+  "header x-http-method is forbidden to use value CONNECT": {
+    "status": "FAIL"
+  },
+  "header x-method-override is forbidden to use value CONNECT": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD-OVERRIDE is forbidden to use value CONNECT": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD is forbidden to use value CONNECT": {
+    "status": "FAIL"
+  },
+  "header X-METHOD-OVERRIDE is forbidden to use value CONNECT": {
+    "status": "FAIL"
+  },
+  "header x-http-method-override is forbidden to use value trace": {
+    "status": "FAIL"
+  },
+  "header x-http-method is forbidden to use value trace": {
+    "status": "FAIL"
+  },
+  "header x-method-override is forbidden to use value trace": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD-OVERRIDE is forbidden to use value trace": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD is forbidden to use value trace": {
+    "status": "FAIL"
+  },
+  "header X-METHOD-OVERRIDE is forbidden to use value trace": {
+    "status": "FAIL"
+  },
+  "header x-http-method-override is forbidden to use value track": {
+    "status": "FAIL"
+  },
+  "header x-http-method is forbidden to use value track": {
+    "status": "FAIL"
+  },
+  "header x-method-override is forbidden to use value track": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD-OVERRIDE is forbidden to use value track": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD is forbidden to use value track": {
+    "status": "FAIL"
+  },
+  "header X-METHOD-OVERRIDE is forbidden to use value track": {
+    "status": "FAIL"
+  },
+  "header x-http-method-override is forbidden to use value connect": {
+    "status": "FAIL"
+  },
+  "header x-http-method is forbidden to use value connect": {
+    "status": "FAIL"
+  },
+  "header x-method-override is forbidden to use value connect": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD-OVERRIDE is forbidden to use value connect": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD is forbidden to use value connect": {
+    "status": "FAIL"
+  },
+  "header X-METHOD-OVERRIDE is forbidden to use value connect": {
+    "status": "FAIL"
+  },
+  "header x-http-method-override is forbidden to use value trace,": {
+    "status": "FAIL"
+  },
+  "header x-http-method is forbidden to use value trace,": {
+    "status": "FAIL"
+  },
+  "header x-method-override is forbidden to use value trace,": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD-OVERRIDE is forbidden to use value trace,": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD is forbidden to use value trace,": {
+    "status": "FAIL"
+  },
+  "header X-METHOD-OVERRIDE is forbidden to use value trace,": {
+    "status": "FAIL"
+  },
+  "header x-http-method-override is forbidden to use value GET,track ": {
+    "status": "FAIL"
+  },
+  "header x-http-method is forbidden to use value GET,track ": {
+    "status": "FAIL"
+  },
+  "header x-method-override is forbidden to use value GET,track ": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD-OVERRIDE is forbidden to use value GET,track ": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD is forbidden to use value GET,track ": {
+    "status": "FAIL"
+  },
+  "header X-METHOD-OVERRIDE is forbidden to use value GET,track ": {
+    "status": "FAIL"
+  },
+  "header x-http-method-override is forbidden to use value  connect": {
+    "status": "FAIL"
+  },
+  "header x-http-method is forbidden to use value  connect": {
+    "status": "FAIL"
+  },
+  "header x-method-override is forbidden to use value  connect": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD-OVERRIDE is forbidden to use value  connect": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD is forbidden to use value  connect": {
+    "status": "FAIL"
+  },
+  "header X-METHOD-OVERRIDE is forbidden to use value  connect": {
+    "status": "FAIL"
+  },
+  "header x-http-method-override is allowed to use value GETTRACE": {
+    "status": "FAIL"
+  },
+  "header x-http-method is allowed to use value GETTRACE": {
+    "status": "FAIL"
+  },
+  "header x-method-override is allowed to use value GETTRACE": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD-OVERRIDE is allowed to use value GETTRACE": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD is allowed to use value GETTRACE": {
+    "status": "FAIL"
+  },
+  "header X-METHOD-OVERRIDE is allowed to use value GETTRACE": {
+    "status": "FAIL"
+  },
+  "header x-http-method-override is allowed to use value GET": {
+    "status": "FAIL"
+  },
+  "header x-http-method is allowed to use value GET": {
+    "status": "FAIL"
+  },
+  "header x-method-override is allowed to use value GET": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD-OVERRIDE is allowed to use value GET": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD is allowed to use value GET": {
+    "status": "FAIL"
+  },
+  "header X-METHOD-OVERRIDE is allowed to use value GET": {
+    "status": "FAIL"
+  },
+  "header x-http-method-override is allowed to use value \",TRACE\",": {
+    "status": "FAIL"
+  },
+  "header x-http-method is allowed to use value \",TRACE\",": {
+    "status": "FAIL"
+  },
+  "header x-method-override is allowed to use value \",TRACE\",": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD-OVERRIDE is allowed to use value \",TRACE\",": {
+    "status": "FAIL"
+  },
+  "header X-HTTP-METHOD is allowed to use value \",TRACE\",": {
+    "status": "FAIL"
+  },
+  "header X-METHOD-OVERRIDE is allowed to use value \",TRACE\",": {
+    "status": "FAIL"
+  }
+}

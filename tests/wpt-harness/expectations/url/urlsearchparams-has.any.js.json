@@ -1,0 +1,11 @@
+{
+  "Has basics": {
+    "status": "PASS"
+  },
+  "has() following delete()": {
+    "status": "PASS"
+  },
+  "Two-argument has()": {
+    "status": "FAIL"
+  }
+}

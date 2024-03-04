@@ -1,0 +1,8 @@
+{
+  "using pipeTo on Response body should disturb it synchronously": {
+    "status": "FAIL"
+  },
+  "using pipeThrough on Response body should disturb it synchronously": {
+    "status": "FAIL"
+  }
+}

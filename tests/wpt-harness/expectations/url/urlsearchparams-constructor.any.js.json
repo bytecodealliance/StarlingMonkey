@@ -1,0 +1,83 @@
+{
+  "Basic URLSearchParams construction": {
+    "status": "PASS"
+  },
+  "URLSearchParams constructor, no arguments": {
+    "status": "PASS"
+  },
+  "URLSearchParams constructor, remove leading \"?\"": {
+    "status": "PASS"
+  },
+  "URLSearchParams constructor, DOMException as argument": {
+    "status": "PASS"
+  },
+  "URLSearchParams constructor, empty string as argument": {
+    "status": "PASS"
+  },
+  "URLSearchParams constructor, {} as argument": {
+    "status": "PASS"
+  },
+  "URLSearchParams constructor, string.": {
+    "status": "PASS"
+  },
+  "URLSearchParams constructor, object.": {
+    "status": "PASS"
+  },
+  "URLSearchParams constructor, FormData.": {
+    "status": "FAIL"
+  },
+  "Parse +": {
+    "status": "PASS"
+  },
+  "Parse encoded +": {
+    "status": "PASS"
+  },
+  "Parse space": {
+    "status": "PASS"
+  },
+  "Parse %20": {
+    "status": "PASS"
+  },
+  "Parse \\0": {
+    "status": "PASS"
+  },
+  "Parse %00": {
+    "status": "PASS"
+  },
+  "Parse ⎄": {
+    "status": "PASS"
+  },
+  "Parse %e2%8e%84": {
+    "status": "PASS"
+  },
+  "Parse 💩": {
+    "status": "PASS"
+  },
+  "Parse %f0%9f%92%a9": {
+    "status": "PASS"
+  },
+  "Constructor with sequence of sequences of strings": {
+    "status": "FAIL"
+  },
+  "Construct with object with +": {
+    "status": "PASS"
+  },
+  "Construct with object with two keys": {
+    "status": "PASS"
+  },
+  "Construct with array with two keys": {
+    "status": "PASS"
+  },
+  "Construct with 2 unpaired surrogates (no trailing)": {
+    "status": "FAIL"
+  },
+  "Construct with 3 unpaired surrogates (no leading)": {
+    "status": "FAIL"
+  },
+  "Construct with object with NULL, non-ASCII, and surrogate keys": {
+    "status": "PASS"
+  },
+  "Custom [Symbol.iterator]": {
+    "status": "PASS"
+  }
+}

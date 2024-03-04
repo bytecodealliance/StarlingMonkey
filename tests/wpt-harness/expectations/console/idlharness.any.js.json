@@ -1,0 +1,86 @@
+{
+  "idl_test setup": {
+    "status": "PASS"
+  },
+  "idl_test validation": {
+    "status": "PASS"
+  },
+  "console namespace: extended attributes": {
+    "status": "PASS"
+  },
+  "console namespace: property descriptor": {
+    "status": "PASS"
+  },
+  "console namespace: [[Extensible]] is true": {
+    "status": "PASS"
+  },
+  "console namespace: [[Prototype]] is Object.prototype": {
+    "status": "PASS"
+  },
+  "console namespace: typeof is \"object\"": {
+    "status": "PASS"
+  },
+  "console namespace: has no length property": {
+    "status": "PASS"
+  },
+  "console namespace: has no name property": {
+    "status": "PASS"
+  },
+  "console namespace: operation assert(optional boolean, any...)": {
+    "status": "PASS"
+  },
+  "console namespace: operation clear()": {
+    "status": "PASS"
+  },
+  "console namespace: operation debug(any...)": {
+    "status": "PASS"
+  },
+  "console namespace: operation error(any...)": {
+    "status": "PASS"
+  },
+  "console namespace: operation info(any...)": {
+    "status": "PASS"
+  },
+  "console namespace: operation log(any...)": {
+    "status": "PASS"
+  },
+  "console namespace: operation table(optional any, optional sequence<DOMString>)": {
+    "status": "PASS"
+  },
+  "console namespace: operation trace(any...)": {
+    "status": "PASS"
+  },
+  "console namespace: operation warn(any...)": {
+    "status": "PASS"
+  },
+  "console namespace: operation dir(optional any, optional object?)": {
+    "status": "PASS"
+  },
+  "console namespace: operation dirxml(any...)": {
+    "status": "PASS"
+  },
+  "console namespace: operation count(optional DOMString)": {
+    "status": "PASS"
+  },
+  "console namespace: operation countReset(optional DOMString)": {
+    "status": "PASS"
+  },
+  "console namespace: operation group(any...)": {
+    "status": "PASS"
+  },
+  "console namespace: operation groupCollapsed(any...)": {
+    "status": "PASS"
+  },
+  "console namespace: operation groupEnd()": {
+    "status": "PASS"
+  },
+  "console namespace: operation time(optional DOMString)": {
+    "status": "PASS"
+  },
+  "console namespace: operation timeLog(optional DOMString, any...)": {
+    "status": "PASS"
+  },
+  "console namespace: operation timeEnd(optional DOMString)": {
+    "status": "PASS"
+  }
+}

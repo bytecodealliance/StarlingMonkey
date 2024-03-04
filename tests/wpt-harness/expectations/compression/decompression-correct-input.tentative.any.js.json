@@ -1,0 +1,11 @@
+{
+  "decompressing deflated input should work": {
+    "status": "PASS"
+  },
+  "decompressing gzip input should work": {
+    "status": "PASS"
+  },
+  "decompressing deflated (with -raw) input should work": {
+    "status": "PASS"
+  }
+}

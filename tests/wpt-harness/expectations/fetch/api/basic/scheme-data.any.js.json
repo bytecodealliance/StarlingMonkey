@@ -1,0 +1,26 @@
+{
+  "Fetching data:,response%27s%20body is OK": {
+    "status": "FAIL"
+  },
+  "Fetching data:,response%27s%20body is OK (same-origin)": {
+    "status": "FAIL"
+  },
+  "Fetching data:,response%27s%20body is OK (cors)": {
+    "status": "FAIL"
+  },
+  "Fetching data:text/plain;base64,cmVzcG9uc2UncyBib[...] is OK": {
+    "status": "FAIL"
+  },
+  "Fetching data:image/png;base64,cmVzcG9uc2UncyBib2[...] is OK": {
+    "status": "FAIL"
+  },
+  "Fetching [POST] data:,response%27s%20body is OK": {
+    "status": "FAIL"
+  },
+  "Fetching [HEAD] data:,response%27s%20body is OK": {
+    "status": "FAIL"
+  },
+  "Fetching [GET] data:notAdataUrl.com is KO": {
+    "status": "FAIL"
+  }
+}

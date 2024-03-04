@@ -1,0 +1,44 @@
+{
+  "Serialize space": {
+    "status": "PASS"
+  },
+  "Serialize empty value": {
+    "status": "PASS"
+  },
+  "Serialize empty name": {
+    "status": "PASS"
+  },
+  "Serialize empty name and value": {
+    "status": "PASS"
+  },
+  "Serialize +": {
+    "status": "PASS"
+  },
+  "Serialize =": {
+    "status": "PASS"
+  },
+  "Serialize &": {
+    "status": "PASS"
+  },
+  "Serialize *-._": {
+    "status": "PASS"
+  },
+  "Serialize %": {
+    "status": "PASS"
+  },
+  "Serialize \\0": {
+    "status": "PASS"
+  },
+  "Serialize 💩": {
+    "status": "PASS"
+  },
+  "URLSearchParams.toString": {
+    "status": "PASS"
+  },
+  "URLSearchParams connected to URL": {
+    "status": "FAIL"
+  },
+  "URLSearchParams must not do newline normalization": {
+    "status": "PASS"
+  }
+}

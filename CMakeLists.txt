@@ -43,6 +43,10 @@ target_include_directories(extension_api INTERFACE include deps/include runtime)
 
 include("builtins")
 
+if (DEFINED ENV{WPT})
+    include("tests/wpt-harness/wpt.cmake")
+endif()
+
 add_executable(js.wasm
         runtime/js.cpp
         runtime/allocator.cpp

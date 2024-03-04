@@ -1,0 +1,248 @@
+{
+  "idl_test setup": {
+    "status": "PASS"
+  },
+  "idl_test validation": {
+    "status": "PASS"
+  },
+  "Partial interface mixin WindowOrWorkerGlobalScope: original interface mixin defined": {
+    "status": "PASS"
+  },
+  "Partial interface mixin WindowOrWorkerGlobalScope: member names are unique": {
+    "status": "PASS"
+  },
+  "Partial interface Window: member names are unique": {
+    "status": "PASS"
+  },
+  "Window includes GlobalEventHandlers: member names are unique": {
+    "status": "PASS"
+  },
+  "Window includes WindowEventHandlers: member names are unique": {
+    "status": "PASS"
+  },
+  "Window includes WindowOrWorkerGlobalScope: member names are unique": {
+    "status": "PASS"
+  },
+  "WorkerGlobalScope includes WindowOrWorkerGlobalScope: member names are unique": {
+    "status": "PASS"
+  },
+  "Window includes AnimationFrameProvider: member names are unique": {
+    "status": "PASS"
+  },
+  "Window includes WindowSessionStorage: member names are unique": {
+    "status": "PASS"
+  },
+  "Window includes WindowLocalStorage: member names are unique": {
+    "status": "PASS"
+  },
+  "Crypto interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "Crypto interface object length": {
+    "status": "PASS"
+  },
+  "Crypto interface object name": {
+    "status": "PASS"
+  },
+  "Crypto interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "Crypto interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "Crypto interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "Crypto interface: attribute subtle": {
+    "status": "PASS"
+  },
+  "Crypto interface: operation getRandomValues(ArrayBufferView)": {
+    "status": "PASS"
+  },
+  "Crypto interface: operation randomUUID()": {
+    "status": "PASS"
+  },
+  "Crypto must be primary interface of crypto": {
+    "status": "PASS"
+  },
+  "Stringification of crypto": {
+    "status": "PASS"
+  },
+  "Crypto interface: crypto must inherit property \"subtle\" with the proper type": {
+    "status": "PASS"
+  },
+  "Crypto interface: crypto must inherit property \"getRandomValues(ArrayBufferView)\" with the proper type": {
+    "status": "PASS"
+  },
+  "Crypto interface: calling getRandomValues(ArrayBufferView) on crypto with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "Crypto interface: crypto must inherit property \"randomUUID()\" with the proper type": {
+    "status": "PASS"
+  },
+  "CryptoKey interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "CryptoKey interface object length": {
+    "status": "PASS"
+  },
+  "CryptoKey interface object name": {
+    "status": "PASS"
+  },
+  "CryptoKey interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "CryptoKey interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "CryptoKey interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "CryptoKey interface: attribute type": {
+    "status": "PASS"
+  },
+  "CryptoKey interface: attribute extractable": {
+    "status": "PASS"
+  },
+  "CryptoKey interface: attribute algorithm": {
+    "status": "PASS"
+  },
+  "CryptoKey interface: attribute usages": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface object length": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface object name": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: operation encrypt(AlgorithmIdentifier, CryptoKey, BufferSource)": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: operation decrypt(AlgorithmIdentifier, CryptoKey, BufferSource)": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: operation sign(AlgorithmIdentifier, CryptoKey, BufferSource)": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: operation verify(AlgorithmIdentifier, CryptoKey, BufferSource, BufferSource)": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: operation digest(AlgorithmIdentifier, BufferSource)": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: operation generateKey(AlgorithmIdentifier, boolean, sequence<KeyUsage>)": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: operation deriveKey(AlgorithmIdentifier, CryptoKey, AlgorithmIdentifier, boolean, sequence<KeyUsage>)": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: operation deriveBits(AlgorithmIdentifier, CryptoKey, unsigned long)": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: operation importKey(KeyFormat, (BufferSource or JsonWebKey), AlgorithmIdentifier, boolean, sequence<KeyUsage>)": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: operation exportKey(KeyFormat, CryptoKey)": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: operation wrapKey(KeyFormat, CryptoKey, CryptoKey, AlgorithmIdentifier)": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: operation unwrapKey(KeyFormat, BufferSource, CryptoKey, AlgorithmIdentifier, AlgorithmIdentifier, boolean, sequence<KeyUsage>)": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto must be primary interface of crypto.subtle": {
+    "status": "PASS"
+  },
+  "Stringification of crypto.subtle": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: crypto.subtle must inherit property \"encrypt(AlgorithmIdentifier, CryptoKey, BufferSource)\" with the proper type": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: calling encrypt(AlgorithmIdentifier, CryptoKey, BufferSource) on crypto.subtle with too few arguments must throw TypeError": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: crypto.subtle must inherit property \"decrypt(AlgorithmIdentifier, CryptoKey, BufferSource)\" with the proper type": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: calling decrypt(AlgorithmIdentifier, CryptoKey, BufferSource) on crypto.subtle with too few arguments must throw TypeError": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: crypto.subtle must inherit property \"sign(AlgorithmIdentifier, CryptoKey, BufferSource)\" with the proper type": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: calling sign(AlgorithmIdentifier, CryptoKey, BufferSource) on crypto.subtle with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: crypto.subtle must inherit property \"verify(AlgorithmIdentifier, CryptoKey, BufferSource, BufferSource)\" with the proper type": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: calling verify(AlgorithmIdentifier, CryptoKey, BufferSource, BufferSource) on crypto.subtle with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: crypto.subtle must inherit property \"digest(AlgorithmIdentifier, BufferSource)\" with the proper type": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: calling digest(AlgorithmIdentifier, BufferSource) on crypto.subtle with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: crypto.subtle must inherit property \"generateKey(AlgorithmIdentifier, boolean, sequence<KeyUsage>)\" with the proper type": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: calling generateKey(AlgorithmIdentifier, boolean, sequence<KeyUsage>) on crypto.subtle with too few arguments must throw TypeError": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: crypto.subtle must inherit property \"deriveKey(AlgorithmIdentifier, CryptoKey, AlgorithmIdentifier, boolean, sequence<KeyUsage>)\" with the proper type": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: calling deriveKey(AlgorithmIdentifier, CryptoKey, AlgorithmIdentifier, boolean, sequence<KeyUsage>) on crypto.subtle with too few arguments must throw TypeError": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: crypto.subtle must inherit property \"deriveBits(AlgorithmIdentifier, CryptoKey, unsigned long)\" with the proper type": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: calling deriveBits(AlgorithmIdentifier, CryptoKey, unsigned long) on crypto.subtle with too few arguments must throw TypeError": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: crypto.subtle must inherit property \"importKey(KeyFormat, (BufferSource or JsonWebKey), AlgorithmIdentifier, boolean, sequence<KeyUsage>)\" with the proper type": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: calling importKey(KeyFormat, (BufferSource or JsonWebKey), AlgorithmIdentifier, boolean, sequence<KeyUsage>) on crypto.subtle with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "SubtleCrypto interface: crypto.subtle must inherit property \"exportKey(KeyFormat, CryptoKey)\" with the proper type": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: calling exportKey(KeyFormat, CryptoKey) on crypto.subtle with too few arguments must throw TypeError": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: crypto.subtle must inherit property \"wrapKey(KeyFormat, CryptoKey, CryptoKey, AlgorithmIdentifier)\" with the proper type": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: calling wrapKey(KeyFormat, CryptoKey, CryptoKey, AlgorithmIdentifier) on crypto.subtle with too few arguments must throw TypeError": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: crypto.subtle must inherit property \"unwrapKey(KeyFormat, BufferSource, CryptoKey, AlgorithmIdentifier, AlgorithmIdentifier, boolean, sequence<KeyUsage>)\" with the proper type": {
+    "status": "FAIL"
+  },
+  "SubtleCrypto interface: calling unwrapKey(KeyFormat, BufferSource, CryptoKey, AlgorithmIdentifier, AlgorithmIdentifier, boolean, sequence<KeyUsage>) on crypto.subtle with too few arguments must throw TypeError": {
+    "status": "FAIL"
+  },
+  "Window interface: attribute crypto": {
+    "status": "PASS"
+  }
+}

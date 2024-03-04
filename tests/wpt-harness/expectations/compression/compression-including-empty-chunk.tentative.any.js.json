@@ -1,0 +1,29 @@
+{
+  "the result of compressing [,Hello,Hello] with deflate should be 'HelloHello'": {
+    "status": "PASS"
+  },
+  "the result of compressing [,Hello,Hello] with gzip should be 'HelloHello'": {
+    "status": "PASS"
+  },
+  "the result of compressing [,Hello,Hello] with deflate-raw should be 'HelloHello'": {
+    "status": "PASS"
+  },
+  "the result of compressing [Hello,,Hello] with deflate should be 'HelloHello'": {
+    "status": "PASS"
+  },
+  "the result of compressing [Hello,,Hello] with gzip should be 'HelloHello'": {
+    "status": "PASS"
+  },
+  "the result of compressing [Hello,,Hello] with deflate-raw should be 'HelloHello'": {
+    "status": "PASS"
+  },
+  "the result of compressing [Hello,Hello,] with deflate should be 'HelloHello'": {
+    "status": "PASS"
+  },
+  "the result of compressing [Hello,Hello,] with gzip should be 'HelloHello'": {
+    "status": "PASS"
+  },
+  "the result of compressing [Hello,Hello,] with deflate-raw should be 'HelloHello'": {
+    "status": "PASS"
+  }
+}

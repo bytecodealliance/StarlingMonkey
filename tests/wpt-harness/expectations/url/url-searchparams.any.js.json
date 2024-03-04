@@ -1,0 +1,14 @@
+{
+  "URL.searchParams getter": {
+    "status": "PASS"
+  },
+  "URL.searchParams updating, clearing": {
+    "status": "PASS"
+  },
+  "URL.searchParams setter, invalid values": {
+    "status": "PASS"
+  },
+  "URL.searchParams and URL.search setters, update propagation": {
+    "status": "FAIL"
+  }
+}

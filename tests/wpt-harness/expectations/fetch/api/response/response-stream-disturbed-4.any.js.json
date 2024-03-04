@@ -1,0 +1,38 @@
+{
+  "Getting blob after cancelling the Response body (body source: fetch)": {
+    "status": "FAIL"
+  },
+  "Getting text after cancelling the Response body (body source: fetch)": {
+    "status": "PASS"
+  },
+  "Getting json after cancelling the Response body (body source: fetch)": {
+    "status": "PASS"
+  },
+  "Getting arrayBuffer after cancelling the Response body (body source: fetch)": {
+    "status": "PASS"
+  },
+  "Getting blob after cancelling the Response body (body source: stream)": {
+    "status": "FAIL"
+  },
+  "Getting text after cancelling the Response body (body source: stream)": {
+    "status": "PASS"
+  },
+  "Getting json after cancelling the Response body (body source: stream)": {
+    "status": "PASS"
+  },
+  "Getting arrayBuffer after cancelling the Response body (body source: stream)": {
+    "status": "PASS"
+  },
+  "Getting blob after cancelling the Response body (body source: string)": {
+    "status": "FAIL"
+  },
+  "Getting text after cancelling the Response body (body source: string)": {
+    "status": "PASS"
+  },
+  "Getting json after cancelling the Response body (body source: string)": {
+    "status": "PASS"
+  },
+  "Getting arrayBuffer after cancelling the Response body (body source: string)": {
+    "status": "PASS"
+  }
+}

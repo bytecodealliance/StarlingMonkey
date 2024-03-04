@@ -40,14 +40,14 @@ cmake --build cmake-build-release --parallel 8
 
 4. Testing the build 
 
-A simple test script is provided in `tests/smoke.js`. To run it using [`Spin`](https://github.com/fermyon/spin), use the following command:
+A simple test script is provided in `tests/smoke.js`. To run it using [`Wasmtime`](https://wasmtime.dev/), use the following command:
 ```bash
-cmake --build cmake-build-release --target smoke-test
+cmake --build cmake-build-release --parallel 8 --target smoke-test
 cd cmake-build-release
-spin up
+wasmtime serve -S common smoke.js.wasm
 ```
 
-Then visit https://localhost:3000 
+Then visit http://0.0.0.0:8080/
 
 5. Using the runtime with other JS applications
 
@@ -58,6 +58,24 @@ For example, the following command is equivalent to the `cmake` invocation from 
 ```bash
 cd cmake-build-release
 ./componentize.sh ../tests/smoke.js
+```
+
+
+## Thorough testing with the Web Platform Tests suite
+
+`js.wasm` includes a test runner for the [Web Platform Tests](https://web-platform-tests.org/) suite. The test runner is built as part of the `js.wasm` runtime, and can be run using the `wpt-test` target.
+
+### Requirements
+
+The WPT runner requires `Node.js` to be installed, and during build configuration the environment variable `WPT` must be defined.
+
+When running the test, `WPT_ROOT` must be set to the path of a checkout of the WPT suite at revision `1014eae5e66f8f334610d5a1521756f7a2fb769f`:
+
+```bash
+WPT=1 WPT_ROOT=[path to your WPT checkout] cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
+cmake --build cmake-build-debug --parallel 8 --target wpt-runtime
+cd cmake-build-debug
+ctest --verbose # Note: some of the tests run fairly slowly in debug builds, so be patient
 ```
 
 

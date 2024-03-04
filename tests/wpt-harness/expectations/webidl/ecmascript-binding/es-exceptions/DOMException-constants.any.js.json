@@ -1,0 +1,155 @@
+{
+  "DOMException-constants": {
+    "status": "PASS"
+  },
+  "Constant INDEX_SIZE_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant INDEX_SIZE_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant DOMSTRING_SIZE_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant DOMSTRING_SIZE_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant HIERARCHY_REQUEST_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant HIERARCHY_REQUEST_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant WRONG_DOCUMENT_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant WRONG_DOCUMENT_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant INVALID_CHARACTER_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant INVALID_CHARACTER_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant NO_DATA_ALLOWED_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant NO_DATA_ALLOWED_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant NO_MODIFICATION_ALLOWED_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant NO_MODIFICATION_ALLOWED_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant NOT_FOUND_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant NOT_FOUND_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant NOT_SUPPORTED_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant NOT_SUPPORTED_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant INUSE_ATTRIBUTE_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant INUSE_ATTRIBUTE_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant INVALID_STATE_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant INVALID_STATE_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant SYNTAX_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant SYNTAX_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant INVALID_MODIFICATION_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant INVALID_MODIFICATION_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant NAMESPACE_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant NAMESPACE_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant INVALID_ACCESS_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant INVALID_ACCESS_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant VALIDATION_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant VALIDATION_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant TYPE_MISMATCH_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant TYPE_MISMATCH_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant SECURITY_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant SECURITY_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant NETWORK_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant NETWORK_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant ABORT_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant ABORT_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant URL_MISMATCH_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant URL_MISMATCH_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant QUOTA_EXCEEDED_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant QUOTA_EXCEEDED_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant TIMEOUT_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant TIMEOUT_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant INVALID_NODE_TYPE_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant INVALID_NODE_TYPE_ERR on DOMException prototype object": {
+    "status": "PASS"
+  },
+  "Constant DATA_CLONE_ERR on DOMException constructor object": {
+    "status": "PASS"
+  },
+  "Constant DATA_CLONE_ERR on DOMException prototype object": {
+    "status": "PASS"
+  }
+}

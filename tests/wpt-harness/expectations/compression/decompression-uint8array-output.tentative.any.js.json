@@ -1,0 +1,8 @@
+{
+  "decompressing deflated output should give Uint8Array chunks": {
+    "status": "PASS"
+  },
+  "decompressing gzip output should give Uint8Array chunks": {
+    "status": "PASS"
+  }
+}

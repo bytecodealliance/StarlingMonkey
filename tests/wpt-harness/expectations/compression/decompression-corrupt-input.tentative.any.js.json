@@ -1,0 +1,80 @@
+{
+  "the unchanged input for 'deflate' should decompress successfully": {
+    "status": "PASS"
+  },
+  "truncating the input for 'deflate' should give an error": {
+    "status": "FAIL"
+  },
+  "trailing junk for 'deflate' should give an error": {
+    "status": "PASS"
+  },
+  "format 'deflate' field CMF should be error for 0": {
+    "status": "PASS"
+  },
+  "format 'deflate' field FLG should be success for 218": {
+    "status": "PASS"
+  },
+  "format 'deflate' field FLG should be success for 1": {
+    "status": "PASS"
+  },
+  "format 'deflate' field FLG should be success for 94": {
+    "status": "PASS"
+  },
+  "format 'deflate' field FLG should be error for 157": {
+    "status": "PASS"
+  },
+  "format 'deflate' field DATA should be success for 4": {
+    "status": "PASS"
+  },
+  "format 'deflate' field DATA should be error for 5": {
+    "status": "PASS"
+  },
+  "format 'deflate' field ADLER should be error for 255": {
+    "status": "PASS"
+  },
+  "the unchanged input for 'gzip' should decompress successfully": {
+    "status": "PASS"
+  },
+  "truncating the input for 'gzip' should give an error": {
+    "status": "FAIL"
+  },
+  "trailing junk for 'gzip' should give an error": {
+    "status": "PASS"
+  },
+  "format 'gzip' field ID should be error for 255": {
+    "status": "PASS"
+  },
+  "format 'gzip' field CM should be error for 0": {
+    "status": "PASS"
+  },
+  "format 'gzip' field FLG should be success for 1": {
+    "status": "PASS"
+  },
+  "format 'gzip' field FLG should be error for 2": {
+    "status": "PASS"
+  },
+  "format 'gzip' field MTIME should be success for 255": {
+    "status": "PASS"
+  },
+  "format 'gzip' field XFL should be success for 255": {
+    "status": "PASS"
+  },
+  "format 'gzip' field OS should be success for 128": {
+    "status": "PASS"
+  },
+  "format 'gzip' field DATA should be error for 3": {
+    "status": "PASS"
+  },
+  "format 'gzip' field DATA should be success for 4": {
+    "status": "PASS"
+  },
+  "format 'gzip' field CRC should be error for 0": {
+    "status": "PASS"
+  },
+  "format 'gzip' field ISIZE should be error for 1": {
+    "status": "PASS"
+  },
+  "the deflate input compressed with dictionary should give an error": {
+    "status": "PASS"
+  }
+}

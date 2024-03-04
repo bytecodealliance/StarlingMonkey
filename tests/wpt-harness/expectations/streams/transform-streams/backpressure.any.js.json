@@ -1,0 +1,44 @@
+{
+  "backpressure allows no transforms with a default identity transform and no reader": {
+    "status": "PASS"
+  },
+  "backpressure only allows one transform() with a identity transform with a readable HWM of 1 and no reader": {
+    "status": "PASS"
+  },
+  "transform() should keep being called as long as there is no backpressure": {
+    "status": "PASS"
+  },
+  "writes should resolve as soon as transform completes": {
+    "status": "PASS"
+  },
+  "calling pull() before the first write() with backpressure should work": {
+    "status": "PASS"
+  },
+  "transform() should be able to read the chunk it just enqueued": {
+    "status": "PASS"
+  },
+  "blocking transform() should cause backpressure": {
+    "status": "PASS"
+  },
+  "writer.closed should resolve after readable is canceled during start": {
+    "status": "PASS"
+  },
+  "writer.closed should resolve after readable is canceled with backpressure": {
+    "status": "PASS"
+  },
+  "writer.closed should resolve after readable is canceled with no backpressure": {
+    "status": "PASS"
+  },
+  "cancelling the readable should cause a pending write to resolve": {
+    "status": "PASS"
+  },
+  "cancelling the readable side of a TransformStream should abort an empty pipe": {
+    "status": "PASS"
+  },
+  "cancelling the readable side of a TransformStream should abort an empty pipe after startup": {
+    "status": "PASS"
+  },
+  "cancelling the readable side of a TransformStream should abort a full pipe": {
+    "status": "PASS"
+  }
+}

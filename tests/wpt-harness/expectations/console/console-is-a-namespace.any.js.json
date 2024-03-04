@@ -1,0 +1,14 @@
+{
+  "console exists on the global object": {
+    "status": "PASS"
+  },
+  "console has the right property descriptors": {
+    "status": "PASS"
+  },
+  "Console (uppercase, as if it were an interface) must not exist": {
+    "status": "PASS"
+  },
+  "The prototype chain must be correct": {
+    "status": "PASS"
+  }
+}

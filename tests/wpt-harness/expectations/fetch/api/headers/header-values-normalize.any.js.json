@@ -1,0 +1,95 @@
+{
+  "fetch() with value %00": {
+    "status": "FAIL"
+  },
+  "fetch() with value %01": {
+    "status": "FAIL"
+  },
+  "fetch() with value %02": {
+    "status": "FAIL"
+  },
+  "fetch() with value %03": {
+    "status": "FAIL"
+  },
+  "fetch() with value %04": {
+    "status": "FAIL"
+  },
+  "fetch() with value %05": {
+    "status": "FAIL"
+  },
+  "fetch() with value %06": {
+    "status": "FAIL"
+  },
+  "fetch() with value %07": {
+    "status": "FAIL"
+  },
+  "fetch() with value %08": {
+    "status": "FAIL"
+  },
+  "fetch() with value %09": {
+    "status": "PASS"
+  },
+  "fetch() with value %0A": {
+    "status": "FAIL"
+  },
+  "fetch() with value %0D": {
+    "status": "FAIL"
+  },
+  "fetch() with value %0E": {
+    "status": "FAIL"
+  },
+  "fetch() with value %0F": {
+    "status": "FAIL"
+  },
+  "fetch() with value %10": {
+    "status": "FAIL"
+  },
+  "fetch() with value %11": {
+    "status": "FAIL"
+  },
+  "fetch() with value %12": {
+    "status": "FAIL"
+  },
+  "fetch() with value %13": {
+    "status": "FAIL"
+  },
+  "fetch() with value %14": {
+    "status": "FAIL"
+  },
+  "fetch() with value %15": {
+    "status": "FAIL"
+  },
+  "fetch() with value %16": {
+    "status": "FAIL"
+  },
+  "fetch() with value %17": {
+    "status": "FAIL"
+  },
+  "fetch() with value %18": {
+    "status": "FAIL"
+  },
+  "fetch() with value %19": {
+    "status": "FAIL"
+  },
+  "fetch() with value %1A": {
+    "status": "FAIL"
+  },
+  "fetch() with value %1B": {
+    "status": "FAIL"
+  },
+  "fetch() with value %1C": {
+    "status": "FAIL"
+  },
+  "fetch() with value %1D": {
+    "status": "FAIL"
+  },
+  "fetch() with value %1E": {
+    "status": "FAIL"
+  },
+  "fetch() with value %1F": {
+    "status": "FAIL"
+  },
+  "fetch() with value %20": {
+    "status": "PASS"
+  }
+}

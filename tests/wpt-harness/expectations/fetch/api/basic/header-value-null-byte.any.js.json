@@ -1,0 +1,5 @@
+{
+  "Ensure fetch() rejects null bytes in headers": {
+    "status": "FAIL"
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "Consume String request's body as text": {
+    "status": "PASS"
+  },
+  "Consume String request's body as blob": {
+    "status": "FAIL"
+  },
+  "Consume String request's body as arrayBuffer": {
+    "status": "PASS"
+  },
+  "Consume String request's body as JSON": {
+    "status": "PASS"
+  },
+  "Consume ArrayBuffer request's body as text": {
+    "status": "PASS"
+  },
+  "Consume ArrayBuffer request's body as blob": {
+    "status": "FAIL"
+  },
+  "Consume ArrayBuffer request's body as arrayBuffer": {
+    "status": "PASS"
+  },
+  "Consume ArrayBuffer request's body as JSON": {
+    "status": "PASS"
+  },
+  "Consume Uint8Array request's body as text": {
+    "status": "PASS"
+  },
+  "Consume Uint8Array request's body as blob": {
+    "status": "FAIL"
+  },
+  "Consume Uint8Array request's body as arrayBuffer": {
+    "status": "PASS"
+  },
+  "Consume Uint8Array request's body as JSON": {
+    "status": "PASS"
+  },
+  "Consume Int8Array request's body as text": {
+    "status": "PASS"
+  },
+  "Consume Int8Array request's body as blob": {
+    "status": "FAIL"
+  },
+  "Consume Int8Array request's body as arrayBuffer": {
+    "status": "PASS"
+  },
+  "Consume Int8Array request's body as JSON": {
+    "status": "PASS"
+  },
+  "Consume Float32Array request's body as text": {
+    "status": "PASS"
+  },
+  "Consume Float32Array request's body as blob": {
+    "status": "FAIL"
+  },
+  "Consume Float32Array request's body as arrayBuffer": {
+    "status": "PASS"
+  },
+  "Consume Float32Array request's body as JSON": {
+    "status": "PASS"
+  },
+  "Consume DataView request's body as text": {
+    "status": "PASS"
+  },
+  "Consume DataView request's body as blob": {
+    "status": "FAIL"
+  },
+  "Consume DataView request's body as arrayBuffer": {
+    "status": "PASS"
+  },
+  "Consume DataView request's body as JSON": {
+    "status": "PASS"
+  },
+  "Consume FormData request's body as FormData": {
+    "status": "FAIL"
+  },
+  "Consume blob response's body as blob": {
+    "status": "FAIL"
+  },
+  "Consume blob response's body as text": {
+    "status": "FAIL"
+  },
+  "Consume blob response's body as json": {
+    "status": "FAIL"
+  },
+  "Consume blob response's body as arrayBuffer": {
+    "status": "FAIL"
+  },
+  "Consume blob response's body as blob (empty blob as input)": {
+    "status": "FAIL"
+  },
+  "Consume JSON from text: '\"null\"'": {
+    "status": "PASS"
+  },
+  "Consume JSON from text: '\"1\"'": {
+    "status": "PASS"
+  },
+  "Consume JSON from text: '\"true\"'": {
+    "status": "PASS"
+  },
+  "Consume JSON from text: '\"\\\"string\\\"\"'": {
+    "status": "PASS"
+  },
+  "Trying to consume bad JSON text as JSON: 'undefined'": {
+    "status": "PASS"
+  },
+  "Trying to consume bad JSON text as JSON: '{'": {
+    "status": "PASS"
+  },
+  "Trying to consume bad JSON text as JSON: 'a'": {
+    "status": "PASS"
+  },
+  "Trying to consume bad JSON text as JSON: '['": {
+    "status": "PASS"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "Create headers giving an array having one string as init argument": {
+    "status": "FAIL"
+  },
+  "Create headers giving an array having three strings as init argument": {
+    "status": "FAIL"
+  },
+  "Create headers giving bad header name as init argument": {
+    "status": "FAIL"
+  },
+  "Create headers giving bad header value as init argument": {
+    "status": "FAIL"
+  },
+  "Check headers get with an invalid name invalidĀ": {
+    "status": "FAIL"
+  },
+  "Check headers get with an invalid name [object Object]": {
+    "status": "FAIL"
+  },
+  "Check headers delete with an invalid name invalidĀ": {
+    "status": "FAIL"
+  },
+  "Check headers delete with an invalid name [object Object]": {
+    "status": "FAIL"
+  },
+  "Check headers has with an invalid name invalidĀ": {
+    "status": "FAIL"
+  },
+  "Check headers has with an invalid name [object Object]": {
+    "status": "FAIL"
+  },
+  "Check headers set with an invalid name invalidĀ": {
+    "status": "FAIL"
+  },
+  "Check headers set with an invalid name [object Object]": {
+    "status": "FAIL"
+  },
+  "Check headers set with an invalid value invalidĀ": {
+    "status": "FAIL"
+  },
+  "Check headers append with an invalid name invalidĀ": {
+    "status": "FAIL"
+  },
+  "Check headers append with an invalid name [object Object]": {
+    "status": "FAIL"
+  },
+  "Check headers append with an invalid value invalidĀ": {
+    "status": "FAIL"
+  },
+  "Headers forEach throws if argument is not callable": {
+    "status": "FAIL"
+  },
+  "Headers forEach loop should stop if callback is throwing exception": {
+    "status": "PASS"
+  }
+}

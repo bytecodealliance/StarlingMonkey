@@ -1,0 +1,23 @@
+{
+  "Cancelling a starting blob Response stream": {
+    "status": "PASS"
+  },
+  "Cancelling a loading blob Response stream": {
+    "status": "PASS"
+  },
+  "Cancelling a closed blob Response stream": {
+    "status": "PASS"
+  },
+  "Cancelling a starting Response stream": {
+    "status": "PASS"
+  },
+  "Cancelling a loading Response stream": {
+    "status": "PASS"
+  },
+  "Cancelling a closed Response stream": {
+    "status": "PASS"
+  },
+  "Accessing .body after canceling it": {
+    "status": "PASS"
+  }
+}

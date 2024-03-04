@@ -1,0 +1,38 @@
+{
+  "csiso2022kr - non-empty input decodes to one replacement character.": {
+    "status": "FAIL"
+  },
+  "csiso2022kr - empty input decodes to empty output.": {
+    "status": "FAIL"
+  },
+  "hz-gb-2312 - non-empty input decodes to one replacement character.": {
+    "status": "FAIL"
+  },
+  "hz-gb-2312 - empty input decodes to empty output.": {
+    "status": "FAIL"
+  },
+  "iso-2022-cn - non-empty input decodes to one replacement character.": {
+    "status": "FAIL"
+  },
+  "iso-2022-cn - empty input decodes to empty output.": {
+    "status": "FAIL"
+  },
+  "iso-2022-cn-ext - non-empty input decodes to one replacement character.": {
+    "status": "FAIL"
+  },
+  "iso-2022-cn-ext - empty input decodes to empty output.": {
+    "status": "FAIL"
+  },
+  "iso-2022-kr - non-empty input decodes to one replacement character.": {
+    "status": "FAIL"
+  },
+  "iso-2022-kr - empty input decodes to empty output.": {
+    "status": "FAIL"
+  },
+  "replacement - non-empty input decodes to one replacement character.": {
+    "status": "FAIL"
+  },
+  "replacement - empty input decodes to empty output.": {
+    "status": "FAIL"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "ReadableStreamBYOBRequest constructor should throw when passed a undefined ReadableByteStreamController and a undefined view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a undefined ReadableByteStreamController and a null view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a undefined ReadableByteStreamController and a fake view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a undefined ReadableByteStreamController and a real view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a null ReadableByteStreamController and a undefined view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a null ReadableByteStreamController and a null view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a null ReadableByteStreamController and a fake view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a null ReadableByteStreamController and a real view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a fake ReadableByteStreamController and a undefined view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a fake ReadableByteStreamController and a null view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a fake ReadableByteStreamController and a fake view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a fake ReadableByteStreamController and a real view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a real ReadableByteStreamController and a undefined view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a real ReadableByteStreamController and a null view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a real ReadableByteStreamController and a fake view": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest constructor should throw when passed a real ReadableByteStreamController and a real view": {
+    "status": "PASS"
+  }
+}

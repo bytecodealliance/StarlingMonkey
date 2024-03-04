@@ -1,0 +1,11 @@
+{
+  "decompressing gzip empty input should work": {
+    "status": "PASS"
+  },
+  "decompressing deflate empty input should work": {
+    "status": "PASS"
+  },
+  "decompressing deflate-raw empty input should work": {
+    "status": "PASS"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "Fetch on 425 response should not be retried for non TLS early data.": {
+    "status": "PASS"
+  }
+}
