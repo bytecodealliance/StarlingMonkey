@@ -47,7 +47,7 @@ A simple test script is provided in `tests/smoke.js`. To run it using [`Wasmtime
 ```bash
 cmake --build cmake-build-release --parallel 8 --target smoke-test
 cd cmake-build-release
-wasmtime serve -S common smoke.starling.wasm
+wasmtime serve -S common smoke.wasm
 ```
 
 Then visit http://0.0.0.0:8080/
