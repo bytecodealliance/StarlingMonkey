@@ -50,6 +50,12 @@ public:
 
   bool run_event_loop(MutableHandleValue result);
 
+  /**
+   * Get the JS value associated with the top-level script execution -
+   * the last expression for a script, or the module namespace for a module.
+   */
+  JS::PersistentRootedObject script_value();
+
   bool has_pending_async_tasks();
   void queue_async_task(AsyncTask *task);
   bool cancel_async_task(int32_t id);

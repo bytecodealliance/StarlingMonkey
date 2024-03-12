@@ -237,7 +237,18 @@ bool ScriptLoader::load_top_level_script(const char *path, MutableHandleValue re
   JS::NonIncrementalGC(cx, JS::GCOptions::Shrink, JS::GCReason::API);
 
   // Execute the top-level module script.
-  return MODULE_MODE
-    ? ModuleEvaluate(cx, module, result)
-    : JS_ExecuteScript(cx, script, result);
+  if (!MODULE_MODE) {
+    return JS_ExecuteScript(cx, script, result);
+  }
+  
+  if (!ModuleEvaluate(cx, module, result)) {
+    return false;
+  }
+  
+  // modules return the top-level await promise in the result value
+  // we don't currently support TLA, instead we reassign result
+  // with the module namespace
+  JS::RootedObject ns(cx, JS::GetModuleNamespace(cx, module));
+  result.setObject(*ns);
+  return true;
 }
