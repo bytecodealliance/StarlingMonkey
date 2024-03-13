@@ -56,17 +56,6 @@ const char VALID_NAME_CHARS[128] = {
     return false;                                                                                  \
   }
 
-JSObject *get_backing_map(JSObject *self) {
-  MOZ_ASSERT(Headers::is_instance(self));
-  return &JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::BackingMap)).toObject();
-}
-
-bool lazy_values(JSObject *self) {
-  MOZ_ASSERT(Headers::is_instance(self));
-  return JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::HasLazyValues))
-      .toBoolean();
-}
-
 Handle *get_handle(JSObject *self) {
   MOZ_ASSERT(Headers::is_instance(self));
   auto handle =
@@ -291,45 +280,9 @@ bool retrieve_value_for_header_from_handle(JSContext *cx, JS::HandleObject self,
   return true;
 }
 
-/**
- * Ensures that a value for the given header is available to client code.
- *
- * The calling code must ensure that a header with the given name exists, but
- * might not yet have been retrieved from the host, i.e., it might be a "lazy"
- * value.
- *
- * The value is returned via the `values` outparam, but *only* if the Headers
- * object has lazy values at all. This is to avoid the map lookup in those cases
- * where none is necessary in this function, and the consumer wouldn't use the
- * value anyway.
- */
-bool ensure_value_for_header(JSContext *cx, JS::HandleObject self, JS::HandleValue normalized_name,
-                             JS::MutableHandleValue values) {
-  if (!lazy_values(self))
-    return true;
-
-  JS::RootedObject map(cx, get_backing_map(self));
-  if (!JS::MapGet(cx, map, normalized_name, values))
-    return false;
-
-  // Value isn't lazy, just return it.
-  if (!values.isNull())
-    return true;
-
-  return retrieve_value_for_header_from_handle(cx, self, normalized_name, values);
-}
-
 bool get_header_value_for_name(JSContext *cx, JS::HandleObject self, JS::HandleValue name,
                                JS::MutableHandleValue rval, const char *fun_name) {
   NORMALIZE_NAME(name, fun_name)
-
-  if (!ensure_value_for_header(cx, self, normalized_name, rval)) {
-    return false;
-  }
-
-  if (rval.isString()) {
-    return true;
-  }
 
   JS::RootedObject map(cx, get_backing_map(self));
   if (!JS::MapGet(cx, map, normalized_name, rval)) {
@@ -390,51 +343,12 @@ std::vector<std::string_view> splitCookiesString(std::string_view cookiesString)
   return cookiesStrings;
 }
 
-bool ensure_all_header_values_from_handle(JSContext *cx, JS::HandleObject self,
-                                          JS::HandleObject backing_map) {
-  if (!lazy_values(self))
-    return true;
-
-  JS::RootedValue iterable(cx);
-  if (!JS::MapKeys(cx, backing_map, &iterable))
-    return false;
-
-  JS::ForOfIterator it(cx);
-  if (!it.init(iterable))
-    return false;
-
-  JS::RootedValue name(cx);
-  JS::RootedValue v(cx);
-  while (true) {
-    bool done;
-    if (!it.next(&name, &done))
-      return false;
-
-    if (done)
-      break;
-
-    if (!ensure_value_for_header(cx, self, name, &v))
-      return false;
-  }
-
-  JS_SetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::HasLazyValues),
-                     JS::BooleanValue(false));
-
-  return true;
-}
-
 } // namespace
 
 bool Headers::append_header_value(JSContext *cx, JS::HandleObject self, JS::HandleValue name,
                                   JS::HandleValue value, const char *fun_name) {
   NORMALIZE_NAME(name, fun_name)
   NORMALIZE_VALUE(value, fun_name)
-
-  // Ensure that any host-side values have been applied JS-side.
-  JS::RootedValue v(cx);
-  if (!ensure_value_for_header(cx, self, normalized_name, &v)) {
-    return false;
-  }
 
   auto handle = get_handle(self);
   if (handle) {
@@ -459,11 +373,6 @@ bool Headers::append_header_value(JSContext *cx, JS::HandleObject self, JS::Hand
   }
 
   return append_header_value_to_map(cx, self, normalized_name, &normalized_value);
-}
-
-bool Headers::delazify(JSContext *cx, JS::HandleObject headers) {
-  JS::RootedObject backing_map(cx, get_backing_map(headers));
-  return ensure_all_header_values_from_handle(cx, headers, backing_map);
 }
 
 JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle,
@@ -767,26 +676,9 @@ bool Headers::init_class(JSContext *cx, JS::HandleObject global) {
   return JS_DefinePropertyById(cx, proto_obj, iteratorId, entries, 0);
 }
 
-JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle) {
+JSObject *Headers::create(JSContext *cx, JS::HandleObject self,
+                          host_api::HttpHeadersReadOnly *handle) {
   JS_SetReservedSlot(self, static_cast<uint32_t>(Slots::Handle), JS::PrivateValue(handle));
-
-  JS::RootedObject backing_map(cx, JS::NewMapObject(cx));
-  if (!backing_map) {
-    return nullptr;
-  }
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::BackingMap),
-                      JS::ObjectValue(*backing_map));
-
-  bool lazy = false;
-  if (handle) {
-    lazy = true;
-    if (!get_header_names_from_handle(cx, handle, backing_map)) {
-      return nullptr;
-    }
-  }
-
-  JS_SetReservedSlot(self, static_cast<uint32_t>(Slots::HasLazyValues), JS::BooleanValue(lazy));
-
   return self;
 }
 

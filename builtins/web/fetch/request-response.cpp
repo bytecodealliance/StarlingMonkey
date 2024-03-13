@@ -227,7 +227,7 @@ bool RequestOrResponse::is_instance(JSObject *obj) {
 
 bool RequestOrResponse::is_incoming(JSObject *obj) { return handle(obj)->is_incoming(); }
 
-host_api::HttpHeaders *RequestOrResponse::headers_handle(JSObject *obj) {
+host_api::HttpHeadersReadOnly *RequestOrResponse::headers_handle(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
   auto res = handle(obj)->headers();
   MOZ_ASSERT(!res.is_err(), "TODO: proper error handling");

@@ -31,7 +31,7 @@ public:
   static bool is_instance(JSObject *obj);
   static bool is_incoming(JSObject *obj);
   static host_api::HttpRequestResponseBase *handle(JSObject *obj);
-  static host_api::HttpHeaders *headers_handle(JSObject *obj);
+  static host_api::HttpHeadersReadOnly *headers_handle(JSObject *obj);
   static bool has_body(JSObject *obj);
   static host_api::HttpIncomingBody *incoming_body_handle(JSObject *obj);
   static host_api::HttpOutgoingBody *outgoing_body_handle(JSObject *obj);
