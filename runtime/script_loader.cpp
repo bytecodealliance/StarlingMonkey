@@ -52,16 +52,16 @@ static char* resolve_path(const char* path, const char* base) {
 static bool load_script(JSContext *cx, const char *script_path, const char* resolved_path,
                         JS::SourceText<mozilla::Utf8Unit> &script);
 
-static JSObject* get_module(JSContext* cx, const char* path, const char* resolved_path,
+static JSObject* get_module(JSContext* cx, const char* specifier, const char* resolved_path,
                             const JS::CompileOptions &opts) {
-  RootedString path_str(cx, JS_NewStringCopyZ(cx, path));
-  if (!path_str) {
+  RootedString resolve_path_str(cx, JS_NewStringCopyZ(cx, resolved_path));
+  if (!resolve_path_str) {
     return nullptr;
   }
 
   RootedValue module_val(cx);
-  RootedValue path_val(cx, StringValue(path_str));
-  if (!JS::MapGet(cx, moduleRegistry, path_val, &module_val)) {
+  RootedValue resolve_path_val(cx, StringValue(resolve_path_str));
+  if (!JS::MapGet(cx, moduleRegistry, resolve_path_val, &module_val)) {
     return nullptr;
   }
 
@@ -70,7 +70,7 @@ static JSObject* get_module(JSContext* cx, const char* path, const char* resolve
   }
 
   JS::SourceText<mozilla::Utf8Unit> source;
-  if (!load_script(cx, path, resolved_path, source)) {
+  if (!load_script(cx, specifier, resolved_path, source)) {
     return nullptr;
   }
 
@@ -85,21 +85,13 @@ static JSObject* get_module(JSContext* cx, const char* path, const char* resolve
     return nullptr;
   }
 
-  if (!JS_DefineProperty(cx, info, "path", path_val, JSPROP_ENUMERATE)) {
+  if (!JS_DefineProperty(cx, info, "path", resolve_path_val, JSPROP_ENUMERATE)) {
     return nullptr;
   }
 
   SetModulePrivate(module, ObjectValue(*info));
 
-  // if (!addModuleToRegistry(cx, path, module)) {
-  //   return nullptr;
-  // }
-
-  if (!ModuleLink(cx, module)) {
-    return nullptr;
-  }
-
-  if (!MapSet(cx, moduleRegistry, path_val, module_val)) {
+  if (!MapSet(cx, moduleRegistry, resolve_path_val, module_val)) {
     return nullptr;
   }
 
@@ -139,34 +131,34 @@ void ScriptLoader::enable_module_mode(bool enable) {
   MODULE_MODE = enable;
 }
 
-static bool load_script(JSContext *cx, const char *script_path, const char* resolved_path,
+static bool load_script(JSContext *cx, const char *specifier, const char* resolved_path,
                                JS::SourceText<mozilla::Utf8Unit> &script) {
   FILE *file = fopen(resolved_path, "r");
   if (!file) {
-    std::cerr << "Error opening file " << script_path << " (resolved to " << resolved_path << ")"
+    std::cerr << "Error opening file " << specifier << " (resolved to " << resolved_path << ")"
               << std::endl;
     return false;
   }
 
   AutoCloseFile autoclose(file);
   if (fseek(file, 0, SEEK_END) != 0) {
-    std::cerr << "Error seeking file " << script_path << std::endl;
+    std::cerr << "Error seeking file " << specifier << std::endl;
     return false;
   }
   size_t len = ftell(file);
   if (fseek(file, 0, SEEK_SET) != 0) {
-    std::cerr << "Error seeking file " << script_path << std::endl;
+    std::cerr << "Error seeking file " << specifier << std::endl;
     return false;
   }
 
   UniqueChars buf(js_pod_malloc<char>(len + 1));
   if (!buf) {
-    std::cerr << "Out of memory reading " << script_path << std::endl;
+    std::cerr << "Out of memory reading " << specifier << std::endl;
     return false;
   }
   size_t cc = fread(buf.get(), sizeof(char), len, file);
   if (cc != len) {
-    std::cerr << "Error reading file " << script_path << std::endl;
+    std::cerr << "Error reading file " << specifier << std::endl;
     return false;
   }
 
@@ -208,6 +200,9 @@ bool ScriptLoader::load_top_level_script(const char *path, MutableHandleValue re
     JS::AutoDisableGenerationalGC noGGC(cx);
     module = get_module(cx, path, path, opts);
     if (!module) {
+      return false;
+    }
+    if (!ModuleLink(cx, module)) {
       return false;
     }
   } else {

@@ -407,6 +407,7 @@ JS::Result<mozilla::Ok> ToSource(JSContext *cx, std::string &sourceOut, JS::Hand
 
 namespace builtins::web::console {
 
+__attribute__((weak))
 void builtin_impl_console_log(Console::LogType log_ty, const char *msg) {
   const char *prefix = "";
   switch (log_ty) {
