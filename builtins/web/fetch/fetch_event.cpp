@@ -168,7 +168,7 @@ bool start_response(JSContext *cx, JS::HandleObject response_obj, bool streaming
     auto incoming_response = static_cast<host_api::HttpIncomingResponse *>(generic_response);
     auto status = incoming_response->status();
     MOZ_RELEASE_ASSERT(!status.is_err(), "Incoming response must have a status code");
-    auto headers = new host_api::HttpHeaders(*incoming_response->headers().unwrap());
+    auto headers = incoming_response->headers().unwrap()->clone();
     response = host_api::HttpOutgoingResponse::make(status.unwrap(), headers);
     auto *source_body = incoming_response->body().unwrap();
     auto *dest_body = response->body().unwrap();

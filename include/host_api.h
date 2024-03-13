@@ -310,6 +310,8 @@ public:
 };
 
 class HttpIncomingResponse;
+class HttpHeaders;
+
 class FutureHttpIncomingResponse final : public Pollable {
 public:
   FutureHttpIncomingResponse() = delete;
@@ -322,21 +324,44 @@ public:
   void unsubscribe() override;
 };
 
-class HttpHeaders final : public Resource {
+class HttpHeadersReadOnly : public Resource {
+  friend HttpIncomingResponse;
+  friend HttpIncomingRequest;
+  friend HttpOutgoingResponse;
+  friend HttpOutgoingRequest;
+  friend HttpHeaders;
+
+protected:
+  explicit HttpHeadersReadOnly(Handle handle);
+  HttpHeadersReadOnly() = default;
+
+public:
+  HttpHeadersReadOnly(const HttpHeadersReadOnly &headers) = delete;
+
+  HttpHeaders* clone();
+
+  virtual bool is_writable() { return false; };
+
+  Result<vector<tuple<HostString, HostString>>> entries() const;
+  Result<vector<HostString>> names() const;
+  Result<optional<vector<HostString>>> get(string_view name) const;
+};
+
+class HttpHeaders final : public HttpHeadersReadOnly {
   friend HttpIncomingResponse;
   friend HttpIncomingRequest;
   friend HttpOutgoingResponse;
   friend HttpOutgoingRequest;
 
+  explicit HttpHeaders(Handle handle);
+
 public:
   HttpHeaders();
-  explicit HttpHeaders(Handle handle);
-  explicit HttpHeaders(const vector<tuple<string_view, vector<string_view>>> &entries);
-  HttpHeaders(const HttpHeaders &headers);
+  explicit HttpHeaders(const HttpHeadersReadOnly &headers);
 
-  Result<vector<tuple<HostString, HostString>>> entries() const;
-  Result<vector<HostString>> names() const;
-  Result<optional<vector<HostString>>> get(string_view name) const;
+  static Result<HttpHeaders*> FromEntries(const vector<tuple<string_view, vector<string_view>>> &entries);
+
+  bool is_writable() override { return true; };
 
   Result<Void> set(string_view name, string_view value);
   Result<Void> append(string_view name, string_view value);
@@ -345,13 +370,13 @@ public:
 
 class HttpRequestResponseBase : public Resource {
 protected:
-  HttpHeaders *headers_ = nullptr;
+  HttpHeadersReadOnly *headers_ = nullptr;
   std::string *_url = nullptr;
 
 public:
   ~HttpRequestResponseBase() override = default;
 
-  virtual Result<HttpHeaders *> headers() = 0;
+  virtual Result<HttpHeadersReadOnly *> headers() = 0;
   virtual string_view url();
 
   virtual bool is_incoming() = 0;
@@ -400,7 +425,7 @@ public:
   bool is_request() override { return true; }
 
   [[nodiscard]] Result<string_view> method() override;
-  Result<HttpHeaders *> headers() override;
+  Result<HttpHeadersReadOnly *> headers() override;
   Result<HttpIncomingBody *> body() override;
 };
 
@@ -417,7 +442,7 @@ public:
   bool is_request() override { return true; }
 
   [[nodiscard]] Result<string_view> method() override;
-  Result<HttpHeaders *> headers() override;
+  Result<HttpHeadersReadOnly *> headers() override;
   Result<HttpOutgoingBody *> body() override;
 
   Result<FutureHttpIncomingResponse *> send();
@@ -440,7 +465,7 @@ public:
   bool is_incoming() override { return true; }
   bool is_request() override { return false; }
 
-  Result<HttpHeaders *> headers() override;
+  Result<HttpHeadersReadOnly *> headers() override;
   Result<HttpIncomingBody *> body() override;
   [[nodiscard]] Result<uint16_t> status() override;
 };
@@ -458,7 +483,7 @@ public:
   bool is_incoming() override { return false; }
   bool is_request() override { return false; }
 
-  Result<HttpHeaders *> headers() override;
+  Result<HttpHeadersReadOnly *> headers() override;
   Result<HttpOutgoingBody *> body() override;
   [[nodiscard]] Result<uint16_t> status() override;
 

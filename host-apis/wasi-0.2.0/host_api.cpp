@@ -185,13 +185,13 @@ void MonotonicClock::unsubscribe(const int32_t handle_id) {
   wasi_io_0_2_0_poll_pollable_drop_own(own_pollable_t{handle_id});
 }
 
-HttpHeaders::HttpHeaders() {
+HttpHeaders::HttpHeaders(Handle handle) : HttpHeadersReadOnly(handle) {}
+
+HttpHeaders::HttpHeaders() : HttpHeadersReadOnly() {
   this->handle_state_ = new HandleState(wasi_http_0_2_0_types_constructor_fields().__handle);
 }
-HttpHeaders::HttpHeaders(Handle handle) { handle_state_ = new HandleState(handle); }
 
-// TODO: make this a factory function
-HttpHeaders::HttpHeaders(const vector<tuple<string_view, vector<string_view>>> &entries) {
+Result<HttpHeaders*> HttpHeaders::FromEntries(const vector<tuple<string_view, vector<string_view>>> &entries) {
   std::vector<wasi_http_0_2_0_types_tuple2_field_key_field_value_t> pairs;
 
   for (const auto &[name, values] : entries) {
@@ -207,16 +207,16 @@ HttpHeaders::HttpHeaders(const vector<tuple<string_view, vector<string_view>>> &
   wasi_http_0_2_0_types_static_fields_from_list(&tuples, &ret, &err);
   // TODO: handle `err`
 
-  this->handle_state_ = new HandleState(ret.__handle);
+  return Result<HttpHeaders*>::ok(new HttpHeaders(ret.__handle));
 }
 
-HttpHeaders::HttpHeaders(const HttpHeaders &headers) {
+HttpHeaders::HttpHeaders(const HttpHeadersReadOnly &headers) : HttpHeadersReadOnly() {
   Borrow<HttpHeaders> borrow(headers.handle_state_);
   auto handle = wasi_http_0_2_0_types_method_fields_clone(borrow);
   this->handle_state_ = new HandleState(handle.__handle);
 }
 
-Result<vector<tuple<HostString, HostString>>> HttpHeaders::entries() const {
+Result<vector<tuple<HostString, HostString>>> HttpHeadersReadOnly::entries() const {
   Result<vector<tuple<HostString, HostString>>> res;
   MOZ_ASSERT(valid());
 
@@ -237,7 +237,7 @@ Result<vector<tuple<HostString, HostString>>> HttpHeaders::entries() const {
   return res;
 }
 
-Result<vector<HostString>> HttpHeaders::names() const {
+Result<vector<HostString>> HttpHeadersReadOnly::names() const {
   Result<vector<HostString>> res;
   MOZ_ASSERT(valid());
 
@@ -256,7 +256,7 @@ Result<vector<HostString>> HttpHeaders::names() const {
   return res;
 }
 
-Result<optional<vector<HostString>>> HttpHeaders::get(string_view name) const {
+Result<optional<vector<HostString>>> HttpHeadersReadOnly::get(string_view name) const {
   Result<optional<vector<HostString>>> res;
   MOZ_ASSERT(valid());
 
@@ -720,10 +720,10 @@ Result<string_view> HttpOutgoingRequest::method() {
   return Result<string_view>::ok(method_);
 }
 
-Result<HttpHeaders *> HttpOutgoingRequest::headers() {
+Result<HttpHeadersReadOnly *> HttpOutgoingRequest::headers() {
   MOZ_ASSERT(valid());
   MOZ_ASSERT(headers_);
-  return Result<HttpHeaders *>::ok(headers_);
+  return Result<HttpHeadersReadOnly *>::ok(headers_);
 }
 
 Result<HttpOutgoingBody *> HttpOutgoingRequest::body() {
@@ -838,6 +838,10 @@ void FutureHttpIncomingResponse::unsubscribe() {
   // TODO: implement
 }
 
+HttpHeadersReadOnly::HttpHeadersReadOnly(Handle handle) {
+  handle_state_ = new HandleState(handle);
+}
+
 Result<uint16_t> HttpIncomingResponse::status() {
   if (status_ == UNSET_STATUS) {
     if (!valid()) {
@@ -853,17 +857,17 @@ HttpIncomingResponse::HttpIncomingResponse(Handle handle) {
   handle_state_ = new HandleState(handle);
 }
 
-Result<HttpHeaders *> HttpIncomingResponse::headers() {
+Result<HttpHeadersReadOnly *> HttpIncomingResponse::headers() {
   if (!headers_) {
     if (!valid()) {
-      return Result<HttpHeaders *>::err(154);
+      return Result<HttpHeadersReadOnly *>::err(154);
     }
     auto res = wasi_http_0_2_0_types_method_incoming_response_headers(
         wasi_http_0_2_0_types_borrow_incoming_response({handle_state_->handle}));
-    headers_ = new HttpHeaders(res.__handle);
+    headers_ = new HttpHeadersReadOnly(res.__handle);
   }
 
-  return Result<HttpHeaders *>::ok(headers_);
+  return Result<HttpHeadersReadOnly *>::ok(headers_);
 }
 
 Result<HttpIncomingBody *> HttpIncomingResponse::body() {
@@ -907,11 +911,11 @@ HttpOutgoingResponse *HttpOutgoingResponse::make(const uint16_t status, HttpHead
   return resp;
 }
 
-Result<HttpHeaders *> HttpOutgoingResponse::headers() {
+Result<HttpHeadersReadOnly *> HttpOutgoingResponse::headers() {
   if (!valid()) {
-    return Result<HttpHeaders *>::err(154);
+    return Result<HttpHeadersReadOnly *>::err(154);
   }
-  return Result<HttpHeaders *>::ok(headers_);
+  return Result<HttpHeadersReadOnly *>::ok(headers_);
 }
 
 Result<HttpOutgoingBody *> HttpOutgoingResponse::body() {
@@ -963,17 +967,17 @@ Result<string_view> HttpIncomingRequest::method() {
   return Result<string_view>::ok(method_);
 }
 
-Result<HttpHeaders *> HttpIncomingRequest::headers() {
+Result<HttpHeadersReadOnly *> HttpIncomingRequest::headers() {
   if (!headers_) {
     if (!valid()) {
-      return Result<HttpHeaders *>::err(154);
+      return Result<HttpHeadersReadOnly *>::err(154);
     }
     borrow_incoming_request_t borrow(handle_state_->handle);
     auto res = wasi_http_0_2_0_types_method_incoming_request_headers(borrow);
-    headers_ = new HttpHeaders(res.__handle);
+    headers_ = new HttpHeadersReadOnly(res.__handle);
   }
 
-  return Result<HttpHeaders *>::ok(headers_);
+  return Result<HttpHeadersReadOnly *>::ok(headers_);
 }
 
 Result<HttpIncomingBody *> HttpIncomingRequest::body() {

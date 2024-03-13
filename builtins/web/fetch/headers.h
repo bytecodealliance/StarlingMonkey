@@ -23,13 +23,9 @@ public:
   static constexpr const char *class_name = "Headers";
 
   enum class Slots {
-    BackingMap,
     Handle,
-    HasLazyValues,
     Count,
   };
-
-  static bool delazify(JSContext *cx, JS::HandleObject headers);
 
   /**
    * Adds the given header name/value to `self`'s list of headers iff `self`
@@ -55,14 +51,14 @@ public:
 
   static const unsigned ctor_length = 1;
 
-  static bool init_class(JSContext *cx, JS::HandleObject global);
-  static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool init_class(JSContext *cx, HandleObject global);
+  static bool constructor(JSContext *cx, unsigned argc, Value *vp);
 
-  static JSObject *create(JSContext *cx, JS::HandleObject headers, host_api::HttpHeaders *handle,
-                          JS::HandleObject init_headers);
-  static JSObject *create(JSContext *cx, JS::HandleObject headers, host_api::HttpHeaders *handle,
-                          JS::HandleValue initv);
-  static JSObject *create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle);
+  static JSObject *create(JSContext *cx, HandleObject self, host_api::HttpHeaders *handle,
+                          HandleObject init_headers);
+  static JSObject *create(JSContext *cx, HandleObject self, host_api::HttpHeaders *handle,
+                          HandleValue init_headers);
+  static JSObject *create(JSContext *cx, HandleObject self, host_api::HttpHeadersReadOnly *handle);
 };
 
 } // namespace fetch
