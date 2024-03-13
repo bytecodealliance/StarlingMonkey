@@ -54,7 +54,7 @@ public:
    * Get the JS value associated with the top-level script execution -
    * the last expression for a script, or the module namespace for a module.
    */
-  JS::PersistentRootedObject script_value();
+  HandleObject script_value();
 
   bool has_pending_async_tasks();
   void queue_async_task(AsyncTask *task);

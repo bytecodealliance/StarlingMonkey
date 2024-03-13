@@ -343,7 +343,7 @@ void api::Engine::enable_module_mode(bool enable) {
 }
 
 JS::PersistentRootedObject SCRIPT_VALUE;
-JS::PersistentRootedObject api::Engine::script_value() {
+HandleObject api::Engine::script_value() {
   return SCRIPT_VALUE;
 }
 
