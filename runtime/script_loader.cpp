@@ -31,7 +31,24 @@ public:
   }
 };
 
-static char* resolve_path(const char* path, const char* base) {
+// strip off base when possible for nicer debugging stacks
+static const char* strip_base(const char* resolved_path, const char* base) {
+  size_t base_len = strlen(base);
+  size_t path_len = strlen(resolved_path);
+  if (strncmp(resolved_path, base, base_len) == 0) {
+    char* buf(js_pod_malloc<char>(path_len - base_len + 1));
+    strncpy(buf, &resolved_path[base_len], path_len - base_len + 1);
+    return buf;
+  }
+  else {
+    char* buf(js_pod_malloc<char>(path_len + 1));
+    strncpy(buf, resolved_path, path_len + 1);
+    return buf;
+  }
+}
+
+static char* resolve_path(const char* path, const char* parent, const char* base) {
+  MOZ_ASSERT(parent);
   MOZ_ASSERT(base);
   if (path[0] == '/') {
     return strdup(path);
@@ -39,13 +56,15 @@ static char* resolve_path(const char* path, const char* base) {
   if (path[0] == '.' && path[1] == '/') {
     path = path + 2;
   }
-  size_t base_len = strlen(base);
-  size_t len = base_len + strlen(path) + 1;
+  size_t parent_len = strlen(parent);
+  while (parent_len > 0 && parent[parent_len - 1] != '/') {
+    parent_len--;
+  }
+  size_t len = parent_len + strlen(path) + 1;
   char* resolved_path = new char[len];
-  strncpy(resolved_path, base, base_len);
-  strncpy(resolved_path + base_len, path, len - base_len);
+  strncpy(resolved_path, parent, parent_len);
+  strncpy(resolved_path + parent_len, path, len - parent_len);
   MOZ_ASSERT(strlen(resolved_path) == len - 1);
-
   return resolved_path;
 }
 
@@ -111,8 +130,28 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
     return nullptr;
   }
   JS::CompileOptions opts(cx, *COMPILE_OPTS);
-  opts.setFileAndLine(path.get(), 1);
-  auto resolved_path = resolve_path(path.get(), BASE_PATH);
+  opts.setFileAndLine(strip_base(path.get(), BASE_PATH), 1);
+
+  RootedObject info(cx, &referencingPrivate.toObject());
+  RootedValue parent_path_val(cx);
+  if (!JS_GetProperty(cx, info, "path", &parent_path_val)) {
+    return nullptr;
+  }
+  if (!parent_path_val.isString()) {
+    return nullptr;
+  }
+  RootedString parent_path(cx, parent_path_val.toString());
+  size_t parent_len = JS_GetStringLength(parent_path) * 3 + 1;
+  char* buf(js_pod_malloc<char>(parent_len));
+  auto result = JS_EncodeStringToUTF8BufferPartial(cx, parent_path, mozilla::Span<char>(buf, buf + parent_len * 3));
+  if (result.isNothing()) {
+    js_free(buf);
+    return nullptr;
+  }
+  size_t written = std::get<1>(result.extract());
+  buf[written] = '\0';
+  char* resolved_path = resolve_path(path.get(), buf, BASE_PATH);
+  js_free(buf);
   return get_module(cx, path.get(), resolved_path, opts);
 }
 
@@ -167,7 +206,7 @@ static bool load_script(JSContext *cx, const char *specifier, const char* resolv
 
 bool ScriptLoader::load_script(JSContext *cx, const char *script_path,
                                JS::SourceText<mozilla::Utf8Unit> &script) {
-  auto resolved_path = resolve_path(script_path, BASE_PATH);
+  auto resolved_path = resolve_path(script_path, BASE_PATH, BASE_PATH);
   return ::load_script(cx, script_path, resolved_path, script);
 }
 
@@ -189,7 +228,7 @@ bool ScriptLoader::load_top_level_script(const char *path, MutableHandleValue re
   }
 
   JS::CompileOptions opts(cx, *COMPILE_OPTS);
-  opts.setFileAndLine(path, 1);
+  opts.setFileAndLine(strip_base(path, BASE_PATH), 1);
   JS::RootedScript script(cx);
   RootedObject module(cx);
   if (MODULE_MODE) {
