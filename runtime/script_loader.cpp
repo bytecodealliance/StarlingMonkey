@@ -34,21 +34,16 @@ public:
 // strip off base when possible for nicer debugging stacks
 static const char* strip_base(const char* resolved_path, const char* base) {
   size_t base_len = strlen(base);
+  if (strncmp(resolved_path, base, base_len) != 0) {
+    return strdup(resolved_path);
+  }
   size_t path_len = strlen(resolved_path);
-  if (strncmp(resolved_path, base, base_len) == 0) {
-    char* buf(js_pod_malloc<char>(path_len - base_len + 1));
-    strncpy(buf, &resolved_path[base_len], path_len - base_len + 1);
-    return buf;
-  }
-  else {
-    char* buf(js_pod_malloc<char>(path_len + 1));
-    strncpy(buf, resolved_path, path_len + 1);
-    return buf;
-  }
+  char* buf(js_pod_malloc<char>(path_len - base_len + 1));
+  strncpy(buf, &resolved_path[base_len], path_len - base_len + 1);
+  return buf;
 }
 
-static char* resolve_path(const char* path, const char* parent, const char* base) {
-  MOZ_ASSERT(parent);
+static char* resolve_path(const char* path, const char* base) {
   MOZ_ASSERT(base);
   if (path[0] == '/') {
     return strdup(path);
@@ -56,15 +51,16 @@ static char* resolve_path(const char* path, const char* parent, const char* base
   if (path[0] == '.' && path[1] == '/') {
     path = path + 2;
   }
-  size_t parent_len = strlen(parent);
-  while (parent_len > 0 && parent[parent_len - 1] != '/') {
-    parent_len--;
+  size_t base_len = strlen(base);
+  while (base_len > 0 && base[base_len - 1] != '/') {
+    base_len--;
   }
-  size_t len = parent_len + strlen(path) + 1;
+  size_t len = base_len + strlen(path) + 1;
   char* resolved_path = new char[len];
-  strncpy(resolved_path, parent, parent_len);
-  strncpy(resolved_path + parent_len, path, len - parent_len);
+  strncpy(resolved_path, base, base_len);
+  strncpy(resolved_path + base_len, path, len - base_len);
   MOZ_ASSERT(strlen(resolved_path) == len - 1);
+
   return resolved_path;
 }
 
@@ -143,14 +139,14 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
   RootedString parent_path(cx, parent_path_val.toString());
   size_t parent_len = JS_GetStringLength(parent_path) * 3 + 1;
   char* buf(js_pod_malloc<char>(parent_len));
-  auto result = JS_EncodeStringToUTF8BufferPartial(cx, parent_path, mozilla::Span<char>(buf, buf + parent_len * 3));
+  auto result = JS_EncodeStringToUTF8BufferPartial(cx, parent_path, mozilla::Span<char>(buf, buf + parent_len));
   if (result.isNothing()) {
     js_free(buf);
     return nullptr;
   }
   size_t written = std::get<1>(result.extract());
   buf[written] = '\0';
-  char* resolved_path = resolve_path(path.get(), buf, BASE_PATH);
+  char* resolved_path = resolve_path(path.get(), buf);
   js_free(buf);
   return get_module(cx, path.get(), resolved_path, opts);
 }
@@ -181,23 +177,23 @@ static bool load_script(JSContext *cx, const char *specifier, const char* resolv
 
   AutoCloseFile autoclose(file);
   if (fseek(file, 0, SEEK_END) != 0) {
-    std::cerr << "Error seeking file " << specifier << std::endl;
+    std::cerr << "Error seeking file " << resolved_path << std::endl;
     return false;
   }
   size_t len = ftell(file);
   if (fseek(file, 0, SEEK_SET) != 0) {
-    std::cerr << "Error seeking file " << specifier << std::endl;
+    std::cerr << "Error seeking file " << resolved_path << std::endl;
     return false;
   }
 
   UniqueChars buf(js_pod_malloc<char>(len + 1));
   if (!buf) {
-    std::cerr << "Out of memory reading " << specifier << std::endl;
+    std::cerr << "Out of memory reading " << resolved_path << std::endl;
     return false;
   }
   size_t cc = fread(buf.get(), sizeof(char), len, file);
   if (cc != len) {
-    std::cerr << "Error reading file " << specifier << std::endl;
+    std::cerr << "Error reading file " << resolved_path << std::endl;
     return false;
   }
 
@@ -206,7 +202,7 @@ static bool load_script(JSContext *cx, const char *specifier, const char* resolv
 
 bool ScriptLoader::load_script(JSContext *cx, const char *script_path,
                                JS::SourceText<mozilla::Utf8Unit> &script) {
-  auto resolved_path = resolve_path(script_path, BASE_PATH, BASE_PATH);
+  auto resolved_path = resolve_path(script_path, BASE_PATH);
   return ::load_script(cx, script_path, resolved_path, script);
 }
 
