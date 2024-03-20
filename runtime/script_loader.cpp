@@ -1,4 +1,5 @@
 #include "script_loader.h"
+#include "encode.h"
 
 #include <cstdio>
 #include <iostream>
@@ -12,6 +13,8 @@ JS::PersistentRootedObject moduleRegistry;
 static bool MODULE_MODE = true;
 static char* BASE_PATH = nullptr;
 JS::CompileOptions *COMPILE_OPTS;
+
+using host_api::HostString;
 
 class AutoCloseFile {
   FILE* file;
@@ -136,18 +139,11 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
   if (!parent_path_val.isString()) {
     return nullptr;
   }
+
   RootedString parent_path(cx, parent_path_val.toString());
-  size_t parent_len = JS_GetStringLength(parent_path) * 3 + 1;
-  char* buf(js_pod_malloc<char>(parent_len));
-  auto result = JS_EncodeStringToUTF8BufferPartial(cx, parent_path, mozilla::Span<char>(buf, buf + parent_len));
-  if (result.isNothing()) {
-    js_free(buf);
-    return nullptr;
-  }
-  size_t written = std::get<1>(result.extract());
-  buf[written] = '\0';
-  char* resolved_path = resolve_path(path.get(), buf);
-  js_free(buf);
+
+  HostString str = core::encode(cx, parent_path_val);
+  char* resolved_path = resolve_path(path.get(), str.ptr.get());
   return get_module(cx, path.get(), resolved_path, opts);
 }
 
