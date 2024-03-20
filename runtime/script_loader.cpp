@@ -46,7 +46,7 @@ static const char* strip_base(const char* resolved_path, const char* base) {
   return buf;
 }
 
-static char* resolve_path(const char* path, const char* base) {
+static char* resolve_path(const char* path, const char* base, size_t base_len) {
   MOZ_ASSERT(base);
   if (path[0] == '/') {
     return strdup(path);
@@ -54,7 +54,6 @@ static char* resolve_path(const char* path, const char* base) {
   if (path[0] == '.' && path[1] == '/') {
     path = path + 2;
   }
-  size_t base_len = strlen(base);
   while (base_len > 0 && base[base_len - 1] != '/') {
     base_len--;
   }
@@ -140,10 +139,8 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
     return nullptr;
   }
 
-  RootedString parent_path(cx, parent_path_val.toString());
-
   HostString str = core::encode(cx, parent_path_val);
-  char* resolved_path = resolve_path(path.get(), str.ptr.get());
+  char* resolved_path = resolve_path(path.get(), str.ptr.get(), str.len);
   return get_module(cx, path.get(), resolved_path, opts);
 }
 
@@ -198,7 +195,7 @@ static bool load_script(JSContext *cx, const char *specifier, const char* resolv
 
 bool ScriptLoader::load_script(JSContext *cx, const char *script_path,
                                JS::SourceText<mozilla::Utf8Unit> &script) {
-  auto resolved_path = resolve_path(script_path, BASE_PATH);
+  auto resolved_path = resolve_path(script_path, BASE_PATH, strlen(BASE_PATH));
   return ::load_script(cx, script_path, resolved_path, script);
 }
 
