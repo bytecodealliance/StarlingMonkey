@@ -342,13 +342,21 @@ void api::Engine::enable_module_mode(bool enable) {
   scriptLoader->enable_module_mode(enable);
 }
 
+JS::PersistentRootedValue SCRIPT_VALUE;
+HandleValue api::Engine::script_value() {
+  return SCRIPT_VALUE;
+}
+
 void api::Engine::abort(const char *reason) { ::abort(CONTEXT, reason); }
 
 bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
   JSContext *cx = CONTEXT;
-  if (!scriptLoader->load_top_level_script(path, result)) {
+  RootedValue ns(cx);
+  if (!scriptLoader->load_top_level_script(path, &ns)) {
     return false;
   }
+
+  SCRIPT_VALUE.init(cx, ns);
 
   // Ensure that any pending promise reactions are run before taking the
   // snapshot.
