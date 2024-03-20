@@ -2159,16 +2159,6 @@ extern bool wasi_io_0_2_0_streams_method_output_stream_write(wasi_io_0_2_0_strea
         // 
         // Equivalent to the SO_DOMAIN socket option.
         extern wasi_sockets_0_2_0_udp_ip_address_family_t wasi_sockets_0_2_0_udp_method_udp_socket_address_family(wasi_sockets_0_2_0_udp_borrow_udp_socket_t self);
-        // Whether IPv4 compatibility (dual-stack) mode is disabled or not.
-        // 
-        // Equivalent to the IPV6_V6ONLY socket option.
-        // 
-        // # Typical errors
-        // - `not-supported`:        (get/set) `this` socket is an IPv4 socket.
-        // - `invalid-state`:        (set) The socket is already bound.
-        // - `not-supported`:        (set) Host does not support dual-stack sockets. (Implementations are not required to.)
-        extern bool wasi_sockets_0_2_0_udp_method_udp_socket_ipv6_only(wasi_sockets_0_2_0_udp_borrow_udp_socket_t self, bool *ret, wasi_sockets_0_2_0_udp_error_code_t *err);
-        extern bool wasi_sockets_0_2_0_udp_method_udp_socket_set_ipv6_only(wasi_sockets_0_2_0_udp_borrow_udp_socket_t self, bool value, wasi_sockets_0_2_0_udp_error_code_t *err);
         // Equivalent to the IP_TTL & IPV6_UNICAST_HOPS socket options.
         // 
         // If the provided value is 0, an `invalid-argument` error is returned.

@@ -218,12 +218,6 @@ extern void __wasm_import_wasi_sockets_0_2_0_udp_method_udp_socket_remote_addres
 __attribute__((__import_module__("wasi:sockets/udp@0.2.0"), __import_name__("[method]udp-socket.address-family")))
 extern int32_t __wasm_import_wasi_sockets_0_2_0_udp_method_udp_socket_address_family(int32_t);
 
-__attribute__((__import_module__("wasi:sockets/udp@0.2.0"), __import_name__("[method]udp-socket.ipv6-only")))
-extern void __wasm_import_wasi_sockets_0_2_0_udp_method_udp_socket_ipv6_only(int32_t, int32_t);
-
-__attribute__((__import_module__("wasi:sockets/udp@0.2.0"), __import_name__("[method]udp-socket.set-ipv6-only")))
-extern void __wasm_import_wasi_sockets_0_2_0_udp_method_udp_socket_set_ipv6_only(int32_t, int32_t, int32_t);
-
 __attribute__((__import_module__("wasi:sockets/udp@0.2.0"), __import_name__("[method]udp-socket.unicast-hop-limit")))
 extern void __wasm_import_wasi_sockets_0_2_0_udp_method_udp_socket_unicast_hop_limit(int32_t, int32_t);
 
@@ -3720,58 +3714,6 @@ bool wasi_sockets_0_2_0_udp_method_udp_socket_remote_address(wasi_sockets_0_2_0_
 wasi_sockets_0_2_0_udp_ip_address_family_t wasi_sockets_0_2_0_udp_method_udp_socket_address_family(wasi_sockets_0_2_0_udp_borrow_udp_socket_t self) {
   int32_t ret = __wasm_import_wasi_sockets_0_2_0_udp_method_udp_socket_address_family((self).__handle);
   return ret;
-}
-
-bool wasi_sockets_0_2_0_udp_method_udp_socket_ipv6_only(wasi_sockets_0_2_0_udp_borrow_udp_socket_t self, bool *ret, wasi_sockets_0_2_0_udp_error_code_t *err) {
-  __attribute__((__aligned__(1)))
-  uint8_t ret_area[2];
-  int32_t ptr = (int32_t) &ret_area;
-  __wasm_import_wasi_sockets_0_2_0_udp_method_udp_socket_ipv6_only((self).__handle, ptr);
-  wasi_sockets_0_2_0_udp_result_bool_error_code_t result;
-  switch ((int32_t) (*((uint8_t*) (ptr + 0)))) {
-    case 0: {
-      result.is_err = false;
-      result.val.ok = (int32_t) (*((uint8_t*) (ptr + 1)));
-      break;
-    }
-    case 1: {
-      result.is_err = true;
-      result.val.err = (int32_t) (*((uint8_t*) (ptr + 1)));
-      break;
-    }
-  }
-  if (!result.is_err) {
-    *ret = result.val.ok;
-    return 1;
-  } else {
-    *err = result.val.err;
-    return 0;
-  }
-}
-
-bool wasi_sockets_0_2_0_udp_method_udp_socket_set_ipv6_only(wasi_sockets_0_2_0_udp_borrow_udp_socket_t self, bool value, wasi_sockets_0_2_0_udp_error_code_t *err) {
-  __attribute__((__aligned__(1)))
-  uint8_t ret_area[2];
-  int32_t ptr = (int32_t) &ret_area;
-  __wasm_import_wasi_sockets_0_2_0_udp_method_udp_socket_set_ipv6_only((self).__handle, value, ptr);
-  wasi_sockets_0_2_0_udp_result_void_error_code_t result;
-  switch ((int32_t) (*((uint8_t*) (ptr + 0)))) {
-    case 0: {
-      result.is_err = false;
-      break;
-    }
-    case 1: {
-      result.is_err = true;
-      result.val.err = (int32_t) (*((uint8_t*) (ptr + 1)));
-      break;
-    }
-  }
-  if (!result.is_err) {
-    return 1;
-  } else {
-    *err = result.val.err;
-    return 0;
-  }
 }
 
 bool wasi_sockets_0_2_0_udp_method_udp_socket_unicast_hop_limit(wasi_sockets_0_2_0_udp_borrow_udp_socket_t self, uint8_t *ret, wasi_sockets_0_2_0_udp_error_code_t *err) {
