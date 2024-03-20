@@ -69,14 +69,14 @@ static bool load_script(JSContext *cx, const char *script_path, const char* reso
 
 static JSObject* get_module(JSContext* cx, const char* specifier, const char* resolved_path,
                             const JS::CompileOptions &opts) {
-  RootedString resolve_path_str(cx, JS_NewStringCopyZ(cx, resolved_path));
-  if (!resolve_path_str) {
+  RootedString resolved_path_str(cx, JS_NewStringCopyZ(cx, resolved_path));
+  if (!resolved_path_str) {
     return nullptr;
   }
 
   RootedValue module_val(cx);
-  RootedValue resolve_path_val(cx, StringValue(resolve_path_str));
-  if (!JS::MapGet(cx, moduleRegistry, resolve_path_val, &module_val)) {
+  RootedValue resolved_path_val(cx, StringValue(resolved_path_str));
+  if (!JS::MapGet(cx, moduleRegistry, resolved_path_val, &module_val)) {
     return nullptr;
   }
 
@@ -100,13 +100,13 @@ static JSObject* get_module(JSContext* cx, const char* specifier, const char* re
     return nullptr;
   }
 
-  if (!JS_DefineProperty(cx, info, "path", resolve_path_val, JSPROP_ENUMERATE)) {
+  if (!JS_DefineProperty(cx, info, "path", resolved_path_val, JSPROP_ENUMERATE)) {
     return nullptr;
   }
 
   SetModulePrivate(module, ObjectValue(*info));
 
-  if (!MapSet(cx, moduleRegistry, resolve_path_val, module_val)) {
+  if (!MapSet(cx, moduleRegistry, resolved_path_val, module_val)) {
     return nullptr;
   }
 
