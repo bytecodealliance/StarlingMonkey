@@ -216,6 +216,10 @@ HttpHeaders::HttpHeaders(const HttpHeadersReadOnly &headers) : HttpHeadersReadOn
   this->handle_state_ = new HandleState(handle.__handle);
 }
 
+HttpHeaders *HttpHeadersReadOnly::clone() {
+  return new HttpHeaders(*this);
+}
+
 Result<vector<tuple<HostString, HostString>>> HttpHeadersReadOnly::entries() const {
   Result<vector<tuple<HostString, HostString>>> res;
   MOZ_ASSERT(valid());
@@ -278,6 +282,14 @@ Result<optional<vector<HostString>>> HttpHeadersReadOnly::get(string_view name) 
   }
 
   return res;
+}
+
+Result<bool> HttpHeadersReadOnly::has(string_view name) const {
+  MOZ_ASSERT(valid());
+
+  auto hdr = string_view_to_world_string(name);
+  Borrow<HttpHeaders> borrow(this->handle_state_);
+  return Result<bool>::ok(wasi_http_0_2_0_types_method_fields_has(borrow, &hdr));
 }
 
 Result<Void> HttpHeaders::set(string_view name, string_view value) {

@@ -47,6 +47,11 @@ struct SpecSlice {
   const uint8_t *data;
   size_t len;
 
+  SpecSlice()
+    : data(nullptr),
+      len(0)
+  {}
+
   SpecSlice(const uint8_t *const& data,
             size_t const& len)
     : data(data),
@@ -59,6 +64,12 @@ struct JSSearchParam {
   SpecSlice name;
   SpecSlice value;
   bool done;
+
+  JSSearchParam()
+    : name(SpecSlice()),
+      value(SpecSlice()),
+      done(false)
+  {}
 
   JSSearchParam(SpecSlice const& name,
                 SpecSlice const& value,

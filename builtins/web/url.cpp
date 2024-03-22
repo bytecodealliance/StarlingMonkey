@@ -24,7 +24,7 @@ bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) 
   if (!result)
     return false;
 
-  jsurl::JSSearchParam param{jsurl::SpecSlice(nullptr, 0), jsurl::SpecSlice(nullptr, 0), false};
+  jsurl::JSSearchParam param{};
   jsurl::params_at(params, index, &param);
 
   if (param.done) {
