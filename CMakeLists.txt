@@ -36,7 +36,7 @@ include("openssl")
 include("host_api")
 include("build-crates")
 
-add_library(extension_api INTERFACE include/extension-api.h runtime/encode.h)
+add_library(extension_api INTERFACE include/extension-api.h runtime/encode.h runtime/decode.h)
 target_link_libraries(extension_api INTERFACE rust-url rust-encoding spidermonkey)
 target_include_directories(extension_api INTERFACE include deps/include runtime)
 
@@ -51,6 +51,7 @@ add_executable(starling.wasm
         runtime/js.cpp
         runtime/allocator.cpp
         runtime/encode.cpp
+        runtime/decode.cpp
         runtime/engine.cpp
         runtime/event_loop.cpp
         runtime/builtin.cpp

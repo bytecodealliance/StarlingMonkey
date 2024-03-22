@@ -22,43 +22,61 @@ class Headers final : public BuiltinImpl<Headers> {
 public:
   static constexpr const char *class_name = "Headers";
 
+  /// Usually, headers are stored on the host only, including when they're created in-content.
+  /// However, iterating over headers (as keys, values, or entries) would be extremely slow if
+  /// we retrieved all of them from the host for each iteration step.
+  /// So, when we start iterating, we retrieve them once and store them in a Map as a cache.
+  /// If, while iterating, a header is added, deleted, or replaced, we start treating the Map as
+  /// the canonical store for headers, and discard the underlying resource handle entirely.
+  enum class Mode {
+    HostOnly, // Headers are stored in the host.
+    CachedInContent, // Host holds canonical headers, content a cached copy.
+    ContentOnly, // Headers are stored in a Map held by the `Entries` slot.
+  };
+
   enum class Slots {
     Handle,
+    Entries, // Map holding headers if they are available in-content.
+    Mode,
     Count,
   };
 
   /**
    * Adds the given header name/value to `self`'s list of headers iff `self`
    * doesn't already contain a header with that name.
-   *
-   * Assumes that both the name and value are valid and normalized.
-   * TODO(performance): fully skip normalization.
-   * https://github.com/fastly/js-compute-runtime/issues/221
    */
   static bool maybe_add(JSContext *cx, JS::HandleObject self, const char *name, const char *value);
 
-  // Appends a non-normalized value for a non-normalized header name to both
-  // the JS side Map and, in non-standalone mode, the host.
+  /// Appends a value for a header name.
   //
-  // Verifies and normalizes the name and value.
+  /// Validates and normalizes the name and value.
   static bool append_header_value(JSContext *cx, JS::HandleObject self, JS::HandleValue name,
                                   JS::HandleValue value, const char *fun_name);
+
+  static Mode mode(JSObject* self) const {
+    MOZ_ASSERT(Headers::is_instance(self));
+    return static_cast<Mode>(JS::GetReservedSlot(self, static_cast<size_t>(Slots::Mode)).toInt32());
+  }
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
 
-  static const unsigned ctor_length = 1;
+  static constexpr unsigned ctor_length = 1;
 
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
 
   static JSObject *create(JSContext *cx, HandleObject self, host_api::HttpHeaders *handle,
-                          HandleObject init_headers);
-  static JSObject *create(JSContext *cx, HandleObject self, host_api::HttpHeaders *handle,
                           HandleValue init_headers);
   static JSObject *create(JSContext *cx, HandleObject self, host_api::HttpHeadersReadOnly *handle);
+
+  /// Returns a Map object containing the headers.
+  ///
+  /// Depending on the `Mode` the instance is in, this can be a cache or the canonical store for
+  /// the headers.
+  static JSObject* get_entries(JSContext *cx, HandleObject self);
 };
 
 } // namespace fetch

@@ -345,6 +345,7 @@ public:
   Result<vector<tuple<HostString, HostString>>> entries() const;
   Result<vector<HostString>> names() const;
   Result<optional<vector<HostString>>> get(string_view name) const;
+  Result<bool> has(string_view name) const;
 };
 
 class HttpHeaders final : public HttpHeadersReadOnly {
