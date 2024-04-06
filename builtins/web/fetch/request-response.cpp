@@ -456,13 +456,12 @@ bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::Ha
     return false;
   }
 
-  bool success = mark_body_used(cx, source);
+  mozilla::DebugOnly<bool> success = mark_body_used(cx, source);
   MOZ_ASSERT(success);
   if (body_stream(source) != body_stream(self)) {
     success = mark_body_used(cx, self);
     MOZ_ASSERT(success);
   }
-  (void)success;
 
   return true;
 }
@@ -1135,7 +1134,11 @@ JSObject *RequestOrResponse::create_body_stream(JSContext *cx, JS::HandleObject 
     return nullptr;
   }
 
-  // TODO: immediately lock the stream if the owner's body is already used.
+  // If the body has already been used without being reified as a ReadableStream,
+  // lock the stream immediately.
+  if (body_used(owner)) {
+    MOZ_RELEASE_ASSERT(streams::NativeStreamSource::lock_stream(cx, body_stream));
+  }
 
   JS_SetReservedSlot(owner, static_cast<uint32_t>(Slots::BodyStream),
                      JS::ObjectValue(*body_stream));
@@ -1544,6 +1547,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
   host_api::HostString method;
 
   if (init_val.isObject()) {
+    // TODO: investigate special-casing native Request objects here to not reify headers and bodies.
     JS::RootedObject init(cx, init_val.toObjectOrNull());
     if (!JS_GetProperty(cx, init, "method", &method_val) ||
         !JS_GetProperty(cx, init, "headers", &headers_val) ||
