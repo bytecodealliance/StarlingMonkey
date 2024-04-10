@@ -53,7 +53,7 @@ public:
   static bool append_header_value(JSContext *cx, JS::HandleObject self, JS::HandleValue name,
                                   JS::HandleValue value, const char *fun_name);
 
-  static Mode mode(JSObject* self) const {
+  static Mode mode(JSObject* self) {
     MOZ_ASSERT(Headers::is_instance(self));
     return static_cast<Mode>(JS::GetReservedSlot(self, static_cast<size_t>(Slots::Mode)).toInt32());
   }
