@@ -313,10 +313,18 @@ Result<Void> HttpHeaders::append(string_view name, string_view value) {
   auto val = from_string_view<field_value>(value);
   Borrow<HttpHeaders> borrow(this->handle_state_);
 
+  // TODO: properly handle `err`
   wasi_http_0_2_0_types_header_error_t err;
-  wasi_http_0_2_0_types_method_fields_append(borrow, &hdr, &val, &err);
-
-  // TODO: handle `err`
+  if (!wasi_http_0_2_0_types_method_fields_append(borrow, &hdr, &val, &err)) {
+    switch (err.tag) {
+    case WASI_HTTP_0_2_0_TYPES_HEADER_ERROR_INVALID_SYNTAX:
+    case WASI_HTTP_0_2_0_TYPES_HEADER_ERROR_FORBIDDEN:
+      return Result<Void>::err(154);
+    case WASI_HTTP_0_2_0_TYPES_HEADER_ERROR_IMMUTABLE:
+      fprintf(stderr, "Headers %d should not be immutable", this->handle_state_->handle);
+      MOZ_ASSERT_UNREACHABLE();
+    }
+  }
 
   return {};
 }

@@ -341,6 +341,9 @@ public:
   HttpHeaders* clone();
 
   virtual bool is_writable() { return false; };
+  virtual HttpHeaders* as_writable() {
+    MOZ_ASSERT_UNREACHABLE();
+  };
 
   Result<vector<tuple<HostString, HostString>>> entries() const;
   Result<vector<HostString>> names() const;
@@ -363,6 +366,9 @@ public:
   static Result<HttpHeaders*> FromEntries(const vector<tuple<string_view, vector<string_view>>> &entries);
 
   bool is_writable() override { return true; };
+  HttpHeaders* as_writable() override {
+    return this;
+  };
 
   Result<Void> set(string_view name, string_view value);
   Result<Void> append(string_view name, string_view value);

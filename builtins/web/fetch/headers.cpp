@@ -9,8 +9,6 @@
 namespace builtins::web::fetch {
 namespace {
 
-using Handle = host_api::HttpHeaders;
-
 #define HEADERS_ITERATION_METHOD(argc)                                                             \
   METHOD_HEADER(argc)                                                                              \
   JS::RootedObject entries(cx, get_entries(cx, self));                                             \
@@ -54,11 +52,11 @@ const char VALID_NAME_CHARS[128] = {
     return false;                                                                                  \
   }
 
-Handle *get_handle(JSObject *self) {
+host_api::HttpHeadersReadOnly *get_handle(JSObject *self) {
   MOZ_ASSERT(Headers::is_instance(self));
   auto handle =
       JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Handle)).toPrivate();
-  return static_cast<Handle *>(handle);
+  return static_cast<host_api::HttpHeadersReadOnly *>(handle);
 }
 
 /**
@@ -267,30 +265,28 @@ bool Headers::append_header_value(JSContext *cx, JS::HandleObject self, JS::Hand
   NORMALIZE_NAME(name, fun_name)
   NORMALIZE_VALUE(value, fun_name)
 
-  auto handle = get_handle(self);
-  if (handle) {
-    std::string_view name = name_chars;
-    if (name == "set-cookie") {
-      for (auto value : splitCookiesString(value_chars)) {
-        auto res = handle->append(name_chars, value);
-        if (auto *err = res.to_err()) {
-          HANDLE_ERROR(cx, *err);
-          return false;
-        }
-      }
-    } else {
-      auto res = handle->append(name_chars, value_chars);
+  auto handle = get_handle(self)->as_writable();
+  std::string_view name_str = name_chars;
+  if (name_str == "set-cookie") {
+    for (auto value : splitCookiesString(value_chars)) {
+      auto res = handle->append(name_chars, value);
       if (auto *err = res.to_err()) {
         HANDLE_ERROR(cx, *err);
         return false;
       }
+    }
+  } else {
+    auto res = handle->append(name_chars, value_chars);
+    if (auto *err = res.to_err()) {
+      HANDLE_ERROR(cx, *err);
+      return false;
     }
   }
 
   return true;
 }
 
-JSObject *Headers::create(JSContext *cx, JS::HandleObject self, Handle *handle,
+JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle,
                           JS::HandleValue initv) {
   // TODO: check if initv is a Headers instance and clone its handle if so.
   JS::RootedObject headers(cx, create(cx, self, handle));
@@ -357,7 +353,7 @@ bool Headers::set(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   Mode mode = Headers::mode(self);
   if (mode == Mode::HostOnly) {
-    auto handle = get_handle(self);
+    auto handle = get_handle(self)->as_writable();
     MOZ_ASSERT(handle);
     auto res = handle->set(name_chars, value_chars);
     if (auto *err = res.to_err()) {
@@ -433,7 +429,7 @@ bool Headers::append(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 bool Headers::maybe_add(JSContext *cx, JS::HandleObject self, const char *name, const char *value) {
   MOZ_ASSERT(mode(self) == Mode::HostOnly);
-  auto handle = get_handle(self);
+  auto handle = get_handle(self)->as_writable();
   auto has = handle->has(name);
   MOZ_ASSERT(!has.is_err());
   if (has.unwrap()) {
@@ -454,7 +450,7 @@ bool Headers::delete_(JSContext *cx, unsigned argc, JS::Value *vp) {
   NORMALIZE_NAME(args[0], "Headers.delete")
   Mode mode = Headers::mode(self);
   if (mode == Mode::HostOnly) {
-    auto handle = get_handle(self);
+    auto handle = get_handle(self)->as_writable();
     MOZ_ASSERT(handle);
     std::string_view name = name_chars;
     auto res = handle->remove(name);
@@ -610,7 +606,7 @@ JSObject *Headers::get_entries(JSContext *cx, HandleObject self) {
     return &GetReservedSlot(self, static_cast<size_t>(Slots::Entries)).toObject();
   }
 
-  host_api::HttpHeadersReadOnly *handle = get_handle(self);
+  auto handle = get_handle(self);
   MOZ_ASSERT(handle);
   auto res = handle->entries();
   if (res.is_err()) {
