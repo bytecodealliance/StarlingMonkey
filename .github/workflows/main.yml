@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+defaults:
+  run:
+    shell: bash
+
+# Cancel any in-flight jobs for the same PR/branch so there's only one active
+# at a time
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Install Rust 1.68.2
+      run: |
+        rustup toolchain install 1.68.2
+        rustup target add wasm32-wasi --toolchain 1.68.2
+
+    - uses: actions/setup-node@v2
+      with:
+        node-version: 'lts'
+
+    - name: Install Wasmtime
+      run: |
+        cargo install wasmtime-cli
+
+    - name: Build StarlingMonkey
+      run: |
+        cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
+        cmake --build cmake-build-debug --parallel 4
+
+    - name: StarlingMonkey Integration Tests
+      run: |
+        cmake --build cmake-build-debug --target test-cases
+        CTEST_OUTPUT_ON_FAILURE=1 make -C cmake-build-debug test

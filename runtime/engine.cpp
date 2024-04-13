@@ -57,7 +57,7 @@ using std::chrono::system_clock;
 
 using JS::Value;
 
-__attribute__((weak)))
+__attribute__((weak))
 bool debug_logging_enabled() { return DEBUG_LOGGING; }
 #define LOG(...)                                                                                   \
   if (debug_logging_enabled()) {                                                                   \

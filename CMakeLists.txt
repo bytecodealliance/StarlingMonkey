@@ -101,4 +101,6 @@ function(componentize OUTPUT)
     add_custom_target(${OUTPUT} DEPENDS ${OUTPUT}.wasm)
 endfunction()
 
-componentize(smoke-test SOURCES tests/smoke.js)
+componentize(smoke-test SOURCES tests/cases/smoke/smoke.js)
+
+include("tests/tests.cmake")
