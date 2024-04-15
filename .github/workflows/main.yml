@@ -41,13 +41,13 @@ jobs:
 
     - name: Install Wasmtime
       run: |
-        curl -LO https://github.com/bytecodealliance/wasmtime/releases/download/${tag}/wasmtime-${{ matrix.wasmtime }}-x86_64-linux.tar.xz
+        curl -LO https://github.com/bytecodealliance/wasmtime/releases/download/${{ matrix.wasmtime }}/wasmtime-${{ matrix.wasmtime }}-x86_64-linux.tar.xz
         tar xf wasmtime-${{ matrix.wasmtime }}-x86_64-linux.tar.xz
         echo `pwd`/wasmtime-${{ matrix.wasmtime }}-x86_64-linux >> $GITHUB_PATH
 
     - name: Install Wizer
       run: |
-        curl -LO https://github.com/bytecodealliance/wizer/releases/download/${tag}/wizer-${{ matrix.wizer }}-x86_64-linux.tar.xz
+        curl -LO https://github.com/bytecodealliance/wizer/releases/download/${{ matrix.wasmtime }}/wizer-${{ matrix.wizer }}-x86_64-linux.tar.xz
         tar xf wizer-${{ matrix.wizer }}-x86_64-linux.tar.xz
         echo `pwd`/wizer-${{ matrix.wizer }}-x86_64-linux >> $GITHUB_PATH
 
