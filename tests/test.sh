@@ -1,26 +1,68 @@
 set -euo pipefail
 
-test_component=$1
-test_dir=$2
+test_name="$2"
+test_runtime="$1"
+test_dir="$(dirname "$0")/cases/$test_name"
 
 wasmtime="${WASMTIME:-wasmtime}"
-test_name="$(basename $test_dir)"
 
-test_body_expectation="$test_dir/expect_body.txt"
-test_stdout_expectation="$test_dir/expect_stdout.txt"
-test_stderr_expectation="$test_dir/expect_stderr.txt"
-test_status_expectation=$(cat "$test_dir/expect_status.txt" 2> /dev/null || echo "200")
+# Load test expectation fails to check, only those defined apply
+test_wizer_fail_expectation="$test_dir/expect_wizer_fail"
+test_wizer_stdout_expectation="$test_dir/expect_wizer_stdout.txt"
+test_wizer_stderr_expectation="$test_dir/expect_wizer_stderr.txt"
+test_serve_body_expectation="$test_dir/expect_serve_body.txt"
+test_serve_stdout_expectation="$test_dir/expect_serve_stdout.txt"
+test_serve_stderr_expectation="$test_dir/expect_serve_stderr.txt"
+test_serve_status_expectation=$(cat "$test_dir/expect_serve_status.txt" 2> /dev/null || echo "200")
 
-if [ ! -f $test_component ]; then
-   echo "Test component $test_component does not exist."
-   exit 1
-fi
+test_component="$test_dir/$test_name.wasm"
 
 body_log="$test_dir/body.log"
 stdout_log="$test_dir/stdout.log"
 stderr_log="$test_dir/stderr.log"
 
-$wasmtime serve -S common --addr 0.0.0.0:8181 $test_component 1> "$stdout_log" 2> "$stderr_log" &
+set +e
+"$test_runtime/componentize.sh" "$test_dir/$test_name.js" "$test_component" 1> "$stdout_log" 2> "$stderr_log"
+wizer_result=$?
+set -e
+
+if [ -f "$test_wizer_fail_expectation" ] && [ $wizer_result -eq 0 ]; then
+   echo "Expected Wizer to fail, but it succeeded."
+   exit 1
+elif [ ! -f "$test_wizer_fail_expectation" ] && [ ! $wizer_result -eq 0 ]; then
+   echo "Wizering failed."
+   >&2 cat "$stderr_log"
+   >&2 cat "$stdout_log"
+   exit 1
+fi
+
+if [ -f "$test_wizer_stdout_expectation" ]; then
+   cmp "$stdout_log" "$test_wizer_stdout_expectation"
+fi
+
+if [ -f "$test_wizer_stderr_expectation" ]; then
+   mv "$stderr_log" "$stderr_log.orig"
+   cat "$stderr_log.orig" | head -n $(cat "$test_wizer_stderr_expectation" | wc -l) > "$stderr_log"
+   rm "$stderr_log.orig"
+   cmp "$stderr_log" "$test_wizer_stderr_expectation"
+fi
+
+if [ ! -f "$test_component" ] || [ ! -s "$test_component" ]; then
+   if [ -f "$test_serve_body_expectation" ] || [ -f "$test_serve_stdout_expectation" ] || [ -f "$test_serve_stderr_expectation" ] || [ -f "$test_dir/expect_serve_status.txt" ]; then
+      echo "Test component $test_component does not exist, cannot verify serve expectations."
+      exit 1
+   else
+      echo "Test component $test_component does not exist, exiting."
+      rm "$stdout_log"
+      rm "$stderr_log"
+      if [ -f "$test_component" ]; then
+         rm "$test_component"
+      fi
+      exit 0
+   fi   
+fi
+
+$wasmtime serve -S common --addr 0.0.0.0:8181 "$test_component" 1> "$stdout_log" 2> "$stderr_log" &
 wasmtime_pid="$!"
 
 function cleanup {
@@ -29,7 +71,7 @@ function cleanup {
 
 trap cleanup EXIT
 
-until cat $stderr_log | grep -m 1 "Serving HTTP" >/dev/null || ! ps -p ${wasmtime_pid} >/dev/null; do : ; done
+until cat "$stderr_log" | grep -m 1 "Serving HTTP" >/dev/null || ! ps -p ${wasmtime_pid} >/dev/null; do : ; done
 
 if ! ps -p ${wasmtime_pid} >/dev/null; then
    echo "Wasmtime exited early"
@@ -45,24 +87,25 @@ fi
 
 status_code=$(curl --write-out %{http_code} --silent --output "$body_log" http://localhost:8181)
 
-if [ ! "$status_code" = "$test_status_expectation" ]; then
-   echo "Bad status code $status_code, expected $test_status_expectation"
+if [ ! "$status_code" = "$test_serve_status_expectation" ]; then
+   echo "Bad status code $status_code, expected $test_serve_status_expectation"
    >&2 cat "$stderr_log"
+   >&2 cat "$stdout_log"
    >&2 cat "$body_log"
    exit 1
 fi
 
-if [ -f $test_body_expectation ]; then
-   cmp "$body_log" "$test_body_expectation"
+if [ -f "$test_serve_body_expectation" ]; then
+   cmp "$body_log" "$test_serve_body_expectation"
 fi
 
-if [ -f $test_stdout_expectation ]; then
-   cmp "$stdout_log" "$test_stdout_expectation"
+if [ -f "$test_serve_stdout_expectation" ]; then
+   cmp "$stdout_log" "$test_serve_stdout_expectation"
 fi
 
-if [ -f $test_stderr_expectation ]; then
+if [ -f "$test_serve_stderr_expectation" ]; then
    tail -n +2 "$stderr_log" > "$stderr_log"
-   cmp "$stderr_log" "$test_stderr_expectation"
+   cmp "$stderr_log" "$test_serve_stderr_expectation"
 fi
 
 rm "$body_log"

@@ -47,22 +47,19 @@ Integration tests require [`Wasmtime`](https://wasmtime.dev/) to be installed (`
 Before tests can be run, the cases must first be built, and then they can be tested:
 
 ```bash
-cmake --build cmake-build-debug --parallel 8 --target test-cases
 CTEST_OUTPUT_ON_FAILURE=1 make -C cmake-build-debug test
 ```
 
 Individual tests can also be run from within the build folder using `ctest` directly:
 
 ```bash
-cd cmake-build-debug
-ctest smoke
+ctest --test-dir cmake-build-debug smoke
 ```
 
-Or, to directly run the tests on Wasmtime, use `wasmtime serve` directly via:
+Or, to directly run the tests on Wasmtime, use `wasmtime serve` via:
 
 ```bash
-cd cmake-build-debug
-wasmtime serve -S common test-smoke.wasm
+wasmtime serve -S common tests/cases/smoke/smoke.wasm
 ```
 
 Then visit http://0.0.0.0:8080/

@@ -353,8 +353,28 @@ void api::Engine::abort(const char *reason) { ::abort(CONTEXT, reason); }
 bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
   JSContext *cx = CONTEXT;
   RootedValue ns(cx);
-  if (!scriptLoader->load_top_level_script(path, &ns)) {
+  RootedValue tla_promise(cx);
+  if (!scriptLoader->load_top_level_script(path, &ns, &tla_promise)) {
     return false;
+  }
+
+  // Drive TLA as far as possible. Rejections during pre-initialization are
+  // treated as top-level exceptions. TLA may remain unresolved, in which case
+  // it will continue tasks at runtime. Rejections after pre-intialization remain
+  // unhandled rejections for now.
+  if (tla_promise.isObject()) {
+    if (!core::EventLoop::run_event_loop(this, 0, &tla_promise)) {
+      return false;
+    }
+    RootedObject promise_obj(cx, &tla_promise.toObject());
+    JS::PromiseState state = JS::GetPromiseState(promise_obj);
+    if (state == JS::PromiseState::Rejected) {
+      RootedValue err(cx, JS::GetPromiseResult(promise_obj));
+      JS_SetPendingException(cx, err);
+      if (!JS::SetSettledPromiseIsHandled(cx, promise_obj)) {
+        return false;
+      }
+    }
   }
 
   SCRIPT_VALUE.init(cx, ns);
@@ -364,9 +384,8 @@ bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
   while (js::HasJobsPending(cx)) {
     js::RunJobs(cx);
 
-    if (JS_IsExceptionPending(cx)) {
+    if (JS_IsExceptionPending(cx))
       abort("running Promise reactions");
-    }
   }
 
   // Report any promise rejections that weren't handled before snapshotting.

@@ -45,7 +45,8 @@ bool initialize(const char *filename) {
   success = success && engine.run_event_loop(&result);
 
   if (JS_IsExceptionPending(engine.cx())) {
-    engine.dump_pending_exception("Error evaluating code: ");
+    engine.dump_pending_exception("pre-initializing");
+    return false;
   }
 
   if (!success) {

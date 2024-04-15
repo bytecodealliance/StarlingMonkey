@@ -23,3 +23,6 @@
 
 # Rust compilation output
 /target
+
+/tests/cases/*/*.wasm
+/tests/cases/*/*.log

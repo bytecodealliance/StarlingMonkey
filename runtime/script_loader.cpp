@@ -221,7 +221,7 @@ bool ScriptLoader::load_script(JSContext *cx, const char *script_path,
   return ::load_script(cx, script_path, resolved_path, script);
 }
 
-bool ScriptLoader::load_top_level_script(const char *path, MutableHandleValue result) {
+bool ScriptLoader::load_top_level_script(const char *path, MutableHandleValue result, MutableHandleValue tla_promise) {
   JSContext *cx = CONTEXT;
 
   MOZ_ASSERT(!BASE_PATH);
@@ -286,11 +286,10 @@ bool ScriptLoader::load_top_level_script(const char *path, MutableHandleValue re
     return JS_ExecuteScript(cx, script, result);
   }
   
-  if (!ModuleEvaluate(cx, module, result)) {
+  if (!ModuleEvaluate(cx, module, tla_promise)) {
     return false;
   }
-  
-  // modules return the top-level await promise in the result value
+
   // we don't currently support TLA, instead we reassign result
   // with the module namespace
   JS::RootedObject ns(cx, JS::GetModuleNamespace(cx, module));
