@@ -22,6 +22,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
+        wasmtime: [v19.0.2]
+        wizer: [v5.0.0]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -39,11 +41,15 @@ jobs:
 
     - name: Install Wasmtime
       run: |
-        cd ..
-        cargo install wasmtime-cli
+        curl -LO https://github.com/bytecodealliance/wasmtime/releases/download/${tag}/wasmtime-${{ matrix.wasmtime }}-x86_64-linux.tar.xz
+        tar xf wasmtime-${{ matrix.wasmtime }}-x86_64-linux.tar.xz
+        echo `pwd`/wasmtime-${{ matrix.wasmtime }}-x86_64-linux >> $GITHUB_PATH
 
     - name: Install Wizer
-      run: cargo install wizer
+      run: |
+        curl -LO https://github.com/bytecodealliance/wizer/releases/download/${tag}/wizer-${{ matrix.wizer }}-x86_64-linux.tar.xz
+        tar xf wizer-${{ matrix.wizer }}-x86_64-linux.tar.xz
+        echo `pwd`/wizer-${{ matrix.wizer }}-x86_64-linux >> $GITHUB_PATH
 
     - name: Build StarlingMonkey
       run: |
