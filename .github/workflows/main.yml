@@ -54,7 +54,7 @@ jobs:
 
     - name: Install Wasm Tools
       run: |
-        curl -LO https://github.com/bytecodealliance/wasm-tools/releases/download/${{ matrix.wasm-tools }}/wizer-${{ matrix.wasm-tools }}-x86_64-linux.tar.xz
+        curl -LO https://github.com/bytecodealliance/wasm-tools/releases/download/${{ matrix.wasm-tools }}/wasm-tools-${{ matrix.wasm-tools }}-x86_64-linux.tar.xz
         tar xf wasm-tools-${{ matrix.wasm-tools }}-x86_64-linux.tar.xz
         echo `pwd`/wasm-tools-${{ matrix.wasm-tools }}-x86_64-linux >> $GITHUB_PATH
 
