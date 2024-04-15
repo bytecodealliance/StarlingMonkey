@@ -39,6 +39,7 @@ jobs:
 
     - name: Install Wasmtime
       run: |
+        cd ..
         cargo install wasmtime-cli
 
     - name: Build StarlingMonkey
