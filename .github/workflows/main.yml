@@ -24,6 +24,7 @@ jobs:
         os: [ubuntu-latest]
         wasmtime: [v19.0.2]
         wizer: [v5.0.0]
+        wasm-tools: [v1.203.0]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -50,6 +51,12 @@ jobs:
         curl -LO https://github.com/bytecodealliance/wizer/releases/download/${{ matrix.wizer }}/wizer-${{ matrix.wizer }}-x86_64-linux.tar.xz
         tar xf wizer-${{ matrix.wizer }}-x86_64-linux.tar.xz
         echo `pwd`/wizer-${{ matrix.wizer }}-x86_64-linux >> $GITHUB_PATH
+
+    - name: Install Wasm Tools
+      run: |
+        curl -LO https://github.com/bytecodealliance/wasm-tools/releases/download/${{ matrix.wasm-tools }}/wizer-${{ matrix.wasm-tools }}-x86_64-linux.tar.xz
+        tar xf wasm-tools-${{ matrix.wasm-tools }}-x86_64-linux.tar.xz
+        echo `pwd`/wasm-tools-${{ matrix.wasm-tools }}-x86_64-linux >> $GITHUB_PATH
 
     - name: Build StarlingMonkey
       run: |
