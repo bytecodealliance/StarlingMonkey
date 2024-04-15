@@ -55,8 +55,8 @@ jobs:
     - name: Install Wasm Tools
       run: |
         curl -LO https://github.com/bytecodealliance/wasm-tools/releases/download/v${{ matrix.wasm-tools }}/wasm-tools-${{ matrix.wasm-tools }}-x86_64-linux.tar.xz
-        tar xf wasm-tools-v${{ matrix.wasm-tools }}-x86_64-linux.tar.xz
-        echo `pwd`/wasm-tools-v${{ matrix.wasm-tools }}-x86_64-linux >> $GITHUB_PATH
+        tar xf wasm-tools-${{ matrix.wasm-tools }}-x86_64-linux.tar.xz
+        echo `pwd`/wasm-tools-${{ matrix.wasm-tools }}-x86_64-linux >> $GITHUB_PATH
 
     - name: Build StarlingMonkey
       run: |
