@@ -56,10 +56,13 @@ static const char* resolve_extension(const char* resolved_path) {
   size_t len = strlen(resolved_path) + 1;
   char* resolved_path_ext = new char[len + 3];
   strncpy(resolved_path_ext, resolved_path, len - 1);
-  delete[] resolved_path;
   strncpy(resolved_path_ext + len - 1, ".js", 4);
   MOZ_ASSERT(strlen(resolved_path_ext) == len + 2);
-  return resolved_path_ext;
+  if (stat(resolved_path_ext, &s) == 0) {
+    delete[] resolved_path;
+    return resolved_path_ext;
+  }
+  return resolved_path;
 }
 
 static const char* resolve_path(const char* path, const char* base, size_t base_len) {
