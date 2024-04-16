@@ -53,11 +53,14 @@ static const char* resolve_extension(const char* resolved_path) {
   if (stat(resolved_path, &s) == 0) {
     return resolved_path;
   }
-  size_t len = strlen(resolved_path) + 1;
-  char* resolved_path_ext = new char[len + 3];
-  strncpy(resolved_path_ext, resolved_path, len - 1);
-  strncpy(resolved_path_ext + len - 1, ".js", 4);
-  MOZ_ASSERT(strlen(resolved_path_ext) == len + 2);
+  size_t len = strlen(resolved_path);
+  if (strncmp(resolved_path + len - 3, ".js", 3) == 0) {
+    return resolved_path;
+  }
+  char* resolved_path_ext = new char[len + 4];
+  strncpy(resolved_path_ext, resolved_path, len);
+  strncpy(resolved_path_ext + len, ".js", 4);
+  MOZ_ASSERT(strlen(resolved_path_ext) == len + 3);
   if (stat(resolved_path_ext, &s) == 0) {
     delete[] resolved_path;
     return resolved_path_ext;
