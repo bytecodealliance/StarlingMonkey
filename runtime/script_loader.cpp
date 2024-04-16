@@ -6,6 +6,7 @@
 #include <js/CompilationAndEvaluation.h>
 #include <js/MapAndSet.h>
 #include <js/Value.h>
+#include <sys/stat.h>
 
 static JSContext* CONTEXT;
 static ScriptLoader* SCRIPT_LOADER;
@@ -46,10 +47,25 @@ static const char* strip_base(const char* resolved_path, const char* base) {
   return buf;
 }
 
-static char* resolve_path(const char* path, const char* base, size_t base_len) {
+struct stat s;
+
+static const char* resolve_extension(const char* resolved_path) {
+  if (stat(resolved_path, &s) == 0) {
+    return resolved_path;
+  }
+  size_t len = strlen(resolved_path) + 1;
+  char* resolved_path_ext = new char[len + 3];
+  strncpy(resolved_path_ext, resolved_path, len - 1);
+  delete[] resolved_path;
+  strncpy(resolved_path_ext + len - 1, ".js", 4);
+  MOZ_ASSERT(strlen(resolved_path_ext) == len + 2);
+  return resolved_path_ext;
+}
+
+static const char* resolve_path(const char* path, const char* base, size_t base_len) {
   MOZ_ASSERT(base);
   if (path[0] == '/') {
-    return strdup(path);
+    return resolve_extension(strdup(path));
   }
   if (path[0] == '.' && path[1] == '/') {
     path = path + 2;
@@ -62,8 +78,7 @@ static char* resolve_path(const char* path, const char* base, size_t base_len) {
   strncpy(resolved_path, base, base_len);
   strncpy(resolved_path + base_len, path, len - base_len);
   MOZ_ASSERT(strlen(resolved_path) == len - 1);
-
-  return resolved_path;
+  return resolve_extension(resolved_path);
 }
 
 static bool load_script(JSContext *cx, const char *script_path, const char* resolved_path,
@@ -140,7 +155,7 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
   }
 
   HostString str = core::encode(cx, parent_path_val);
-  char* resolved_path = resolve_path(path.get(), str.ptr.get(), str.len);
+  const char* resolved_path = resolve_path(path.get(), str.ptr.get(), str.len);
   return get_module(cx, path.get(), resolved_path, opts);
 }
 
