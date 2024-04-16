@@ -17,3 +17,5 @@ function(test TEST_NAME)
 endfunction()
 
 test(smoke)
+
+set_property(TEST smoke PROPERTY ENVIRONMENT "WASMTIME=${WASMTIME}")

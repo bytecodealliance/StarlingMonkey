@@ -40,24 +40,6 @@ jobs:
       with:
         node-version: 'lts/*'
 
-    - name: Install Wasmtime
-      run: |
-        curl -LO https://github.com/bytecodealliance/wasmtime/releases/download/v${{ matrix.wasmtime }}/wasmtime-v${{ matrix.wasmtime }}-x86_64-linux.tar.xz
-        tar xf wasmtime-v${{ matrix.wasmtime }}-x86_64-linux.tar.xz
-        echo `pwd`/wasmtime-v${{ matrix.wasmtime }}-x86_64-linux >> $GITHUB_PATH
-
-    - name: Install Wizer
-      run: |
-        curl -LO https://github.com/bytecodealliance/wizer/releases/download/v${{ matrix.wizer }}/wizer-v${{ matrix.wizer }}-x86_64-linux.tar.xz
-        tar xf wizer-v${{ matrix.wizer }}-x86_64-linux.tar.xz
-        echo `pwd`/wizer-v${{ matrix.wizer }}-x86_64-linux >> $GITHUB_PATH
-
-    - name: Install Wasm Tools
-      run: |
-        curl -LO https://github.com/bytecodealliance/wasm-tools/releases/download/v${{ matrix.wasm-tools }}/wasm-tools-${{ matrix.wasm-tools }}-x86_64-linux.tar.gz
-        tar xf wasm-tools-${{ matrix.wasm-tools }}-x86_64-linux.tar.gz
-        echo `pwd`/wasm-tools-${{ matrix.wasm-tools }}-x86_64-linux >> $GITHUB_PATH
-
     - name: Build StarlingMonkey
       run: |
         cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
