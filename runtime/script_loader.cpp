@@ -62,6 +62,7 @@ static const char* resolve_extension(const char* resolved_path) {
     delete[] resolved_path;
     return resolved_path_ext;
   }
+  delete[] resolved_path_ext;
   return resolved_path;
 }
 
