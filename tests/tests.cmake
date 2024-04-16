@@ -1,6 +1,8 @@
 enable_testing()
 
 find_program(BASH_PROGRAM bash)
+include("wizer")
+include("wasmtime")
 
 function(test TEST_NAME)
     get_target_property(RUNTIME_DIR starling.wasm BINARY_DIR)
