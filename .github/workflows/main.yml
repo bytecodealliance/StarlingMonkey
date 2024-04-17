@@ -22,9 +22,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        wasmtime: [19.0.2]
-        wizer: [5.0.0]
-        wasm-tools: [1.203.0]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
