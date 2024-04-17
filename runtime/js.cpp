@@ -75,6 +75,7 @@ extern "C" bool exports_wasi_cli_run_run() {
   return true;
 }
 
+__attribute__((weak)) 
 int main(int argc, const char *argv[]) {
   printf("Main starting\n");
   return 0;

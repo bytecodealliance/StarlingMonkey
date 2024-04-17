@@ -40,14 +40,29 @@ The following command will build the `starling.wasm` runtime module in the `cmak
 cmake --build cmake-build-release --parallel 8
 ```
 
-
 4. Testing the build 
 
-A simple test script is provided in `tests/smoke.js`. To run it using [`Wasmtime`](https://wasmtime.dev/), use the following command:
+Integration tests require [`Wasmtime`](https://wasmtime.dev/) to be installed (`cargo install wasmtime-cli`).
+
+Before tests can be run, the cases must first be built, and then they can be tested:
+
 ```bash
-cmake --build cmake-build-release --parallel 8 --target smoke-test
-cd cmake-build-release
-wasmtime serve -S common smoke.wasm
+cmake --build cmake-build-debug --parallel 8 --target test-cases
+CTEST_OUTPUT_ON_FAILURE=1 make -C cmake-build-debug test
+```
+
+Individual tests can also be run from within the build folder using `ctest` directly:
+
+```bash
+cd cmake-build-debug
+ctest smoke
+```
+
+Or, to directly run the tests on Wasmtime, use `wasmtime serve` directly via:
+
+```bash
+cd cmake-build-debug
+wasmtime serve -S common test-smoke.wasm
 ```
 
 Then visit http://0.0.0.0:8080/
