@@ -44,5 +44,4 @@ jobs:
 
     - name: StarlingMonkey Integration Tests
       run: |
-        cmake --build cmake-build-debug --target test-cases
         CTEST_OUTPUT_ON_FAILURE=1 make -C cmake-build-debug test
