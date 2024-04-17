@@ -37,10 +37,6 @@ jobs:
       with:
         node-version: 'lts/*'
 
-    - name: Install Wasmtime
-      run: |
-        cargo install wasmtime-cli
-
     - name: Build StarlingMonkey
       run: |
         cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug

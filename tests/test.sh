@@ -3,6 +3,8 @@ set -euo pipefail
 test_component=$1
 test_expectation=$2
 
+wasmtime="${WASMTIME:-wasmtime}"
+
 output_dir=$(dirname $test_expectation)
 
 if [ ! -f $test_component ]; then
@@ -18,7 +20,7 @@ fi
 wasmtime_log="$output_dir/wasmtime.log"
 response_body_log="$output_dir/response.log"
 
-wasmtime serve -S common --addr 0.0.0.0:8181 $test_component 2> "$wasmtime_log" &
+$wasmtime serve -S common --addr 0.0.0.0:8181 $test_component 2> "$wasmtime_log" &
 wasmtime_pid="$!"
 
 function cleanup {
