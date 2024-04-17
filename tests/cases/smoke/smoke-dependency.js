@@ -1,4 +1,4 @@
-import "./nested-smoke-dependency.js";
+import "./nested-smoke-dependency";
 
 console.log("smoke-dependency.js loaded");
 
