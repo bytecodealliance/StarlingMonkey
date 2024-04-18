@@ -42,7 +42,7 @@ bool initialize(const char *filename) {
 
   RootedValue result(engine.cx());
   bool success = engine.eval_toplevel(filename, &result);
-  success = success && engine.run_event_loop(&result);
+  success = success && engine.run_event_loop();
 
   if (JS_IsExceptionPending(engine.cx())) {
     engine.dump_pending_exception("pre-initializing");
@@ -51,8 +51,7 @@ bool initialize(const char *filename) {
 
   if (!success) {
     fflush(stdout);
-    fprintf(stderr, "Error running event loop: ");
-    engine.dump_value(result, stderr);
+    fprintf(stderr, "Internal error");
     return false;
   }
 

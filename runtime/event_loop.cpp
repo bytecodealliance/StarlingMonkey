@@ -38,8 +38,7 @@ bool EventLoop::cancel_async_task(api::Engine *engine, const int32_t id) {
 
 bool EventLoop::has_pending_async_tasks() { return !queue.get().tasks.empty(); }
 
-bool EventLoop::run_event_loop(api::Engine *engine, double total_compute,
-                               MutableHandleValue result) {
+bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
   // Loop until no more resolved promises or backend requests are pending.
   // LOG("Start processing async jobs ...\n");
 
@@ -51,7 +50,7 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute,
       js::RunJobs(cx);
 
       if (JS_IsExceptionPending(cx))
-        engine->abort("running Promise reactions");
+        return false;
     }
 
     // TODO: add general mechanism for extending the event loop duration.

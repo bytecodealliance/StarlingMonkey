@@ -33,7 +33,7 @@ public:
    *
    * The loop terminates once both of these steps are null-ops.
    */
-  static bool run_event_loop(api::Engine *engine, double total_compute, MutableHandleValue result);
+  static bool run_event_loop(api::Engine *engine, double total_compute);
 
   /**
    * Queue a new async task.

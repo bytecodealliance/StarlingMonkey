@@ -589,16 +589,14 @@ void exports_wasi_http_incoming_handler(exports_wasi_http_incoming_request reque
 
   dispatch_fetch_event(fetch_event, &total_compute);
 
-  RootedValue result(ENGINE->cx());
-  if (!ENGINE->run_event_loop(&result)) {
-    fflush(stdout);
-    fprintf(stderr, "Error running event loop: ");
-    ENGINE->dump_value(result, stderr);
-    return;
-  }
+  bool success = ENGINE->run_event_loop();
 
   if (JS_IsExceptionPending(ENGINE->cx())) {
-    ENGINE->dump_pending_exception("Error evaluating code: ");
+    ENGINE->dump_pending_exception("evaluating incoming request");
+  }
+
+  if (!success) {
+    fprintf(stderr, "Internal error.");
   }
 
   if (ENGINE->debug_logging_enabled() && ENGINE->has_pending_async_tasks()) {

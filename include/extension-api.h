@@ -48,7 +48,7 @@ public:
   void enable_module_mode(bool enable);
   bool eval_toplevel(const char *path, MutableHandleValue result);
 
-  bool run_event_loop(MutableHandleValue result);
+  bool run_event_loop();
 
   /**
    * Get the JS value associated with the top-level script execution -
