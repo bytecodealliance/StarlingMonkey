@@ -96,6 +96,14 @@ cd cmake-build-debug
 ctest --verbose # Note: some of the tests run fairly slowly in debug builds, so be patient
 ```
 
+## Configuring available builtins
+StarlingMonkey supports enabling/disabling bundled builtins using CMake options. You can get a full list of bundled builtins by running the following shell command:
+```shell
+cmake -P [PATH_TO_STARLING_MONKEY]/cmake/builtins.cmake
+```
+
+Note that it's required to include builtins defining all exports defined by the used host API. Using the default WASI 0.2.0 host API, that means including the `fetch_event` builtin.
+
 
 ## Using StarlingMonkey as a CMake sub-project
 
