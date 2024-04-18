@@ -360,15 +360,6 @@ bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
 
   SCRIPT_VALUE.init(cx, ns);
 
-  // Ensure that any pending promise reactions are run before taking the
-  // snapshot.
-  while (js::HasJobsPending(cx)) {
-    js::RunJobs(cx);
-
-    if (JS_IsExceptionPending(cx))
-      abort("running Promise reactions");
-  }
-
   if (!core::EventLoop::run_event_loop(this, 0)) {
     return false;
   }
