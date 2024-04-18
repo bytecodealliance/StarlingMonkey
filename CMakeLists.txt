@@ -42,7 +42,8 @@ target_include_directories(extension_api INTERFACE include deps/include runtime)
 
 include("builtins")
 
-if (DEFINED ENV{WPT})
+option(ENABLE_WPT "Enable WPT harness support" OFF)
+if (ENABLE_WPT)
     include("tests/wpt-harness/wpt.cmake")
 endif()
 
