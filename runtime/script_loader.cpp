@@ -290,8 +290,6 @@ bool ScriptLoader::load_top_level_script(const char *path, MutableHandleValue re
     return false;
   }
 
-  // we don't currently support TLA, instead we reassign result
-  // with the module namespace
   JS::RootedObject ns(cx, JS::GetModuleNamespace(cx, module));
   result.setObject(*ns);
   return true;
