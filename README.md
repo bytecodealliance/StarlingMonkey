@@ -53,7 +53,7 @@ CTEST_OUTPUT_ON_FAILURE=1 make -C cmake-build-debug test
 Individual tests can also be run from within the build folder using `ctest` directly:
 
 ```bash
-ctest --test-dir cmake-build-debug smoke
+ctest --test-dir cmake-build-debug -R smoke
 ```
 
 Or, to directly run the tests on Wasmtime, use `wasmtime serve` via:
