@@ -25,6 +25,20 @@
 #include "js/experimental/TypedData.h"
 #pragma clang diagnostic pop
 
+namespace builtins::web::streams {
+
+JSObject *NativeStreamSource::stream(JSObject *self) {
+  return web::fetch::RequestOrResponse::body_stream(owner(self));
+}
+
+bool NativeStreamSource::stream_is_body(JSContext *cx, JS::HandleObject stream) {
+  JSObject *stream_source = get_stream_source(cx, stream);
+  return NativeStreamSource::is_instance(stream_source) &&
+         web::fetch::RequestOrResponse::is_instance(owner(stream_source));
+}
+
+} // builtins::web::streams
+
 namespace builtins::web::fetch {
 
 static api::Engine *ENGINE;

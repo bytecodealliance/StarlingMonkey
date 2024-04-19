@@ -7,7 +7,6 @@
 
 #include "js/Stream.h"
 
-#include "../fetch/request-response.h"
 #include "native-stream-sink.h"
 #include "native-stream-source.h"
 
@@ -20,10 +19,6 @@ namespace streams {
 JSObject *NativeStreamSource::owner(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   return &JS::GetReservedSlot(self, Slots::Owner).toObject();
-}
-
-JSObject *NativeStreamSource::stream(JSObject *self) {
-  return web::fetch::RequestOrResponse::body_stream(owner(self));
 }
 
 JS::Value NativeStreamSource::startPromise(JSObject *self) {
@@ -69,12 +64,6 @@ JSObject *NativeStreamSource::get_stream_source(JSContext *cx, JS::HandleObject 
 bool NativeStreamSource::stream_has_native_source(JSContext *cx, JS::HandleObject stream) {
   JSObject *source = get_stream_source(cx, stream);
   return is_instance(source);
-}
-
-bool NativeStreamSource::stream_is_body(JSContext *cx, JS::HandleObject stream) {
-  JSObject *stream_source = get_stream_source(cx, stream);
-  return NativeStreamSource::is_instance(stream_source) &&
-         web::fetch::RequestOrResponse::is_instance(owner(stream_source));
 }
 
 void NativeStreamSource::set_stream_piped_to_ts_writable(JSContext *cx, JS::HandleObject stream,
