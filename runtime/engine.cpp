@@ -373,9 +373,7 @@ bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
     if (state == JS::PromiseState::Rejected) {
       RootedValue err(cx, JS::GetPromiseResult(promise_obj));
       JS_SetPendingException(cx, err);
-      if (!JS::SetSettledPromiseIsHandled(cx, promise_obj)) {
-        return false;
-      }
+      return false;
     }
   }
 
