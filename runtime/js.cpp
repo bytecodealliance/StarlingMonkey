@@ -41,17 +41,11 @@ bool initialize(const char *filename) {
 #endif
 
   RootedValue result(engine.cx());
-  bool success = engine.eval_toplevel(filename, &result);
-  success = success && engine.run_event_loop(&result);
-
-  if (JS_IsExceptionPending(engine.cx())) {
-    engine.dump_pending_exception("Error evaluating code: ");
-  }
-
-  if (!success) {
-    fflush(stdout);
-    fprintf(stderr, "Error running event loop: ");
-    engine.dump_value(result, stderr);
+  
+  if (!engine.eval_toplevel(filename, &result)) {
+    if (JS_IsExceptionPending(engine.cx())) {
+      engine.dump_pending_exception("pre-initializing");
+    }
     return false;
   }
 

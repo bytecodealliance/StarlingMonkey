@@ -353,19 +353,27 @@ void api::Engine::abort(const char *reason) { ::abort(CONTEXT, reason); }
 bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
   JSContext *cx = CONTEXT;
   RootedValue ns(cx);
-  if (!scriptLoader->load_top_level_script(path, &ns)) {
+  RootedValue tla_promise(cx);
+  if (!scriptLoader->load_top_level_script(path, &ns, &tla_promise)) {
     return false;
   }
 
   SCRIPT_VALUE.init(cx, ns);
 
-  // Ensure that any pending promise reactions are run before taking the
-  // snapshot.
-  while (js::HasJobsPending(cx)) {
-    js::RunJobs(cx);
+  if (!core::EventLoop::run_event_loop(this, 0)) {
+    return false;
+  }
 
-    if (JS_IsExceptionPending(cx)) {
-      abort("running Promise reactions");
+  // TLA rejections during pre-initialization are treated as top-level exceptions.
+  // TLA may remain unresolved, in which case it will continue tasks at runtime.
+  // Rejections after pre-intialization remain unhandled rejections for now.
+  if (tla_promise.isObject()) {
+    RootedObject promise_obj(cx, &tla_promise.toObject());
+    JS::PromiseState state = JS::GetPromiseState(promise_obj);
+    if (state == JS::PromiseState::Rejected) {
+      RootedValue err(cx, JS::GetPromiseResult(promise_obj));
+      JS_SetPendingException(cx, err);
+      return false;
     }
   }
 
@@ -405,8 +413,8 @@ bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
   return true;
 }
 
-bool api::Engine::run_event_loop(MutableHandleValue result) {
-  return core::EventLoop::run_event_loop(this, 0, result);
+bool api::Engine::run_event_loop() {
+  return core::EventLoop::run_event_loop(this, 0);
 }
 
 bool api::Engine::dump_value(JS::Value val, FILE *fp) { return ::dump_value(CONTEXT, val, fp); }
