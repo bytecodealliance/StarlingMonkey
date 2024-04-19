@@ -38,6 +38,20 @@ public:
   HandleObject global();
 
   /**
+   * Define a new builtin import
+   * 
+   * The enumerable properties of the builtin object are used to construct
+   * a synthetic module namespace for the module.
+   * 
+   * The enumeration and getters are called only on the first import of
+   * the builtin, so that lazy getters can be used to lazily initialize
+   * builtins.
+   * 
+   * Once loaded, the instance is cached and reused as a singleton.
+   */
+  bool define_builtin_import(const char* id, HandleValue builtin);
+
+  /**
    * Treat the top-level script as a module or classic JS script.
    *
    * By default, the engine treats the top-level script as a module.

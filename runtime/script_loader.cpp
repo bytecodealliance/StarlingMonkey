@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <iostream>
 #include <js/CompilationAndEvaluation.h>
+#include <jsfriendapi.h>
 #include <js/MapAndSet.h>
 #include <js/Value.h>
 #include <sys/stat.h>
@@ -11,6 +12,7 @@
 static JSContext* CONTEXT;
 static ScriptLoader* SCRIPT_LOADER;
 JS::PersistentRootedObject moduleRegistry;
+JS::PersistentRootedObject builtinImports;
 static bool MODULE_MODE = true;
 static char* BASE_PATH = nullptr;
 JS::CompileOptions *COMPILE_OPTS;
@@ -124,13 +126,106 @@ static JSObject* get_module(JSContext* cx, const char* specifier, const char* re
     return nullptr;
   }
 
-  if (!JS_DefineProperty(cx, info, "path", resolved_path_val, JSPROP_ENUMERATE)) {
+  if (!JS_DefineProperty(cx, info, "id", resolved_path_val, JSPROP_ENUMERATE)) {
     return nullptr;
   }
 
   SetModulePrivate(module, ObjectValue(*info));
 
   if (!MapSet(cx, moduleRegistry, resolved_path_val, module_val)) {
+    return nullptr;
+  }
+
+  return module;
+}
+
+static JSObject* get_builtin_module(JSContext* cx, HandleValue id, HandleObject builtin) {
+  RootedValue module_val(cx);
+  MOZ_ASSERT(id.isString());
+  if (!JS::MapGet(cx, moduleRegistry, id, &module_val)) {
+    return nullptr;
+  }
+  if (!module_val.isUndefined()) {
+    return &module_val.toObject();
+  }
+
+  JS::CompileOptions opts(cx, *COMPILE_OPTS);
+  JS::SourceText<mozilla::Utf8Unit> source;
+
+  std::string code = "const { ";
+  JS::RootedIdVector props(cx);
+  GetPropertyKeys(cx, builtin, JSITER_OWNONLY, &props);
+
+  size_t length = props.length();
+  bool firstValue = true;
+  for (size_t i = 0; i < length; ++i) {
+    if (firstValue) {
+      firstValue = false;  
+    } else {
+      code += ", ";
+    }
+
+    code += "'";
+    const auto &prop = props[i];
+    JS::RootedValue key(cx, js::IdToValue(prop));
+    if (!key.isString()) {
+      return nullptr;
+    }
+    auto key_str = core::encode(cx, key);
+    code += std::string_view(key_str.ptr.get(), key_str.len);
+    code += "': ";
+
+    code += "e";
+    code += std::to_string(i);
+  }
+
+  code += " } = import.meta.builtin;\nexport { ";
+
+  firstValue = true;
+  for (size_t i = 0; i < length; ++i) {
+    if (firstValue) {
+      firstValue = false;  
+    } else {
+      code += ", ";
+    }
+
+    code += "e";
+    code += std::to_string(i);
+    
+    code += " as '";
+    const auto &prop = props[i];
+    JS::RootedValue key(cx, js::IdToValue(prop));
+    if (!key.isString()) {
+      return nullptr;
+    }
+    auto key_str = core::encode(cx, key);
+    code += std::string_view(key_str.ptr.get(), key_str.len);
+    code += "'";
+  }
+  code += " }\n";
+
+  if (!source.init(cx, code.c_str(), strlen(code.c_str()), JS::SourceOwnership::Borrowed)) {
+    return nullptr;
+  }
+
+  RootedObject module(cx, JS::CompileModule(cx, opts, source));
+  if (!module) {
+    return nullptr;
+  }
+  module_val.setObject(*module);
+
+  RootedObject info(cx, JS_NewPlainObject(cx));
+  if (!info) {
+    return nullptr;
+  }
+
+  if (!JS_DefineProperty(cx, info, "id", id, JSPROP_ENUMERATE)) {
+    return nullptr;
+  }
+
+  SetModulePrivate(module, ObjectValue(*info));
+
+  if (!MapSet(cx, moduleRegistry, id, module_val)) {
     return nullptr;
   }
 
@@ -150,9 +245,19 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
     return nullptr;
   }
 
+  RootedValue builtin_val(cx);
+  if (!MapGet(cx, builtinImports, path_val, &builtin_val)) {
+    return nullptr; 
+  }
+  if (!builtin_val.isUndefined()) {
+    RootedValue specifier_val(cx, StringValue(specifier));
+    RootedObject builtin_obj(cx, &builtin_val.toObject());
+    return get_builtin_module(cx, specifier_val, builtin_obj);
+  }
+
   RootedObject info(cx, &referencingPrivate.toObject());
   RootedValue parent_path_val(cx);
-  if (!JS_GetProperty(cx, info, "path", &parent_path_val)) {
+  if (!JS_GetProperty(cx, info, "id", &parent_path_val)) {
     return nullptr;
   }
   if (!parent_path_val.isString()) {
@@ -167,15 +272,59 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
   return get_module(cx, path.get(), resolved_path, opts);
 }
 
- ScriptLoader::ScriptLoader(JSContext *cx, JS::CompileOptions *opts) {
+bool module_metadata_hook(JSContext* cx, HandleValue referencingPrivate, HandleObject metaObject) {
+  RootedObject info(cx, &referencingPrivate.toObject());
+  RootedValue parent_id_val(cx);
+  if (!JS_GetProperty(cx, info, "id", &parent_id_val)) {
+    return false;
+  }
+  if (!parent_id_val.isString()) {
+    return false;
+  }
+  RootedValue builtin_val(cx);
+  if (!MapGet(cx, builtinImports, parent_id_val, &builtin_val)) {
+    return false;
+  }
+  if (builtin_val.isUndefined()) {
+    return false;
+  }
+  JS_SetProperty(cx, metaObject, "builtin", builtin_val);
+  return true;
+}
+
+ScriptLoader::ScriptLoader(JSContext *cx, JS::CompileOptions *opts) {
   MOZ_ASSERT(!SCRIPT_LOADER);
   SCRIPT_LOADER = this;
   CONTEXT = cx;
   COMPILE_OPTS = opts;
   moduleRegistry.init(cx, JS::NewMapObject(cx));
+  builtinImports.init(cx, JS::NewMapObject(cx));
   MOZ_RELEASE_ASSERT(moduleRegistry);
+  MOZ_RELEASE_ASSERT(builtinImports);
   JSRuntime *rt = JS_GetRuntime(cx);
   SetModuleResolveHook(rt, module_resolve_hook);
+  SetModuleMetadataHook(rt, module_metadata_hook);
+}
+
+bool ScriptLoader::define_builtin_import(const char* id, HandleValue builtin) {
+  RootedString id_str(CONTEXT, JS_NewStringCopyZ(CONTEXT, id));
+  if (!id_str) {
+    return false;
+  }
+  RootedValue module_val(CONTEXT);
+  RootedValue id_val(CONTEXT, StringValue(id_str));
+  bool already_exists;
+  if (!MapHas(CONTEXT, builtinImports, id_val, &already_exists)) {
+    return false;
+  }
+  if (already_exists) {
+    fprintf(stderr, "Unable to define builtin %s, as it already exists", id);
+    return false;
+  }
+  if (!MapSet(CONTEXT, builtinImports, id_val, builtin)) {
+    return false;
+  }
+  return true;
 }
 
 void ScriptLoader::enable_module_mode(bool enable) {
@@ -286,7 +435,7 @@ bool ScriptLoader::load_top_level_script(const char *path, MutableHandleValue re
   if (!MODULE_MODE) {
     return JS_ExecuteScript(cx, script, result);
   }
-  
+
   if (!ModuleEvaluate(cx, module, tla_promise)) {
     return false;
   }
