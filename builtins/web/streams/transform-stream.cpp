@@ -7,8 +7,8 @@
 
 #include "js/Conversions.h"
 #include "js/Stream.h"
+#include "builtin.h"
 
-#include "../fetch/request-response.h"
 #include "native-stream-sink.h"
 #include "native-stream-source.h"
 #include "transform-stream-default-controller.h"
@@ -277,7 +277,6 @@ JSObject *TransformStream::owner(JSObject *self) {
 
 void TransformStream::set_owner(JSObject *self, JSObject *owner) {
   MOZ_ASSERT(is_instance(self));
-  MOZ_ASSERT(web::fetch::RequestOrResponse::is_instance(owner));
   MOZ_ASSERT(JS::GetReservedSlot(self, TransformStream::Slots::Owner).isUndefined());
   JS::SetReservedSlot(self, TransformStream::Slots::Owner, JS::ObjectValue(*owner));
 }
