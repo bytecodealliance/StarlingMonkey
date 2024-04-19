@@ -149,8 +149,6 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
   if (!path) {
     return nullptr;
   }
-  JS::CompileOptions opts(cx, *COMPILE_OPTS);
-  opts.setFileAndLine(strip_base(path.get(), BASE_PATH), 1);
 
   RootedObject info(cx, &referencingPrivate.toObject());
   RootedValue parent_path_val(cx);
@@ -163,6 +161,9 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
 
   HostString str = core::encode(cx, parent_path_val);
   const char* resolved_path = resolve_path(path.get(), str.ptr.get(), str.len);
+
+  JS::CompileOptions opts(cx, *COMPILE_OPTS);
+  opts.setFileAndLine(strip_base(resolved_path, BASE_PATH), 1);
   return get_module(cx, path.get(), resolved_path, opts);
 }
 
