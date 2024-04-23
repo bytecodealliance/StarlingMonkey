@@ -71,20 +71,56 @@ static const char* resolve_extension(const char* resolved_path) {
 
 static const char* resolve_path(const char* path, const char* base, size_t base_len) {
   MOZ_ASSERT(base);
-  if (path[0] == '/') {
-    return resolve_extension(strdup(path));
-  }
-  if (path[0] == '.' && path[1] == '/') {
-    path = path + 2;
-  }
   while (base_len > 0 && base[base_len - 1] != '/') {
     base_len--;
   }
-  size_t len = base_len + strlen(path) + 1;
-  char* resolved_path = new char[len];
-  strncpy(resolved_path, base, base_len);
-  strncpy(resolved_path + base_len, path, len - base_len);
-  MOZ_ASSERT(strlen(resolved_path) == len - 1);
+  size_t path_len = strlen(path);
+
+  // create the maximum buffer size as a working buffer
+  char* resolved_path = new char[base_len + path_len + 1];
+
+  // copy the base in if used
+  size_t resolved_len = base_len;
+  if (path[0] == '/') {
+    resolved_len = 0;
+  } else {
+    strncpy(resolved_path, base, base_len);
+  }
+
+  // then iterate by segment of the path
+  size_t path_from_idx = 0;
+  size_t path_cur_idx = 0;
+  while (path_cur_idx < path_len) {
+    while (path_cur_idx < path_len && path[path_cur_idx] != '/')
+      path_cur_idx++;
+    if (path_cur_idx == path_from_idx)
+      break;
+    if (path_cur_idx - path_from_idx == 1 && path[path_from_idx] == '.') {
+      path_cur_idx++;
+      path_from_idx = path_cur_idx;
+      continue;
+    }
+    if (path_cur_idx - path_from_idx == 2 && path[path_from_idx] == '.' && path[path_from_idx + 1] == '.') {
+      path_cur_idx++;
+      path_from_idx = path_cur_idx;
+      if (resolved_len > 0 && resolved_path[resolved_len - 1] == '/') {
+        resolved_len --;
+      }
+      while (resolved_len > 0 && resolved_path[resolved_len - 1] != '/') {
+        resolved_len--;
+      }
+      continue;
+    }
+    if (path[path_cur_idx] == '/')
+      path_cur_idx++;
+    strncpy(resolved_path + resolved_len, path + path_from_idx, path_cur_idx - path_from_idx);
+    resolved_len += path_cur_idx - path_from_idx;
+    path_from_idx = path_cur_idx;
+  }
+
+  // finalize the buffer
+  resolved_path[resolved_len] = '\0';
+  MOZ_ASSERT(strlen(resolved_path) == resolved_len);
   return resolve_extension(resolved_path);
 }
 

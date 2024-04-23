@@ -42,27 +42,17 @@ cmake --build cmake-build-release --parallel 8
 
 4. Testing the build 
 
-Integration tests require [`Wasmtime`](https://wasmtime.dev/) to be installed (`cargo install wasmtime-cli`).
-
-Before tests can be run, the cases must first be built, and then they can be tested:
+After completing the build (a debug build in this case), the integration test runner can be built:
 
 ```bash
-CTEST_OUTPUT_ON_FAILURE=1 make -C cmake-build-debug test
+cmake --build cmake-build-debug --target integration-test-server
 ```
 
-Individual tests can also be run from within the build folder using `ctest` directly:
+Then tests can be run with `ctest` directly via:
 
 ```bash
-ctest --test-dir cmake-build-debug -R smoke
+CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-debug -j8
 ```
-
-Or, to directly run the tests on Wasmtime, use `wasmtime serve` via:
-
-```bash
-wasmtime serve -S common tests/cases/smoke/smoke.wasm
-```
-
-Then visit http://0.0.0.0:8080/
 
 5. Using the runtime with other JS applications
 

@@ -1,0 +1,2 @@
+stdout [0] :: Log: chaining to /chained
+stdout [1] :: Log: post resp [object Response]

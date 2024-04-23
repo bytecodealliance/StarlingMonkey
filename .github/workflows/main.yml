@@ -42,6 +42,6 @@ jobs:
         cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
         cmake --build cmake-build-debug --parallel 4
 
-    - name: StarlingMonkey Integration Tests
+    - name: StarlingMonkey E2E & Integration Tests
       run: |
-        CTEST_OUTPUT_ON_FAILURE=1 make -C cmake-build-debug test
+        CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-debug -j4

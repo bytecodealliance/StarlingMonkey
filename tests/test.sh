@@ -1,68 +1,76 @@
 set -euo pipefail
 
-test_name="$2"
+test_dir="$2"
 test_runtime="$1"
-test_dir="$(dirname "$0")/cases/$test_name"
+test_component="${3:-}"
+test_name="$(basename $test_dir)"
+test_serve_path="${4:-}"
 
 wasmtime="${WASMTIME:-wasmtime}"
 
 # Load test expectation fails to check, only those defined apply
-test_wizer_fail_expectation="$test_dir/expect_wizer_fail"
-test_wizer_stdout_expectation="$test_dir/expect_wizer_stdout.txt"
-test_wizer_stderr_expectation="$test_dir/expect_wizer_stderr.txt"
 test_serve_body_expectation="$test_dir/expect_serve_body.txt"
 test_serve_stdout_expectation="$test_dir/expect_serve_stdout.txt"
 test_serve_stderr_expectation="$test_dir/expect_serve_stderr.txt"
 test_serve_status_expectation=$(cat "$test_dir/expect_serve_status.txt" 2> /dev/null || echo "200")
 
-test_component="$test_dir/$test_name.wasm"
-
 body_log="$test_dir/body.log"
 stdout_log="$test_dir/stdout.log"
 stderr_log="$test_dir/stderr.log"
 
-set +e
-"$test_runtime/componentize.sh" "$test_dir/$test_name.js" "$test_component" 1> "$stdout_log" 2> "$stderr_log"
-wizer_result=$?
-set -e
+# Optionally create the test component if not explicitly provided
+if [ -z "$test_component" ]; then
+   test_component="$test_dir/$test_name.wasm"
 
-if [ -f "$test_wizer_fail_expectation" ] && [ $wizer_result -eq 0 ]; then
-   echo "Expected Wizer to fail, but it succeeded."
-   exit 1
-elif [ ! -f "$test_wizer_fail_expectation" ] && [ ! $wizer_result -eq 0 ]; then
-   echo "Wizering failed."
-   >&2 cat "$stderr_log"
-   >&2 cat "$stdout_log"
-   exit 1
-fi
+   # Run Wizer
+   set +e
+   "$test_runtime/componentize.sh" "$test_dir/$test_name.js" "$test_component" 1> "$stdout_log" 2> "$stderr_log"
+   wizer_result=$?
+   set -e
 
-if [ -f "$test_wizer_stdout_expectation" ]; then
-   cmp "$stdout_log" "$test_wizer_stdout_expectation"
-fi
+   # Check optional Wizer expectations, only those defined apply
+   test_wizer_fail_expectation="$test_dir/expect_wizer_fail"
+   test_wizer_stdout_expectation="$test_dir/expect_wizer_stdout.txt"
+   test_wizer_stderr_expectation="$test_dir/expect_wizer_stderr.txt"
 
-if [ -f "$test_wizer_stderr_expectation" ]; then
-   mv "$stderr_log" "$stderr_log.orig"
-   cat "$stderr_log.orig" | head -n $(cat "$test_wizer_stderr_expectation" | wc -l) > "$stderr_log"
-   rm "$stderr_log.orig"
-   cmp "$stderr_log" "$test_wizer_stderr_expectation"
-fi
-
-if [ ! -f "$test_component" ] || [ ! -s "$test_component" ]; then
-   if [ -f "$test_serve_body_expectation" ] || [ -f "$test_serve_stdout_expectation" ] || [ -f "$test_serve_stderr_expectation" ] || [ -f "$test_dir/expect_serve_status.txt" ]; then
-      echo "Test component $test_component does not exist, cannot verify serve expectations."
+   if [ -f "$test_wizer_fail_expectation" ] && [ $wizer_result -eq 0 ]; then
+      echo "Expected Wizer to fail, but it succeeded."
       exit 1
-   else
-      echo "Test component $test_component does not exist, exiting."
-      rm "$stdout_log"
-      rm "$stderr_log"
-      if [ -f "$test_component" ]; then
-         rm "$test_component"
-      fi
-      exit 0
-   fi   
+   elif [ ! -f "$test_wizer_fail_expectation" ] && [ ! $wizer_result -eq 0 ]; then
+      echo "Wizering failed."
+      >&2 cat "$stderr_log"
+      >&2 cat "$stdout_log"
+      exit 1
+   fi
+
+   if [ -f "$test_wizer_stdout_expectation" ]; then
+      cmp "$stdout_log" "$test_wizer_stdout_expectation"
+   fi
+
+   if [ -f "$test_wizer_stderr_expectation" ]; then
+      mv "$stderr_log" "$stderr_log.orig"
+      cat "$stderr_log.orig" | head -n $(cat "$test_wizer_stderr_expectation" | wc -l) > "$stderr_log"
+      rm "$stderr_log.orig"
+      cmp "$stderr_log" "$test_wizer_stderr_expectation"
+   fi
+
+   if [ ! -f "$test_component" ] || [ ! -s "$test_component" ]; then
+      if [ -f "$test_serve_body_expectation" ] || [ -f "$test_serve_stdout_expectation" ] || [ -f "$test_serve_stderr_expectation" ] || [ -f "$test_dir/expect_serve_status.txt" ]; then
+         echo "Test component $test_component does not exist, cannot verify serve expectations."
+         exit 1
+      else
+         echo "Test component $test_component does not exist, exiting."
+         rm "$stdout_log"
+         rm "$stderr_log"
+         if [ -f "$test_component" ]; then
+            rm "$test_component"
+         fi
+         exit 0
+      fi   
+   fi
 fi
 
-$wasmtime serve -S common --addr 0.0.0.0:8181 "$test_component" 1> "$stdout_log" 2> "$stderr_log" &
+$wasmtime serve -S common --addr 0.0.0.0:0 "$test_component" 1> "$stdout_log" 2> "$stderr_log" &
 wasmtime_pid="$!"
 
 function cleanup {
@@ -85,7 +93,9 @@ if ! cat "$stderr_log" | grep -m 1 "Serving HTTP"; then
    exit 1
 fi
 
-status_code=$(curl --write-out %{http_code} --silent --output "$body_log" http://localhost:8181)
+port=$(cat "$stderr_log" | head -n 1 | tail -c 7 | head -c 5)
+
+status_code=$(curl --write-out %{http_code} --silent --output "$body_log" "http://localhost:$port/$test_serve_path")
 
 if [ ! "$status_code" = "$test_serve_status_expectation" ]; then
    echo "Bad status code $status_code, expected $test_serve_status_expectation"
