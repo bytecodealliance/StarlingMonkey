@@ -40,7 +40,7 @@ jobs:
     - name: Build StarlingMonkey
       run: |
         cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
-        cmake --build cmake-build-debug --parallel 4
+        cmake --build cmake-build-debug --parallel 4 --target all integration-test-server
 
     - name: StarlingMonkey E2E & Integration Tests
       run: |
