@@ -10,10 +10,7 @@ export function serveTest (handler) {
     if (filterEquals)
       testFilter = testFilter.slice(1);
 
-    function filter (subtest) {
-      if (filterEquals)
-        return filterEquals ? subtest === testFilter : subtest.includes(testFilter);
-    }
+    const filter = subtest => filterEquals ? subtest === testFilter : subtest.includes(testFilter);
 
     let subtestCnt = 0;
     let curSubtest = null;
@@ -47,7 +44,7 @@ export function serveTest (handler) {
         return new Response(errorPrefix + e.message, { status: 500 });
       return new Response(errorPrefix + `Unexpected error: ${e.message}\n${e.stack}`, { status: 500 });
     }
-    return new Response(`OK ${testName}${curSubtest ? '?' + curSubtest : subtestCnt > 0 ? ` (${subtestCnt} subtests)` : ''}`);
+    return new Response(`OK ${testName}${curSubtest ? '?' + curSubtest : subtestCnt > 0 || testFilter ? ` (${subtestCnt} subtests)` : ''}`);
   };
 }
 

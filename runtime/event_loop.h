@@ -25,15 +25,14 @@ public:
   static bool has_pending_async_tasks();
 
   /**
-   * Run the event loop until all async tasks have completed.
-   *
-   * Concretely, that means running a loop, whose body does two things:
-   * 1. Run all micro-tasks, i.e. pending Promise reactions
-   * 2. Run the next ready async task
-   *
-   * The loop terminates once both of these steps are null-ops.
+   * Run the micro-tasks / pending Promise reactions
    */
-  static bool run_event_loop(api::Engine *engine, double total_compute);
+  static bool process_jobs(api::Engine *engine, double total_compute);
+  
+  /**
+   * Select on the next async tasks
+   */
+  static bool process_async_tasks(api::Engine *engine, double timeout);
 
   /**
    * Queue a new async task.

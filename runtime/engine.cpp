@@ -363,8 +363,16 @@ bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
 
   SCRIPT_VALUE.init(cx, ns);
 
-  if (!core::EventLoop::run_event_loop(this, 0)) {
+  if (!this->process_jobs()) {
     return false;
+  }
+  while (this->has_pending_async_tasks()) {
+    if (!this->process_async_tasks()) {
+      return false;
+    }
+    if (!this->process_jobs()) {
+      return false;
+    }
   }
 
   // TLA rejections during pre-initialization are treated as top-level exceptions.
@@ -416,8 +424,12 @@ bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
   return true;
 }
 
-bool api::Engine::run_event_loop() {
-  return core::EventLoop::run_event_loop(this, 0);
+bool api::Engine::process_jobs() {
+  return core::EventLoop::process_jobs(this, 0);
+}
+
+bool api::Engine::process_async_tasks() {
+  return core::EventLoop::process_async_tasks(this, 0);
 }
 
 bool api::Engine::dump_value(JS::Value val, FILE *fp) { return ::dump_value(CONTEXT, val, fp); }

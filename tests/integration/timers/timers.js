@@ -19,6 +19,19 @@ export const handler = serveTest(async (t) => {
       }, 20);
     });
   });
+  await t.test("setInterval", async () => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        reject(new AssertionError("Expected setInterval to be called 10 times quickly"));
+      }, 1000);
+      let cnt = 0;
+      setInterval(() => {
+        cnt++;
+        if (cnt === 10)
+          resolve();
+      });
+    });
+  });
   t.test("setInterval-exposed-as-global", () => {
     strictEqual(typeof setInterval, "function", `typeof setInterval`);
   });
@@ -124,7 +137,7 @@ export const handler = serveTest(async (t) => {
     }
   });
 
-  t.skip("setInterval-timeout-parameter-not-supplied", () => {
+  t.test("setInterval-timeout-parameter-not-supplied", () => {
     setInterval(function () {});
   });
 
@@ -156,25 +169,25 @@ export const handler = serveTest(async (t) => {
     );
   });
 
-  t.skip("setInterval-timeout-parameter-negative", () => {
+  t.test("setInterval-timeout-parameter-negative", () => {
     setInterval(() => {}, -1);
     setInterval(() => {}, -1.1);
     setInterval(() => {}, Number.MIN_SAFE_INTEGER);
     setInterval(() => {}, Number.MIN_VALUE);
     setInterval(() => {}, -Infinity);
   });
-  t.skip("setInterval-timeout-parameter-positive", () => {
+  t.test("setInterval-timeout-parameter-positive", () => {
     setInterval(() => {}, 1);
     setInterval(() => {}, 1.1);
     setInterval(() => {}, Number.MAX_SAFE_INTEGER);
     setInterval(() => {}, Number.MAX_VALUE);
     setInterval(() => {}, Infinity);
   });
-  t.skip("setInterval-returns-integer", () => {
+  t.test("setInterval-returns-integer", () => {
     let id = setInterval(() => {}, 1);
     deepStrictEqual(typeof id, "number", `typeof id === "number"`);
   });
-  t.skip("setInterval-called-unbound", () => {
+  t.test("setInterval-called-unbound", () => {
     setInterval.call(undefined, () => {}, 1);
   });
 
