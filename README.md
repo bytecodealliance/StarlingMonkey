@@ -54,6 +54,14 @@ Then tests can be run with `ctest` directly via:
 CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-debug -j8
 ```
 
+Alternative, the integration test server can be directly run with `wasmtime serve` via:
+
+```bash
+wasmtime serve -S common cmake-build-debug/test-server.wasm
+```
+
+Then visit http://0.0.0.0:8080/timers, or any test name and filter of the form `[testName]/[filter]`
+
 5. Using the runtime with other JS applications
 
 The build directory contains a shell script `componentize.sh` that can be used to create components from JS applications. `componentize.sh` takes a single argument, the path to the JS application, and creates a component with a name of the form `[input-file-name].wasm` in the current working directory.
