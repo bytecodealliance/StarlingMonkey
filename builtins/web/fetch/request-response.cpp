@@ -124,11 +124,6 @@ public:
     return true;
   }
 
-  bool ready() override {
-    // TODO(TS): implement
-    return true;
-  }
-
   void trace(JSTracer *trc) override { TraceEdge(trc, &body_source_, "body source for future"); }
 };
 
@@ -186,11 +181,6 @@ public:
   [[nodiscard]] bool cancel(api::Engine *engine) override {
     // TODO(TS): implement
     handle_ = -1;
-    return true;
-  }
-
-  bool ready() override {
-    // TODO(TS): implement
     return true;
   }
 

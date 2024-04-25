@@ -9,6 +9,7 @@
 
 struct TaskQueue {
   std::vector<api::AsyncTask *> tasks = {};
+  int lifetime_cnt = 0;
 
   void trace(JSTracer *trc) const {
     for (const auto task : tasks) {
@@ -38,28 +39,52 @@ bool EventLoop::cancel_async_task(api::Engine *engine, const int32_t id) {
 
 bool EventLoop::has_pending_async_tasks() { return !queue.get().tasks.empty(); }
 
-// TODO: implement compute limit
-bool EventLoop::process_jobs(api::Engine *engine, double total_compute) {
-  JSContext *cx = engine->cx();
-  while (js::HasJobsPending(cx)) {
-    js::RunJobs(cx);
-    if (JS_IsExceptionPending(cx))
-      return false;
-  }
-  return true;
+void EventLoop::incr_event_loop_lifetime() {
+  queue.get().lifetime_cnt++;
 }
 
-// TODO: implement timeout limit
-bool EventLoop::process_async_tasks(api::Engine *engine, double timeout) {
-  if (has_pending_async_tasks()) {
+void EventLoop::decr_event_loop_lifetime() {
+  MOZ_ASSERT(queue.get().lifetime_cnt > 0);
+  queue.get().lifetime_cnt--;
+}
+
+bool lifetime_complete() {
+  return queue.get().lifetime_cnt == 0;
+}
+
+bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
+  JSContext *cx = engine->cx();
+
+  while (true) {
+    while (js::HasJobsPending(cx)) {
+      js::RunJobs(cx);
+      if (JS_IsExceptionPending(cx))
+        return false;
+      if (lifetime_complete())
+        return true;
+    }
+
     auto tasks = &queue.get().tasks;
-    const auto index = api::AsyncTask::select(tasks);
-    auto task = tasks->at(index);
-    if (!task->run(engine)) {
+
+    // Unresolved lifetime error -
+    // if there are no async tasks, and the lifetime was not complete
+    // then we cannot complete the lifetime
+    if (tasks->size() == 0) {
       return false;
     }
-    tasks->erase(tasks->begin() + index);
+
+    const auto ready = api::AsyncTask::poll(tasks);
+    for (auto index : ready) {
+      auto task = tasks->at(index);
+      if (!task->run(engine)) {
+        return false;
+      }
+      tasks->erase(tasks->begin() + index);
+      if (lifetime_complete())
+        return true;
+    }
   }
+
   return true;
 }
 

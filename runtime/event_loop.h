@@ -25,9 +25,12 @@ public:
   static bool has_pending_async_tasks();
 
   /**
-   * Run the micro-tasks / pending Promise reactions
+   * Run the event loop until all lifetimes are complete
    */
-  static bool process_jobs(api::Engine *engine, double total_compute);
+  static bool run_event_loop(api::Engine *engine, double total_compute);
+
+  static void incr_event_loop_lifetime();
+  static void decr_event_loop_lifetime();
   
   /**
    * Select on the next async tasks

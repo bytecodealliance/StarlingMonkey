@@ -32,6 +32,12 @@ namespace api {
 class AsyncTask;
 
 class Engine {
+
+typedef int Lifetime;
+
+#define LIFETIME_NONE -1;
+#define LIFETIME_ALL -2;
+
 public:
   Engine();
   JSContext *cx();
@@ -62,8 +68,22 @@ public:
   void enable_module_mode(bool enable);
   bool eval_toplevel(const char *path, MutableHandleValue result);
 
-  bool process_jobs();
-  bool process_async_tasks();
+  /**
+   * Run the JS task queue and wait on pending tasks until there
+   * are no outstanding lifetimes to wait on.
+   */
+  bool run_event_loop();
+
+  /**
+   * Add an event loop lifetime to track
+   */
+  void incr_event_loop_lifetime();
+
+  /**
+   * Remove an event loop lifetime to track
+   * The last decrementer marks the event loop as complete to finish
+   */
+  void decr_event_loop_lifetime();
 
   /**
    * Get the JS value associated with the top-level script execution -
@@ -94,7 +114,6 @@ public:
 
   virtual bool run(Engine *engine) = 0;
   virtual bool cancel(Engine *engine) = 0;
-  virtual bool ready() = 0;
 
   [[nodiscard]] virtual PollableHandle id() {
     MOZ_ASSERT(handle_ != INVALID_POLLABLE_HANDLE);
@@ -103,13 +122,16 @@ public:
 
   virtual void trace(JSTracer *trc) = 0;
 
-  /// Returns the first ready `AsyncTask`.
-  ///
-  /// TODO: as an optimization, return a vector containing the ready head of the queue.
-  /// Note that that works iff the very first entry in the queue is ready, and then only
-  /// for the dense head of the queue, without gaps. This is because during processing
-  /// of the ready tasks, other tasks might become ready that should be processed first.
-  static size_t select(std::vector<AsyncTask *> *handles);
+  /**
+   * Poll for completion on the given async tasks
+   * A list of ready task indices is returned
+   */
+  static std::vector<size_t> poll(std::vector<AsyncTask *> *handles);
+
+  /**
+   * Returns whether or not the given task is ready
+   */
+  static bool ready(AsyncTask *task);
 };
 
 } // namespace api

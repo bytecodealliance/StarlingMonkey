@@ -41,6 +41,8 @@ void dec_pending_promise_count(JSObject *self) {
           .toInt32();
   MOZ_ASSERT(count > 0);
   count--;
+  if (count == 0)
+    ENGINE->decr_event_loop_lifetime();
   JS::SetReservedSlot(self, static_cast<uint32_t>(FetchEvent::Slots::PendingPromiseCount),
                       JS::Int32Value(count));
 }
@@ -589,19 +591,10 @@ void exports_wasi_http_incoming_handler(exports_wasi_http_incoming_request reque
 
   dispatch_fetch_event(fetch_event, &total_compute);
 
-  bool success = ENGINE->process_jobs();
-  if (success) {
-    while (FetchEvent::is_active(fetch_event) && ENGINE->has_pending_async_tasks()) {
-      if (!ENGINE->process_async_tasks()) {
-        success = false;
-        break;
-      }
-      if (!ENGINE->process_jobs()) {
-        success = false;
-        break;
-      }
-    }
-  }
+  // track the fetch event lifetime, which when decremented ends the event loop
+  ENGINE->incr_event_loop_lifetime();
+
+  bool success = ENGINE->run_event_loop();
 
   if (JS_IsExceptionPending(ENGINE->cx())) {
     ENGINE->dump_pending_exception("evaluating incoming request");
