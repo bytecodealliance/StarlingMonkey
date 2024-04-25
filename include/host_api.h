@@ -305,7 +305,7 @@ public:
       : incoming(incoming), outgoing(outgoing) {}
 
   Result<uint8_t> pump();
-  bool ready();
+
   bool done();
 };
 
