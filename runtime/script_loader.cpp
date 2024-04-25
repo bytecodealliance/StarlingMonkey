@@ -87,19 +87,24 @@ static const char* resolve_path(const char* path, const char* base, size_t base_
     strncpy(resolved_path, base, base_len);
   }
 
-  // then iterate by segment of the path
+  // Iterate through each segment of the path, copying each segment into the resolved path,
+  // while handling backtracking for .. segments and skipping . segments appropriately.
   size_t path_from_idx = 0;
   size_t path_cur_idx = 0;
   while (path_cur_idx < path_len) {
+    // read until the end or the next / to get the segment position
+    // as the substring between path_from_idx and path_cur_idx
     while (path_cur_idx < path_len && path[path_cur_idx] != '/')
       path_cur_idx++;
     if (path_cur_idx == path_from_idx)
       break;
+    // . segment to skip
     if (path_cur_idx - path_from_idx == 1 && path[path_from_idx] == '.') {
       path_cur_idx++;
       path_from_idx = path_cur_idx;
       continue;
     }
+    // .. segment backtracking
     if (path_cur_idx - path_from_idx == 2 && path[path_from_idx] == '.' && path[path_from_idx + 1] == '.') {
       path_cur_idx++;
       path_from_idx = path_cur_idx;
@@ -111,6 +116,7 @@ static const char* resolve_path(const char* path, const char* base, size_t base_
       }
       continue;
     }
+    // normal segment to copy (with the trailing / if not the last segment)
     if (path[path_cur_idx] == '/')
       path_cur_idx++;
     strncpy(resolved_path + resolved_len, path + path_from_idx, path_cur_idx - path_from_idx);
