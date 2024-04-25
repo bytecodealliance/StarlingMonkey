@@ -306,7 +306,7 @@ ScriptLoader::ScriptLoader(JSContext *cx, JS::CompileOptions *opts) {
   SetModuleMetadataHook(rt, module_metadata_hook);
 }
 
-bool ScriptLoader::define_builtin_import(const char* id, HandleValue builtin) {
+bool ScriptLoader::define_builtin_module(const char* id, HandleValue builtin) {
   RootedString id_str(CONTEXT, JS_NewStringCopyZ(CONTEXT, id));
   if (!id_str) {
     return false;

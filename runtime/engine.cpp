@@ -350,8 +350,8 @@ HandleValue api::Engine::script_value() {
 
 void api::Engine::abort(const char *reason) { ::abort(CONTEXT, reason); }
 
-bool api::Engine::define_builtin_import(const char* id, HandleValue builtin) {
-  return scriptLoader->define_builtin_import(id, builtin);
+bool api::Engine::define_builtin_module(const char* id, HandleValue builtin) {
+  return scriptLoader->define_builtin_module(id, builtin);
 }
 
 bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {

@@ -38,7 +38,7 @@ public:
   HandleObject global();
 
   /**
-   * Define a new builtin import
+   * Define a new builtin module
    * 
    * The enumerable properties of the builtin object are used to construct
    * a synthetic module namespace for the module.
@@ -49,7 +49,7 @@ public:
    * 
    * Once loaded, the instance is cached and reused as a singleton.
    */
-  bool define_builtin_import(const char* id, HandleValue builtin);
+  bool define_builtin_module(const char* id, HandleValue builtin);
 
   /**
    * Treat the top-level script as a module or classic JS script.
