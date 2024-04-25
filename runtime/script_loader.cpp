@@ -12,7 +12,7 @@
 static JSContext* CONTEXT;
 static ScriptLoader* SCRIPT_LOADER;
 JS::PersistentRootedObject moduleRegistry;
-JS::PersistentRootedObject builtinImports;
+JS::PersistentRootedObject builtinModules;
 static bool MODULE_MODE = true;
 static char* BASE_PATH = nullptr;
 JS::CompileOptions *COMPILE_OPTS;
@@ -246,7 +246,7 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
   }
 
   RootedValue builtin_val(cx);
-  if (!MapGet(cx, builtinImports, path_val, &builtin_val)) {
+  if (!MapGet(cx, builtinModules, path_val, &builtin_val)) {
     return nullptr; 
   }
   if (!builtin_val.isUndefined()) {
@@ -282,7 +282,7 @@ bool module_metadata_hook(JSContext* cx, HandleValue referencingPrivate, HandleO
     return false;
   }
   RootedValue builtin_val(cx);
-  if (!MapGet(cx, builtinImports, parent_id_val, &builtin_val)) {
+  if (!MapGet(cx, builtinModules, parent_id_val, &builtin_val)) {
     return false;
   }
   if (builtin_val.isUndefined()) {
@@ -298,9 +298,9 @@ ScriptLoader::ScriptLoader(JSContext *cx, JS::CompileOptions *opts) {
   CONTEXT = cx;
   COMPILE_OPTS = opts;
   moduleRegistry.init(cx, JS::NewMapObject(cx));
-  builtinImports.init(cx, JS::NewMapObject(cx));
+  builtinModules.init(cx, JS::NewMapObject(cx));
   MOZ_RELEASE_ASSERT(moduleRegistry);
-  MOZ_RELEASE_ASSERT(builtinImports);
+  MOZ_RELEASE_ASSERT(builtinModules);
   JSRuntime *rt = JS_GetRuntime(cx);
   SetModuleResolveHook(rt, module_resolve_hook);
   SetModuleMetadataHook(rt, module_metadata_hook);
@@ -314,14 +314,14 @@ bool ScriptLoader::define_builtin_module(const char* id, HandleValue builtin) {
   RootedValue module_val(CONTEXT);
   RootedValue id_val(CONTEXT, StringValue(id_str));
   bool already_exists;
-  if (!MapHas(CONTEXT, builtinImports, id_val, &already_exists)) {
+  if (!MapHas(CONTEXT, builtinModules, id_val, &already_exists)) {
     return false;
   }
   if (already_exists) {
     fprintf(stderr, "Unable to define builtin %s, as it already exists", id);
     return false;
   }
-  if (!MapSet(CONTEXT, builtinImports, id_val, builtin)) {
+  if (!MapSet(CONTEXT, builtinModules, id_val, builtin)) {
     return false;
   }
   return true;
