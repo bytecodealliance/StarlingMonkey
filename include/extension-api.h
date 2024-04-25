@@ -33,11 +33,6 @@ class AsyncTask;
 
 class Engine {
 
-typedef int Lifetime;
-
-#define LIFETIME_NONE -1;
-#define LIFETIME_ALL -2;
-
 public:
   Engine();
   JSContext *cx();
