@@ -1,2 +1,0 @@
-stdout [0] :: Log: chaining from http://localhost:8181/ to /chained
-stdout [1] :: Log: post resp [object Response]

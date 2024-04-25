@@ -24,5 +24,7 @@
 # Rust compilation output
 /target
 
-/tests/cases/*/*.wasm
-/tests/cases/*/*.log
+/tests/e2e/*/*.wasm
+/tests/e2e/*/*.log
+/tests/integration/*/*.wasm
+/tests/integration/*/*.log
