@@ -417,12 +417,12 @@ bool api::Engine::run_event_loop() {
   return core::EventLoop::run_event_loop(this, 0);
 }
 
-void api::Engine::incr_event_loop_lifetime() {
-  return core::EventLoop::incr_event_loop_lifetime();
+void api::Engine::incr_event_loop_interest() {
+  return core::EventLoop::incr_event_loop_interest();
 }
 
-void api::Engine::decr_event_loop_lifetime() {
-  return core::EventLoop::decr_event_loop_lifetime();
+void api::Engine::decr_event_loop_interest() {
+  return core::EventLoop::decr_event_loop_interest();
 }
 
 bool api::Engine::dump_value(JS::Value val, FILE *fp) { return ::dump_value(CONTEXT, val, fp); }

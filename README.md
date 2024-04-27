@@ -51,7 +51,7 @@ cmake --build cmake-build-debug --target integration-test-server
 Then tests can be run with `ctest` directly via:
 
 ```bash
-CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-debug -j8
+ctest --test-dir cmake-build-debug -j8 --output-on-failure
 ```
 
 Alternatively, the integration test server can be directly run with `wasmtime serve` via:

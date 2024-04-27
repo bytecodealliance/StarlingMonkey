@@ -9,7 +9,8 @@
 
 struct TaskQueue {
   std::vector<api::AsyncTask *> tasks = {};
-  int lifetime_cnt = 0;
+  int interest_cnt = 0;
+  bool event_loop_running = false;
 
   void trace(JSTracer *trc) const {
     for (const auto task : tasks) {
@@ -39,53 +40,74 @@ bool EventLoop::cancel_async_task(api::Engine *engine, const int32_t id) {
 
 bool EventLoop::has_pending_async_tasks() { return !queue.get().tasks.empty(); }
 
-void EventLoop::incr_event_loop_lifetime() {
-  queue.get().lifetime_cnt++;
+void EventLoop::incr_event_loop_interest() { queue.get().interest_cnt++; }
+
+void EventLoop::decr_event_loop_interest() {
+  MOZ_ASSERT(queue.get().interest_cnt > 0);
+  queue.get().interest_cnt--;
 }
 
-void EventLoop::decr_event_loop_lifetime() {
-  MOZ_ASSERT(queue.get().lifetime_cnt > 0);
-  queue.get().lifetime_cnt--;
-}
+inline bool interest_complete() { return queue.get().interest_cnt == 0; }
 
-bool lifetime_complete() {
-  return queue.get().lifetime_cnt == 0;
-}
+inline void exit_event_loop() { queue.get().event_loop_running = false; }
 
 bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
+  if (queue.get().event_loop_running) {
+    fprintf(stderr, "cannot run event loop as it is already running");
+    return false;
+  }
+  queue.get().event_loop_running = true;
   JSContext *cx = engine->cx();
 
   while (true) {
     while (js::HasJobsPending(cx)) {
       js::RunJobs(cx);
-      if (JS_IsExceptionPending(cx))
+      if (JS_IsExceptionPending(cx)) {
+        exit_event_loop();
         return false;
-      if (lifetime_complete())
+      }
+      if (interest_complete()) {
+        exit_event_loop();
         return true;
+      }
     }
 
-    auto tasks = &queue.get().tasks;
+    const auto tasks = &queue.get().tasks;
 
-    // Unresolved lifetime error -
-    // if there are no async tasks, and the lifetime was not complete
-    // then we cannot complete the lifetime
     if (tasks->size() == 0) {
+      fprintf(stderr, "event loop error - both task and job queues are empty, but expected "
+                      "operations did not resolve");
+      exit_event_loop();
       return false;
     }
 
-    const auto ready = api::AsyncTask::poll(tasks);
-    for (auto index : ready) {
+    auto ready = api::AsyncTask::poll(tasks);
+    const auto ready_len = ready.size();
+    // ensure ready list is monotonic
+    if (!std::is_sorted(ready.begin(), ready.end())) {
+      std::sort(ready.begin(), ready.end());
+    }
+    for (auto i = 0; i < ready_len; i++) {
+      // index is offset by previous erasures
+      auto index = ready.at(i) - i;
       auto task = tasks->at(index);
-      if (!task->run(engine)) {
+      bool success = task->run(engine);
+      tasks->erase(tasks->begin() + index);
+      if (!success) {
+        exit_event_loop();
         return false;
       }
-      tasks->erase(tasks->begin() + index);
-      if (lifetime_complete())
+      js::RunJobs(cx);
+      if (JS_IsExceptionPending(cx)) {
+        exit_event_loop();
+        return false;
+      }
+      if (interest_complete()) {
+        exit_event_loop();
         return true;
+      }
     }
   }
-
-  return true;
 }
 
 void EventLoop::init(JSContext *cx) { queue.init(cx); }
