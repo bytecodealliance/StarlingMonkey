@@ -42,7 +42,7 @@ void dec_pending_promise_count(JSObject *self) {
   MOZ_ASSERT(count > 0);
   count--;
   if (count == 0)
-    ENGINE->decr_event_loop_lifetime();
+    ENGINE->decr_event_loop_interest();
   JS::SetReservedSlot(self, static_cast<uint32_t>(FetchEvent::Slots::PendingPromiseCount),
                       JS::Int32Value(count));
 }
@@ -159,7 +159,7 @@ bool send_response(host_api::HttpOutgoingResponse *response, JS::HandleObject se
 
 bool start_response(JSContext *cx, JS::HandleObject response_obj, bool streaming) {
   auto generic_response = Response::response_handle(response_obj);
-  host_api::HttpOutgoingResponse* response;
+  host_api::HttpOutgoingResponse *response;
 
   if (generic_response->is_incoming()) {
     auto incoming_response = static_cast<host_api::HttpIncomingResponse *>(generic_response);
@@ -591,8 +591,8 @@ void exports_wasi_http_incoming_handler(exports_wasi_http_incoming_request reque
 
   dispatch_fetch_event(fetch_event, &total_compute);
 
-  // track the fetch event lifetime, which when decremented ends the event loop
-  ENGINE->incr_event_loop_lifetime();
+  // track fetch event interest, which when decremented ends the event loop
+  ENGINE->incr_event_loop_interest();
 
   bool success = ENGINE->run_event_loop();
 

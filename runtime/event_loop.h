@@ -32,7 +32,7 @@ public:
 
   static void incr_event_loop_interest();
   static void decr_event_loop_interest();
-  
+
   /**
    * Select on the next async tasks
    */
