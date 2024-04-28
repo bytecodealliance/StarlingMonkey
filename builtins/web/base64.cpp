@@ -80,7 +80,7 @@ const uint8_t base64DecodeTable[128] = {
   /* 64 */   nonAlphabet,           0,           1,           2,           3,           4,           5,           6,
   /* 72 */             7,           8,           9,          10,          11,          12,          13,          14,
   /* 80 */            15,          16,          17,          18,          19,          20,          21,          22,
-  /* 88 */            23,          24,          25, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet,          63,
+  /* 88 */            23,          24,          25, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet, nonAlphabet,
   /* 96 */   nonAlphabet,          26,          27,          28,          29,          30,          31,          32,
   /* 104 */           33,          34,          35,          36,          37,          38,          39,          40,
   /* 112 */           41,          42,          43,          44,          45,          46,          47,          48,
