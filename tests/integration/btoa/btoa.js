@@ -374,5 +374,6 @@ export const handler = serveTest(async () => {
     throws(() => atob("~~"));
     throws(() => atob(".."));
     throws(() => atob("--"));
+    throws(() => atob("__"));
   }
 });
