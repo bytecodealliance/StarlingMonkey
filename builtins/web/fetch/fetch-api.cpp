@@ -42,7 +42,7 @@ public:
       return false;
     }
 
-    response_obj = Response::create(cx, response_obj, response);
+    response_obj = Response::create_incoming(cx, response_obj, response);
     if (!response_obj) {
       return false;
     }
