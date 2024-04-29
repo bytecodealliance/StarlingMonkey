@@ -198,33 +198,24 @@ struct HostBytes final {
   operator std::span<uint8_t>() const { return std::span<uint8_t>(this->ptr.get(), this->len); }
 };
 
-/// The type of handles used by the host interface.
-typedef int32_t Handle;
-
-/// An abstract base class to be used in classes representing host resources.
+/// An opaque class to be used in classes representing host resources.
 ///
 /// Some host resources have different requirements for their client-side representation
-/// depending on the host API. To accommodate this, we introduce a base class to use for
-/// all of them, which the API-specific implementation can subclass as needed.
-class HandleState {
-public:
-  Handle handle;
-  HandleState() = delete;
-  explicit HandleState(Handle handle) : handle{handle} {}
-  virtual ~HandleState() = default;
-
-  bool valid() const { return handle != -1; }
-};
+/// depending on the host API. To accommodate this, we introduce an opaque class to use for
+/// all of them, which the API-specific implementation can define as needed.
+class HandleState;
 
 class Resource {
 protected:
-  HandleState *handle_state_;
+  std::unique_ptr<HandleState> handle_state_ = nullptr;
+
+  // explicit Resource(HandleState *handle_state);
 
 public:
-  virtual ~Resource() = default;
+  virtual ~Resource();
 
-  /// Returns true when this resource handle is valid.
-  virtual bool valid() const { return this->handle_state_ != nullptr; }
+  /// Returns true if this resource handle has been initialized and is still valid.
+  bool valid() const;
 };
 
 class Pollable : public Resource {
@@ -241,7 +232,7 @@ public:
 class HttpIncomingBody final : public Pollable {
 public:
   HttpIncomingBody() = delete;
-  explicit HttpIncomingBody(Handle handle);
+  explicit HttpIncomingBody(std::unique_ptr<HandleState> handle);
 
   class ReadResult final {
   public:
@@ -267,7 +258,7 @@ public:
 class HttpOutgoingBody final : public Pollable {
 public:
   HttpOutgoingBody() = delete;
-  explicit HttpOutgoingBody(Handle handle);
+  explicit HttpOutgoingBody(std::unique_ptr<HandleState> handle);
 
   /// Get the body's stream's current capacity.
   Result<uint64_t> capacity();
@@ -315,7 +306,7 @@ class HttpHeaders;
 class FutureHttpIncomingResponse final : public Pollable {
 public:
   FutureHttpIncomingResponse() = delete;
-  explicit FutureHttpIncomingResponse(Handle handle);
+  explicit FutureHttpIncomingResponse(std::unique_ptr<HandleState> handle);
 
   /// Returns the response if it is ready, or `nullopt` if it is not.
   Result<optional<HttpIncomingResponse *>> maybe_response();
@@ -331,11 +322,9 @@ class HttpHeadersReadOnly : public Resource {
   friend HttpOutgoingRequest;
   friend HttpHeaders;
 
-protected:
-  explicit HttpHeadersReadOnly(Handle handle);
-  HttpHeadersReadOnly() = default;
-
 public:
+  HttpHeadersReadOnly() = delete;
+  explicit HttpHeadersReadOnly(std::unique_ptr<HandleState> handle);
   HttpHeadersReadOnly(const HttpHeadersReadOnly &headers) = delete;
 
   HttpHeaders* clone();
@@ -357,13 +346,13 @@ class HttpHeaders final : public HttpHeadersReadOnly {
   friend HttpOutgoingResponse;
   friend HttpOutgoingRequest;
 
-  explicit HttpHeaders(Handle handle);
+  explicit HttpHeaders(std::unique_ptr<HandleState> handle);
 
 public:
   HttpHeaders();
   explicit HttpHeaders(const HttpHeadersReadOnly &headers);
 
-  static Result<HttpHeaders*> FromEntries(const vector<tuple<string_view, vector<string_view>>> &entries);
+  static Result<HttpHeaders*> FromEntries(const vector<tuple<string_view, string_view>> &entries);
 
   bool is_writable() override { return true; };
   HttpHeaders* as_writable() override {
@@ -425,8 +414,10 @@ public:
 
 class HttpIncomingRequest final : public HttpRequest, public HttpIncomingBodyOwner {
 public:
+  using RequestHandler = bool (*)(HttpIncomingRequest* request);
+
   HttpIncomingRequest() = delete;
-  explicit HttpIncomingRequest(Handle handle);
+  explicit HttpIncomingRequest(std::unique_ptr<HandleState> handle);
 
   bool is_incoming() override { return true; }
   bool is_request() override { return true; }
@@ -434,16 +425,18 @@ public:
   [[nodiscard]] Result<string_view> method() override;
   Result<HttpHeadersReadOnly *> headers() override;
   Result<HttpIncomingBody *> body() override;
+
+  static void set_handler(RequestHandler handler);
 };
 
 class HttpOutgoingRequest final : public HttpRequest, public HttpOutgoingBodyOwner {
-  HttpOutgoingRequest(HandleState *state);
+  HttpOutgoingRequest(std::unique_ptr<HandleState> handle);
 
 public:
   HttpOutgoingRequest() = delete;
 
   static HttpOutgoingRequest *make(string_view method, optional<HostString> url,
-                                   HttpHeaders *headers);
+                                                              HttpHeadersReadOnly *headers);
 
   bool is_incoming() override { return false; }
   bool is_request() override { return true; }
@@ -467,7 +460,7 @@ public:
 class HttpIncomingResponse final : public HttpResponse, public HttpIncomingBodyOwner {
 public:
   HttpIncomingResponse() = delete;
-  explicit HttpIncomingResponse(Handle handle);
+  explicit HttpIncomingResponse(std::unique_ptr<HandleState> handle);
 
   bool is_incoming() override { return true; }
   bool is_request() override { return false; }
@@ -478,11 +471,9 @@ public:
 };
 
 class HttpOutgoingResponse final : public HttpResponse, public HttpOutgoingBodyOwner {
-  HttpOutgoingResponse(HandleState *state);
+  HttpOutgoingResponse(std::unique_ptr<HandleState> handle);
 
 public:
-  using ResponseOutparam = Handle;
-
   HttpOutgoingResponse() = delete;
 
   static HttpOutgoingResponse *make(uint16_t status, HttpHeaders *headers);
@@ -494,7 +485,7 @@ public:
   Result<HttpOutgoingBody *> body() override;
   [[nodiscard]] Result<uint16_t> status() override;
 
-  Result<Void> send(ResponseOutparam out_param);
+  Result<Void> send();
 };
 
 class Random final {

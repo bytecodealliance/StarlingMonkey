@@ -20,8 +20,6 @@ api::Engine *ENGINE;
 
 PersistentRooted<JSObject *> INSTANCE;
 JS::PersistentRootedObjectVector *FETCH_HANDLERS;
-
-host_api::HttpOutgoingResponse::ResponseOutparam RESPONSE_OUT;
 host_api::HttpOutgoingBody *STREAMING_BODY;
 
 void inc_pending_promise_count(JSObject *self) {
@@ -70,7 +68,7 @@ JSObject *FetchEvent::prepare_downstream_request(JSContext *cx) {
       cx, JS_NewObjectWithGivenProto(cx, &Request::class_, Request::proto_obj));
   if (!requestInstance)
     return nullptr;
-  return Request::create(cx, requestInstance, nullptr);
+  return Request::create(cx, requestInstance);
 }
 
 bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
@@ -149,7 +147,7 @@ bool send_response(host_api::HttpOutgoingResponse *response, JS::HandleObject se
                    FetchEvent::State new_state) {
   MOZ_ASSERT(FetchEvent::state(self) == FetchEvent::State::unhandled ||
              FetchEvent::state(self) == FetchEvent::State::waitToRespond);
-  auto result = response->send(RESPONSE_OUT);
+  auto result = response->send();
   FetchEvent::set_state(self, new_state);
 
   if (auto *err = result.to_err()) {
@@ -161,26 +159,27 @@ bool send_response(host_api::HttpOutgoingResponse *response, JS::HandleObject se
 }
 
 bool start_response(JSContext *cx, JS::HandleObject response_obj, bool streaming) {
-  auto generic_response = Response::response_handle(response_obj);
-  host_api::HttpOutgoingResponse *response;
+  auto status = Response::status(response_obj);
+  auto headers = RequestOrResponse::headers_clone(cx, response_obj);
+  if (!headers) {
+    return false;
+  }
 
-  if (generic_response->is_incoming()) {
-    auto incoming_response = static_cast<host_api::HttpIncomingResponse *>(generic_response);
-    auto status = incoming_response->status();
-    MOZ_RELEASE_ASSERT(!status.is_err(), "Incoming response must have a status code");
-    auto headers = incoming_response->headers().unwrap()->clone();
-    response = host_api::HttpOutgoingResponse::make(status.unwrap(), headers);
-    auto *source_body = incoming_response->body().unwrap();
-    auto *dest_body = response->body().unwrap();
+  auto incoming_response = Response::response_handle(response_obj);
+  host_api::HttpOutgoingResponse* response =
+    host_api::HttpOutgoingResponse::make(status, headers.get());
+  if (incoming_response) {
+    if (streaming) {
+      auto *source_body = incoming_response->body().unwrap();
+      auto *dest_body = response->body().unwrap();
 
-    auto res = dest_body->append(ENGINE, source_body);
-    if (auto *err = res.to_err()) {
-      HANDLE_ERROR(cx, *err);
-      return false;
+      auto res = dest_body->append(ENGINE, source_body);
+      if (auto *err = res.to_err()) {
+        HANDLE_ERROR(cx, *err);
+        return false;
+      }
+      MOZ_RELEASE_ASSERT(RequestOrResponse::mark_body_used(cx, response_obj));
     }
-    MOZ_RELEASE_ASSERT(RequestOrResponse::mark_body_used(cx, response_obj));
-  } else {
-    response = static_cast<host_api::HttpOutgoingResponse *>(generic_response);
   }
 
   if (streaming && response->has_body()) {
@@ -509,6 +508,49 @@ static void dispatch_fetch_event(HandleObject event, double *total_compute) {
   // LOG("Request handler took %fms\n", diff / 1000);
 }
 
+bool handle_incoming_request(host_api::HttpIncomingRequest * request) {
+  HandleObject fetch_event = FetchEvent::instance();
+  MOZ_ASSERT(FetchEvent::is_instance(fetch_event));
+  if (!FetchEvent::init_incoming_request(ENGINE->cx(), fetch_event, request)) {
+    ENGINE->dump_pending_exception("initialization of FetchEvent");
+    return false;
+  }
+
+  double total_compute = 0;
+
+  dispatch_fetch_event(fetch_event, &total_compute);
+
+  // track fetch event interest, which when decremented ends the event loop
+  ENGINE->incr_event_loop_interest();
+
+  bool success = ENGINE->run_event_loop();
+
+  if (JS_IsExceptionPending(ENGINE->cx())) {
+    ENGINE->dump_pending_exception("evaluating incoming request");
+  }
+
+  if (!success) {
+    fprintf(stderr, "Internal error.");
+  }
+
+  if (ENGINE->debug_logging_enabled() && ENGINE->has_pending_async_tasks()) {
+    fprintf(stderr, "Event loop terminated with async tasks pending. "
+                    "Use FetchEvent#waitUntil to extend the component's "
+                    "lifetime if needed.\n");
+  }
+
+  if (!FetchEvent::response_started(fetch_event)) {
+    FetchEvent::respondWithError(ENGINE->cx(), fetch_event);
+    return true;
+  }
+
+  if (STREAMING_BODY && STREAMING_BODY->valid()) {
+    STREAMING_BODY->close();
+  }
+
+  return true;
+}
+
 bool install(api::Engine *engine) {
   ENGINE = engine;
   FETCH_HANDLERS = new JS::PersistentRootedObjectVector(engine->cx());
@@ -544,81 +586,8 @@ bool install(api::Engine *engine) {
   //   }
   // }
 
+  host_api::HttpIncomingRequest::set_handler(handle_incoming_request);
   return true;
 }
 
 } // namespace builtins::web::fetch::fetch_event
-
-// #define S_TO_NS(s) ((s) * 1000000000)
-// static int64_t now_ns() {
-//   timespec now{};
-//   clock_gettime(CLOCK_MONOTONIC, &now);
-//   return S_TO_NS(now.tv_sec) + now.tv_nsec;
-// }
-using namespace builtins::web::fetch::fetch_event;
-// TODO: change this to fully work in terms of host_api.
-void exports_wasi_http_incoming_handler(exports_wasi_http_incoming_request request_handle,
-                                        exports_wasi_http_response_outparam response_out) {
-
-  // auto begin = now_ns();
-  // auto id1 = host_api::MonotonicClock::subscribe(begin + 1, true);
-  // auto id2 = host_api::MonotonicClock::subscribe(begin + 1000000*1000, true);
-  // bindings_borrow_pollable_t handles[2] = {bindings_borrow_pollable_t{id2},
-  // bindings_borrow_pollable_t{id1}}; auto list = bindings_list_borrow_pollable_t{handles, 2};
-  // bindings_list_u32_t res = {.ptr = nullptr,.len = 0};
-  // wasi_io_0_2_0_rc_2023_10_18_poll_poll_list(&list, &res);
-  // fprintf(stderr, "first ready after first poll: %d. diff: %lld\n", handles[res.ptr[0]].__handle,
-  // (now_ns() - begin) / 1000);
-  //
-  // wasi_io_0_2_0_rc_2023_10_18_poll_pollable_drop_own(bindings_own_pollable_t{id1});
-  //
-  // bindings_borrow_pollable_t handles2[1] = {bindings_borrow_pollable_t{id2}};
-  // list = bindings_list_borrow_pollable_t{handles2, 1};
-  // wasi_io_0_2_0_rc_2023_10_18_poll_poll_list(&list, &res);
-  // fprintf(stderr, "first ready after second poll: %d. diff: %lld\n",
-  // handles2[res.ptr[0]].__handle, (now_ns() - begin) / 1000);
-  //
-  // return;
-
-  RESPONSE_OUT = response_out.__handle;
-
-  auto *request = new host_api::HttpIncomingRequest(request_handle.__handle);
-  HandleObject fetch_event = FetchEvent::instance();
-  MOZ_ASSERT(FetchEvent::is_instance(fetch_event));
-  if (!FetchEvent::init_incoming_request(ENGINE->cx(), fetch_event, request)) {
-    ENGINE->dump_pending_exception("initialization of FetchEvent");
-    return;
-  }
-
-  double total_compute = 0;
-
-  dispatch_fetch_event(fetch_event, &total_compute);
-
-  // track fetch event interest, which when decremented ends the event loop
-  ENGINE->incr_event_loop_interest();
-
-  bool success = ENGINE->run_event_loop();
-
-  if (JS_IsExceptionPending(ENGINE->cx())) {
-    ENGINE->dump_pending_exception("evaluating incoming request");
-  }
-
-  if (!success) {
-    fprintf(stderr, "Internal error.");
-  }
-
-  if (ENGINE->debug_logging_enabled() && ENGINE->has_pending_async_tasks()) {
-    fprintf(stderr, "Event loop terminated with async tasks pending. "
-                    "Use FetchEvent#waitUntil to extend the component's "
-                    "lifetime if needed.\n");
-  }
-
-  if (!FetchEvent::response_started(fetch_event)) {
-    FetchEvent::respondWithError(ENGINE->cx(), fetch_event);
-    return;
-  }
-
-  if (STREAMING_BODY && STREAMING_BODY->valid()) {
-    STREAMING_BODY->close();
-  }
-}
