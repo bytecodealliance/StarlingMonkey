@@ -2,8 +2,8 @@
 
 namespace core {
 
-JSString* decode(JSContext* cx, host_api::HostString& str) {
-  JS::UTF8Chars ret_chars(str.ptr.get(), str.len);
+JSString* decode(JSContext* cx, string_view str) {
+  JS::UTF8Chars ret_chars(str.data(), str.length());
   return JS_NewStringCopyUTF8N(cx, ret_chars);
 }
 
