@@ -13,9 +13,9 @@ async function main(event) {
         
         let response = await fetch("https://echo.free.beeceptor.com", {
             method: "POST",
-            headers: {
-                [headerKey] :headerValue 
-            },
+            // headers: {
+            //     [headerKey] :headerValue 
+            // },
             body: "hello world"
         })
 
