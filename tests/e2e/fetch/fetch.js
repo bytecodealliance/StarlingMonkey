@@ -10,8 +10,6 @@ async function main(event) {
         
         let p = fetch("https://jsonplaceholder.typicode.com/users");
         let response = await p;
-        // Not logging the response results in an error
-        console.log("RESPONSE", response.status);
 
         let text = await response.json();
         console.log("Successfully received response json body");

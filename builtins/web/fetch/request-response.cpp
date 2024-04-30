@@ -1149,7 +1149,11 @@ JSObject *RequestOrResponse::create_body_stream(JSContext *cx, JS::HandleObject 
     return nullptr;
   }
 
-  // TODO: immediately lock the stream if the owner's body is already used.
+  // If the body has already been used without being reified as a ReadableStream,
+  // lock the stream immediately.
+  if (body_used(owner)) {
+    MOZ_RELEASE_ASSERT(streams::NativeStreamSource::lock_stream(cx, body_stream));
+  }
 
   JS_SetReservedSlot(owner, static_cast<uint32_t>(Slots::BodyStream),
                      JS::ObjectValue(*body_stream));
