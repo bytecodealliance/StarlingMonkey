@@ -144,6 +144,7 @@ bool send_response(host_api::HttpOutgoingResponse *response, JS::HandleObject se
                    FetchEvent::State new_state) {
   MOZ_ASSERT(FetchEvent::state(self) == FetchEvent::State::unhandled ||
              FetchEvent::state(self) == FetchEvent::State::waitToRespond);
+  // This isn't always firing. 
   auto result = response->send(RESPONSE_OUT);
   FetchEvent::set_state(self, new_state);
 

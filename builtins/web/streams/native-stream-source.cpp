@@ -103,6 +103,25 @@ bool NativeStreamSource::lock_stream(JSContext *cx, JS::HandleObject stream) {
   return true;
 }
 
+JSObject *NativeStreamSource::get_locked_by_internal_reader(JSContext *cx, JS::HandleObject stream) {
+  // fprintf(stderr, "get_locked_by_internal_reader\n");
+
+  JS::RootedObject self(cx, get_stream_source(cx, stream));
+  MOZ_ASSERT(is_instance(self));
+
+  // fprintf(stderr, "is instance\n");
+
+  // This errors out if a the response is not logged??
+  bool locked;
+  JS::ReadableStreamIsLocked(cx, stream, &locked);
+  MOZ_ASSERT(locked);
+
+  // fprintf(stderr, "readablestreamislocked\n");
+
+  JS::RootedObject reader(cx, &JS::GetReservedSlot(self, Slots::InternalReader).toObject());
+  return reader;
+}
+
 bool NativeStreamSource::start(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 

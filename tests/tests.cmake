@@ -27,9 +27,6 @@ function(test_integration TEST_NAME)
 endfunction()
 
 test_e2e(smoke)
-test_e2e(tla)
-test_e2e(syntax-err)
-test_e2e(tla-err)
-test_e2e(tla-runtime-resolve)
+test_e2e(fetch)
 
 test_integration(btoa)

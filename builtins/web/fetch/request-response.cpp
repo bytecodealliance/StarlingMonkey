@@ -334,6 +334,13 @@ bool RequestOrResponse::body_unusable(JSContext *cx, JS::HandleObject body) {
   return disturbed || locked;
 }
 
+bool RequestOrResponse::body_disturbed(JSContext *cx, JS::HandleObject body) {
+  MOZ_ASSERT(JS::IsReadableStream(body));
+  bool disturbed;
+  MOZ_RELEASE_ASSERT(JS::ReadableStreamIsDisturbed(cx, body, &disturbed));
+  return disturbed;
+}
+
 /**
  * Implementation of the `extract a body` algorithm at
  * https://fetch.spec.whatwg.org/#concept-bodyinit-extract
@@ -757,7 +764,7 @@ bool RequestOrResponse::consume_content_stream_for_bodyAll(JSContext *cx, JS::Ha
     return false;
   }
   MOZ_ASSERT(JS::IsReadableStream(stream));
-  if (RequestOrResponse::body_unusable(cx, stream)) {
+  if (RequestOrResponse::body_disturbed(cx, stream)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_RESPONSE_BODY_DISTURBED_OR_LOCKED);
     JS::RootedObject result_promise(cx);
@@ -766,8 +773,9 @@ bool RequestOrResponse::consume_content_stream_for_bodyAll(JSContext *cx, JS::Ha
     JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise), JS::UndefinedValue());
     return RejectPromiseWithPendingError(cx, result_promise);
   }
-  JS::Rooted<JSObject *> unwrappedReader(
-      cx, JS::ReadableStreamGetReader(cx, stream, JS::ReadableStreamReaderMode::Default));
+
+  JS::RootedObject unwrappedReader(cx, streams::NativeStreamSource::get_locked_by_internal_reader(cx, stream));
+
   if (!unwrappedReader) {
     return false;
   }

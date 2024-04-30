@@ -42,6 +42,7 @@ public:
   static JS::Value url(JSObject *obj);
   static void set_url(JSObject *obj, JS::Value url);
   static bool body_unusable(JSContext *cx, JS::HandleObject body);
+  static bool body_disturbed(JSContext *cx, JS::HandleObject body);
   static bool extract_body(JSContext *cx, JS::HandleObject self, JS::HandleValue body_val);
 
   /**

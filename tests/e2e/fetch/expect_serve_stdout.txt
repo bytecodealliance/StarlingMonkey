@@ -1,0 +1,2 @@
+stdout [0] :: Log: RESPONSE Response { redirected: false, type: "default", url: "https://jsonplaceholder.typicode.com/users", status: 200, ok: true, statusText: "OK", headers: Headers {}, body: ReadableStream { locked: false }, bodyUsed: false }
+stdout [0] :: Log: Successfully received response json body
