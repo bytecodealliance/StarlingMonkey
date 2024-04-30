@@ -59,53 +59,62 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
   queue.get().event_loop_running = true;
   JSContext *cx = engine->cx();
 
+  bool polled = false;
+  std::vector<size_t> ready_list;
+  size_t ready_idx;
+  size_t erasures_since_last_poll = 0;
+
   while (true) {
-    while (js::HasJobsPending(cx)) {
-      js::RunJobs(cx);
-      if (JS_IsExceptionPending(cx)) {
-        exit_event_loop();
-        return false;
-      }
-      if (interest_complete()) {
-        exit_event_loop();
-        return true;
-      }
-    }
+    // Run a microtask checkpoint
+    js::RunJobs(cx);
 
-    const auto tasks = &queue.get().tasks;
-
-    if (tasks->size() == 0) {
-      fprintf(stderr, "event loop error - both task and job queues are empty, but expected "
-                      "operations did not resolve");
+    if (JS_IsExceptionPending(cx)) {
       exit_event_loop();
       return false;
     }
-
-    auto ready = api::AsyncTask::poll(tasks);
-    const auto ready_len = ready.size();
-    // ensure ready list is monotonic
-    if (!std::is_sorted(ready.begin(), ready.end())) {
-      std::sort(ready.begin(), ready.end());
+    if (interest_complete()) {
+      exit_event_loop();
+      return true;
     }
-    for (auto i = 0; i < ready_len; i++) {
-      // index is offset by previous erasures
-      auto index = ready.at(i) - i;
-      auto task = tasks->at(index);
-      bool success = task->run(engine);
-      tasks->erase(tasks->begin() + index);
-      if (!success) {
-        exit_event_loop();
-        return false;
-      }
-      js::RunJobs(cx);
-      if (JS_IsExceptionPending(cx)) {
-        exit_event_loop();
-        return false;
-      }
+
+    const auto tasks = &queue.get().tasks;
+    size_t tasks_size = tasks->size();
+    if (tasks_size == 0) {
+      exit_event_loop();
+      // if there is no interest in the event loop at all, we always run one tick
       if (interest_complete()) {
-        exit_event_loop();
         return true;
+      } else {
+        fprintf(stderr, "event loop error - both task and job queues are empty, but expected "
+                        "operations did not resolve");
+        return false;
       }
+    }
+
+    // Select the next task to run according to event-loop semantics of oldest-first.
+    // ready_list and last_idx are set if this has been run previously, where the previous list is
+    // used as an optimization when the next ready item is adjacent, to avoid a new unnecessary poll
+    // host call when possible.
+    if (polled && ready_list.size() > ready_idx + 1 &&
+        ready_list.at(ready_idx + 1) == ready_list.at(ready_idx) + 1) {
+      ready_idx++;
+    } else {
+      ready_list = api::AsyncTask::poll(tasks);
+      polled = true;
+      erasures_since_last_poll = 0;
+      MOZ_ASSERT(ready_list.size() > 0);
+      ready_idx = 0;
+    }
+
+    size_t task_idx = ready_list.at(ready_idx);
+    // index is offset by task processing erasures
+    auto task = tasks->at(task_idx - erasures_since_last_poll);
+    bool success = task->run(engine);
+    tasks->erase(tasks->begin() + task_idx);
+    erasures_since_last_poll++;
+    if (!success) {
+      exit_event_loop();
+      return false;
     }
   }
 }

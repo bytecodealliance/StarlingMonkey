@@ -134,11 +134,6 @@ public:
    * A list of ready task indices is returned
    */
   static std::vector<size_t> poll(std::vector<AsyncTask *> *handles);
-
-  /**
-   * Returns whether or not the given task is ready
-   */
-  static bool ready(AsyncTask *task);
 };
 
 } // namespace api
