@@ -28,5 +28,9 @@ endfunction()
 
 test_e2e(smoke)
 test_e2e(fetch)
+test_e2e(tla)
+test_e2e(syntax-err)
+test_e2e(tla-err)
+test_e2e(tla-runtime-resolve)
 
 test_integration(btoa)
