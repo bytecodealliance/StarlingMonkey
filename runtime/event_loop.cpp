@@ -59,11 +59,6 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
   queue.get().event_loop_running = true;
   JSContext *cx = engine->cx();
 
-  bool polled = false;
-  std::vector<size_t> ready_list;
-  size_t ready_idx;
-  size_t erasures_since_last_poll = 0;
-
   while (true) {
     // Run a microtask checkpoint
     js::RunJobs(cx);
@@ -92,26 +87,11 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
     }
 
     // Select the next task to run according to event-loop semantics of oldest-first.
-    // ready_list and last_idx are set if this has been run previously, where the previous list is
-    // used as an optimization when the next ready item is adjacent, to avoid a new unnecessary poll
-    // host call when possible.
-    if (polled && ready_list.size() > ready_idx + 1 &&
-        ready_list.at(ready_idx + 1) == ready_list.at(ready_idx) + 1) {
-      ready_idx++;
-    } else {
-      ready_list = api::AsyncTask::poll(tasks);
-      polled = true;
-      erasures_since_last_poll = 0;
-      MOZ_ASSERT(ready_list.size() > 0);
-      ready_idx = 0;
-    }
+    size_t task_idx = api::AsyncTask::select(tasks);
 
-    size_t task_idx = ready_list.at(ready_idx);
-    // index is offset by task processing erasures
-    auto task = tasks->at(task_idx - erasures_since_last_poll);
+    auto task = tasks->at(task_idx);
     bool success = task->run(engine);
     tasks->erase(tasks->begin() + task_idx);
-    erasures_since_last_poll++;
     if (!success) {
       exit_event_loop();
       return false;

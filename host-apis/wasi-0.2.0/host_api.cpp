@@ -96,7 +96,7 @@ template <> struct HandleOps<Pollable> {
 
 } // namespace
 
-std::vector<size_t> api::AsyncTask::poll(std::vector<api::AsyncTask *> *tasks) {
+size_t api::AsyncTask::select(std::vector<api::AsyncTask *> *tasks) {
   auto count = tasks->size();
   vector<Borrow<Pollable>> handles;
   for (const auto task : *tasks) {
@@ -107,7 +107,10 @@ std::vector<size_t> api::AsyncTask::poll(std::vector<api::AsyncTask *> *tasks) {
   wasi_io_0_2_0_poll_list_u32_t result{nullptr, 0};
   wasi_io_0_2_0_poll_poll(&list, &result);
   MOZ_ASSERT(result.len > 0);
-  return std::vector<size_t>(result.ptr, result.ptr + result.len);
+  const auto ready_index = result.ptr[0];
+  free(result.ptr);
+
+  return ready_index;
 }
 
 namespace host_api {

@@ -130,10 +130,9 @@ public:
   virtual void trace(JSTracer *trc) = 0;
 
   /**
-   * Poll for completion on the given async tasks
-   * A list of ready task indices is returned
+   * Select for the next available ready task, providing the oldest ready first.
    */
-  static std::vector<size_t> poll(std::vector<AsyncTask *> *handles);
+  static size_t select(std::vector<AsyncTask *> *handles);
 };
 
 } // namespace api
