@@ -88,7 +88,8 @@ JSObject *digest(JSContext *cx, std::span<uint8_t> data, const EVP_MD *algorithm
   }
   // 3. Return a new ArrayBuffer containing result.
   JS::RootedObject array_buffer(cx);
-  array_buffer.set(JS::NewArrayBufferWithContents(cx, size, buf.get()));
+  array_buffer.set(JS::NewArrayBufferWithContents(
+      cx, size, buf.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
   if (!array_buffer) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
@@ -704,7 +705,7 @@ JSObject *CryptoAlgorithmHMAC_Sign_Verify::sign(JSContext *cx, JS::HandleObject 
 
   // 2. Return a new ArrayBuffer object, associated with the relevant global object of this [HTML], and containing the bytes of mac.
   JS::RootedObject array_buffer(cx);
-  array_buffer.set(JS::NewArrayBufferWithContents(cx, size, sig.get()));
+  array_buffer.set(JS::NewArrayBufferWithContents(cx, size, sig.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
   if (!array_buffer) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
@@ -826,7 +827,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify::sign(JSContext *cx, JS::
 
   // 5. Return a new ArrayBuffer associated with the relevant global object of this [HTML], and
   // containing the bytes of signature.
-  JS::RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, signature_length, signature.get()));
+  JS::RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, signature_length, signature.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
   if (!buffer) {
     // We can be here is the array buffer was too large -- if that was the case then a
     // JSMSG_BAD_ARRAY_LENGTH will have been created. No other failure scenarios in this path will

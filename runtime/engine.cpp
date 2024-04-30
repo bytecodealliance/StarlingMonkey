@@ -224,8 +224,7 @@ bool init_js() {
 
   // TODO: check if we should set a different creation zone.
   JS::RealmOptions options;
-  options.creationOptions().setStreamsEnabled(true).setWeakRefsEnabled(
-      JS::WeakRefSpecifier::EnabledWithoutCleanupSome);
+  options.creationOptions().setStreamsEnabled(true);
 
   JS::DisableIncrementalGC(cx);
   // JS_SetGCParameter(cx, JSGC_MAX_EMPTY_CHUNK_COUNT, 1);

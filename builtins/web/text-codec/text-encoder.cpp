@@ -30,7 +30,9 @@ bool TextEncoder::encode(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   auto chars = core::encode(cx, args[0]);
-  JS::RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, chars.len, chars.begin()));
+  JS::RootedObject buffer(
+      cx, JS::NewArrayBufferWithContents(cx, chars.len, chars.begin(),
+                                         JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
   if (!buffer) {
     return false;
   }

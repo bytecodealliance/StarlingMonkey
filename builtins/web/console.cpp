@@ -4,6 +4,7 @@
 #include <map>
 
 #include <js/Array.h>
+#include "mozilla/Try.h"
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
@@ -287,13 +288,16 @@ JS::Result<mozilla::Ok> ToSource(JSContext *cx, std::string &sourceOut, JS::Hand
     JS::RootedObject obj(cx, &val.toObject());
 
     if (JS_ObjectIsFunction(obj)) {
-      sourceOut += "[Function";
+      sourceOut += "[";
       std::string source;
-      auto id = JS_GetFunctionId(JS_ValueToFunction(cx, val));
-      if (id) {
+      JS::Rooted<JSFunction *> fun(cx, JS_ValueToFunction(cx, val));
+      if (fun) {
+        JS::RootedString result(cx, JS_DecompileFunction(cx, fun));
+        if (!result) {
+          return JS::Result<mozilla::Ok>(JS::Error());
+        }
         sourceOut += " ";
-        JS::RootedString name(cx, id);
-        auto msg = core::encode(cx, name);
+        auto msg = core::encode(cx, result);
         if (!msg) {
           return JS::Result<mozilla::Ok>(JS::Error());
         }

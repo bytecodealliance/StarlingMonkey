@@ -1,4 +1,5 @@
 #include "base64.h"
+#include "mozilla/Try.h"
 
 namespace builtins {
 namespace web {
