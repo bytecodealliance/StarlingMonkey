@@ -217,10 +217,8 @@ public:
 };
 
 class Resource {
-protected:
-  HandleState *handle_state_;
-
 public:
+  HandleState *handle_state_;
   virtual ~Resource() = default;
 
   /// Returns true when this resource handle is valid.

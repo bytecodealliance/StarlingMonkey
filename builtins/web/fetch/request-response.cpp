@@ -445,7 +445,13 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
 
   // Step 36.3 of Request constructor / 8.4 of Response constructor.
   if (content_type) {
+    // Headers do not contain a valid resource reference.
     JS::RootedObject headers(cx, RequestOrResponse::headers(cx, self));
+    if (!headers) {
+      fprintf(stderr, "FAILED TO EXTRACT OR CREATE HEADERS\n");
+      return false;
+    }
+    // THIS TRAPS.
     if (!Headers::maybe_add(cx, headers, "content-type", content_type)) {
       return false;
     }
@@ -485,23 +491,38 @@ bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::Ha
 JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
   JSObject *headers = maybe_headers(obj);
   if (!headers) {
+    fprintf(stderr, "maybe_headers is null\n");
+
     JS::RootedObject headersInstance(
         cx, JS_NewObjectWithGivenProto(cx, &Headers::class_, Headers::proto_obj));
 
     if (!headersInstance) {
+      fprintf(stderr, "headersInstance is null\n");
       return nullptr;
+    } else {
+      fprintf(stderr, "headersInstance is NOT null\n");
     }
 
     auto *headers_handle = RequestOrResponse::headers_handle(obj);
     if (!headers_handle) {
-      headers_handle = new host_api::HttpHeaders();
+      // Error is here? is this not creating a valid resource?
+      auto result = new host_api::HttpHeaders();
+      fprintf(stderr, "headers_handle is null\n");
+      headers_handle = result;
+    } else {
+      fprintf(stderr, "headers_handle is NOT null\n");
     }
     headers = Headers::create(cx, headersInstance, headers_handle);
     if (!headers) {
+      fprintf(stderr, "Headers::create is null\n");
       return nullptr;
+    } else {
+      fprintf(stderr, "Headers::create is NOT null\n");
     }
 
     JS_SetReservedSlot(obj, static_cast<uint32_t>(Slots::Headers), JS::ObjectValue(*headers));
+  } else {
+    fprintf(stderr, "maybe_headers is NOT null\n");
   }
 
   return headers;
@@ -1712,6 +1733,8 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
   // otherwise create it from the `init` object's `headers`, or create a new,
   // empty one.
   auto *headers_handle = new host_api::HttpHeaders();
+  fprintf(stderr, "Created Header Resource:  %p %d\n", headers_handle, headers_handle->handle_state_->handle);
+
   JS::RootedObject headers(cx);
 
   if (headers_val.isUndefined() && input_headers) {
@@ -1726,6 +1749,8 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     headers = Headers::create(cx, headersInstance, headers_handle, headers_val);
     if (!headers) {
       return nullptr;
+    } else {
+      fprintf(stderr, "headers successfully created\n");
     }
   }
 

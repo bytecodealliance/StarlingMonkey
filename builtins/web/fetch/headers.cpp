@@ -67,11 +67,20 @@ bool lazy_values(JSObject *self) {
       .toBoolean();
 }
 
-Handle *get_handle(JSObject *self) {
+Handle* get_handle(JSObject* self) {
   MOZ_ASSERT(Headers::is_instance(self));
   auto handle =
       JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Handle)).toPrivate();
-  return static_cast<Handle *>(handle);
+  auto result = static_cast<Handle*>(handle);
+
+  if (result != nullptr) {
+    int32_t handleValue = result->handle_state_->handle;
+    fprintf(stderr, "get_handle retrieved Resource %p with handle value %d\n", result, handleValue);
+  } else {
+    fprintf(stderr, "get_handle retrieved nullptr\n");
+  }
+
+  return result;
 }
 
 /**
@@ -444,6 +453,7 @@ bool Headers::append_header_value(JSContext *cx, JS::HandleObject self, JS::Hand
       for (auto value : splitCookiesString(value)) {
         auto res = handle->append(name, value);
         if (auto *err = res.to_err()) {
+          fprintf(stderr, "handle->append error 1\n");
           HANDLE_ERROR(cx, *err);
           return false;
         }
@@ -452,6 +462,7 @@ bool Headers::append_header_value(JSContext *cx, JS::HandleObject self, JS::Hand
       std::string_view value = value_chars;
       auto res = handle->append(name, value);
       if (auto *err = res.to_err()) {
+        fprintf(stderr, "handle->append error 2\n");
         HANDLE_ERROR(cx, *err);
         return false;
       }
@@ -466,9 +477,10 @@ bool Headers::delazify(JSContext *cx, JS::HandleObject headers) {
   return ensure_all_header_values_from_handle(cx, headers, backing_map);
 }
 
+// Create header from iterable.
 JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle,
                           JS::HandleObject init_headers) {
-  JS::RootedObject headers(cx, create(cx, self, handle));
+  JS::RootedObject headers(cx, Headers::create(cx, self, handle));
   if (!headers) {
     return nullptr;
   }
@@ -481,6 +493,7 @@ JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHe
     return nullptr;
   }
 
+  // TODO: does this do anything? 
   JS::RootedObject headers_map(cx, get_backing_map(headers));
   JS::RootedObject init_map(cx, get_backing_map(init_headers));
 
@@ -522,6 +535,7 @@ JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHe
 
 JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle,
                           JS::HandleValue initv) {
+  fprintf(stderr, "Headers::create from HandleValue\n");
   JS::RootedObject headers(cx, create(cx, self, handle));
   if (!headers)
     return nullptr;
@@ -768,6 +782,7 @@ bool Headers::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle) {
+  fprintf(stderr, "Headers::create storing handle %p %d\n", handle, handle->handle_state_->handle);
   JS_SetReservedSlot(self, static_cast<uint32_t>(Slots::Handle), JS::PrivateValue(handle));
 
   JS::RootedObject backing_map(cx, JS::NewMapObject(cx));

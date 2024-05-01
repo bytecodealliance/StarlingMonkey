@@ -8,8 +8,8 @@ async function main(event) {
         });
         event.respondWith(responsePromise);
 
-        const headerKey = "X-Test-Header";
-        const headerValue = "test-header-value";
+        // const headerKey = "X-Test-Header";
+        // const headerValue = "test-header-value";
         
         let response = await fetch("https://echo.free.beeceptor.com", {
             method: "POST",
