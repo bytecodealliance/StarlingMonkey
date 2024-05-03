@@ -290,7 +290,7 @@ JS::Result<mozilla::Ok> ToSource(JSContext *cx, std::string &sourceOut, JS::Hand
     if (JS_ObjectIsFunction(obj)) {
       sourceOut += "[";
       std::string source;
-      JS::Rooted<JSFunction *> fun(cx, JS_ValueToFunction(cx, val));
+      JS::RootedFunction fun(cx, JS_ValueToFunction(cx, val));
       if (fun) {
         JS::RootedString result(cx, JS_DecompileFunction(cx, fun));
         if (!result) {
