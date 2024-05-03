@@ -32,6 +32,7 @@ namespace api {
 class AsyncTask;
 
 class Engine {
+
 public:
   Engine();
   JSContext *cx();
@@ -39,17 +40,17 @@ public:
 
   /**
    * Define a new builtin module
-   * 
+   *
    * The enumerable properties of the builtin object are used to construct
    * a synthetic module namespace for the module.
-   * 
+   *
    * The enumeration and getters are called only on the first import of
    * the builtin, so that lazy getters can be used to lazily initialize
    * builtins.
-   * 
+   *
    * Once loaded, the instance is cached and reused as a singleton.
    */
-  bool define_builtin_module(const char* id, HandleValue builtin);
+  bool define_builtin_module(const char *id, HandleValue builtin);
 
   /**
    * Treat the top-level script as a module or classic JS script.
@@ -62,7 +63,34 @@ public:
   void enable_module_mode(bool enable);
   bool eval_toplevel(const char *path, MutableHandleValue result);
 
+  /**
+   * Run the async event loop as long as there's interest registered in keeping it running.
+   *
+   * Each turn of the event loop consists of three steps:
+   * 1. Run reactions to all promises that have been resolves/rejected.
+   * 2. Check if there's any interest registered in continuing to wait for async tasks, and
+   *    terminate the loop if not.
+   * 3. Wait for the next async tasks and execute their reactions
+   *
+   * Interest or loss of interest in keeping the event loop running can be signaled using the
+   * `Engine::incr_event_loop_interest` and `Engine::decr_event_loop_interest` methods.
+   *
+   * Every call to incr_event_loop_interest must be followed by an eventual call to
+   * decr_event_loop_interest, for the event loop to complete. Otherwise, if no async tasks remain
+   * pending while there's still interest in the event loop, an error will be reported.
+   */
   bool run_event_loop();
+
+  /**
+   * Add an event loop interest to track
+   */
+  void incr_event_loop_interest();
+
+  /**
+   * Remove an event loop interest to track
+   * The last decrementer marks the event loop as complete to finish
+   */
+  void decr_event_loop_interest();
 
   /**
    * Get the JS value associated with the top-level script execution -
@@ -93,7 +121,6 @@ public:
 
   virtual bool run(Engine *engine) = 0;
   virtual bool cancel(Engine *engine) = 0;
-  virtual bool ready() = 0;
 
   [[nodiscard]] virtual PollableHandle id() {
     MOZ_ASSERT(handle_ != INVALID_POLLABLE_HANDLE);
@@ -102,12 +129,9 @@ public:
 
   virtual void trace(JSTracer *trc) = 0;
 
-  /// Returns the first ready `AsyncTask`.
-  ///
-  /// TODO: as an optimization, return a vector containing the ready head of the queue.
-  /// Note that that works iff the very first entry in the queue is ready, and then only
-  /// for the dense head of the queue, without gaps. This is because during processing
-  /// of the ready tasks, other tasks might become ready that should be processed first.
+  /**
+   * Select for the next available ready task, providing the oldest ready first.
+   */
   static size_t select(std::vector<AsyncTask *> *handles);
 };
 

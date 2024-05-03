@@ -3,16 +3,48 @@ import { AssertionError } from './assert.js';
 
 export function serveTest (handler) {
   return async function handle (evt) {
-    const testName = new URL(evt.request.url).pathname.slice(1);
+    const url = new URL(evt.request.url);
+    const testName = url.pathname.slice(1);
+    let testFilter = url.search.slice(1);
+    const filterEquals = testFilter[0] === '=';
+    if (filterEquals)
+      testFilter = testFilter.slice(1);
+
+    const filter = subtest => filterEquals ? subtest === testFilter : subtest.includes(testFilter);
+
+    let subtestCnt = 0;
+    let curSubtest = null;
     try {
-      await handler();
+      await handler({
+        skip (name) {
+          if (!filter(name))
+            return;
+          console.log(`SKIPPING TEST ${testName}?${name}`);
+        },
+        test (name, subtest) {
+          if (!filter(name))
+            return;
+          curSubtest = name;
+          const maybePromise = subtest();
+          if (maybePromise) {
+            return maybePromise.then(() => {
+              curSubtest = null;
+              subtestCnt++;
+            });
+          } else {
+            curSubtest = null;
+            subtestCnt++;
+          }
+        }
+      });
     }
     catch (e) {
+      const errorPrefix = `Error running test ${testName}${curSubtest ? '?' + curSubtest : ''}\n`;
       if (e instanceof AssertionError)
-        return new Response(e.message, { status: 500 });
-      return new Response(`Unexpected error: ${e.message}\n${e.stack}`, { status: 500 });
+        return new Response(errorPrefix + e.message, { status: 500 });
+      return new Response(errorPrefix + `Unexpected error: ${e.message}\n${e.stack}`, { status: 500 });
     }
-    return new Response(`${testName} OK`);
+    return new Response(`OK ${testName}${curSubtest ? '?' + curSubtest : subtestCnt > 0 || testFilter ? ` (${subtestCnt} subtests)` : ''}`);
   };
 }
 

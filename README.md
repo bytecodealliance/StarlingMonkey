@@ -51,8 +51,16 @@ cmake --build cmake-build-debug --target integration-test-server
 Then tests can be run with `ctest` directly via:
 
 ```bash
-CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-debug -j8
+ctest --test-dir cmake-build-debug -j8 --output-on-failure
 ```
+
+Alternatively, the integration test server can be directly run with `wasmtime serve` via:
+
+```bash
+wasmtime serve -S common cmake-build-debug/test-server.wasm
+```
+
+Then visit http://0.0.0.0:8080/timers, or any test name and filter of the form `[testName]/[filter]`
 
 5. Using the runtime with other JS applications
 

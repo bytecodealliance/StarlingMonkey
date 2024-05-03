@@ -37,7 +37,6 @@ public:
   }
 
   [[nodiscard]] bool run(api::Engine *engine) override {
-    MOZ_ASSERT(ready());
     JSContext *cx = engine->cx();
 
     const RootedObject callback(cx, callback_);
@@ -68,8 +67,6 @@ public:
     handle_ = -1;
     return true;
   }
-
-  bool ready() override { return host_api::MonotonicClock::now() >= this->deadline_; }
 
   void trace(JSTracer *trc) override {
     TraceEdge(trc, &callback_, "Timer callback");

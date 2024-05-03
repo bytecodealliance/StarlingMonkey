@@ -8,7 +8,10 @@ function(test_e2e TEST_NAME)
     get_target_property(RUNTIME_DIR starling.wasm BINARY_DIR)
     add_test(${TEST_NAME} ${BASH_PROGRAM} ${CMAKE_SOURCE_DIR}/tests/test.sh ${RUNTIME_DIR} ${CMAKE_SOURCE_DIR}/tests/e2e/${TEST_NAME})
     set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT "WASMTIME=${WASMTIME};WIZER=${WIZER_DIR}/wizer;WASM_TOOLS=${WASM_TOOLS_DIR}/wasm-tools")
+    set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 120)
 endfunction()
+
+add_custom_target(integration-test-server DEPENDS test-server.wasm)
 
 function(test_integration TEST_NAME)
     get_target_property(RUNTIME_DIR starling.wasm BINARY_DIR)
@@ -20,10 +23,10 @@ function(test_integration TEST_NAME)
         DEPENDS ${ARG_SOURCES} ${RUNTIME_DIR}/componentize.sh starling.wasm
         VERBATIM
     )
-    add_custom_target(integration-test-server DEPENDS test-server.wasm)
 
     add_test(${TEST_NAME} ${BASH_PROGRAM} ${CMAKE_SOURCE_DIR}/tests/test.sh ${RUNTIME_DIR} ${CMAKE_SOURCE_DIR}/tests/integration/${TEST_NAME} ${RUNTIME_DIR}/test-server.wasm ${TEST_NAME})
     set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT "WASMTIME=${WASMTIME};WIZER=${WIZER_DIR}/wizer;WASM_TOOLS=${WASM_TOOLS_DIR}/wasm-tools")
+    set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 120)
 endfunction()
 
 test_e2e(smoke)
@@ -33,3 +36,4 @@ test_e2e(tla-err)
 test_e2e(tla-runtime-resolve)
 
 test_integration(btoa)
+test_integration(timers)
