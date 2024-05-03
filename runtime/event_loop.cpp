@@ -67,6 +67,7 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
       exit_event_loop();
       return false;
     }
+    // if there is no interest in the event loop at all, just run one tick
     if (interest_complete()) {
       exit_event_loop();
       return true;
@@ -76,14 +77,10 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
     size_t tasks_size = tasks->size();
     if (tasks_size == 0) {
       exit_event_loop();
-      // if there is no interest in the event loop at all, we always run one tick
-      if (interest_complete()) {
-        return true;
-      } else {
-        fprintf(stderr, "event loop error - both task and job queues are empty, but expected "
-                        "operations did not resolve");
-        return false;
-      }
+      MOZ_ASSERT(!interest_complete());
+      fprintf(stderr, "event loop error - both task and job queues are empty, but expected "
+                      "operations did not resolve");
+      return false;
     }
 
     // Select the next task to run according to event-loop semantics of oldest-first.
