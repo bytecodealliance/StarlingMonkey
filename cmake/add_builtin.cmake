@@ -11,11 +11,11 @@ function(add_builtin)
         set(NS ${NS}::${NAME})
         set(DEFAULT_ENABLE ON)
     else()
-        cmake_parse_arguments(PARSE_ARGV 1 "" "DISABLED_BY_DEFAULT" "" "SRC;LINK_LIBS;INCLUDE_DIRS")
+        cmake_parse_arguments(PARSE_ARGV 1 "" "DISABLED_BY_DEFAULT" "" "SRC;INCLUDE_DIRS;DEPENDENCIES")
         list(GET ARGN 0 NS)
         set(SRC ${_SRC})
-        set(LINK_LIBS ${_LINK_LIBS})
         set(INCLUDE_DIRS ${_INCLUDE_DIRS})
+        set(DEPENDENCIES ${_DEPENDENCIES})
         if (_DISABLED_BY_DEFAULT)
             set(DEFAULT_ENABLE OFF)
         else()
@@ -47,9 +47,46 @@ function(add_builtin)
     message(STATUS "Adding builtin ${DESCRIPTION}")
 
     add_library(${LIB_NAME} STATIC ${SRC})
-    target_link_libraries(${LIB_NAME} PRIVATE spidermonkey extension_api ${LINK_LIBS})
+
+    if (DEPENDENCIES)
+        message(VERBOSE "${LIB_NAME} depends on ${DEPENDENCIES}")
+
+        add_dependencies(${LIB_NAME} ${DEPENDENCIES})
+
+        foreach(DEPENDENCY IN ITEMS ${DEPENDENCIES})
+            get_target_property(TYPE ${DEPENDENCY} TYPE)
+            if(NOT ${TYPE} MATCHES "UTILITY")
+                # A built-in can either depend on libraries implicitly
+                # linked by StarlingMonkey (i.e. depending on OpenSSL
+                # for your built-in when it only needs OpenSSL::Crypto),
+                # or on a library target.
+                target_link_libraries(${LIB_NAME} PRIVATE ${DEPENDENCY})
+            endif()
+
+            # If a built-in requires a sub-dependency, e.g. the OpenSSL
+            # crypto library, we need to build the OpenSSL dependency
+            # first.
+            # The base name for the dependency is also how we're going
+            # to find the includes.
+            string(FIND "${DEPENDENCY}" "::" COLON_COLON)
+            if(COLON_COLON GREATER_EQUAL 0)
+                string(SUBSTRING "${DEPENDENCY}" 0 COLON_COLON DEPENDENCY)
+            endif()
+
+            # Not all dependencies will have their include files in this
+            # location, but we can't, at this point, check if it exists,
+            # because this code runs at configure time and this directory
+            # will be created during compilation time.  This, however,
+            # doesn't cause compilation issues.
+            target_include_directories(${LIB_NAME}
+                       PRIVATE ${CMAKE_BINARY_DIR}/deps/${DEPENDENCY}/include)
+        endforeach()
+    endif ()
+
+    target_link_libraries(${LIB_NAME} PRIVATE spidermonkey extension_api)
     target_link_libraries(builtins PRIVATE ${LIB_NAME})
     target_include_directories(${LIB_NAME} PRIVATE ${INCLUDE_DIRS})
+
     file(APPEND $CACHE{INSTALL_BUILTINS} "NS_DEF(${NS})\n")
     return(PROPAGATE LIB_NAME)
 endfunction()
