@@ -62,11 +62,6 @@ public:
     return true;
   }
 
-  bool ready() override {
-    // TODO(TS): implement
-    return true;
-  }
-
   void trace(JSTracer *trc) override { TraceEdge(trc, &request_, "Request for response future"); }
 };
 

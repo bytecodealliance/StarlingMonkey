@@ -558,11 +558,6 @@ public:
     return true;
   }
 
-  bool ready() override {
-    // TODO(TS): properly implement. This won't ever return `true` right now
-    return state_ == State::Ready;
-  }
-
   [[nodiscard]] int32_t id() override {
     if (state_ == State::BlockedOnBoth || state_ == State::BlockedOnIncoming) {
       return incoming_pollable_;

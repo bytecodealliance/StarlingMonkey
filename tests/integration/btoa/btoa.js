@@ -1,9 +1,8 @@
 import { serveTest } from '../test-server.js';
 import { strictEqual, throws } from '../assert.js';
 
-export const handler = serveTest(async () => {
-  // btoa
-  {
+export const handler = serveTest(async (t) => {
+  t.test('btoa', () => {
     var everything = "";
     for (var i = 0; i < 256; i++) {
       everything += String.fromCharCode(i);
@@ -291,10 +290,10 @@ export const handler = serveTest(async () => {
     strictEqual(btoa("ý"), "/Q==", `btoa("ý")`);
     strictEqual(btoa("þ"), "/g==", `btoa("þ")`);
     strictEqual(btoa("ÿ"), "/w==", `btoa("ÿ")`);
-  }
+  });
 
   // atob
-  {
+  t.test('atob', () => {
     strictEqual(atob(""), "", `atob("")`);
     strictEqual(atob("abcd"), 'i·\x1D');
     strictEqual(atob(" abcd"), 'i·\x1D');
@@ -374,5 +373,6 @@ export const handler = serveTest(async () => {
     throws(() => atob("~~"));
     throws(() => atob(".."));
     throws(() => atob("--"));
-  }
+    throws(() => atob("__"));
+  });
 });

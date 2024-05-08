@@ -37,7 +37,7 @@ bool NativeStreamSource::stream_is_body(JSContext *cx, JS::HandleObject stream) 
          web::fetch::RequestOrResponse::is_instance(owner(stream_source));
 }
 
-} // builtins::web::streams
+} // namespace builtins::web::streams
 
 namespace builtins::web::fetch {
 
@@ -93,7 +93,9 @@ public:
     // the array buffer allocation has been successful, as that ensures that the
     // return path frees chunk automatically when necessary.
     auto &bytes = chunk.bytes;
-    RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, bytes.len, bytes.ptr.get()));
+    RootedObject buffer(
+        cx, JS::NewArrayBufferWithContents(cx, bytes.len, bytes.ptr.get(),
+                                           JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
     if (!buffer) {
       return error_stream_controller_with_pending_exception(cx, controller);
     }
@@ -119,11 +121,6 @@ public:
   [[nodiscard]] bool cancel(api::Engine *engine) override {
     // TODO(TS): implement
     handle_ = -1;
-    return true;
-  }
-
-  bool ready() override {
-    // TODO(TS): implement
     return true;
   }
 
@@ -184,11 +181,6 @@ public:
   [[nodiscard]] bool cancel(api::Engine *engine) override {
     // TODO(TS): implement
     handle_ = -1;
-    return true;
-  }
-
-  bool ready() override {
-    // TODO(TS): implement
     return true;
   }
 
@@ -537,7 +529,9 @@ bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::Uni
   JS::RootedValue result(cx);
 
   if constexpr (result_type == RequestOrResponse::BodyReadResult::ArrayBuffer) {
-    JS::RootedObject array_buffer(cx, JS::NewArrayBufferWithContents(cx, len, buf.get()));
+    JS::RootedObject array_buffer(
+        cx, JS::NewArrayBufferWithContents(cx, len, buf.get(),
+                                           JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
     if (!array_buffer) {
       return RejectPromiseWithPendingError(cx, result_promise);
     }
@@ -1538,8 +1532,8 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     if (!url_instance)
       return nullptr;
 
-    JS::RootedObject parsedURL(cx, url::URL::create(cx, url_instance, input,
-                               worker_location::WorkerLocation::url));
+    JS::RootedObject parsedURL(
+        cx, url::URL::create(cx, url_instance, input, worker_location::WorkerLocation::url));
 
     // 2.  If `parsedURL` is failure, then throw a `TypeError`.
     if (!parsedURL) {

@@ -25,15 +25,18 @@ public:
   static bool has_pending_async_tasks();
 
   /**
-   * Run the event loop until all async tasks have completed.
-   *
-   * Concretely, that means running a loop, whose body does two things:
-   * 1. Run all micro-tasks, i.e. pending Promise reactions
-   * 2. Run the next ready async task
-   *
-   * The loop terminates once both of these steps are null-ops.
+   * Run the event loop until all interests are complete.
+   * See run_event_loop in extension-api.h for the complete description.
    */
   static bool run_event_loop(api::Engine *engine, double total_compute);
+
+  static void incr_event_loop_interest();
+  static void decr_event_loop_interest();
+
+  /**
+   * Select on the next async tasks
+   */
+  static bool process_async_tasks(api::Engine *engine, double timeout);
 
   /**
    * Queue a new async task.
