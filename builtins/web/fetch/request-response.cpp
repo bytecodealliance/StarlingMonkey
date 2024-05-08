@@ -446,12 +446,12 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
   // Step 36.3 of Request constructor / 8.4 of Response constructor.
   if (content_type) {
     // Headers do not contain a valid resource reference.
+    fprintf(stderr, "Creating headers %s\n", content_type);
     JS::RootedObject headers(cx, RequestOrResponse::headers(cx, self));
     if (!headers) {
       fprintf(stderr, "FAILED TO EXTRACT OR CREATE HEADERS\n");
       return false;
     }
-    // THIS TRAPS.
     if (!Headers::maybe_add(cx, headers, "content-type", content_type)) {
       return false;
     }
