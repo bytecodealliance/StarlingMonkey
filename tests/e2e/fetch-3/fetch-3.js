@@ -8,18 +8,20 @@ async function main(event) {
         });
         event.respondWith(responsePromise);
 
-        // const headerKey = "X-Test-Header";
-        // const headerValue = "test-header-value";
+        console.log("fetching")
         
         let response = await fetch("https://echo.free.beeceptor.com", {
             method: "POST",
-            // headers: {
-            //     [headerKey] :headerValue 
-            // },
-            body: "hello world"
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({hello: "world"})
         })
 
+        console.log("fetch executed")
+
         let responseJson = await response.json();
+
         console.log("Successfully received response json body");
         resolve(new Response(JSON.stringify(responseJson)));
     } catch (e) {
