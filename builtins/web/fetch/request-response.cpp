@@ -1726,7 +1726,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
   // `init["headers"]` exists, create the request's `headers` from that,
   // otherwise create it from the `init` object's `headers`, or create a new,
   // empty one.
-  auto *headers_handle = new host_api::HttpHeaders();
+  auto *headers_handle = new host_api::HttpHeaders(); // *************************
   fprintf(stderr, "Created Header Resource:  %p %d\n", headers_handle, headers_handle->handle_state_->handle);
 
   JS::RootedObject headers(cx);
@@ -1804,7 +1804,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     //     ``Content-Type``, then append (``Content-Type``, `Content-Type`) to
     //     this’s headers.
     // Note: these steps are all inlined into RequestOrResponse::extract_body.
-    if (!RequestOrResponse::extract_body(cx, request, body_val)) {
+    if (!RequestOrResponse::extract_body(cx, request, body_val)) { // *************************
       return nullptr;
     }
   } else if (input_has_body) {
