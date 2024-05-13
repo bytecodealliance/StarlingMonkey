@@ -2648,6 +2648,8 @@ JSObject *Response::create(JSContext *cx, JS::HandleObject response,
   MOZ_ASSERT(is_instance(response));
   MOZ_ASSERT(response_handle);
 
+  fprintf(stderr, "Response::create\n");
+
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Response),
                       JS::PrivateValue(response_handle));
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Headers), JS::NullValue());
@@ -2657,6 +2659,7 @@ JSObject *Response::create(JSContext *cx, JS::HandleObject response,
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Redirected), JS::FalseValue());
 
   if (response_handle->is_incoming()) {
+    fprintf(stderr, "Response::create: response handle INCOMING\n");
     auto res = reinterpret_cast<host_api::HttpIncomingResponse *>(response_handle)->status();
     MOZ_ASSERT(!res.is_err(), "TODO: proper error handling");
     auto status = res.unwrap();
@@ -2666,6 +2669,8 @@ JSObject *Response::create(JSContext *cx, JS::HandleObject response,
     if (!(status == 204 || status == 205 || status == 304)) {
       JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::HasBody), JS::TrueValue());
     }
+  } else {
+    fprintf(stderr, "Response::create: response handle NOT INCOMING\n");
   }
 
   return response;

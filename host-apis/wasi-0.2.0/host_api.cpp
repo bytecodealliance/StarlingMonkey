@@ -98,14 +98,19 @@ template <> struct HandleOps<Pollable> {
 
 size_t api::AsyncTask::select(std::vector<api::AsyncTask *> *tasks) {
   auto count = tasks->size();
+  fprintf(stderr, "api::AsyncTask::select %zu\n", count);
   vector<Borrow<Pollable>> handles;
   for (const auto task : *tasks) {
-    handles.emplace_back(task->id());
+    auto id = task->id();
+    fprintf(stderr, "api::AsyncTask::select task %d\n", reinterpret_cast<int32_t>(id));
+    handles.emplace_back(id);
   }
   auto list = list_borrow_pollable_t{
       reinterpret_cast<HandleOps<Pollable>::borrow *>(handles.data()), count};
+  fprintf(stderr, "api::AsyncTask::select before poll\n");
   wasi_io_0_2_0_poll_list_u32_t result{nullptr, 0};
   wasi_io_0_2_0_poll_poll(&list, &result);
+  fprintf(stderr, "api::AsyncTask::select after poll\n");
   MOZ_ASSERT(result.len > 0);
   const auto ready_index = result.ptr[0];
   free(result.ptr);
