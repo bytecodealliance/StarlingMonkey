@@ -423,6 +423,10 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     auto body = RequestOrResponse::outgoing_body_handle(self);
     auto write_res = body->write_all(reinterpret_cast<uint8_t *>(buf), length);
 
+    fprintf(stderr, "Closing outgoing body\n");
+    body->close();
+    fprintf(stderr, "Closed outgoing body\n");
+
     // Ensure that the NoGC is reset, so throwing an error in HANDLE_ERROR
     // succeeds.
     if (maybeNoGC.isSome()) {
