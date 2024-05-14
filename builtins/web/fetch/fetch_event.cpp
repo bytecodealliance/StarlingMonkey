@@ -1,4 +1,5 @@
 #include "fetch_event.h"
+#include "../performance.h"
 #include "../url.h"
 #include "../worker-location.h"
 #include "encode.h"
@@ -74,6 +75,8 @@ JSObject *FetchEvent::prepare_downstream_request(JSContext *cx) {
 
 bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
                                        host_api::HttpIncomingRequest *req) {
+  builtins::web::performance::Performance::timeOrigin.emplace(
+      std::chrono::high_resolution_clock::now());
   JS::RootedObject request(
       cx, &JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::Request)).toObject());
 

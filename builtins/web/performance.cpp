@@ -67,7 +67,13 @@ bool Performance::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 bool install(api::Engine *engine) {
-  return Performance::init_class(engine->cx(), engine->global());
+  if (!Performance::init_class(engine->cx(), engine->global())) {
+    return false;
+  }
+  if (!Performance::create(engine->cx(), engine->global())) {
+    return false;
+  }
+  return true;
 }
 
 } // namespace performance

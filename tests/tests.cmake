@@ -36,4 +36,5 @@ test_e2e(tla-err)
 test_e2e(tla-runtime-resolve)
 
 test_integration(btoa)
+test_integration(performance)
 test_integration(timers)
