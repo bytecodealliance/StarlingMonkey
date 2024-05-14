@@ -1,5 +1,5 @@
 import { serveTest } from "../test-server.js";
-import { assert, deepStrictEqual, strictEqual } from "../assert.js";
+import { deepStrictEqual, strictEqual, throws } from "../assert.js";
 
 export const handler = serveTest(async (t) => {
   t.test("Performance-interface", () => {
@@ -104,7 +104,7 @@ export const handler = serveTest(async (t) => {
         enumerable: false,
         configurable: true,
       };
-      assert(
+      deepStrictEqual(
         actual,
         expected,
         `Reflect.getOwnPropertyDescriptor(Performance.prototype.constructor, 'length')`
@@ -122,7 +122,7 @@ export const handler = serveTest(async (t) => {
         enumerable: false,
         configurable: true,
       };
-      assert(
+      deepStrictEqual(
         actual,
         expected,
         `Reflect.getOwnPropertyDescriptor(Performance.prototype.constructor, 'name')`
@@ -141,13 +141,13 @@ export const handler = serveTest(async (t) => {
         enumerable: false,
         configurable: true,
       };
-      assert(
+      deepStrictEqual(
         actual,
         expected,
         `Reflect.getOwnPropertyDescriptor(Performance.prototype, [Symbol.toStringTag])`
       );
 
-      assert(
+      strictEqual(
         typeof Performance.prototype[Symbol.toStringTag],
         "string",
         `typeof Performance.prototype[Symbol.toStringTag]`
@@ -160,34 +160,33 @@ export const handler = serveTest(async (t) => {
         Performance.prototype,
         "timeOrigin"
       );
-      let expected = { enumerable: true, configurable: true };
-      assert(
+      strictEqual(
         descriptors.enumerable,
         true,
         `Reflect.getOwnPropertyDescriptor(Performance, 'timeOrigin').enumerable`
       );
-      assert(
+      strictEqual(
         descriptors.configurable,
         true,
         `Reflect.getOwnPropertyDescriptor(Performance, 'timeOrigin').configurable`
       );
-      assert(
+      strictEqual(
         descriptors.value,
         undefined,
         `Reflect.getOwnPropertyDescriptor(Performance, 'timeOrigin').value`
       );
-      assert(
+      strictEqual(
         descriptors.set,
         undefined,
         `Reflect.getOwnPropertyDescriptor(Performance, 'timeOrigin').set`
       );
-      assert(
+      strictEqual(
         typeof descriptors.get,
         "function",
         `typeof Reflect.getOwnPropertyDescriptor(Performance, 'timeOrigin').get`
       );
 
-      assert(
+      strictEqual(
         typeof Performance.prototype.timeOrigin,
         "number",
         `typeof Performance.prototype.timeOrigin`
@@ -206,13 +205,13 @@ export const handler = serveTest(async (t) => {
         configurable: true,
         value: Performance.prototype.now,
       };
-      assert(
+      deepStrictEqual(
         actual,
         expected,
         `Reflect.getOwnPropertyDescriptor(Performance, 'now')`
       );
 
-      assert(
+      strictEqual(
         typeof Performance.prototype.now,
         "function",
         `typeof Performance.prototype.now`
@@ -230,7 +229,7 @@ export const handler = serveTest(async (t) => {
         enumerable: false,
         configurable: true,
       };
-      assert(
+      deepStrictEqual(
         actual,
         expected,
         `Reflect.getOwnPropertyDescriptor(Performance.prototype.now, 'length')`
@@ -248,7 +247,7 @@ export const handler = serveTest(async (t) => {
         enumerable: false,
         configurable: true,
       };
-      assert(
+      deepStrictEqual(
         actual,
         expected,
         `Reflect.getOwnPropertyDescriptor(Performance.prototype.now, 'name')`
@@ -257,7 +256,7 @@ export const handler = serveTest(async (t) => {
   });
 
   t.test("globalThis.performance", () => {
-    assert(
+    strictEqual(
       globalThis.performance instanceof Performance,
       true,
       `globalThis.performance instanceof Performance`
@@ -266,18 +265,18 @@ export const handler = serveTest(async (t) => {
 
   t.test("globalThis.performance.now", () => {
     throws(() => new performance.now());
-    assert(typeof performance.now(), "number");
-    assert(performance.now() > 0, true);
-    assert(Number.isNaN(performance.now()), false);
-    assert(Number.isFinite(performance.now()), true);
-    assert(performance.now() < Date.now(), true);
+    strictEqual(typeof performance.now(), "number");
+    strictEqual(performance.now() > 0, true);
+    strictEqual(Number.isNaN(performance.now()), false);
+    strictEqual(Number.isFinite(performance.now()), true);
+    strictEqual(performance.now() < Date.now(), true);
   });
 
   t.test("globalThis.performance.timeOrigin", () => {
-    assert(typeof performance.timeOrigin, "number");
-    assert(performance.timeOrigin > 0, true);
-    assert(Number.isNaN(performance.timeOrigin), false);
-    assert(Number.isFinite(performance.timeOrigin), true);
-    assert(performance.timeOrigin < Date.now(), true);
+    strictEqual(typeof performance.timeOrigin, "number");
+    strictEqual(performance.timeOrigin > 0, true);
+    strictEqual(Number.isNaN(performance.timeOrigin), false);
+    strictEqual(Number.isFinite(performance.timeOrigin), true);
+    strictEqual(performance.timeOrigin < Date.now(), true);
   });
 });
