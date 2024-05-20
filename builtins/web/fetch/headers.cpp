@@ -466,7 +466,6 @@ bool Headers::delazify(JSContext *cx, JS::HandleObject headers) {
   return ensure_all_header_values_from_handle(cx, headers, backing_map);
 }
 
-// Create header from iterable.
 JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle,
                           JS::HandleObject init_headers) {
   JS::RootedObject headers(cx, Headers::create(cx, self, handle));

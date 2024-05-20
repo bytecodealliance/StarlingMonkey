@@ -492,7 +492,7 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
     auto *headers_handle = RequestOrResponse::headers_handle(obj);
     if (!headers_handle) {
       headers_handle = new host_api::HttpHeaders();
-    } 
+    }
     headers = Headers::create(cx, headersInstance, headers_handle);
     if (!headers) {
       return nullptr;

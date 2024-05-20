@@ -120,7 +120,7 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
   }
 
   JS::SetReservedSlot(request, static_cast<uint32_t>(Request::Slots::ResponsePromise),
-                    JS::ObjectValue(*response_promise));
+                      JS::ObjectValue(*response_promise));
 
   args.rval().setObject(*response_promise);
   return true;
