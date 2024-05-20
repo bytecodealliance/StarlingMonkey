@@ -8,8 +8,6 @@ async function main(event) {
         });
         event.respondWith(responsePromise);
 
-        console.log("fetching")
-        
         let response = await fetch("https://echo.free.beeceptor.com", {
             method: "POST",
             headers: {
@@ -18,12 +16,15 @@ async function main(event) {
             body: JSON.stringify({hello: "world"})
         })
 
-        console.log("fetch executed")
-
         let responseJson = await response.json();
 
+        let result = {
+            method: responseJson.method,
+            parsedBody: responseJson.parsedBody,
+        };
+
         console.log("Successfully received response json body");
-        resolve(new Response(JSON.stringify(responseJson)));
+        resolve(new Response(JSON.stringify(result)));
     } catch (e) {
         console.log(`Error: ${e}. Stack: ${e.stack}`);
     }
