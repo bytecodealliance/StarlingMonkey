@@ -2,7 +2,6 @@
 #define BUILTINS_WEB_FETCH_API_H
 
 #include "builtin.h"
-#include "request-response.h"
 
 namespace builtins {
 namespace web {

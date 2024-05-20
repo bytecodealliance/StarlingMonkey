@@ -217,10 +217,10 @@ public:
 };
 
 class Resource {
-public:
+protected:
   HandleState *handle_state_;
   virtual ~Resource() = default;
-
+public:
   /// Returns true when this resource handle is valid.
   virtual bool valid() const { return this->handle_state_ != nullptr; }
 };

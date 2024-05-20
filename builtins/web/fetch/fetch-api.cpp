@@ -113,14 +113,14 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
     pending_handle = res.unwrap();
   }
 
-    JS::SetReservedSlot(request, static_cast<uint32_t>(Request::Slots::ResponsePromise),
-                      JS::ObjectValue(*response_promise));
-
   // If the request body is streamed, we need to wait for streaming to complete
   // before marking the request as pending.
   if (!streaming) {
     ENGINE->queue_async_task(new ResponseFutureTask(request, pending_handle));
   }
+
+  JS::SetReservedSlot(request, static_cast<uint32_t>(Request::Slots::ResponsePromise),
+                    JS::ObjectValue(*response_promise));
 
   args.rval().setObject(*response_promise);
   return true;

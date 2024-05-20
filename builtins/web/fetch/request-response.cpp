@@ -439,7 +439,6 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
 
   // Step 36.3 of Request constructor / 8.4 of Response constructor.
   if (content_type) {
-    // Headers do not contain a valid resource reference.
     JS::RootedObject headers(cx, RequestOrResponse::headers(cx, self));
     if (!headers) {
       return false;
@@ -492,7 +491,6 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
 
     auto *headers_handle = RequestOrResponse::headers_handle(obj);
     if (!headers_handle) {
-      // Error is here? is this not creating a valid resource?
       auto result = new host_api::HttpHeaders();
       headers_handle = result;
     } 
@@ -2650,7 +2648,7 @@ JSObject *Response::create(JSContext *cx, JS::HandleObject response,
     if (!(status == 204 || status == 205 || status == 304)) {
       JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::HasBody), JS::TrueValue());
     }
-  } 
+  }
 
   return response;
 }

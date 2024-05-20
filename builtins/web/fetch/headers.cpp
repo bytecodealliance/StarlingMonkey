@@ -71,9 +71,7 @@ Handle* get_handle(JSObject* self) {
   MOZ_ASSERT(Headers::is_instance(self));
   auto handle =
       JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Handle)).toPrivate();
-  auto result = static_cast<Handle*>(handle);
-
-  return result;
+  return static_cast<Handle*>(handle);
 }
 
 /**
