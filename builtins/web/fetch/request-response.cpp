@@ -487,12 +487,11 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
 
     if (!headersInstance) {
       return nullptr;
-    } 
+    }
 
     auto *headers_handle = RequestOrResponse::headers_handle(obj);
     if (!headers_handle) {
-      auto result = new host_api::HttpHeaders();
-      headers_handle = result;
+      headers_handle = new host_api::HttpHeaders();
     } 
     headers = Headers::create(cx, headersInstance, headers_handle);
     if (!headers) {
@@ -500,7 +499,7 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
     }
 
     JS_SetReservedSlot(obj, static_cast<uint32_t>(Slots::Headers), JS::ObjectValue(*headers));
-  } 
+  }
 
   return headers;
 }

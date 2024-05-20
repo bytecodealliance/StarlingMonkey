@@ -219,8 +219,8 @@ public:
 class Resource {
 protected:
   HandleState *handle_state_;
-  virtual ~Resource() = default;
 public:
+  virtual ~Resource() = default;
   /// Returns true when this resource handle is valid.
   virtual bool valid() const { return this->handle_state_ != nullptr; }
 };

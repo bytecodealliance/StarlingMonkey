@@ -100,8 +100,7 @@ size_t api::AsyncTask::select(std::vector<api::AsyncTask *> *tasks) {
   auto count = tasks->size();
   vector<Borrow<Pollable>> handles;
   for (const auto task : *tasks) {
-    auto id = task->id();
-    handles.emplace_back(id);
+    handles.emplace_back(task->id());
   }
   auto list = list_borrow_pollable_t{
       reinterpret_cast<HandleOps<Pollable>::borrow *>(handles.data()), count};
