@@ -17,8 +17,7 @@ public:
       : request_(request), future_(future) {
     auto res = future->subscribe();
     MOZ_ASSERT(!res.is_err(), "Subscribing to a future should never fail");
-    this->handle_ = res.unwrap();
-
+    handle_ = res.unwrap();
   }
 
   [[nodiscard]] bool run(api::Engine *engine) override {

@@ -104,10 +104,8 @@ size_t api::AsyncTask::select(std::vector<api::AsyncTask *> *tasks) {
   }
   auto list = list_borrow_pollable_t{
       reinterpret_cast<HandleOps<Pollable>::borrow *>(handles.data()), count};
-
   wasi_io_0_2_0_poll_list_u32_t result{nullptr, 0};
   wasi_io_0_2_0_poll_poll(&list, &result);
-
   MOZ_ASSERT(result.len > 0);
   const auto ready_index = result.ptr[0];
   free(result.ptr);

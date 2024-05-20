@@ -67,11 +67,11 @@ bool lazy_values(JSObject *self) {
       .toBoolean();
 }
 
-Handle* get_handle(JSObject* self) {
+Handle *get_handle(JSObject *self) {
   MOZ_ASSERT(Headers::is_instance(self));
   auto handle =
       JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Handle)).toPrivate();
-  return static_cast<Handle*>(handle);
+  return static_cast<Handle *>(handle);
 }
 
 /**
@@ -468,7 +468,7 @@ bool Headers::delazify(JSContext *cx, JS::HandleObject headers) {
 
 JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle,
                           JS::HandleObject init_headers) {
-  JS::RootedObject headers(cx, Headers::create(cx, self, handle));
+  JS::RootedObject headers(cx, create(cx, self, handle));
   if (!headers) {
     return nullptr;
   }
