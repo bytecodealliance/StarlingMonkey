@@ -57,7 +57,7 @@ export function throws(func, errorClass, errorMessage) {
   } catch (err) {
     if (errorClass) {
       if (!(err instanceof errorClass)) {
-        throw new AssertionError(`not expected error instance calling \`${func.toString()}\``, errorMessage, err.name, errorClass.name);
+        throw new AssertionError(`not expected error instance calling \`${func.toString()}\``, errorMessage, err.name + ': ' + err.message, errorClass.name);
       }
     }
     if (errorMessage) {
@@ -68,4 +68,23 @@ export function throws(func, errorClass, errorMessage) {
     return;
   }
   throw new AssertionError(`Expected \`${func.toString()}\` to throw, but it didn't`);
+}
+
+export async function rejects(asyncFunc, errorClass, errorMessage) {
+  try {
+    await asyncFunc();
+  } catch (err) {
+    if (errorClass) {
+      if (!(err instanceof errorClass)) {
+        throw new AssertionError(`not expected error instance calling \`${asyncFunc.toString()}\``, errorMessage, err.name + ': ' + err.message, errorClass.name);
+      }
+    }
+    if (errorMessage) {
+      if (err.message !== errorMessage) {
+        throw new AssertionError(`not expected error message calling \`${asyncFunc.toString()}\``, errorMessage, err.message, errorMessage);
+      }
+    }
+    return;
+  }
+  throw new AssertionError(`Expected \`${asyncFunc.toString()}\` to throw, but it didn't`);
 }

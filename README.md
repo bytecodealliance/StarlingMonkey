@@ -15,7 +15,7 @@ With sufficiently new versions of `cmake` and `rustup` installed, the build proc
 1. Clone the repo
 
 ```bash
-git clone https://github.com/fermyon/StarlingMonkey
+git clone https://github.com/bytecodealliance/StarlingMonkey
 cd StarlingMonkey
 ```
 

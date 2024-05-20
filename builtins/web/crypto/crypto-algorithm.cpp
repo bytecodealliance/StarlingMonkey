@@ -2,6 +2,7 @@
 #include "openssl/sha.h"
 #include <fmt/format.h>
 #include <iostream>
+#include <openssl/ecdsa.h>
 #include <optional>
 #include <span>
 #include <vector>
@@ -18,6 +19,50 @@ namespace builtins::web::crypto {
 using dom_exception::DOMException;
 
 // namespace {
+
+int numBitsToBytes(int x) { return (x / 8) + (7 + (x % 8)) / 8; }
+
+std::pair<mozilla::UniquePtr<uint8_t[], JS::FreePolicy>, size_t>
+convertToBytesExpand(JSContext *cx, const BIGNUM *bignum, size_t minimumBufferSize) {
+  int length = BN_num_bytes(bignum);
+
+  size_t bufferSize = std::max<size_t>(length, minimumBufferSize);
+  mozilla::UniquePtr<uint8_t[], JS::FreePolicy> bytes{
+      static_cast<uint8_t *>(JS_malloc(cx, bufferSize))};
+
+  size_t paddingLength = bufferSize - length;
+  if (paddingLength > 0) {
+    uint8_t padding = BN_is_negative(bignum) ? 0xFF : 0x00;
+    std::fill_n(bytes.get(), paddingLength, padding);
+  }
+  BN_bn2bin(bignum, bytes.get() + paddingLength);
+  return std::pair<mozilla::UniquePtr<uint8_t[], JS::FreePolicy>, size_t>(std::move(bytes),
+                                                                          bufferSize);
+}
+
+const EVP_MD *createDigestAlgorithm(JSContext *cx, CryptoAlgorithmIdentifier hashIdentifier) {
+  switch (hashIdentifier) {
+  case CryptoAlgorithmIdentifier::MD5: {
+    return EVP_md5();
+  }
+  case CryptoAlgorithmIdentifier::SHA_1: {
+    return EVP_sha1();
+  }
+  case CryptoAlgorithmIdentifier::SHA_256: {
+    return EVP_sha256();
+  }
+  case CryptoAlgorithmIdentifier::SHA_384: {
+    return EVP_sha384();
+  }
+  case CryptoAlgorithmIdentifier::SHA_512: {
+    return EVP_sha512();
+  }
+  default: {
+    DOMException::raise(cx, "NotSupportedError", "NotSupportedError");
+    return nullptr;
+  }
+  }
+}
 
 const EVP_MD *createDigestAlgorithm(JSContext *cx, JS::HandleObject key) {
 
@@ -356,6 +401,30 @@ JS::Result<NamedCurve> toNamedCurve(JSContext *cx, JS::HandleValue value) {
   } else {
     return JS::Result<NamedCurve>(JS::Error());
   }
+}
+
+JS::Result<size_t> curveSize(JSContext *cx, JS::HandleObject key) {
+
+  JS::RootedObject alg(cx, CryptoKey::get_algorithm(key));
+
+  JS::RootedValue namedCurve_val(cx);
+  JS_GetProperty(cx, alg, "namedCurve", &namedCurve_val);
+  auto namedCurve_chars = core::encode(cx, namedCurve_val);
+  if (!namedCurve_chars) {
+    return JS::Result<size_t>(JS::Error());
+  }
+
+  std::string_view namedCurve = namedCurve_chars;
+  if (namedCurve == "P-256") {
+    return 256;
+  } else if (namedCurve == "P-384") {
+    return 384;
+  } else if (namedCurve == "P-521") {
+    return 521;
+  }
+
+  MOZ_ASSERT_UNREACHABLE();
+  return 0;
 }
 
 // This implements the first section of
@@ -747,12 +816,163 @@ JSObject *CryptoAlgorithmHMAC_Sign_Verify::toObject(JSContext *cx) {
 JSObject *CryptoAlgorithmECDSA_Sign_Verify::sign(JSContext *cx, JS::HandleObject key, std::span<uint8_t> data) {
   MOZ_ASSERT(CryptoKey::is_instance(key));
 
-  return nullptr;
+  // 1. If the [[type]] internal slot of key is not "private", then throw an InvalidAccessError.
+  if (CryptoKey::type(key) != CryptoKeyType::Private) {
+    DOMException::raise(cx, "InvalidAccessError", "InvalidAccessError");
+    return nullptr;
+  }
+
+  // 2. Let hashAlgorithm be the hash member of normalizedAlgorithm.
+  const EVP_MD* algorithm = createDigestAlgorithm(cx, this->hashIdentifier);
+  if (!algorithm) {
+    DOMException::raise(cx, "SubtleCrypto.sign: failed to sign", "OperationError");
+    return nullptr;
+  }
+
+  // 3. Let M be the result of performing the digest operation specified by hashAlgorithm using message.
+  auto digestOption = rawDigest(cx, data, algorithm, EVP_MD_size(algorithm));
+  if (!digestOption.has_value()) {
+    DOMException::raise(cx, "OperationError", "OperationError");
+    return nullptr;
+  }
+
+  auto digest = digestOption.value();
+
+  // 4. Let d be the ECDSA private key associated with key.
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  const EC_KEY * ecKey = EVP_PKEY_get0_EC_KEY(CryptoKey::key(key));
+  #pragma clang diagnostic pop
+  if (!ecKey) {
+    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
+    return nullptr;
+  }
+
+  // 5. Let params be the EC domain parameters associated with key.
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  auto sig = ECDSA_do_sign(digest.data(), digest.size(), const_cast<EC_KEY*>(ecKey));
+  #pragma clang diagnostic pop
+  if (!sig) {
+    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
+    return nullptr;
+  }
+
+  // 6. If the namedCurve attribute of the [[algorithm]] internal slot of key is "P-256", "P-384" or "P-521":
+  //         Perform the ECDSA signing process, as specified in [RFC6090], Section 5.4, with M as the message, using params as the EC domain parameters, and with d as the private key.
+  //         Let r and s be the pair of integers resulting from performing the ECDSA signing process.
+  //         Let result be an empty byte sequence.
+  //         Let n be the smallest integer such that n * 8 is greater than the logarithm to base 2 of the order of the base point of the elliptic curve identified by params.
+  //         Convert r to an octet string of length n and append this sequence of bytes to result.
+  //         Convert s to an octet string of length n and append this sequence of bytes to result.
+  // Otherwise, the namedCurve attribute of the [[algorithm]] internal slot of key is a value specified in an applicable specification:
+  //     Perform the ECDSA signature steps specified in that specification, passing in M, params and d and resulting in result.
+  const BIGNUM* r;
+  const BIGNUM* s;
+  ECDSA_SIG_get0(sig, &r, &s);
+  auto keySize = curveSize(cx, key);
+  if (keySize.isErr()) {
+    return nullptr;
+  }
+
+  size_t keySizeInBytes = numBitsToBytes(keySize.unwrap());
+
+  auto rBytesAndSize = convertToBytesExpand(cx, r, keySizeInBytes);
+  auto *rBytes = rBytesAndSize.first.get();
+  auto rBytesSize = rBytesAndSize.second;
+
+  auto sBytesAndSize = convertToBytesExpand(cx, s, keySizeInBytes);
+  auto *sBytes = sBytesAndSize.first.get();
+  auto sBytesSize = sBytesAndSize.second;
+
+  auto resultSize = rBytesSize + sBytesSize;
+  mozilla::UniquePtr<uint8_t[], JS::FreePolicy> result{
+      static_cast<uint8_t *>(JS_malloc(cx, resultSize))};
+
+  std::memcpy(result.get(), rBytes, rBytesSize);
+  std::memcpy(result.get() + rBytesSize, sBytes, sBytesSize);
+
+  // 7. Return the result of creating an ArrayBuffer containing result.
+  JS::RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, resultSize, result.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
+  if (!buffer) {
+    // We can be here is the array buffer was too large -- if that was the case then a
+    // JSMSG_BAD_ARRAY_LENGTH will have been created. No other failure scenarios in this path will
+    // create a JS exception and so we need to create one.
+    if (!JS_IsExceptionPending(cx)) {
+      // TODO Rename error to InternalError
+      JS_ReportErrorLatin1(cx, "InternalError");
+    }
+    return nullptr;
+  }
+
+  // `signature` is now owned by `buffer`
+  static_cast<void>(result.release());
+
+  return buffer;
 };
 JS::Result<bool> CryptoAlgorithmECDSA_Sign_Verify::verify(JSContext *cx, JS::HandleObject key, std::span<uint8_t> signature, std::span<uint8_t> data) {
   MOZ_ASSERT(CryptoKey::is_instance(key));
-  DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
-  return JS::Result<bool>(JS::Error());
+  // 1. If the [[type]] internal slot of key is not "public", then throw an InvalidAccessError.
+  if (CryptoKey::type(key) != CryptoKeyType::Public) {
+    DOMException::raise(cx, "InvalidAccessError", "InvalidAccessError");
+    return JS::Result<bool>(JS::Error());
+  }
+
+  // 2. Let hashAlgorithm be the hash member of normalizedAlgorithm.
+  const EVP_MD* algorithm = createDigestAlgorithm(cx, this->hashIdentifier);
+  if (!algorithm) {
+    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
+    return JS::Result<bool>(JS::Error());
+  }
+
+  // 3. Let M be the result of performing the digest operation specified by hashAlgorithm using message.
+  auto digestOption = rawDigest(cx, data, algorithm, EVP_MD_size(algorithm));
+  if (!digestOption.has_value()) {
+    DOMException::raise(cx, "OperationError", "OperationError");
+    return JS::Result<bool>(JS::Error());
+  }
+
+  auto digest = digestOption.value();
+
+  // 4. Let Q be the ECDSA public key associated with key.
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  const EC_KEY * ecKey = EVP_PKEY_get0_EC_KEY(CryptoKey::key(key));
+  #pragma clang diagnostic pop
+  if (!ecKey) {
+    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
+    return JS::Result<bool>(JS::Error());
+  }
+
+  // 5. Let params be the EC domain parameters associated with key.
+  // 6. If the namedCurve attribute of the [[algorithm]] internal slot of key is "P-256", "P-384" or "P-521":
+      // Perform the ECDSA verifying process, as specified in RFC6090, Section 5.3, with M as the received message, signature as the received signature and using params as the EC domain parameters, and Q as the public key.
+    // Otherwise, the namedCurve attribute of the [[algorithm]] internal slot of key is a value specified in an applicable specification:
+      // Perform the ECDSA verification steps specified in that specification passing in M, signature, params and Q and resulting in an indication of whether or not the purported signature is valid.
+  auto keySize = curveSize(cx, key);
+  if (keySize.isErr()) {
+    return JS::Result<bool>(JS::Error());
+  }
+
+  size_t keySizeInBytes = numBitsToBytes(keySize.unwrap());
+
+  auto sig = ECDSA_SIG_new();
+  auto r = BN_bin2bn(signature.data(), keySizeInBytes, nullptr);
+  auto s = BN_bin2bn(signature.data() + keySizeInBytes, keySizeInBytes, nullptr);
+
+  if (!ECDSA_SIG_set0(sig, r, s)) {
+    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
+    return JS::Result<bool>(JS::Error());
+  }
+
+  // 7. Let result be a boolean with the value true if the signature is valid and the value false otherwise.
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  bool result = ECDSA_do_verify(digest.data(), digest.size(), sig, const_cast<EC_KEY*>(ecKey)) == 1;
+  #pragma clang diagnostic pop
+
+  // 8. Return result.
+  return result;
 };
 JSObject *CryptoAlgorithmECDSA_Sign_Verify::toObject(JSContext *cx) {
   return nullptr;
