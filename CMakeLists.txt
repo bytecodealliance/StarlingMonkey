@@ -102,6 +102,5 @@ function(componentize OUTPUT)
 endfunction()
 
 componentize(smoke-test SOURCES tests/cases/smoke/smoke.js)
-componentize(fetch-test SOURCES tests/cases/fetch/fetch.js)
 
 include("tests/tests.cmake")

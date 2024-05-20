@@ -484,7 +484,6 @@ JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHe
     return nullptr;
   }
 
-  // TODO: does this do anything? 
   JS::RootedObject headers_map(cx, get_backing_map(headers));
   JS::RootedObject init_map(cx, get_backing_map(init_headers));
 

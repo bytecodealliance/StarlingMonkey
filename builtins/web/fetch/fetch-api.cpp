@@ -15,7 +15,6 @@ public:
   explicit ResponseFutureTask(const HandleObject request,
                               host_api::FutureHttpIncomingResponse *future)
       : request_(request), future_(future) {
-    ensure_no_response(ENGINE->cx(), request, future);
     auto res = future->subscribe();
     MOZ_ASSERT(!res.is_err(), "Subscribing to a future should never fail");
     this->handle_ = res.unwrap();
@@ -120,50 +119,11 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
   // If the request body is streamed, we need to wait for streaming to complete
   // before marking the request as pending.
   if (!streaming) {
-    ensure_no_response(cx, request, pending_handle);
     ENGINE->queue_async_task(new ResponseFutureTask(request, pending_handle));
   }
 
   args.rval().setObject(*response_promise);
   return true;
-}
-
-bool ensure_no_response(JSContext *cx, JS::HandleObject req,
-                        host_api::FutureHttpIncomingResponse *future) {
-
-    const RootedObject request(cx, req);
-    RootedObject response_promise(cx, Request::response_promise(request));
-
-    auto res = future->maybe_response();
-    if (res.is_err()) {
-      JS_ReportErrorUTF8(cx, "NetworkError when attempting to fetch resource.");
-      return RejectPromiseWithPendingError(cx, response_promise);
-    }
-
-    auto maybe_response = res.unwrap();
-    if (maybe_response.has_value()) {
-      auto response = maybe_response.value();
-      RootedObject response_obj(
-          cx, JS_NewObjectWithGivenProto(cx, &Response::class_, Response::proto_obj));
-      if (!response_obj) {
-        return false;
-      }
-
-      response_obj = Response::create(cx, response_obj, response);
-      if (!response_obj) {
-        return false;
-      }
-
-      RequestOrResponse::set_url(response_obj, RequestOrResponse::url(request));
-      RootedValue response_val(cx, ObjectValue(*response_obj));
-      if (!ResolvePromise(cx, response_promise, response_val)) {
-        return false;
-      } else {
-        return true;
-      }
-    } else {
-      return false;
-    }
 }
 
 const JSFunctionSpec methods[] = {JS_FN("fetch", fetch, 2, JSPROP_ENUMERATE), JS_FS_END};

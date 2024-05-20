@@ -499,7 +499,7 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
     headers = Headers::create(cx, headersInstance, headers_handle);
     if (!headers) {
       return nullptr;
-    } 
+    }
 
     JS_SetReservedSlot(obj, static_cast<uint32_t>(Slots::Headers), JS::ObjectValue(*headers));
   } 
@@ -1729,7 +1729,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     headers = Headers::create(cx, headersInstance, headers_handle, headers_val);
     if (!headers) {
       return nullptr;
-    } 
+    }
   }
 
   // 33.  Let `inputBody` be `input`’s requests body if `input` is a `Request`
@@ -1788,7 +1788,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     //     ``Content-Type``, then append (``Content-Type``, `Content-Type`) to
     //     this’s headers.
     // Note: these steps are all inlined into RequestOrResponse::extract_body.
-    if (!RequestOrResponse::extract_body(cx, request, body_val)) { 
+    if (!RequestOrResponse::extract_body(cx, request, body_val)) {
       return nullptr;
     }
   } else if (input_has_body) {

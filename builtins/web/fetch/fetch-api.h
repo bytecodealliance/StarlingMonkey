@@ -9,8 +9,6 @@ namespace web {
 namespace fetch {
 
 bool install(api::Engine *engine);
-bool ensure_no_response(JSContext *cx, HandleObject request,
-                        host_api::FutureHttpIncomingResponse *future);
 
 } // namespace fetch
 } // namespace web
