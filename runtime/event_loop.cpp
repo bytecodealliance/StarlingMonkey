@@ -9,6 +9,8 @@
 
 struct TaskQueue {
   std::vector<api::AsyncTask *> tasks = {};
+  int interest_cnt = 0;
+  bool event_loop_running = false;
 
   void trace(JSTracer *trc) const {
     for (const auto task : tasks) {
@@ -38,40 +40,60 @@ bool EventLoop::cancel_async_task(api::Engine *engine, const int32_t id) {
 
 bool EventLoop::has_pending_async_tasks() { return !queue.get().tasks.empty(); }
 
-bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
-  // Loop until no more resolved promises or backend requests are pending.
-  // LOG("Start processing async jobs ...\n");
+void EventLoop::incr_event_loop_interest() { queue.get().interest_cnt++; }
 
+void EventLoop::decr_event_loop_interest() {
+  MOZ_ASSERT(queue.get().interest_cnt > 0);
+  queue.get().interest_cnt--;
+}
+
+inline bool interest_complete() { return queue.get().interest_cnt == 0; }
+
+inline void exit_event_loop() { queue.get().event_loop_running = false; }
+
+bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
+  if (queue.get().event_loop_running) {
+    fprintf(stderr, "cannot run event loop as it is already running");
+    return false;
+  }
+  queue.get().event_loop_running = true;
   JSContext *cx = engine->cx();
 
-  do {
-    // First, drain the promise reactions queue.
-    while (js::HasJobsPending(cx)) {
-      js::RunJobs(cx);
+  while (true) {
+    // Run a microtask checkpoint
+    js::RunJobs(cx);
 
-      if (JS_IsExceptionPending(cx))
-        return false;
+    if (JS_IsExceptionPending(cx)) {
+      exit_event_loop();
+      return false;
+    }
+    // if there is no interest in the event loop at all, just run one tick
+    if (interest_complete()) {
+      exit_event_loop();
+      return true;
     }
 
-    // TODO: add general mechanism for extending the event loop duration.
-    // Then, check if the fetch event is still active, i.e. had pending promises
-    // added to it using `respondWith` or `waitUntil`.
-    // if (!builtins::FetchEvent::is_active(fetch_event))
-    //   break;
-
-    // Process async tasks.
-    if (has_pending_async_tasks()) {
-      auto tasks = &queue.get().tasks;
-      const auto index = api::AsyncTask::select(tasks);
-      auto task = tasks->at(index);
-      if (!task->run(engine)) {
-        return false;
-      }
-      tasks->erase(tasks->begin() + index);
+    const auto tasks = &queue.get().tasks;
+    size_t tasks_size = tasks->size();
+    if (tasks_size == 0) {
+      exit_event_loop();
+      MOZ_ASSERT(!interest_complete());
+      fprintf(stderr, "event loop error - both task and job queues are empty, but expected "
+                      "operations did not resolve");
+      return false;
     }
-  } while (js::HasJobsPending(engine->cx()) || has_pending_async_tasks());
 
-  return true;
+    // Select the next task to run according to event-loop semantics of oldest-first.
+    size_t task_idx = api::AsyncTask::select(tasks);
+
+    auto task = tasks->at(task_idx);
+    bool success = task->run(engine);
+    tasks->erase(tasks->begin() + task_idx);
+    if (!success) {
+      exit_event_loop();
+      return false;
+    }
+  }
 }
 
 void EventLoop::init(JSContext *cx) { queue.init(cx); }

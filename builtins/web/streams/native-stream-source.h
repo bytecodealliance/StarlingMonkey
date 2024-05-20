@@ -47,6 +47,7 @@ public:
                                               JS::HandleObject writable);
   static JSObject *piped_to_transform_stream(JSObject *self);
   static bool lock_stream(JSContext *cx, JS::HandleObject stream);
+  static JSObject *get_locked_by_internal_reader(JSContext *cx, JS::HandleObject stream);
   static bool start(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool pull(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool cancel(JSContext *cx, unsigned argc, JS::Value *vp);

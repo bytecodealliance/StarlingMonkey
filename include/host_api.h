@@ -217,10 +217,8 @@ public:
 };
 
 class Resource {
-protected:
-  HandleState *handle_state_;
-
 public:
+  HandleState *handle_state_;
   virtual ~Resource() = default;
 
   /// Returns true when this resource handle is valid.
@@ -305,7 +303,7 @@ public:
       : incoming(incoming), outgoing(outgoing) {}
 
   Result<uint8_t> pump();
-  bool ready();
+
   bool done();
 };
 

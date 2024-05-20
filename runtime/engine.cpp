@@ -224,8 +224,7 @@ bool init_js() {
 
   // TODO: check if we should set a different creation zone.
   JS::RealmOptions options;
-  options.creationOptions().setStreamsEnabled(true).setWeakRefsEnabled(
-      JS::WeakRefSpecifier::EnabledWithoutCleanupSome);
+  options.creationOptions().setStreamsEnabled(true);
 
   JS::DisableIncrementalGC(cx);
   // JS_SetGCParameter(cx, JSGC_MAX_EMPTY_CHUNK_COUNT, 1);
@@ -363,10 +362,7 @@ bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
   }
 
   SCRIPT_VALUE.init(cx, ns);
-
-  if (!core::EventLoop::run_event_loop(this, 0)) {
-    return false;
-  }
+  this->run_event_loop();
 
   // TLA rejections during pre-initialization are treated as top-level exceptions.
   // TLA may remain unresolved, in which case it will continue tasks at runtime.
@@ -419,6 +415,14 @@ bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
 
 bool api::Engine::run_event_loop() {
   return core::EventLoop::run_event_loop(this, 0);
+}
+
+void api::Engine::incr_event_loop_interest() {
+  return core::EventLoop::incr_event_loop_interest();
+}
+
+void api::Engine::decr_event_loop_interest() {
+  return core::EventLoop::decr_event_loop_interest();
 }
 
 bool api::Engine::dump_value(JS::Value val, FILE *fp) { return ::dump_value(CONTEXT, val, fp); }

@@ -37,7 +37,7 @@ bool NativeStreamSource::stream_is_body(JSContext *cx, JS::HandleObject stream) 
          web::fetch::RequestOrResponse::is_instance(owner(stream_source));
 }
 
-} // builtins::web::streams
+} // namespace builtins::web::streams
 
 namespace builtins::web::fetch {
 
@@ -93,7 +93,9 @@ public:
     // the array buffer allocation has been successful, as that ensures that the
     // return path frees chunk automatically when necessary.
     auto &bytes = chunk.bytes;
-    RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, bytes.len, bytes.ptr.get()));
+    RootedObject buffer(
+        cx, JS::NewArrayBufferWithContents(cx, bytes.len, bytes.ptr.get(),
+                                           JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
     if (!buffer) {
       return error_stream_controller_with_pending_exception(cx, controller);
     }
@@ -119,11 +121,6 @@ public:
   [[nodiscard]] bool cancel(api::Engine *engine) override {
     // TODO(TS): implement
     handle_ = -1;
-    return true;
-  }
-
-  bool ready() override {
-    // TODO(TS): implement
     return true;
   }
 
@@ -184,11 +181,6 @@ public:
   [[nodiscard]] bool cancel(api::Engine *engine) override {
     // TODO(TS): implement
     handle_ = -1;
-    return true;
-  }
-
-  bool ready() override {
-    // TODO(TS): implement
     return true;
   }
 
@@ -334,6 +326,13 @@ bool RequestOrResponse::body_unusable(JSContext *cx, JS::HandleObject body) {
   return disturbed || locked;
 }
 
+bool RequestOrResponse::body_disturbed(JSContext *cx, JS::HandleObject body) {
+  MOZ_ASSERT(JS::IsReadableStream(body));
+  bool disturbed;
+  MOZ_RELEASE_ASSERT(JS::ReadableStreamIsDisturbed(cx, body, &disturbed));
+  return disturbed;
+}
+
 /**
  * Implementation of the `extract a body` algorithm at
  * https://fetch.spec.whatwg.org/#concept-bodyinit-extract
@@ -424,6 +423,8 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     auto body = RequestOrResponse::outgoing_body_handle(self);
     auto write_res = body->write_all(reinterpret_cast<uint8_t *>(buf), length);
 
+    body->close();
+
     // Ensure that the NoGC is reset, so throwing an error in HANDLE_ERROR
     // succeeds.
     if (maybeNoGC.isSome()) {
@@ -438,7 +439,11 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
 
   // Step 36.3 of Request constructor / 8.4 of Response constructor.
   if (content_type) {
+    // Headers do not contain a valid resource reference.
     JS::RootedObject headers(cx, RequestOrResponse::headers(cx, self));
+    if (!headers) {
+      return false;
+    }
     if (!Headers::maybe_add(cx, headers, "content-type", content_type)) {
       return false;
     }
@@ -483,19 +488,21 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
 
     if (!headersInstance) {
       return nullptr;
-    }
+    } 
 
     auto *headers_handle = RequestOrResponse::headers_handle(obj);
     if (!headers_handle) {
-      headers_handle = new host_api::HttpHeaders();
-    }
+      // Error is here? is this not creating a valid resource?
+      auto result = new host_api::HttpHeaders();
+      headers_handle = result;
+    } 
     headers = Headers::create(cx, headersInstance, headers_handle);
     if (!headers) {
       return nullptr;
-    }
+    } 
 
     JS_SetReservedSlot(obj, static_cast<uint32_t>(Slots::Headers), JS::ObjectValue(*headers));
-  }
+  } 
 
   return headers;
 }
@@ -509,7 +516,9 @@ bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::Uni
   JS::RootedValue result(cx);
 
   if constexpr (result_type == RequestOrResponse::BodyReadResult::ArrayBuffer) {
-    JS::RootedObject array_buffer(cx, JS::NewArrayBufferWithContents(cx, len, buf.get()));
+    JS::RootedObject array_buffer(
+        cx, JS::NewArrayBufferWithContents(cx, len, buf.get(),
+                                           JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
     if (!array_buffer) {
       return RejectPromiseWithPendingError(cx, result_promise);
     }
@@ -757,7 +766,7 @@ bool RequestOrResponse::consume_content_stream_for_bodyAll(JSContext *cx, JS::Ha
     return false;
   }
   MOZ_ASSERT(JS::IsReadableStream(stream));
-  if (RequestOrResponse::body_unusable(cx, stream)) {
+  if (RequestOrResponse::body_disturbed(cx, stream)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_RESPONSE_BODY_DISTURBED_OR_LOCKED);
     JS::RootedObject result_promise(cx);
@@ -766,8 +775,9 @@ bool RequestOrResponse::consume_content_stream_for_bodyAll(JSContext *cx, JS::Ha
     JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise), JS::UndefinedValue());
     return RejectPromiseWithPendingError(cx, result_promise);
   }
-  JS::Rooted<JSObject *> unwrappedReader(
-      cx, JS::ReadableStreamGetReader(cx, stream, JS::ReadableStreamReaderMode::Default));
+
+  JS::RootedObject unwrappedReader(cx, streams::NativeStreamSource::get_locked_by_internal_reader(cx, stream));
+
   if (!unwrappedReader) {
     return false;
   }
@@ -1141,7 +1151,11 @@ JSObject *RequestOrResponse::create_body_stream(JSContext *cx, JS::HandleObject 
     return nullptr;
   }
 
-  // TODO: immediately lock the stream if the owner's body is already used.
+  // If the body has already been used without being reified as a ReadableStream,
+  // lock the stream immediately.
+  if (body_used(owner)) {
+    MOZ_RELEASE_ASSERT(streams::NativeStreamSource::lock_stream(cx, body_stream));
+  }
 
   JS_SetReservedSlot(owner, static_cast<uint32_t>(Slots::BodyStream),
                      JS::ObjectValue(*body_stream));
@@ -1505,8 +1519,8 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     if (!url_instance)
       return nullptr;
 
-    JS::RootedObject parsedURL(cx, url::URL::create(cx, url_instance, input,
-                               worker_location::WorkerLocation::url));
+    JS::RootedObject parsedURL(
+        cx, url::URL::create(cx, url_instance, input, worker_location::WorkerLocation::url));
 
     // 2.  If `parsedURL` is failure, then throw a `TypeError`.
     if (!parsedURL) {
@@ -1699,7 +1713,8 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
   // `init["headers"]` exists, create the request's `headers` from that,
   // otherwise create it from the `init` object's `headers`, or create a new,
   // empty one.
-  auto *headers_handle = new host_api::HttpHeaders();
+  auto *headers_handle = new host_api::HttpHeaders(); 
+
   JS::RootedObject headers(cx);
 
   if (headers_val.isUndefined() && input_headers) {
@@ -1714,7 +1729,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     headers = Headers::create(cx, headersInstance, headers_handle, headers_val);
     if (!headers) {
       return nullptr;
-    }
+    } 
   }
 
   // 33.  Let `inputBody` be `input`’s requests body if `input` is a `Request`
@@ -1773,7 +1788,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     //     ``Content-Type``, then append (``Content-Type``, `Content-Type`) to
     //     this’s headers.
     // Note: these steps are all inlined into RequestOrResponse::extract_body.
-    if (!RequestOrResponse::extract_body(cx, request, body_val)) {
+    if (!RequestOrResponse::extract_body(cx, request, body_val)) { 
       return nullptr;
     }
   } else if (input_has_body) {
@@ -2635,7 +2650,7 @@ JSObject *Response::create(JSContext *cx, JS::HandleObject response,
     if (!(status == 204 || status == 205 || status == 304)) {
       JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::HasBody), JS::TrueValue());
     }
-  }
+  } 
 
   return response;
 }

@@ -100,12 +100,15 @@ size_t api::AsyncTask::select(std::vector<api::AsyncTask *> *tasks) {
   auto count = tasks->size();
   vector<Borrow<Pollable>> handles;
   for (const auto task : *tasks) {
-    handles.emplace_back(task->id());
+    auto id = task->id();
+    handles.emplace_back(id);
   }
   auto list = list_borrow_pollable_t{
       reinterpret_cast<HandleOps<Pollable>::borrow *>(handles.data()), count};
+
   wasi_io_0_2_0_poll_list_u32_t result{nullptr, 0};
   wasi_io_0_2_0_poll_poll(&list, &result);
+
   MOZ_ASSERT(result.len > 0);
   const auto ready_index = result.ptr[0];
   free(result.ptr);
@@ -558,11 +561,6 @@ public:
     return true;
   }
 
-  bool ready() override {
-    // TODO(TS): properly implement. This won't ever return `true` right now
-    return state_ == State::Ready;
-  }
-
   [[nodiscard]] int32_t id() override {
     if (state_ == State::BlockedOnBoth || state_ == State::BlockedOnIncoming) {
       return incoming_pollable_;
@@ -714,21 +712,24 @@ HttpOutgoingRequest *HttpOutgoingRequest::make(string_view method_str, optional<
   auto *state = new HandleState(handle.__handle);
   auto *resp = new HttpOutgoingRequest(state);
 
-  resp->headers_ = headers;
-
   return resp;
 }
 
 Result<string_view> HttpOutgoingRequest::method() {
   MOZ_ASSERT(valid());
-  MOZ_ASSERT(headers_);
   return Result<string_view>::ok(method_);
 }
 
 Result<HttpHeaders *> HttpOutgoingRequest::headers() {
+  typedef Result<HttpHeaders *> Res;
   MOZ_ASSERT(valid());
-  MOZ_ASSERT(headers_);
-  return Result<HttpHeaders *>::ok(headers_);
+  
+  if (!this->headers_) {
+    auto res = wasi_http_0_2_0_types_method_outgoing_request_headers(
+        wasi_http_0_2_0_types_borrow_outgoing_request({handle_state_->handle}));
+    headers_ = new HttpHeaders(res.__handle);
+  }
+  return Res::ok(this->headers_);
 }
 
 Result<HttpOutgoingBody *> HttpOutgoingRequest::body() {
@@ -747,6 +748,12 @@ Result<HttpOutgoingBody *> HttpOutgoingRequest::body() {
 
 Result<FutureHttpIncomingResponse *> HttpOutgoingRequest::send() {
   MOZ_ASSERT(valid());
+
+  if (this->headers_) {
+    wasi_http_0_2_0_types_fields_drop_borrow({this->headers_->handle_state_->handle});
+  }
+
+
   future_incoming_response_t ret;
   wasi_http_0_2_0_outgoing_handler_error_code_t err;
   wasi_http_0_2_0_outgoing_handler_handle({handle_state_->handle}, nullptr, &ret, &err);

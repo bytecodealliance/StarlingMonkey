@@ -658,8 +658,9 @@ JSObject *CryptoKey::createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_I
   auto exp = keyData->exponent;
   std::copy(exp.begin(), exp.end(), p.get());
 
-  JS::RootedObject buffer(cx,
-                          JS::NewArrayBufferWithContents(cx, keyData->exponent.size(), p.get()));
+  JS::RootedObject buffer(
+      cx, JS::NewArrayBufferWithContents(cx, keyData->exponent.size(), p.get(),
+                                         JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
   // `buffer` takes ownership of `p` if the call to NewArrayBufferWithContents was successful
   // if the call was not successful, we need to free `p` before exiting from the function.
   if (!buffer) {

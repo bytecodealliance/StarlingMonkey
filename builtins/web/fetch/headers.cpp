@@ -67,11 +67,13 @@ bool lazy_values(JSObject *self) {
       .toBoolean();
 }
 
-Handle *get_handle(JSObject *self) {
+Handle* get_handle(JSObject* self) {
   MOZ_ASSERT(Headers::is_instance(self));
   auto handle =
       JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Handle)).toPrivate();
-  return static_cast<Handle *>(handle);
+  auto result = static_cast<Handle*>(handle);
+
+  return result;
 }
 
 /**
@@ -466,9 +468,10 @@ bool Headers::delazify(JSContext *cx, JS::HandleObject headers) {
   return ensure_all_header_values_from_handle(cx, headers, backing_map);
 }
 
+// Create header from iterable.
 JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle,
                           JS::HandleObject init_headers) {
-  JS::RootedObject headers(cx, create(cx, self, handle));
+  JS::RootedObject headers(cx, Headers::create(cx, self, handle));
   if (!headers) {
     return nullptr;
   }
@@ -481,6 +484,7 @@ JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHe
     return nullptr;
   }
 
+  // TODO: does this do anything? 
   JS::RootedObject headers_map(cx, get_backing_map(headers));
   JS::RootedObject init_map(cx, get_backing_map(init_headers));
 
