@@ -423,9 +423,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     auto body = RequestOrResponse::outgoing_body_handle(self);
     auto write_res = body->write_all(reinterpret_cast<uint8_t *>(buf), length);
 
-    fprintf(stderr, "Closing outgoing body\n");
     body->close();
-    fprintf(stderr, "Closed outgoing body\n");
 
     // Ensure that the NoGC is reset, so throwing an error in HANDLE_ERROR
     // succeeds.
@@ -442,10 +440,8 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
   // Step 36.3 of Request constructor / 8.4 of Response constructor.
   if (content_type) {
     // Headers do not contain a valid resource reference.
-    fprintf(stderr, "Creating headers %s\n", content_type);
     JS::RootedObject headers(cx, RequestOrResponse::headers(cx, self));
     if (!headers) {
-      fprintf(stderr, "FAILED TO EXTRACT OR CREATE HEADERS\n");
       return false;
     }
     if (!Headers::maybe_add(cx, headers, "content-type", content_type)) {
@@ -487,39 +483,26 @@ bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::Ha
 JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
   JSObject *headers = maybe_headers(obj);
   if (!headers) {
-    fprintf(stderr, "maybe_headers is null\n");
-
     JS::RootedObject headersInstance(
         cx, JS_NewObjectWithGivenProto(cx, &Headers::class_, Headers::proto_obj));
 
     if (!headersInstance) {
-      fprintf(stderr, "headersInstance is null\n");
       return nullptr;
-    } else {
-      fprintf(stderr, "headersInstance is NOT null\n");
-    }
+    } 
 
     auto *headers_handle = RequestOrResponse::headers_handle(obj);
     if (!headers_handle) {
       // Error is here? is this not creating a valid resource?
       auto result = new host_api::HttpHeaders();
-      fprintf(stderr, "headers_handle is null\n");
       headers_handle = result;
-    } else {
-      fprintf(stderr, "headers_handle is NOT null\n");
-    }
+    } 
     headers = Headers::create(cx, headersInstance, headers_handle);
     if (!headers) {
-      fprintf(stderr, "Headers::create is null\n");
       return nullptr;
-    } else {
-      fprintf(stderr, "Headers::create is NOT null\n");
-    }
+    } 
 
     JS_SetReservedSlot(obj, static_cast<uint32_t>(Slots::Headers), JS::ObjectValue(*headers));
-  } else {
-    fprintf(stderr, "maybe_headers is NOT null\n");
-  }
+  } 
 
   return headers;
 }
@@ -1730,8 +1713,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
   // `init["headers"]` exists, create the request's `headers` from that,
   // otherwise create it from the `init` object's `headers`, or create a new,
   // empty one.
-  auto *headers_handle = new host_api::HttpHeaders(); // *************************
-  fprintf(stderr, "Created Header Resource:  %p %d\n", headers_handle, headers_handle->handle_state_->handle);
+  auto *headers_handle = new host_api::HttpHeaders(); 
 
   JS::RootedObject headers(cx);
 
@@ -1747,9 +1729,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     headers = Headers::create(cx, headersInstance, headers_handle, headers_val);
     if (!headers) {
       return nullptr;
-    } else {
-      fprintf(stderr, "headers successfully created\n");
-    }
+    } 
   }
 
   // 33.  Let `inputBody` be `input`’s requests body if `input` is a `Request`
@@ -1808,7 +1788,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     //     ``Content-Type``, then append (``Content-Type``, `Content-Type`) to
     //     this’s headers.
     // Note: these steps are all inlined into RequestOrResponse::extract_body.
-    if (!RequestOrResponse::extract_body(cx, request, body_val)) { // *************************
+    if (!RequestOrResponse::extract_body(cx, request, body_val)) { 
       return nullptr;
     }
   } else if (input_has_body) {
@@ -2652,8 +2632,6 @@ JSObject *Response::create(JSContext *cx, JS::HandleObject response,
   MOZ_ASSERT(is_instance(response));
   MOZ_ASSERT(response_handle);
 
-  fprintf(stderr, "Response::create\n");
-
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Response),
                       JS::PrivateValue(response_handle));
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Headers), JS::NullValue());
@@ -2663,7 +2641,6 @@ JSObject *Response::create(JSContext *cx, JS::HandleObject response,
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Redirected), JS::FalseValue());
 
   if (response_handle->is_incoming()) {
-    fprintf(stderr, "Response::create: response handle INCOMING\n");
     auto res = reinterpret_cast<host_api::HttpIncomingResponse *>(response_handle)->status();
     MOZ_ASSERT(!res.is_err(), "TODO: proper error handling");
     auto status = res.unwrap();
@@ -2673,9 +2650,7 @@ JSObject *Response::create(JSContext *cx, JS::HandleObject response,
     if (!(status == 204 || status == 205 || status == 304)) {
       JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::HasBody), JS::TrueValue());
     }
-  } else {
-    fprintf(stderr, "Response::create: response handle NOT INCOMING\n");
-  }
+  } 
 
   return response;
 }

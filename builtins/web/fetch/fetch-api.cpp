@@ -15,31 +15,26 @@ public:
   explicit ResponseFutureTask(const HandleObject request,
                               host_api::FutureHttpIncomingResponse *future)
       : request_(request), future_(future) {
-    fprintf(stderr, "ResponseFutureTask::ResponseFutureTask\n");
     ensure_no_response(ENGINE->cx(), request, future);
     auto res = future->subscribe();
     MOZ_ASSERT(!res.is_err(), "Subscribing to a future should never fail");
     this->handle_ = res.unwrap();
 
-    fprintf(stderr, "ResponseFutureTask::ResponseFutureTask END!\n");
   }
 
   [[nodiscard]] bool run(api::Engine *engine) override {
-    fprintf(stderr, "ResponseFutureTask::run\n");
     // MOZ_ASSERT(ready());
     JSContext *cx = engine->cx();
 
     const RootedObject request(cx, request_);
     RootedObject response_promise(cx, Request::response_promise(request));
 
-    fprintf(stderr, "ResponseFutureTask::run: maybe_response\n");
     auto res = future_->maybe_response();
     if (res.is_err()) {
       JS_ReportErrorUTF8(cx, "NetworkError when attempting to fetch resource.");
       return RejectPromiseWithPendingError(cx, response_promise);
     }
 
-    fprintf(stderr, "ResponseFutureTask::run: maybe_response\n");
     auto maybe_response = res.unwrap();
     MOZ_ASSERT(maybe_response.has_value());
     auto response = maybe_response.value();
@@ -64,7 +59,6 @@ public:
   }
 
   [[nodiscard]] bool cancel(api::Engine *engine) override {
-    fprintf(stderr, "ResponseFutureTask::cancel\n");
     // TODO(TS): implement
     handle_ = -1;
     return true;
@@ -110,9 +104,7 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
   host_api::FutureHttpIncomingResponse *pending_handle;
   {
     auto request_handle = Request::outgoing_handle(request);
-    fprintf(stderr, "fetch: sending request\n");
     auto res = request_handle->send();
-    fprintf(stderr, "fetch: send initiated\n");
 
     if (auto *err = res.to_err()) {
       HANDLE_ERROR(cx, *err);
@@ -128,18 +120,10 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
   // If the request body is streamed, we need to wait for streaming to complete
   // before marking the request as pending.
   if (!streaming) {
-    fprintf(stderr, "fetch: scheduling response future task\n");
-
-    if (ensure_no_response(cx, request, pending_handle)) {
-      fprintf(stderr, "fetch: maybe_response has value!\n");
-    } else {
-      fprintf(stderr, "fetch: maybe_response has no value! Future queued.\n");
-      
-      ENGINE->queue_async_task(new ResponseFutureTask(request, pending_handle));
-    }
+    ensure_no_response(cx, request, pending_handle);
+    ENGINE->queue_async_task(new ResponseFutureTask(request, pending_handle));
   }
 
-  fprintf(stderr, "fetch: returning response promise\n");
   args.rval().setObject(*response_promise);
   return true;
 }
@@ -150,17 +134,14 @@ bool ensure_no_response(JSContext *cx, JS::HandleObject req,
     const RootedObject request(cx, req);
     RootedObject response_promise(cx, Request::response_promise(request));
 
-    fprintf(stderr, "ensure_no_response: maybe_response\n");
     auto res = future->maybe_response();
     if (res.is_err()) {
       JS_ReportErrorUTF8(cx, "NetworkError when attempting to fetch resource.");
       return RejectPromiseWithPendingError(cx, response_promise);
     }
 
-    fprintf(stderr, "ensure_no_response: maybe_response is not error \n");
     auto maybe_response = res.unwrap();
     if (maybe_response.has_value()) {
-      fprintf(stderr, "ensure_no_response: maybe_response has value!\n");
       auto response = maybe_response.value();
       RootedObject response_obj(
           cx, JS_NewObjectWithGivenProto(cx, &Response::class_, Response::proto_obj));
@@ -181,7 +162,6 @@ bool ensure_no_response(JSContext *cx, JS::HandleObject req,
         return true;
       }
     } else {
-      fprintf(stderr, "ensure_no_response: maybe_response has no value\n");
       return false;
     }
 }

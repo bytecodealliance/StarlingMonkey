@@ -98,26 +98,17 @@ template <> struct HandleOps<Pollable> {
 
 size_t api::AsyncTask::select(std::vector<api::AsyncTask *> *tasks) {
   auto count = tasks->size();
-  fprintf(stderr, "api::AsyncTask::select %zu\n", count);
   vector<Borrow<Pollable>> handles;
   for (const auto task : *tasks) {
     auto id = task->id();
-    fprintf(stderr, "api::AsyncTask::select task %d\n", reinterpret_cast<int32_t>(id));
     handles.emplace_back(id);
   }
   auto list = list_borrow_pollable_t{
       reinterpret_cast<HandleOps<Pollable>::borrow *>(handles.data()), count};
 
-  for (int i = 0; i < list.len; i++) {
-      bool ready = wasi_io_0_2_0_poll_method_pollable_ready(list.ptr[i]);
-      fprintf(stderr, "api::AsyncTask::select %d ready: %d\n", i, ready);
-  }
-
-  fprintf(stderr, "api::AsyncTask::select before poll\n");
   wasi_io_0_2_0_poll_list_u32_t result{nullptr, 0};
   wasi_io_0_2_0_poll_poll(&list, &result);
 
-  fprintf(stderr, "api::AsyncTask::select after poll\n");
   MOZ_ASSERT(result.len > 0);
   const auto ready_index = result.ptr[0];
   free(result.ptr);
@@ -199,16 +190,6 @@ void MonotonicClock::unsubscribe(const int32_t handle_id) {
 
 HttpHeaders::HttpHeaders() {
   this->handle_state_ = new HandleState(wasi_http_0_2_0_types_constructor_fields().__handle);
-  fprintf(stderr, "wasi_http_0_2_0_types_constructor_fields returned with %d\n", this->handle_state_->handle);
-
-  Result<vector<HostString>> names_result = this->names();
-  MOZ_ASSERT(!names_result.is_err());
-  vector<HostString> &names = names_result.unwrap();
-  fprintf(stderr, "wasi_http_0_2_0_types_constructor_fields ==> len: %zu", names.size());
-  for (auto &str : names) {
-    fprintf(stderr, "wasi_http_0_2_0_types_constructor_fields ==> %zu", str.size());
-  }
-
 }
 HttpHeaders::HttpHeaders(Handle handle) { handle_state_ = new HandleState(handle); }
 
@@ -769,11 +750,9 @@ Result<FutureHttpIncomingResponse *> HttpOutgoingRequest::send() {
   MOZ_ASSERT(valid());
 
   if (this->headers_) {
-    fprintf(stderr, "HttpOutgoingRequest::send dropping borrowed headers");
     wasi_http_0_2_0_types_fields_drop_borrow({this->headers_->handle_state_->handle});
   }
 
-  fprintf(stderr, "HttpOutgoingRequest::send calling handle");
 
   future_incoming_response_t ret;
   wasi_http_0_2_0_outgoing_handler_error_code_t err;

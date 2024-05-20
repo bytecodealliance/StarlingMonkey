@@ -73,13 +73,6 @@ Handle* get_handle(JSObject* self) {
       JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Handle)).toPrivate();
   auto result = static_cast<Handle*>(handle);
 
-  if (result != nullptr) {
-    int32_t handleValue = result->handle_state_->handle;
-    fprintf(stderr, "get_handle retrieved Resource %p with handle value %d\n", result, handleValue);
-  } else {
-    fprintf(stderr, "get_handle retrieved nullptr\n");
-  }
-
   return result;
 }
 
@@ -453,7 +446,6 @@ bool Headers::append_header_value(JSContext *cx, JS::HandleObject self, JS::Hand
       for (auto value : splitCookiesString(value)) {
         auto res = handle->append(name, value);
         if (auto *err = res.to_err()) {
-          fprintf(stderr, "handle->append error 1\n");
           HANDLE_ERROR(cx, *err);
           return false;
         }
@@ -462,7 +454,6 @@ bool Headers::append_header_value(JSContext *cx, JS::HandleObject self, JS::Hand
       std::string_view value = value_chars;
       auto res = handle->append(name, value);
       if (auto *err = res.to_err()) {
-        fprintf(stderr, "handle->append error 2\n");
         HANDLE_ERROR(cx, *err);
         return false;
       }
@@ -535,7 +526,6 @@ JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHe
 
 JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle,
                           JS::HandleValue initv) {
-  fprintf(stderr, "Headers::create from HandleValue\n");
   JS::RootedObject headers(cx, create(cx, self, handle));
   if (!headers)
     return nullptr;
@@ -782,7 +772,6 @@ bool Headers::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 JSObject *Headers::create(JSContext *cx, JS::HandleObject self, host_api::HttpHeaders *handle) {
-  fprintf(stderr, "Headers::create storing handle %p %d\n", handle, handle->handle_state_->handle);
   JS_SetReservedSlot(self, static_cast<uint32_t>(Slots::Handle), JS::PrivateValue(handle));
 
   JS::RootedObject backing_map(cx, JS::NewMapObject(cx));
