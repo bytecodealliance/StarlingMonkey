@@ -56,23 +56,28 @@ function(add_builtin)
         foreach(DEPENDENCY IN ITEMS ${DEPENDENCIES})
             get_target_property(TYPE ${DEPENDENCY} TYPE)
             if(NOT ${TYPE} MATCHES "UTILITY")
-                # A built-in can either depend on libraries implicitly
-                # linked by StarlingMonkey (i.e. depending on OpenSSL
-                # for your built-in when it only needs OpenSSL::Crypto),
-                # or on a library target.
+                # A built-in might specify a speficic dependency
+                # (e.g. "OpenSSL::Crypto").  Ensure that if this dependency
+                # is of the right type (i.e. libraries), this particular
+                # built-in is linked against this library.
+                # (CMake will take care of building e.g. "OpenSSL" first.)
                 target_link_libraries(${LIB_NAME} PRIVATE ${DEPENDENCY})
             endif()
 
-            # If a built-in requires a sub-dependency, e.g. the OpenSSL
-            # crypto library, we need to build the OpenSSL dependency
-            # first.
-            # The base name for the dependency is also how we're going
-            # to find the includes.
+            # If a dependency has the format "PackageName::SubDependency",
+            # e.g. "OpenSSL::Crypto", we need to grab only the PackageName
+            # to ensure that the target finds the libraries includes in the
+            # right place (in the next step).
             string(FIND "${DEPENDENCY}" "::" COLON_COLON)
             if(COLON_COLON GREATER_EQUAL 0)
                 string(SUBSTRING "${DEPENDENCY}" 0 COLON_COLON DEPENDENCY)
             endif()
 
+            # Only linking against a library isn't sufficient to build this
+            # built-in:  the compiler also needs to find the include files
+            # that this dependency brought.  CMake doesn't do this automatically,
+            # so give it a hand.
+            #
             # Not all dependencies will have their include files in this
             # location, but we can't, at this point, check if it exists,
             # because this code runs at configure time and this directory
