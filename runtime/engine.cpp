@@ -327,17 +327,60 @@ static void abort(JSContext *cx, const char *description) {
   exit(1);
 }
 
+static api::Engine *ENGINE;
+
 api::Engine::Engine() {
   // total_compute = 0;
   bool result = init_js();
   MOZ_RELEASE_ASSERT(result);
   JS::EnterRealm(cx(), global());
   core::EventLoop::init(cx());
+  ENGINE = this;
 }
 
 JSContext *api::Engine::cx() { return CONTEXT; }
 
 HandleObject api::Engine::global() { return GLOBAL; }
+
+extern bool install_builtins(api::Engine *engine);
+
+#ifdef DEBUG
+static bool trap(JSContext *cx, unsigned argc, JS::Value *vp) {
+  JS::CallArgs args = CallArgsFromVp(argc, vp);
+  ENGINE->dump_value(args.get(0));
+  MOZ_ASSERT(false, "trap function called");
+  return false;
+}
+#endif
+
+bool api::Engine::initialize(const char *filename) {
+  if (!install_builtins(this)) {
+    return false;
+  }
+
+#ifdef DEBUG
+  if (!JS_DefineFunction(cx(), global(), "trap", trap, 1, 0)) {
+    return false;
+  }
+#endif
+
+  if (!filename || strlen(filename) == 0) {
+    return true;
+  }
+
+  RootedValue result(cx());
+
+  if (!eval_toplevel(filename, &result)) {
+    if (JS_IsExceptionPending(cx())) {
+      dump_pending_exception("pre-initializing");
+    }
+    return false;
+  }
+
+  js::ResetMathRandomSeed(cx());
+
+  return true;
+}
 void api::Engine::enable_module_mode(bool enable) {
   scriptLoader->enable_module_mode(enable);
 }
@@ -353,11 +396,14 @@ bool api::Engine::define_builtin_module(const char* id, HandleValue builtin) {
   return scriptLoader->define_builtin_module(id, builtin);
 }
 
-bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
+static bool TOPLEVEL_EVALUATED = false;
+
+bool api::Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char *path,
+                                MutableHandleValue result) {
   JSContext *cx = CONTEXT;
   RootedValue ns(cx);
   RootedValue tla_promise(cx);
-  if (!scriptLoader->load_top_level_script(path, &ns, &tla_promise)) {
+  if (!scriptLoader->eval_top_level_script(path, source, &ns, &tla_promise)) {
     return false;
   }
 
@@ -410,7 +456,22 @@ bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
   // dedicated log target for telemetry messages like this.
   JS_SetGCCallback(cx, gc_callback, nullptr);
 
+  TOPLEVEL_EVALUATED = true;
+
   return true;
+}
+
+bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
+  JS::SourceText<mozilla::Utf8Unit> source;
+  if (!scriptLoader->load_script(CONTEXT, path, source)) {
+    return false;
+  }
+
+  return eval_toplevel(source, path, result);
+}
+
+bool api::Engine::toplevel_evaluated() {
+  return TOPLEVEL_EVALUATED;
 }
 
 bool api::Engine::run_event_loop() {

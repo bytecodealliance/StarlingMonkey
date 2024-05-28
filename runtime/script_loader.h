@@ -19,7 +19,8 @@ public:
 
   bool define_builtin_module(const char* id, HandleValue builtin);
   void enable_module_mode(bool enable);
-  bool load_top_level_script(const char *path, MutableHandleValue result, MutableHandleValue tla_promise);
+  bool eval_top_level_script(const char *path, JS::SourceText<mozilla::Utf8Unit> &source,
+                             MutableHandleValue result, MutableHandleValue tla_promise);
   bool load_script(JSContext* cx, const char *script_path, JS::SourceText<mozilla::Utf8Unit> &script);
 };
 

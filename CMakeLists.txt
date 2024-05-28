@@ -104,5 +104,6 @@ function(componentize OUTPUT)
 endfunction()
 
 componentize(smoke-test SOURCES tests/cases/smoke/smoke.js)
+componentize(runtime-eval)
 
 include("tests/tests.cmake")

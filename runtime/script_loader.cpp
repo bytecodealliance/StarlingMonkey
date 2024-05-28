@@ -4,9 +4,9 @@
 #include <cstdio>
 #include <iostream>
 #include <js/CompilationAndEvaluation.h>
-#include <jsfriendapi.h>
 #include <js/MapAndSet.h>
 #include <js/Value.h>
+#include <jsfriendapi.h>
 #include <sys/stat.h>
 
 static JSContext* CONTEXT;
@@ -135,15 +135,47 @@ static const char* resolve_path(const char* path, const char* base, size_t base_
 static bool load_script(JSContext *cx, const char *script_path, const char* resolved_path,
                         JS::SourceText<mozilla::Utf8Unit> &script);
 
+static JSObject* get_module(JSContext* cx, JS::SourceText<mozilla::Utf8Unit> &source,
+                            const char* resolved_path, const JS::CompileOptions &opts) {
+  RootedObject module(cx, JS::CompileModule(cx, opts, source));
+  if (!module) {
+    return nullptr;
+  }
+  RootedValue module_val(cx, ObjectValue(*module));
+
+  RootedObject info(cx, JS_NewPlainObject(cx));
+  if (!info) {
+    return nullptr;
+  }
+
+  RootedString resolved_path_str(cx, JS_NewStringCopyZ(cx, resolved_path));
+  if (!resolved_path_str) {
+    return nullptr;
+  }
+  RootedValue resolved_path_val(cx, StringValue(resolved_path_str));
+
+  if (!JS_DefineProperty(cx, info, "id", resolved_path_val, JSPROP_ENUMERATE)) {
+    return nullptr;
+  }
+
+  SetModulePrivate(module, ObjectValue(*info));
+
+  if (!MapSet(cx, moduleRegistry, resolved_path_val, module_val)) {
+    return nullptr;
+  }
+
+  return module;
+}
+
 static JSObject* get_module(JSContext* cx, const char* specifier, const char* resolved_path,
                             const JS::CompileOptions &opts) {
   RootedString resolved_path_str(cx, JS_NewStringCopyZ(cx, resolved_path));
   if (!resolved_path_str) {
     return nullptr;
   }
+  RootedValue resolved_path_val(cx, StringValue(resolved_path_str));
 
   RootedValue module_val(cx);
-  RootedValue resolved_path_val(cx, StringValue(resolved_path_str));
   if (!JS::MapGet(cx, moduleRegistry, resolved_path_val, &module_val)) {
     return nullptr;
   }
@@ -157,28 +189,7 @@ static JSObject* get_module(JSContext* cx, const char* specifier, const char* re
     return nullptr;
   }
 
-  RootedObject module(cx, JS::CompileModule(cx, opts, source));
-  if (!module) {
-    return nullptr;
-  }
-  module_val.setObject(*module);
-
-  RootedObject info(cx, JS_NewPlainObject(cx));
-  if (!info) {
-    return nullptr;
-  }
-
-  if (!JS_DefineProperty(cx, info, "id", resolved_path_val, JSPROP_ENUMERATE)) {
-    return nullptr;
-  }
-
-  SetModulePrivate(module, ObjectValue(*info));
-
-  if (!MapSet(cx, moduleRegistry, resolved_path_val, module_val)) {
-    return nullptr;
-  }
-
-  return module;
+  return get_module(cx, source, resolved_path, opts);
 }
 
 static JSObject* get_builtin_module(JSContext* cx, HandleValue id, HandleObject builtin) {
@@ -377,8 +388,8 @@ static bool load_script(JSContext *cx, const char *specifier, const char* resolv
                                JS::SourceText<mozilla::Utf8Unit> &script) {
   FILE *file = fopen(resolved_path, "r");
   if (!file) {
-    std::cerr << "Error opening file " << specifier << " (resolved to " << resolved_path << ")"
-              << std::endl;
+    std::cerr << "Error opening file " << specifier << " (resolved to " << resolved_path << "): "
+              << std::strerror(errno) << std::endl;
     return false;
   }
 
@@ -409,26 +420,31 @@ static bool load_script(JSContext *cx, const char *specifier, const char* resolv
 
 bool ScriptLoader::load_script(JSContext *cx, const char *script_path,
                                JS::SourceText<mozilla::Utf8Unit> &script) {
-  auto resolved_path = resolve_path(script_path, BASE_PATH, strlen(BASE_PATH));
+  const char *resolved_path;
+  if (!BASE_PATH) {
+    auto last_slash = strrchr(script_path, '/');
+    size_t base_len;
+    if (last_slash) {
+      last_slash++;
+      base_len = last_slash - script_path;
+      BASE_PATH = new char[base_len + 1];
+      MOZ_ASSERT(BASE_PATH);
+      strncpy(BASE_PATH, script_path, base_len);
+      BASE_PATH[base_len] = '\0';
+    } else {
+      BASE_PATH = strdup("./");
+    }
+    resolved_path = script_path;
+  } else {
+    resolved_path = resolve_path(script_path, BASE_PATH, strlen(BASE_PATH));
+  }
+
   return ::load_script(cx, script_path, resolved_path, script);
 }
 
-bool ScriptLoader::load_top_level_script(const char *path, MutableHandleValue result, MutableHandleValue tla_promise) {
+bool ScriptLoader::eval_top_level_script(const char *path, JS::SourceText<mozilla::Utf8Unit> &source,
+                                         MutableHandleValue result, MutableHandleValue tla_promise) {
   JSContext *cx = CONTEXT;
-
-  MOZ_ASSERT(!BASE_PATH);
-  auto last_slash = strrchr(path, '/');
-  size_t base_len;
-  if (last_slash) {
-    last_slash++;
-    base_len = last_slash - path;
-    BASE_PATH = new char[base_len + 1];
-    MOZ_ASSERT(BASE_PATH);
-    strncpy(BASE_PATH, path, base_len);
-    BASE_PATH[base_len] = '\0';
-  } else {
-    BASE_PATH = strdup("./");
-  }
 
   JS::CompileOptions opts(cx, *COMPILE_OPTS);
   opts.setFileAndLine(strip_base(path, BASE_PATH), 1);
@@ -440,7 +456,7 @@ bool ScriptLoader::load_top_level_script(const char *path, MutableHandleValue re
     // (Whereas disabling it during execution below meaningfully increases it,
     // which is why this is scoped to just compilation.)
     JS::AutoDisableGenerationalGC noGGC(cx);
-    module = get_module(cx, path, path, opts);
+    module = get_module(cx, source, path, opts);
     if (!module) {
       return false;
     }
@@ -448,10 +464,6 @@ bool ScriptLoader::load_top_level_script(const char *path, MutableHandleValue re
       return false;
     }
   } else {
-    JS::SourceText<mozilla::Utf8Unit> source;
-    if (!::load_script(cx, path, path, source)) {
-      return false;
-    }
     // See comment above about disabling GGC during compilation.
     JS::AutoDisableGenerationalGC noGGC(cx);
     script = JS::Compile(cx, opts, source);
