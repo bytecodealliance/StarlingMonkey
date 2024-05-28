@@ -1,6 +1,7 @@
 #include "host_api.h"
 #include "bindings/bindings.h"
 
+#include <set>
 #include <algorithm>
 #include <exports.h>
 #ifdef DEBUG
@@ -108,18 +109,29 @@ public:
   Handle take() {
     auto handle = get();
     // DBG("Consuming handle %d,%d\n", handle_ns_, handle);
+#ifdef DEBUG
     auto ns_handle = to_namespaced(handle, handle_ns_);
     used_handles.erase(ns_handle);
     poisoned_ = true;
+#endif
     return handle;
   }
 
-  bool valid() const { return handle_ != UNINITIALIZED_HANDLE && !poisoned_; }
+  bool valid() const {
+#ifdef DEBUG
+    if (posoned_) return false;
+#endif
+    return handle_ != UNINITIALIZED_HANDLE;
+  }
   bool initialized() const { return handle_ != UNINITIALIZED_HANDLE;}
+#ifdef DEBUG
   bool poisoned() const { return poisoned_; }
+#endif
 };
 
+#ifdef DEBUG
 std::set<int32_t> host_api::HandleState::used_handles = std::set<int32_t>();
+#endif
 
 namespace {
 
