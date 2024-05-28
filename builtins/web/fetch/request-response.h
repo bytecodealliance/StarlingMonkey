@@ -211,7 +211,7 @@ public:
   static JSObject* create_incoming(JSContext * cx, HandleObject self,
                                                            host_api::HttpIncomingResponse* response);
 
-  static host_api::HttpIncomingResponse *response_handle(JSObject *obj);
+  static host_api::HttpResponse *response_handle(JSObject *obj);
   static uint16_t status(JSObject *obj);
   static JSString *status_message(JSObject *obj);
   static void set_status_message_from_code(JSContext *cx, JSObject *obj, uint16_t code);

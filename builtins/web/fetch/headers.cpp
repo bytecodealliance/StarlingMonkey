@@ -1,5 +1,4 @@
 #include "headers.h"
-// #include "request-response.h"
 #include "encode.h"
 #include "decode.h"
 #include "sequence.hpp"
@@ -70,7 +69,7 @@ host_api::HttpHeadersReadOnly *get_handle(JSObject *self) {
  */
 host_api::HostString normalize_header_name(JSContext *cx, HandleValue name_val, bool* named_changed,
                                            const char *fun_name) {
-  *named_changed = false;
+  *named_changed = !name_val.isString();
   JS::RootedString name_str(cx, JS::ToString(cx, name_val));
   if (!name_str) {
     return nullptr;
@@ -114,7 +113,7 @@ host_api::HostString normalize_header_name(JSContext *cx, HandleValue name_val, 
  */
 host_api::HostString normalize_header_value(JSContext *cx, HandleValue value_val,
                                             bool* value_changed, const char *fun_name) {
-  *value_changed = false;
+  *value_changed = !value_val.isString();
   JS::RootedString value_str(cx, JS::ToString(cx, value_val));
   if (!value_str) {
     return nullptr;
@@ -309,7 +308,8 @@ static bool switch_mode(JSContext* cx, HandleObject self, const Headers::Mode mo
       return false;
     }
 
-    vector<tuple<string_view, string_view>> string_entries;
+    using host_api::HostString;
+    vector<tuple<HostString, HostString>> string_entries;
 
     RootedValue entry_val(cx);
     RootedObject entry(cx);
@@ -328,8 +328,8 @@ static bool switch_mode(JSContext* cx, HandleObject self, const Headers::Mode mo
       }
 
       entry = &entry_val.toObject();
-      JS_GetElement(cx, entry, 1, &name_val);
-      JS_GetElement(cx, entry, 0, &value_val);
+      JS_GetElement(cx, entry, 0, &name_val);
+      JS_GetElement(cx, entry, 1, &value_val);
       name_str = name_val.toString();
       value_str = value_val.toString();
 
@@ -343,7 +343,7 @@ static bool switch_mode(JSContext* cx, HandleObject self, const Headers::Mode mo
         return false;
       }
 
-      string_entries.emplace_back(name, value);
+      string_entries.emplace_back(std::move(name), std::move(value));
     }
 
     auto handle = host_api::HttpHeaders::FromEntries(string_entries);
@@ -862,6 +862,9 @@ bool Headers::init_class(JSContext *cx, JS::HandleObject global) {
 
 JSObject *Headers::get_entries(JSContext *cx, HandleObject self) {
   MOZ_ASSERT(is_instance(self));
+  if (mode(self) == Mode::Uninitialized && !switch_mode(cx, self, Mode::ContentOnly)) {
+    return nullptr;
+  }
   if (mode(self) == Mode::HostOnly && !switch_mode(cx, self, Mode::CachedInContent)) {
     return nullptr;
   }
@@ -871,6 +874,12 @@ JSObject *Headers::get_entries(JSContext *cx, HandleObject self) {
 
 unique_ptr<host_api::HttpHeaders> Headers::handle_clone(JSContext* cx, HandleObject self) {
   auto mode = Headers::mode(self);
+
+  // If this instance uninitialized, return an empty handle without initializing this instance.
+  if (mode == Mode::Uninitialized) {
+    return std::make_unique<host_api::HttpHeaders>();
+  }
+
   if (mode == Mode::ContentOnly && !switch_mode(cx, self, Mode::CachedInContent)) {
     // Switch to Mode::CachedInContent to ensure that the latest data is available on the handle,
     // but without discarding the existing entries, in case content reads them later.

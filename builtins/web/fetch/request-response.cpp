@@ -157,6 +157,7 @@ struct ReadResult {
 } // namespace
 
 host_api::HttpRequestResponseBase *RequestOrResponse::handle(JSObject *obj) {
+  MOZ_ASSERT(is_instance(obj));
   auto slot = JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::RequestOrResponse));
   return static_cast<host_api::HttpRequestResponseBase *>(slot.toPrivate());
 }
@@ -165,7 +166,10 @@ bool RequestOrResponse::is_instance(JSObject *obj) {
   return Request::is_instance(obj) || Response::is_instance(obj);
 }
 
-bool RequestOrResponse::is_incoming(JSObject *obj) { return !!handle(obj); }
+bool RequestOrResponse::is_incoming(JSObject *obj) {
+  auto handle = RequestOrResponse::handle(obj);
+  return handle && handle->is_incoming();
+}
 
 host_api::HttpHeadersReadOnly *RequestOrResponse::headers_handle(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
@@ -190,15 +194,11 @@ host_api::HttpIncomingBody *RequestOrResponse::incoming_body_handle(JSObject *ob
 
 host_api::HttpOutgoingBody *RequestOrResponse::outgoing_body_handle(JSObject *obj) {
   MOZ_ASSERT(!is_incoming(obj));
-  host_api::Result<host_api::HttpOutgoingBody *> res;
-  if (Request::is_instance(obj)) {
-    auto owner = reinterpret_cast<host_api::HttpOutgoingRequest *>(handle(obj));
-    res = owner->body();
+  if (handle(obj)->is_request()) {
+    return reinterpret_cast<host_api::HttpOutgoingRequest *>(handle(obj))->body().unwrap();
   } else {
-    auto owner = reinterpret_cast<host_api::HttpOutgoingResponse *>(handle(obj));
-    res = owner->body();
+    return reinterpret_cast<host_api::HttpOutgoingResponse *>(handle(obj))->body().unwrap();
   }
-  return res.unwrap();
 }
 
 JSObject *RequestOrResponse::body_stream(JSObject *obj) {
@@ -318,60 +318,97 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
       }
     }
   } else {
-    mozilla::Maybe<JS::AutoCheckCannotGC> maybeNoGC;
-    JS::UniqueChars text;
-    char *buf;
-    size_t length;
+    RootedValue chunk(cx);
+    RootedObject buffer(cx);
+    char *buf = nullptr;
+    size_t length = 0;
+
+    // Must be declared here to keep the buffer alive.
+    host_api::HostString text;
 
     if (body_obj && JS_IsArrayBufferViewObject(body_obj)) {
-      // Short typed arrays have inline data which can move on GC, so assert
-      // that no GC happens. (Which it doesn't, because we're not allocating
-      // before `buf` goes out of scope.)
-      maybeNoGC.emplace(cx);
-      JS::AutoCheckCannotGC &noGC = maybeNoGC.ref();
-      bool is_shared;
       length = JS_GetArrayBufferViewByteLength(body_obj);
-      buf = (char *)JS_GetArrayBufferViewData(body_obj, &is_shared, noGC);
-    } else if (body_obj && JS::IsArrayBufferObject(body_obj)) {
+      buf = static_cast<char *>(js_malloc(length));
+      if (!buf) {
+        return false;
+      }
+
       bool is_shared;
-      JS::GetArrayBufferLengthAndData(body_obj, &length, &is_shared, (uint8_t **)&buf);
+      JS::AutoCheckCannotGC noGC(cx);
+      auto temp_buf = JS_GetArrayBufferViewData(body_obj, &is_shared, noGC);
+      memcpy(buf, temp_buf, length);
+    } else if (body_obj && IsArrayBufferObject(body_obj)) {
+      buffer = CopyArrayBuffer(cx, body_obj);
+      if (!buffer) {
+        return false;
+      }
     } else if (body_obj && url::URLSearchParams::is_instance(body_obj)) {
       auto slice = url::URLSearchParams::serialize(cx, body_obj);
       buf = (char *)slice.data;
       length = slice.len;
       content_type = "application/x-www-form-urlencoded;charset=UTF-8";
     } else {
-      {
-        auto str = core::encode(cx, body_val);
-        text = std::move(str.ptr);
-        length = str.len;
-      }
-
-      if (!text)
+      text = core::encode(cx, body_val);
+      if (!text.ptr) {
         return false;
-      buf = text.get();
+      }
+      buf = text.ptr.get();
+      length = text.len;
       content_type = "text/plain;charset=UTF-8";
     }
 
-    // TODO: restore
-    // auto body = RequestOrResponse::outgoing_body_handle(self);
-    // auto write_res = body->write_all(reinterpret_cast<uint8_t *>(buf), length);
-
-    // Ensure that the NoGC is reset, so throwing an error in HANDLE_ERROR
-    // succeeds.
-    if (maybeNoGC.isSome()) {
-      maybeNoGC.reset();
+    if (buf) {
+      MOZ_ASSERT(!buffer);
+      buffer = NewArrayBufferWithContents(cx, length, buf,
+                                          JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory);
+      if (text.ptr) {
+        static_cast<void>(text.ptr.release());
+      }
+      if (!buffer) {
+        js_free(buf);
+        return false;
+      }
+      chunk.setObject(*buffer);
     }
 
-    // if (auto *err = write_res.to_err()) {
-    //   HANDLE_ERROR(cx, *err);
-    //   return false;
-    // }
+    if (buffer) {
+      RootedObject array(cx, JS_NewUint8ArrayWithBuffer(cx, buffer, 0, length));
+      if (!array) {
+        return false;
+      }
+      chunk.setObject(*array);
+    }
+
+    RootedObject source(cx, JS_NewObjectWithGivenProto(cx, nullptr, nullptr));
+    if (!source) {
+      return false;
+    }
+    RootedObject body_stream(cx, JS::NewReadableDefaultStreamObject(cx, source,
+                             nullptr, 0.0));
+    if (!body_stream) {
+      return false;
+    }
+
+    mozilla::DebugOnly<bool> disturbed;
+    MOZ_ASSERT(ReadableStreamIsDisturbed(cx, body_stream, &disturbed));
+    MOZ_ASSERT(!disturbed);
+
+
+    if (!ReadableStreamEnqueue(cx, body_stream, chunk) ||
+        !ReadableStreamClose(cx, body_stream)) {
+      return false;
+    }
+
+    JS_SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyStream),
+                       ObjectValue(*body_stream));
   }
 
   // Step 36.3 of Request constructor / 8.4 of Response constructor.
   if (content_type) {
     JS::RootedObject headers(cx, RequestOrResponse::headers(cx, self));
+    if (!headers) {
+      return false;
+    }
     if (!Headers::set_if_undefined(cx, headers, "content-type", content_type)) {
       return false;
     }
@@ -427,8 +464,11 @@ bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::Ha
 JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
   JSObject *headers = maybe_headers(obj);
   if (!headers) {
-    if (auto *headers_handle = RequestOrResponse::headers_handle(obj)) {
-      headers = Headers::create(cx, headers_handle);
+    host_api::HttpHeadersReadOnly *handle;
+    if (is_incoming(obj) && (handle = headers_handle(obj))) {
+      headers = Headers::create(cx, handle);
+    } else {
+      headers = Headers::create(cx, NullHandleValue);
     }
     if (!headers) {
       return nullptr;
@@ -788,10 +828,6 @@ bool RequestOrResponse::bodyAll(JSContext *cx, JS::CallArgs args, JS::HandleObje
     return true;
   }
 
-  if (!mark_body_used(cx, self)) {
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
-
   JS::RootedValue body_parser(cx, JS::PrivateValue((void *)parse_body<result_type>));
 
   // TODO(performance): don't reify a ReadableStream for body handles—use an AsyncTask instead
@@ -896,10 +932,6 @@ bool RequestOrResponse::body_reader_then_handler(JSContext *cx, JS::HandleObject
       return false;
     }
 
-    if (Request::is_instance(body_owner)) {
-      ENGINE->queue_async_task(new BodyFutureTask(body_owner));
-    }
-
     return true;
   }
 
@@ -939,6 +971,7 @@ bool RequestOrResponse::body_reader_then_handler(JSContext *cx, JS::HandleObject
     bool is_shared;
     uint8_t *bytes = JS_GetUint8ArrayData(array, &is_shared, nogc);
     size_t length = JS_GetTypedArrayByteLength(array);
+    // TODO: change this to write in chunks, respecting backpressure.
     res = body->write_all(bytes, length);
   }
 
@@ -1029,17 +1062,6 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
   if (!reader)
     return false;
 
-  bool is_closed;
-  if (!JS::ReadableStreamReaderIsClosed(cx, reader, &is_closed))
-    return false;
-
-  // It's ok for the stream to be closed, as its contents might
-  // already have fully been written to the body handle.
-  // In that case, we can do a blocking send instead.
-  if (is_closed) {
-    return true;
-  }
-
   // Create handlers for both `then` and `catch`.
   // These are functions with two reserved slots, in which we store all
   // information required to perform the reactions. We store the actually
@@ -1124,20 +1146,24 @@ host_api::HttpRequest *Request::request_handle(JSObject *obj) {
 
 host_api::HttpOutgoingRequest *Request::outgoing_handle(JSObject *obj) {
   auto base = RequestOrResponse::handle(obj);
+  MOZ_ASSERT(base->is_outgoing());
   return reinterpret_cast<host_api::HttpOutgoingRequest *>(base);
 }
 
 host_api::HttpIncomingRequest *Request::incoming_handle(JSObject *obj) {
   auto base = RequestOrResponse::handle(obj);
+  MOZ_ASSERT(base->is_incoming());
   return reinterpret_cast<host_api::HttpIncomingRequest *>(base);
 }
 
 JSObject *Request::response_promise(JSObject *obj) {
+  MOZ_ASSERT(is_instance(obj));
   return &JS::GetReservedSlot(obj, static_cast<uint32_t>(Request::Slots::ResponsePromise))
               .toObject();
 }
 
 JSString *Request::method(JSContext *cx, JS::HandleObject obj) {
+  MOZ_ASSERT(is_instance(obj));
   return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::Method)).toString();
 }
 
@@ -1374,6 +1400,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance) {
  */
 JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::HandleValue input,
                           JS::HandleValue init_val) {
+  create(cx, requestInstance);
   JS::RootedString url_str(cx);
   JS::RootedString method_str(cx);
   bool method_needs_normalization = false;
@@ -1804,10 +1831,9 @@ static_assert((int)Response::Slots::BodyUsed == (int)Request::Slots::BodyUsed);
 static_assert((int)Response::Slots::Headers == (int)Request::Slots::Headers);
 static_assert((int)Response::Slots::Response == (int)Request::Slots::Request);
 
-host_api::HttpIncomingResponse *Response::response_handle(JSObject *obj) {
+host_api::HttpResponse *Response::response_handle(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
-  return static_cast<host_api::HttpIncomingResponse *>(
-      JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::Response)).toPrivate());
+  return static_cast<host_api::HttpResponse *>(RequestOrResponse::handle(obj));
 }
 
 uint16_t Response::status(JSObject *obj) {
@@ -2529,15 +2555,6 @@ bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     if (!RequestOrResponse::extract_body(cx, response, body_val)) {
       return false;
     }
-
-    // TODO: presumably remove this code, but check what it's for first
-    // if (RequestOrResponse::has_body(response)) {
-    //   if (response_handle->body().is_err()) {
-    //     auto err = response_handle->body().to_err();
-    //     HANDLE_ERROR(cx, *err);
-    //     return false;
-    //   }
-    // }
   }
 
   args.rval().setObject(*response);

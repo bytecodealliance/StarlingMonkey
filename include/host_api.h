@@ -209,10 +209,11 @@ class Resource {
 protected:
   std::unique_ptr<HandleState> handle_state_ = nullptr;
 
-  // explicit Resource(HandleState *handle_state);
-
 public:
   virtual ~Resource();
+
+  typedef uint8_t HandleNS;
+  static HandleNS next_handle_ns(const char* ns_name);
 
   /// Returns true if this resource handle has been initialized and is still valid.
   bool valid() const;
@@ -228,6 +229,8 @@ public:
   virtual Result<PollableHandle> subscribe() = 0;
   virtual void unsubscribe() = 0;
 };
+
+void block_on_pollable_handle(PollableHandle handle);
 
 class HttpIncomingBody final : public Pollable {
 public:
@@ -352,7 +355,7 @@ public:
   HttpHeaders();
   explicit HttpHeaders(const HttpHeadersReadOnly &headers);
 
-  static Result<HttpHeaders*> FromEntries(const vector<tuple<string_view, string_view>> &entries);
+  static Result<HttpHeaders*> FromEntries(vector<tuple<HostString, HostString>>& entries);
 
   bool is_writable() override { return true; };
   HttpHeaders* as_writable() override {
@@ -435,8 +438,8 @@ class HttpOutgoingRequest final : public HttpRequest, public HttpOutgoingBodyOwn
 public:
   HttpOutgoingRequest() = delete;
 
-  static HttpOutgoingRequest *make(string_view method, optional<HostString> url,
-                                                              HttpHeadersReadOnly *headers);
+  static HttpOutgoingRequest *make(string_view method_str, optional<HostString> url_str,
+                                   std::unique_ptr<HttpHeadersReadOnly> headers);
 
   bool is_incoming() override { return false; }
   bool is_request() override { return true; }
@@ -476,7 +479,7 @@ class HttpOutgoingResponse final : public HttpResponse, public HttpOutgoingBodyO
 public:
   HttpOutgoingResponse() = delete;
 
-  static HttpOutgoingResponse *make(uint16_t status, HttpHeaders *headers);
+  static HttpOutgoingResponse *make(const uint16_t status, unique_ptr<HttpHeaders> headers);
 
   bool is_incoming() override { return false; }
   bool is_request() override { return false; }

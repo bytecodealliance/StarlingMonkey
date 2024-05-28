@@ -3,10 +3,13 @@
 #include "../url.h"
 #include "../worker-location.h"
 #include "encode.h"
-#include "exports.h"
 #include "request-response.h"
 
 #include "bindings.h"
+
+#include <allocator.h>
+#include <js/SourceText.h>
+
 #include <iostream>
 #include <memory>
 
@@ -165,12 +168,22 @@ bool start_response(JSContext *cx, JS::HandleObject response_obj, bool streaming
     return false;
   }
 
-  auto incoming_response = Response::response_handle(response_obj);
   host_api::HttpOutgoingResponse* response =
-    host_api::HttpOutgoingResponse::make(status, headers.get());
-  if (incoming_response) {
+    host_api::HttpOutgoingResponse::make(status, std::move(headers));
+  if (streaming) {
+    // Get the body here, so it will be stored on the response object.
+    // Otherwise, it'd not be available anymore, because the response handle itself
+    // is consumed by sending it off.
+    auto body = response->body().unwrap();
+    MOZ_RELEASE_ASSERT(body);
+  }
+  MOZ_RELEASE_ASSERT(response);
+
+  auto existing_handle = Response::response_handle(response_obj);
+  if (existing_handle) {
+    MOZ_ASSERT(existing_handle->is_incoming());
     if (streaming) {
-      auto *source_body = incoming_response->body().unwrap();
+      auto *source_body = static_cast<host_api::HttpIncomingResponse*>(existing_handle)->body().unwrap();
       auto *dest_body = response->body().unwrap();
 
       auto res = dest_body->append(ENGINE, source_body);
@@ -180,6 +193,9 @@ bool start_response(JSContext *cx, JS::HandleObject response_obj, bool streaming
       }
       MOZ_RELEASE_ASSERT(RequestOrResponse::mark_body_used(cx, response_obj));
     }
+  } else {
+    SetReservedSlot(response_obj, static_cast<uint32_t>(Response::Slots::Response),
+                    PrivateValue(response));
   }
 
   if (streaming && response->has_body()) {
@@ -215,17 +231,6 @@ bool response_promise_then_handler(JSContext *cx, JS::HandleObject event, JS::Ha
   // Step 10.2 (very roughly: the way we handle responses and their bodies is
   // very different.)
   JS::RootedObject response_obj(cx, &args[0].toObject());
-
-  // Ensure that all headers are stored client-side, so we retain access to them
-  // after sending the response off.
-  // TODO(TS): restore proper headers handling
-  // if (Response::is_upstream(response_obj)) {
-  //   JS::RootedObject headers(cx);
-  //   headers =
-  //       RequestOrResponse::headers<Headers::Mode::ProxyToResponse>(cx, response_obj);
-  //   if (!Headers::delazify(cx, headers))
-  //     return false;
-  // }
 
   bool streaming = false;
   if (!RequestOrResponse::maybe_stream_body(cx, response_obj, &streaming)) {
@@ -304,7 +309,7 @@ bool FetchEvent::respondWithError(JSContext *cx, JS::HandleObject self) {
   MOZ_RELEASE_ASSERT(state(self) == State::unhandled || state(self) == State::waitToRespond);
 
   auto headers = std::make_unique<host_api::HttpHeaders>();
-  auto *response = host_api::HttpOutgoingResponse::make(500, headers.get());
+  auto *response = host_api::HttpOutgoingResponse::make(500, std::move(headers));
 
   auto body_res = response->body();
   if (auto *err = body_res.to_err()) {
@@ -509,6 +514,46 @@ static void dispatch_fetch_event(HandleObject event, double *total_compute) {
 }
 
 bool handle_incoming_request(host_api::HttpIncomingRequest * request) {
+  if (!ENGINE->toplevel_evaluated()) {
+    JS::SourceText<mozilla::Utf8Unit> source;
+    auto body = request->body().unwrap();
+    auto pollable = body->subscribe().unwrap();
+    size_t len = 0;
+    vector<host_api::HostBytes> chunks;
+
+    while (true) {
+      host_api::block_on_pollable_handle(pollable);
+      auto result = body->read(4096);
+      if (result.unwrap().done) {
+        break;
+      }
+
+      auto chunk = std::move(result.unwrap().bytes);
+      len += chunk.size();
+      chunks.push_back(std::move(chunk));
+    }
+
+    // Merge all chunks into one buffer
+    auto buffer = new char[len];
+    size_t offset = 0;
+    for (auto &chunk : chunks) {
+      memcpy(buffer + offset, chunk.ptr.get(), chunk.size());
+      offset += chunk.size();
+    }
+
+    if (!source.init(CONTEXT, buffer, len, JS::SourceOwnership::TakeOwnership)) {
+      return false;
+    }
+
+    RootedValue rval(ENGINE->cx());
+    if (!ENGINE->eval_toplevel(source, "<runtime eval>", &rval)) {
+      if (JS_IsExceptionPending(ENGINE->cx())) {
+        ENGINE->dump_pending_exception("Runtime script evaluation");
+      }
+      return false;
+    }
+  }
+
   HandleObject fetch_event = FetchEvent::instance();
   MOZ_ASSERT(FetchEvent::is_instance(fetch_event));
   if (!FetchEvent::init_incoming_request(ENGINE->cx(), fetch_event, request)) {
