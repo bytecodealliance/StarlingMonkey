@@ -72,7 +72,7 @@
   "fetch/api/headers/headers-record.any.js",
   "fetch/api/headers/headers-structure.any.js",
   "fetch/api/request/forbidden-method.any.js",
-  "fetch/api/request/request-bad-port.any.js",
+  "SKIP [tests restrictions we're not imposing] fetch/api/request/request-bad-port.any.js",
   "fetch/api/request/request-cache-default-conditional.any.js",
   "fetch/api/request/request-cache-default.any.js",
   "fetch/api/request/request-cache-force-cache.any.js",
