@@ -1,5 +1,10 @@
 set(SM_REV 702095ed0ba2316b4f2905bbd597d0b2fa23951e)
 
+CPMAddPackage(NAME spidermonkey-debug
+        URL https://github.com/bytecodealliance/spidermonkey-wasi-embedding/releases/download/rev_${SM_REV}/spidermonkey-wasm-static-lib_debug.tar.gz
+        DOWNLOAD_ONLY YES
+)
+
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(SM_BUILD_TYPE debug)
 else()
@@ -8,14 +13,9 @@ else()
         URL https://github.com/bytecodealliance/spidermonkey-wasi-embedding/releases/download/rev_${SM_REV}/spidermonkey-wasm-static-lib_release.tar.gz
         DOWNLOAD_ONLY YES
     )
+    # Temporary fix for https://github.com/bytecodealliance/StarlingMonkey/issues/50
+    file(COPY ${CPM_PACKAGE_spidermonkey-debug_SOURCE_DIR}/lib/libjsrust.a DESTINATION "${CPM_PACKAGE_spidermonkey-release_SOURCE_DIR}/lib")
 endif()
-
-CPMAddPackage(NAME spidermonkey-debug
-        URL https://github.com/bytecodealliance/spidermonkey-wasi-embedding/releases/download/rev_${SM_REV}/spidermonkey-wasm-static-lib_debug.tar.gz
-        DOWNLOAD_ONLY YES
-)
-
-file(COPY ${CPM_PACKAGE_spidermonkey-debug_SOURCE_DIR}/lib/libjsrust.a DESTINATION "${CPM_PACKAGE_spidermonkey-release_SOURCE_DIR}/lib")
 
 set(SM_SOURCE_DIR ${CPM_PACKAGE_spidermonkey-${SM_BUILD_TYPE}_SOURCE_DIR} CACHE STRING "Path to spidermonkey ${SM_BUILD_TYPE} build" FORCE)
 set(SM_INCLUDE_DIR ${SM_SOURCE_DIR}/include)

@@ -22,16 +22,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
+        mode: [debug, release]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
-
-    - name: Install Rust 1.68.2
-      run: |
-        rustup toolchain install 1.68.2
-        rustup target add wasm32-wasi --toolchain 1.68.2
 
     - uses: actions/setup-node@v2
       with:
@@ -39,9 +35,10 @@ jobs:
 
     - name: Build StarlingMonkey
       run: |
-        cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
-        cmake --build cmake-build-debug --parallel 4 --target all integration-test-server
+        cmake -S . -B "cmake-build-${{matrix.mode}}" -DCMAKE_BUILD_TYPE=${{matrix.mode == 'debug' && 'Debug' || 'Release'}}
+        cmake --build cmake-build-${{matrix.mode}} --parallel 4 --target all integration-test-server
 
     - name: StarlingMonkey E2E & Integration Tests
       run: |
-        CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-debug -j4
+        CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-${{matrix.mode}} -j4
+      
