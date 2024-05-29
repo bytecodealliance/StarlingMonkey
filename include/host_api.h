@@ -335,6 +335,7 @@ public:
   virtual bool is_writable() { return false; };
   virtual HttpHeaders* as_writable() {
     MOZ_ASSERT_UNREACHABLE();
+    return nullptr;
   };
 
   Result<vector<tuple<HostString, HostString>>> entries() const;
