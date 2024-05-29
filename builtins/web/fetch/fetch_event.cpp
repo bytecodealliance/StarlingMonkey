@@ -29,6 +29,9 @@ void inc_pending_promise_count(JSObject *self) {
   auto count =
       JS::GetReservedSlot(self, static_cast<uint32_t>(FetchEvent::Slots::PendingPromiseCount))
           .toInt32();
+  if (count == 0) {
+    ENGINE->incr_event_loop_interest();
+  }
   count++;
   MOZ_ASSERT(count > 0);
   JS::SetReservedSlot(self, static_cast<uint32_t>(FetchEvent::Slots::PendingPromiseCount),
@@ -42,8 +45,9 @@ void dec_pending_promise_count(JSObject *self) {
           .toInt32();
   MOZ_ASSERT(count > 0);
   count--;
-  if (count == 0)
+  if (count == 0) {
     ENGINE->decr_event_loop_interest();
+  }
   JS::SetReservedSlot(self, static_cast<uint32_t>(FetchEvent::Slots::PendingPromiseCount),
                       JS::Int32Value(count));
 }
@@ -185,6 +189,10 @@ bool start_response(JSContext *cx, JS::HandleObject response_obj, bool streaming
 
   if (streaming && response->has_body()) {
     STREAMING_BODY = response->body().unwrap();
+  }
+
+  if (streaming) {
+    ENGINE->incr_event_loop_interest();
   }
 
   return send_response(response, FetchEvent::instance(),
@@ -424,11 +432,13 @@ bool FetchEvent::is_dispatching(JSObject *self) {
 
 void FetchEvent::start_dispatching(JSObject *self) {
   MOZ_ASSERT(!is_dispatching(self));
+  ENGINE->incr_event_loop_interest();
   JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::Dispatch), JS::TrueValue());
 }
 
 void FetchEvent::stop_dispatching(JSObject *self) {
   MOZ_ASSERT(is_dispatching(self));
+  ENGINE->decr_event_loop_interest();
   JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::Dispatch), JS::FalseValue());
 }
 
@@ -593,9 +603,6 @@ void exports_wasi_http_incoming_handler(exports_wasi_http_incoming_request reque
   double total_compute = 0;
 
   dispatch_fetch_event(fetch_event, &total_compute);
-
-  // track fetch event interest, which when decremented ends the event loop
-  ENGINE->incr_event_loop_interest();
 
   bool success = ENGINE->run_event_loop();
 

@@ -59,10 +59,10 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
   queue.get().event_loop_running = true;
   JSContext *cx = engine->cx();
 
-  while (true) {
-    // Run a microtask checkpoint
-    js::RunJobs(cx);
+  // Run a microtask checkpoint
+  js::RunJobs(cx);
 
+  while (true) {
     if (JS_IsExceptionPending(cx)) {
       exit_event_loop();
       return false;
@@ -88,7 +88,6 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
       // Perform a non-blocking select in the case of there being no event loop interest
       // (we are thus only performing a "single tick", but must still progress work that is ready)
       std::optional<size_t> maybe_task_idx = api::AsyncTask::ready(tasks);
-      // nothing ready -> single tick has completed
       if (!maybe_task_idx.has_value()) {
         exit_event_loop();
         return true;
@@ -104,6 +103,14 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
     if (!success) {
       exit_event_loop();
       return false;
+    }
+
+    // Run a single microtask checkpoint after each async task processing
+    // to complete "one tick"
+    js::RunJobs(cx);
+
+    if (interest_complete()) {
+      return true;
     }
   }
 }

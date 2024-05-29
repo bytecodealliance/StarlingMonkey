@@ -938,6 +938,7 @@ bool RequestOrResponse::body_reader_then_handler(JSContext *cx, JS::HandleObject
     // `responseDone`.
     // TODO(TS): factor this out to remove dependency on fetch-event.h
     if (Response::is_instance(body_owner)) {
+      ENGINE->decr_event_loop_interest();
       fetch_event::FetchEvent::set_state(fetch_event::FetchEvent::instance(),
                                          fetch_event::FetchEvent::State::responseDone);
     }
@@ -1025,9 +1026,10 @@ bool RequestOrResponse::body_reader_catch_handler(JSContext *cx, JS::HandleObjec
   // `responseDone` is the right state: `respondedWithError` is for when sending
   // a response at all failed.)
   // TODO(TS): investigate why this is disabled.
-  // if (Response::is_instance(body_owner)) {
-  //   FetchEvent::set_state(FetchEvent::instance(), FetchEvent::State::responseDone);
-  // }
+  if (Response::is_instance(body_owner)) {
+    ENGINE->decr_event_loop_interest();
+    //   FetchEvent::set_state(FetchEvent::instance(), FetchEvent::State::responseDone);
+  }
   return true;
 }
 
