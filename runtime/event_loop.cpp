@@ -59,10 +59,10 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
   queue.get().event_loop_running = true;
   JSContext *cx = engine->cx();
 
-  // Run a microtask checkpoint
-  js::RunJobs(cx);
-
   while (true) {
+    // Run a microtask checkpoint
+    js::RunJobs(cx);
+
     if (JS_IsExceptionPending(cx)) {
       exit_event_loop();
       return false;
@@ -104,10 +104,6 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
       exit_event_loop();
       return false;
     }
-
-    // Run a single microtask checkpoint after each async task processing
-    // to complete "one tick"
-    js::RunJobs(cx);
 
     if (interest_complete()) {
       return true;
