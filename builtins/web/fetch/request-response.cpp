@@ -990,10 +990,6 @@ bool reader_for_outgoing_body_catch_handler(JSContext *cx, JS::HandleObject body
   // `responseDone`. (Note that even though we encountered an error,
   // `responseDone` is the right state: `respondedWithError` is for when sending
   // a response at all failed.)
-  // TODO(TS): investigate why this is disabled.
-  // if (Response::is_instance(body_owner)) {
-  //   FetchEvent::set_state(FetchEvent::instance(), FetchEvent::State::responseDone);
-  // }
   return finish_outgoing_body_streaming(cx, body_owner);
 }
 

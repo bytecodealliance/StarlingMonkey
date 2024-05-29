@@ -149,6 +149,11 @@ public:
    * Select for the next available ready task, providing the oldest ready first.
    */
   static size_t select(std::vector<AsyncTask *> &handles);
+
+  /**
+   * Non-blocking check for a ready task, providing the oldest ready first, if any.
+   */
+  static std::optional<size_t> ready(std::vector<AsyncTask *> &handles);
 };
 
 } // namespace api

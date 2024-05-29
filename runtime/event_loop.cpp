@@ -61,7 +61,7 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
   queue.get().event_loop_running = true;
   JSContext *cx = engine->cx();
 
-  while (true) {
+  do {
     // Run a microtask checkpoint
     js::RunJobs(cx);
 
@@ -69,24 +69,34 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
       exit_event_loop();
       return false;
     }
-    // if there is no interest in the event loop at all, just run one tick
-    if (interest_complete()) {
-      exit_event_loop();
-      return true;
-    }
 
     const auto tasks = &queue.get().tasks;
     size_t tasks_size = tasks->size();
+
     if (tasks_size == 0) {
+      if (interest_complete()) {
+        break;
+      }
       exit_event_loop();
-      MOZ_ASSERT(!interest_complete());
       fprintf(stderr, "event loop error - both task and job queues are empty, but expected "
                       "operations did not resolve");
       return false;
     }
 
+    size_t task_idx;
+
     // Select the next task to run according to event-loop semantics of oldest-first.
-    size_t task_idx = api::AsyncTask::select(*tasks);
+    if (interest_complete()) {
+      // Perform a non-blocking select in the case of there being no event loop interest
+      // (we are thus only performing a "single tick", but must still progress work that is ready)
+      std::optional<size_t> maybe_task_idx = api::AsyncTask::ready(*tasks);
+      if (!maybe_task_idx.has_value()) {
+        break;
+      }
+      task_idx = maybe_task_idx.value();
+    } else {
+      task_idx = api::AsyncTask::select(*tasks);
+    }
 
     auto task = tasks->at(task_idx);
     tasks->erase(tasks->begin() + task_idx);
@@ -95,7 +105,10 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
       exit_event_loop();
       return false;
     }
-  }
+  } while (!interest_complete());
+
+  exit_event_loop();
+  return true;
 }
 
 void EventLoop::init(JSContext *cx) { queue.init(cx); }
