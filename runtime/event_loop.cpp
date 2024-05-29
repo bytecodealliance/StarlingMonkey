@@ -81,25 +81,28 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
       return false;
     }
 
-    std::optional<size_t> task_idx;
+    size_t task_idx;
 
     // Select the next task to run according to event-loop semantics of oldest-first.
     if (interest_complete()) {
       // Perform a non-blocking select in the case of there being no event loop interest
       // (we are thus only performing a "single tick", but must still progress work that is ready)
-      task_idx = api::AsyncTask::ready(tasks);
+      std::optional<size_t> maybe_task_idx = api::AsyncTask::ready(tasks);
+      // nothing ready -> single tick has completed
+      if (!maybe_task_idx.has_value()) {
+        return true;
+      }
+      task_idx = maybe_task_idx.value();
     } else {
-      task_idx = std::optional{api::AsyncTask::select(tasks)};
+      task_idx = api::AsyncTask::select(tasks);
     }
 
-    if (task_idx.has_value()) {
-      auto task = tasks->at(task_idx.value());
-      bool success = task->run(engine);
-      tasks->erase(tasks->begin() + task_idx.value());
-      if (!success) {
-        exit_event_loop();
-        return false;
-      }
+    auto task = tasks->at(task_idx);
+    bool success = task->run(engine);
+    tasks->erase(tasks->begin() + task_idx);
+    if (!success) {
+      exit_event_loop();
+      return false;
     }
   }
 }
