@@ -56,7 +56,7 @@ function(add_builtin)
         foreach(DEPENDENCY IN ITEMS ${DEPENDENCIES})
             get_target_property(TYPE ${DEPENDENCY} TYPE)
             if(NOT ${TYPE} MATCHES "UTILITY")
-                # A built-in might specify a speficic dependency
+                # A built-in might specify a specific dependency
                 # (e.g. "OpenSSL::Crypto").  Ensure that if this dependency
                 # is of the right type (i.e. libraries), this particular
                 # built-in is linked against this library.
