@@ -1,7 +1,7 @@
 # Based on https://stackoverflow.com/a/72187533
 set(OPENSSL_VERSION 3.0.7)
-set(OPENSSL_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openssl-src) # default path by CMake
-set(OPENSSL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/openssl)
+set(OPENSSL_SOURCE_DIR ${CMAKE_BINARY_DIR}/deps-src/OpenSSL)
+set(OPENSSL_INSTALL_DIR ${CMAKE_BINARY_DIR}/deps/OpenSSL)
 set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_DIR}/include)
 include(ExternalProject)
 ExternalProject_Add(
