@@ -90,6 +90,7 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
       std::optional<size_t> maybe_task_idx = api::AsyncTask::ready(tasks);
       // nothing ready -> single tick has completed
       if (!maybe_task_idx.has_value()) {
+        exit_event_loop();
         return true;
       }
       task_idx = maybe_task_idx.value();
