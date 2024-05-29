@@ -67,31 +67,39 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
       exit_event_loop();
       return false;
     }
-    // if there is no interest in the event loop at all, just run one tick
-    if (interest_complete()) {
-      exit_event_loop();
-      return true;
-    }
 
     const auto tasks = &queue.get().tasks;
     size_t tasks_size = tasks->size();
+
     if (tasks_size == 0) {
       exit_event_loop();
-      MOZ_ASSERT(!interest_complete());
+      if (interest_complete()) {
+        return true;
+      }
       fprintf(stderr, "event loop error - both task and job queues are empty, but expected "
                       "operations did not resolve");
       return false;
     }
 
-    // Select the next task to run according to event-loop semantics of oldest-first.
-    size_t task_idx = api::AsyncTask::select(tasks);
+    std::optional<size_t> task_idx;
 
-    auto task = tasks->at(task_idx);
-    bool success = task->run(engine);
-    tasks->erase(tasks->begin() + task_idx);
-    if (!success) {
-      exit_event_loop();
-      return false;
+    // Select the next task to run according to event-loop semantics of oldest-first.
+    if (interest_complete()) {
+      // Perform a non-blocking select in the case of there being no event loop interest
+      // (we are thus only performing a "single tick", but must still progress work that is ready)
+      task_idx = api::AsyncTask::ready(tasks);
+    } else {
+      task_idx = std::optional{api::AsyncTask::select(tasks)};
+    }
+
+    if (task_idx.has_value()) {
+      auto task = tasks->at(task_idx.value());
+      bool success = task->run(engine);
+      tasks->erase(tasks->begin() + task_idx.value());
+      if (!success) {
+        exit_event_loop();
+        return false;
+      }
     }
   }
 }
