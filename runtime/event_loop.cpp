@@ -59,7 +59,7 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
   queue.get().event_loop_running = true;
   JSContext *cx = engine->cx();
 
-  while (true) {
+  do {
     // Run a microtask checkpoint
     js::RunJobs(cx);
 
@@ -104,11 +104,7 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
       exit_event_loop();
       return false;
     }
-
-    if (interest_complete()) {
-      return true;
-    }
-  }
+  } while (!interest_complete());
 }
 
 void EventLoop::init(JSContext *cx) { queue.init(cx); }
