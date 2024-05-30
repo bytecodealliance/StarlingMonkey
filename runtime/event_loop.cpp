@@ -72,10 +72,10 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
     size_t tasks_size = tasks->size();
 
     if (tasks_size == 0) {
-      exit_event_loop();
       if (interest_complete()) {
-        return true;
+        break;
       }
+      exit_event_loop();
       fprintf(stderr, "event loop error - both task and job queues are empty, but expected "
                       "operations did not resolve");
       return false;
@@ -89,8 +89,7 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
       // (we are thus only performing a "single tick", but must still progress work that is ready)
       std::optional<size_t> maybe_task_idx = api::AsyncTask::ready(tasks);
       if (!maybe_task_idx.has_value()) {
-        exit_event_loop();
-        return true;
+        break;
       }
       task_idx = maybe_task_idx.value();
     } else {
@@ -105,6 +104,9 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
       return false;
     }
   } while (!interest_complete());
+
+  exit_event_loop();
+  return true;
 }
 
 void EventLoop::init(JSContext *cx) { queue.init(cx); }
