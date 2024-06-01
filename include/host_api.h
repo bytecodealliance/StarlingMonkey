@@ -325,8 +325,12 @@ class HttpHeadersReadOnly : public Resource {
   friend HttpOutgoingRequest;
   friend HttpHeaders;
 
+protected:
+  // It's never valid to create an HttpHeadersReadOnly without a handle,
+  // but a subclass can create a handle and then assign it.
+  explicit HttpHeadersReadOnly();
+
 public:
-  HttpHeadersReadOnly() = delete;
   explicit HttpHeadersReadOnly(std::unique_ptr<HandleState> handle);
   HttpHeadersReadOnly(const HttpHeadersReadOnly &headers) = delete;
 
