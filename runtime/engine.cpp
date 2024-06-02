@@ -201,6 +201,8 @@ bool fix_math_random(JSContext *cx, HandleObject global) {
   return JS_DefineFunctions(cx, math, funs);
 }
 
+static api::Engine *ENGINE;
+
 bool init_js() {
   JS_Init();
 
@@ -253,8 +255,9 @@ bool init_js() {
   // generating bytecode for functions.
   // https://searchfox.org/mozilla-central/rev/5b2d2863bd315f232a3f769f76e0eb16cdca7cb0/js/public/CompileOptions.h#571-574
   opts->setForceFullParse();
-  scriptLoader = new ScriptLoader(cx, opts);
+  scriptLoader = new ScriptLoader(ENGINE, opts);
 
+  // TODO: restore in a way that doesn't cause a dependency on the Performance builtin in the core runtime.
   //   builtins::Performance::timeOrigin.emplace(
   //       std::chrono::high_resolution_clock::now());
 
@@ -327,15 +330,13 @@ static void abort(JSContext *cx, const char *description) {
   exit(1);
 }
 
-static api::Engine *ENGINE;
-
 api::Engine::Engine() {
   // total_compute = 0;
+  ENGINE = this;
   bool result = init_js();
   MOZ_RELEASE_ASSERT(result);
   JS::EnterRealm(cx(), global());
   core::EventLoop::init(cx());
-  ENGINE = this;
 }
 
 JSContext *api::Engine::cx() { return CONTEXT; }
@@ -447,8 +448,10 @@ bool api::Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const
   // the shrinking GC causes them to be intermingled with other objects. I.e.,
   // writes become more fragmented due to the shrinking GC.
   // https://github.com/fastly/js-compute-runtime/issues/224
-  JS::PrepareForFullGC(cx);
-  JS::NonIncrementalGC(cx, JS::GCOptions::Normal, JS::GCReason::API);
+  if (isWizening()) {
+    JS::PrepareForFullGC(cx);
+    JS::NonIncrementalGC(cx, JS::GCOptions::Normal, JS::GCReason::API);
+  }
 
   // Ignore the first GC, but then print all others, because ideally GCs
   // should be rare, and developers should know about them.
@@ -460,6 +463,7 @@ bool api::Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const
 
   return true;
 }
+bool api::Engine::is_preinitializing() { return isWizening(); }
 
 bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
   JS::SourceText<mozilla::Utf8Unit> source;

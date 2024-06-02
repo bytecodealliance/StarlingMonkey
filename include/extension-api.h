@@ -67,6 +67,8 @@ public:
   bool eval_toplevel(const char *path, MutableHandleValue result);
   bool eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char *path,
                      MutableHandleValue result);
+
+  bool is_preinitializing();
   bool toplevel_evaluated();
 
   /**

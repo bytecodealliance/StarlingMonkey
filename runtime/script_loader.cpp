@@ -9,7 +9,7 @@
 #include <jsfriendapi.h>
 #include <sys/stat.h>
 
-static JSContext* CONTEXT;
+static api::Engine* ENGINE;
 static ScriptLoader* SCRIPT_LOADER;
 JS::PersistentRootedObject moduleRegistry;
 JS::PersistentRootedObject builtinModules;
@@ -345,11 +345,12 @@ bool module_metadata_hook(JSContext* cx, HandleValue referencingPrivate, HandleO
   return true;
 }
 
-ScriptLoader::ScriptLoader(JSContext *cx, JS::CompileOptions *opts) {
+ScriptLoader::ScriptLoader(api::Engine* engine, JS::CompileOptions *opts) {
   MOZ_ASSERT(!SCRIPT_LOADER);
+  ENGINE = engine;
   SCRIPT_LOADER = this;
-  CONTEXT = cx;
   COMPILE_OPTS = opts;
+  JSContext* cx = engine->cx();
   moduleRegistry.init(cx, JS::NewMapObject(cx));
   builtinModules.init(cx, JS::NewMapObject(cx));
   MOZ_RELEASE_ASSERT(moduleRegistry);
@@ -360,21 +361,22 @@ ScriptLoader::ScriptLoader(JSContext *cx, JS::CompileOptions *opts) {
 }
 
 bool ScriptLoader::define_builtin_module(const char* id, HandleValue builtin) {
-  RootedString id_str(CONTEXT, JS_NewStringCopyZ(CONTEXT, id));
+  JSContext* cx = ENGINE->cx();
+  RootedString id_str(cx, JS_NewStringCopyZ(cx, id));
   if (!id_str) {
     return false;
   }
-  RootedValue module_val(CONTEXT);
-  RootedValue id_val(CONTEXT, StringValue(id_str));
+  RootedValue module_val(cx);
+  RootedValue id_val(cx, StringValue(id_str));
   bool already_exists;
-  if (!MapHas(CONTEXT, builtinModules, id_val, &already_exists)) {
+  if (!MapHas(cx, builtinModules, id_val, &already_exists)) {
     return false;
   }
   if (already_exists) {
     fprintf(stderr, "Unable to define builtin %s, as it already exists", id);
     return false;
   }
-  if (!MapSet(CONTEXT, builtinModules, id_val, builtin)) {
+  if (!MapSet(cx, builtinModules, id_val, builtin)) {
     return false;
   }
   return true;
@@ -444,7 +446,7 @@ bool ScriptLoader::load_script(JSContext *cx, const char *script_path,
 
 bool ScriptLoader::eval_top_level_script(const char *path, JS::SourceText<mozilla::Utf8Unit> &source,
                                          MutableHandleValue result, MutableHandleValue tla_promise) {
-  JSContext *cx = CONTEXT;
+  JSContext *cx = ENGINE->cx();
 
   JS::CompileOptions opts(cx, *COMPILE_OPTS);
   opts.setFileAndLine(strip_base(path, BASE_PATH), 1);
@@ -482,8 +484,10 @@ bool ScriptLoader::eval_top_level_script(const char *path, JS::SourceText<mozill
   // optimizing them for compactness makes sense and doesn't fragment writes
   // later on.
   // https://github.com/fastly/js-compute-runtime/issues/222
-  JS::PrepareForFullGC(cx);
-  JS::NonIncrementalGC(cx, JS::GCOptions::Shrink, JS::GCReason::API);
+  if (ENGINE->is_preinitializing()) {
+    JS::PrepareForFullGC(cx);
+    JS::NonIncrementalGC(cx, JS::GCOptions::Shrink, JS::GCReason::API);
+  }
 
   // Execute the top-level module script.
   if (!MODULE_MODE) {

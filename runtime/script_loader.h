@@ -14,7 +14,7 @@
 
 class ScriptLoader {
 public:
-  ScriptLoader(JSContext* cx, JS::CompileOptions* opts);
+  ScriptLoader(api::Engine* engine, JS::CompileOptions* opts);
   ~ScriptLoader();
 
   bool define_builtin_module(const char* id, HandleValue builtin);

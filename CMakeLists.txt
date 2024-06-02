@@ -96,7 +96,7 @@ function(componentize OUTPUT)
     add_custom_command(
             OUTPUT ${OUTPUT}.wasm
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR};${WIZER_DIR};$ENV{PATH}" ${RUNTIME_DIR}/componentize.sh ${SOURCES} ${OUTPUT}.wasm
+            COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR};${WIZER_DIR};$ENV{PATH}" ${RUNTIME_DIR}/componentize.sh ${SOURCES} -o ${OUTPUT}.wasm
             DEPENDS ${ARG_SOURCES} ${RUNTIME_DIR}/componentize.sh starling.wasm
             VERBATIM
     )
