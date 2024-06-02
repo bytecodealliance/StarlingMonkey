@@ -806,7 +806,8 @@ template <RequestOrResponse::BodyReadResult result_type>
 bool RequestOrResponse::bodyAll(JSContext *cx, JS::CallArgs args, JS::HandleObject self) {
   // TODO: mark body as consumed when operating on stream, too.
   if (body_used(self)) {
-    JS_ReportErrorASCII(cx, "Body has already been consumed");
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_RESPONSE_BODY_DISTURBED_OR_LOCKED);
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
@@ -843,6 +844,7 @@ bool RequestOrResponse::bodyAll(JSContext *cx, JS::CallArgs args, JS::HandleObje
     return false;
   }
 
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyUsed), JS::BooleanValue(true));
   JS::RootedValue extra(cx, JS::ObjectValue(*stream));
   if (!enqueue_internal_method<consume_content_stream_for_bodyAll>(cx, self, extra)) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
