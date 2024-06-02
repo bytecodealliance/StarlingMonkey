@@ -97,6 +97,7 @@ public:
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
 
+  static JSObject *create(JSContext *cx);
   static JSObject *create(JSContext *cx, HandleValue init_headers);
   static JSObject *create(JSContext *cx, HandleObject self, HandleValue init_headers);
   static JSObject *create(JSContext *cx, host_api::HttpHeadersReadOnly *handle);

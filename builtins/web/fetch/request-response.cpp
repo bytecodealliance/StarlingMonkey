@@ -379,6 +379,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
       chunk.setObject(*array);
     }
 
+    // Set a __proto__-less source so modifying Object.prototype doesn't change the behavior.
     RootedObject source(cx, JS_NewObjectWithGivenProto(cx, nullptr, nullptr));
     if (!source) {
       return false;
@@ -468,7 +469,7 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
     if (is_incoming(obj) && (handle = headers_handle(obj))) {
       headers = Headers::create(cx, handle);
     } else {
-      headers = Headers::create(cx, NullHandleValue);
+      headers = Headers::create(cx);
     }
     if (!headers) {
       return nullptr;

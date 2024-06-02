@@ -523,8 +523,18 @@ void init_from_handle(JSObject* self, host_api::HttpHeadersReadOnly* handle) {
   SetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Handle), PrivateValue(handle));
 }
 
+JSObject *Headers::create(JSContext *cx) {
+  JSObject* self = JS_NewObjectWithGivenProto(cx, &class_, proto_obj);
+  if (!self) {
+    return nullptr;
+  }
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Mode),
+                  JS::Int32Value(static_cast<int32_t>(Mode::Uninitialized)));
+  return self;
+}
+
 JSObject *Headers::create(JSContext *cx, host_api::HttpHeadersReadOnly *handle) {
-  RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
+  RootedObject self(cx, create(cx));
   if (!self) {
     return nullptr;
   }
@@ -533,7 +543,7 @@ JSObject *Headers::create(JSContext *cx, host_api::HttpHeadersReadOnly *handle) 
 }
 
 JSObject *Headers::create(JSContext *cx, HandleValue init_headers) {
-  RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
+  RootedObject self(cx, create(cx));
   if (!self) {
     return nullptr;
   }
