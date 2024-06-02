@@ -323,9 +323,6 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     char *buf = nullptr;
     size_t length = 0;
 
-    // Must be declared here to keep the buffer alive.
-    host_api::HostString text;
-
     if (body_obj && JS_IsArrayBufferViewObject(body_obj)) {
       length = JS_GetArrayBufferViewByteLength(body_obj);
       buf = static_cast<char *>(js_malloc(length));
@@ -342,42 +339,37 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
       if (!buffer) {
         return false;
       }
+      length = GetArrayBufferByteLength(buffer);
     } else if (body_obj && url::URLSearchParams::is_instance(body_obj)) {
       auto slice = url::URLSearchParams::serialize(cx, body_obj);
       buf = (char *)slice.data;
       length = slice.len;
       content_type = "application/x-www-form-urlencoded;charset=UTF-8";
     } else {
-      text = core::encode(cx, body_val);
+      auto text = core::encode(cx, body_val);
       if (!text.ptr) {
         return false;
       }
-      buf = text.ptr.get();
+      buf = text.ptr.release();
       length = text.len;
       content_type = "text/plain;charset=UTF-8";
     }
 
-    if (buf) {
-      MOZ_ASSERT(!buffer);
+    if (!buffer) {
+      MOZ_ASSERT_IF(length, buf);
       buffer = NewArrayBufferWithContents(cx, length, buf,
                                           JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory);
-      if (text.ptr) {
-        static_cast<void>(text.ptr.release());
-      }
       if (!buffer) {
         js_free(buf);
         return false;
       }
-      chunk.setObject(*buffer);
     }
 
-    if (buffer) {
-      RootedObject array(cx, JS_NewUint8ArrayWithBuffer(cx, buffer, 0, length));
-      if (!array) {
-        return false;
-      }
-      chunk.setObject(*array);
+    RootedObject array(cx, JS_NewUint8ArrayWithBuffer(cx, buffer, 0, length));
+    if (!array) {
+      return false;
     }
+    chunk.setObject(*array);
 
     // Set a __proto__-less source so modifying Object.prototype doesn't change the behavior.
     RootedObject source(cx, JS_NewObjectWithGivenProto(cx, nullptr, nullptr));
