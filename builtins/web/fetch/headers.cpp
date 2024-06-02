@@ -158,6 +158,11 @@ host_api::HostString normalize_header_value(JSContext *cx, HandleValue value_val
     }
   }
 
+  if (*value_changed) {
+    memmove(value_chars, value_chars + start, end - start);
+    value.len = end - start;
+  }
+
   return value;
 }
 
@@ -456,6 +461,25 @@ bool append_single_normalized_header_value(JSContext *cx, HandleObject self,
       return false;
     }
 
+    RootedValue entry(cx);
+    if (!MapGet(cx, entries, name_val, &entry)) {
+      return false;
+    }
+
+    if (!entry.isUndefined()) {
+      RootedString entry_str(cx, JS::ToString(cx, entry));
+      entry_str = JS_ConcatStrings(cx, entry_str, comma);
+      if (!entry_str) {
+        return false;
+      }
+      RootedString val_str(cx, value_val.toString());
+      entry_str = JS_ConcatStrings(cx, entry_str, val_str);
+      if (!entry_str) {
+        return false;
+      }
+      value_val.setString(entry_str);
+    }
+
     if (!MapSet(cx, entries, name_val, value_val)) {
       return false;
     }
@@ -618,7 +642,7 @@ bool Headers::has(JSContext *cx, unsigned argc, JS::Value *vp) {
   NORMALIZE_NAME(args[0], "Headers.has")
 
   Mode mode = Headers::mode(self);
-  if (mode == Headers::Mode::Uninitialized) {
+  if (mode == Mode::Uninitialized) {
     args.rval().setBoolean(false);
     return true;
   }
@@ -634,8 +658,13 @@ bool Headers::has(JSContext *cx, unsigned argc, JS::Value *vp) {
     if (!entries) {
       return false;
     }
+
+    RootedValue name_val(cx);
+    if (!redecode_str_if_changed(cx, args[0], name_chars, name_changed, &name_val)) {
+      return false;
+    }
     bool has;
-    if (!MapHas(cx, entries, args[0], &has)) {
+    if (!MapHas(cx, entries, name_val, &has)) {
       return false;
     }
     args.rval().setBoolean(has);
