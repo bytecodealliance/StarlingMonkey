@@ -77,7 +77,7 @@ add_builtin(
     builtins::web::fetch::fetch_event
     SRC
         builtins/web/fetch/fetch_event.cpp
-    LINK_LIBS
+    DEPENDENCIES
         host_api
     INCLUDE_DIRS
         runtime
@@ -93,7 +93,7 @@ add_builtin(
         builtins/web/crypto/crypto-key-rsa-components.cpp
         builtins/web/crypto/json-web-key.cpp
         builtins/web/crypto/subtle-crypto.cpp
-    LINK_LIBS
+    DEPENDENCIES
         OpenSSL::Crypto
         fmt
     INCLUDE_DIRS

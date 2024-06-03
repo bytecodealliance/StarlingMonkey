@@ -37,7 +37,7 @@ include("host_api")
 include("build-crates")
 
 add_library(extension_api INTERFACE include/extension-api.h runtime/encode.h)
-target_link_libraries(extension_api INTERFACE rust-url rust-encoding spidermonkey)
+target_link_libraries(extension_api INTERFACE rust-url spidermonkey)
 target_include_directories(extension_api INTERFACE include deps/include runtime)
 
 include("builtins")
