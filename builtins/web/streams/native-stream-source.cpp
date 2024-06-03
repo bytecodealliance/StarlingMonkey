@@ -103,19 +103,6 @@ bool NativeStreamSource::lock_stream(JSContext *cx, JS::HandleObject stream) {
   return true;
 }
 
-JSObject *NativeStreamSource::get_locked_by_internal_reader(JSContext *cx, JS::HandleObject stream) {
-
-  JS::RootedObject self(cx, get_stream_source(cx, stream));
-  MOZ_ASSERT(is_instance(self));
-
-  bool locked;
-  JS::ReadableStreamIsLocked(cx, stream, &locked);
-  MOZ_ASSERT(locked);
-
-  JS::RootedObject reader(cx, &JS::GetReservedSlot(self, Slots::InternalReader).toObject());
-  return reader;
-}
-
 bool NativeStreamSource::start(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 

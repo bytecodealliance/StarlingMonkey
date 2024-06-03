@@ -326,13 +326,6 @@ bool RequestOrResponse::body_unusable(JSContext *cx, JS::HandleObject body) {
   return disturbed || locked;
 }
 
-bool RequestOrResponse::body_disturbed(JSContext *cx, JS::HandleObject body) {
-  MOZ_ASSERT(JS::IsReadableStream(body));
-  bool disturbed;
-  MOZ_RELEASE_ASSERT(JS::ReadableStreamIsDisturbed(cx, body, &disturbed));
-  return disturbed;
-}
-
 /**
  * Implementation of the `extract a body` algorithm at
  * https://fetch.spec.whatwg.org/#concept-bodyinit-extract
@@ -423,8 +416,6 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     auto body = RequestOrResponse::outgoing_body_handle(self);
     auto write_res = body->write_all(reinterpret_cast<uint8_t *>(buf), length);
 
-    body->close();
-
     // Ensure that the NoGC is reset, so throwing an error in HANDLE_ERROR
     // succeeds.
     if (maybeNoGC.isSome()) {
@@ -440,9 +431,6 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
   // Step 36.3 of Request constructor / 8.4 of Response constructor.
   if (content_type) {
     JS::RootedObject headers(cx, RequestOrResponse::headers(cx, self));
-    if (!headers) {
-      return false;
-    }
     if (!Headers::maybe_add(cx, headers, "content-type", content_type)) {
       return false;
     }
@@ -763,7 +751,7 @@ bool RequestOrResponse::consume_content_stream_for_bodyAll(JSContext *cx, JS::Ha
     return false;
   }
   MOZ_ASSERT(JS::IsReadableStream(stream));
-  if (RequestOrResponse::body_disturbed(cx, stream)) {
+  if (RequestOrResponse::body_unusable(cx, stream)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_RESPONSE_BODY_DISTURBED_OR_LOCKED);
     JS::RootedObject result_promise(cx);
@@ -772,9 +760,8 @@ bool RequestOrResponse::consume_content_stream_for_bodyAll(JSContext *cx, JS::Ha
     JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise), JS::UndefinedValue());
     return RejectPromiseWithPendingError(cx, result_promise);
   }
-
-  JS::RootedObject unwrappedReader(cx, streams::NativeStreamSource::get_locked_by_internal_reader(cx, stream));
-
+  JS::Rooted<JSObject *> unwrappedReader(
+      cx, JS::ReadableStreamGetReader(cx, stream, JS::ReadableStreamReaderMode::Default));
   if (!unwrappedReader) {
     return false;
   }
@@ -1148,11 +1135,7 @@ JSObject *RequestOrResponse::create_body_stream(JSContext *cx, JS::HandleObject 
     return nullptr;
   }
 
-  // If the body has already been used without being reified as a ReadableStream,
-  // lock the stream immediately.
-  if (body_used(owner)) {
-    MOZ_RELEASE_ASSERT(streams::NativeStreamSource::lock_stream(cx, body_stream));
-  }
+  // TODO: immediately lock the stream if the owner's body is already used.
 
   JS_SetReservedSlot(owner, static_cast<uint32_t>(Slots::BodyStream),
                      JS::ObjectValue(*body_stream));
@@ -1710,8 +1693,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
   // `init["headers"]` exists, create the request's `headers` from that,
   // otherwise create it from the `init` object's `headers`, or create a new,
   // empty one.
-  auto *headers_handle = new host_api::HttpHeaders(); 
-
+  auto *headers_handle = new host_api::HttpHeaders();
   JS::RootedObject headers(cx);
 
   if (headers_val.isUndefined() && input_headers) {

@@ -70,7 +70,7 @@ if [ -z "$test_component" ]; then
    fi
 fi
 
-WASMTIME_BACKTRACE_DETAILS=1 WASMTIME_LOG=wasmtime_wasi $wasmtime serve -S common --addr 0.0.0.0:0 "$test_component" 1> "$stdout_log" 2> "$stderr_log" &
+$wasmtime serve -S common --addr 0.0.0.0:0 "$test_component" 1> "$stdout_log" 2> "$stderr_log" &
 wasmtime_pid="$!"
 
 function cleanup {
