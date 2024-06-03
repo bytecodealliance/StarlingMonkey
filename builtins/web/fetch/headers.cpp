@@ -694,7 +694,7 @@ bool Headers::append(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
-bool Headers::set_if_undefined(JSContext *cx, JS::HandleObject self, const char *name, const char *value) {
+bool Headers::set_if_undefined(JSContext *cx, HandleObject self, string_view name, string_view value) {
   if (!prepare_for_entries_modification(cx, self)) {
     return false;
   }
@@ -717,7 +717,7 @@ bool Headers::set_if_undefined(JSContext *cx, JS::HandleObject self, const char 
 
   MOZ_ASSERT(mode(self) == Mode::ContentOnly);
   RootedObject entries(cx, get_entries(cx, self));
-  RootedString name_str(cx, JS_NewStringCopyZ(cx, name));
+  RootedString name_str(cx, core::decode(cx, name));
   if (!name_str) {
     return false;
   }
@@ -731,7 +731,7 @@ bool Headers::set_if_undefined(JSContext *cx, JS::HandleObject self, const char 
     return true;
   }
 
-  RootedString value_str(cx, JS_NewStringCopyZ(cx, value));
+  RootedString value_str(cx, core::decode(cx, value));
   if (!value_str) {
     return false;
   }

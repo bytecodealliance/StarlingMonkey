@@ -281,7 +281,8 @@ public:
   Result<Void> write_all(const uint8_t *bytes, size_t len);
 
   /// Append an HttpIncomingBody to this one.
-  Result<Void> append(api::Engine *engine, HttpIncomingBody *incoming);
+  Result<Void> append(api::Engine *engine, HttpIncomingBody *other,
+                      api::TaskCompletionCallback callback, HandleObject callback_receiver);
 
   /// Close this handle, and reset internal state to invalid.
   Result<Void> close();

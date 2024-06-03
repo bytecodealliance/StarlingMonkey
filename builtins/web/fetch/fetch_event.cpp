@@ -186,7 +186,9 @@ bool start_response(JSContext *cx, JS::HandleObject response_obj, bool streaming
       auto *source_body = static_cast<host_api::HttpIncomingResponse*>(existing_handle)->body().unwrap();
       auto *dest_body = response->body().unwrap();
 
-      auto res = dest_body->append(ENGINE, source_body);
+      // TODO: check if we should add a callback here and do something in response to body
+      //  streaming being finished.
+      auto res = dest_body->append(ENGINE, source_body, nullptr, nullptr);
       if (auto *err = res.to_err()) {
         HANDLE_ERROR(cx, *err);
         return false;

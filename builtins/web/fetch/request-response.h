@@ -91,11 +91,6 @@ public:
                                            JS::HandleValue reason);
   static bool body_source_pull_algorithm(JSContext *cx, JS::CallArgs args, JS::HandleObject source,
                                          JS::HandleObject body_owner, JS::HandleObject controller);
-  static bool body_reader_then_handler(JSContext *cx, JS::HandleObject body_owner,
-                                       JS::HandleValue extra, JS::CallArgs args);
-
-  static bool body_reader_catch_handler(JSContext *cx, JS::HandleObject body_owner,
-                                        JS::HandleValue extra, JS::CallArgs args);
 
   /**
    * Ensures that the given |body_owner|'s body is properly streamed, if it

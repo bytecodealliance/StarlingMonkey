@@ -120,6 +120,9 @@ public:
   void dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp);
 };
 
+
+typedef bool (*TaskCompletionCallback)(JSContext* cx, HandleObject receiver);
+
 class AsyncTask {
 protected:
   PollableHandle handle_ = -1;

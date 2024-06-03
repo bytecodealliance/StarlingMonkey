@@ -70,7 +70,8 @@ public:
    * Adds the given header name/value to `self`'s list of headers iff `self`
    * doesn't already contain a header with that name.
    */
-  static bool set_if_undefined(JSContext *cx, JS::HandleObject self, const char *name, const char *value);
+  static bool set_if_undefined(JSContext *cx, JS::HandleObject self, string_view name,
+                               string_view value);
 
   /// Appends a value for a header name.
   //

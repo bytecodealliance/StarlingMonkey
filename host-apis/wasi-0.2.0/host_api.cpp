@@ -604,16 +604,30 @@ class BodyAppendTask final : public api::AsyncTask {
   HttpOutgoingBody *outgoing_body_;
   PollableHandle incoming_pollable_;
   PollableHandle outgoing_pollable_;
+
+  api::TaskCompletionCallback cb_;
+  Heap<JSObject*> cb_receiver_;
   State state_;
 
-  void set_state(const State state) {
+  void set_state(JSContext* cx, const State state) {
     MOZ_ASSERT(state_ != State::Done);
     state_ = state;
+    if (state == State::Done && cb_) {
+      RootedObject receiver(cx, cb_receiver_);
+      cb_(cx, receiver);
+      cb_ = nullptr;
+      cb_receiver_ = nullptr;
+    }
   }
 
 public:
-  explicit BodyAppendTask(HttpIncomingBody *incoming_body, HttpOutgoingBody *outgoing_body)
-      : incoming_body_(incoming_body), outgoing_body_(outgoing_body) {
+  explicit BodyAppendTask(api::Engine *engine,
+                          HttpIncomingBody *incoming_body,
+                          HttpOutgoingBody *outgoing_body,
+                          api::TaskCompletionCallback completion_callback,
+                          HandleObject callback_receiver)
+      : incoming_body_(incoming_body), outgoing_body_(outgoing_body),
+        cb_(completion_callback) {
     auto res = incoming_body_->subscribe();
     MOZ_ASSERT(!res.is_err());
     incoming_pollable_ = res.unwrap();
@@ -622,7 +636,9 @@ public:
     MOZ_ASSERT(!res.is_err());
     outgoing_pollable_ = res.unwrap();
 
-    state_ = State::BlockedOnBoth;
+    cb_receiver_ = callback_receiver;
+
+    set_state(engine->cx(), State::BlockedOnBoth);
   }
 
   [[nodiscard]] bool run(api::Engine *engine) override {
@@ -633,10 +649,10 @@ public:
       MOZ_ASSERT(!res.is_err());
       auto [done, _] = std::move(res.unwrap());
       if (done) {
-        set_state(State::Done);
+        set_state(engine->cx(), State::Done);
         return true;
       }
-      set_state(State::BlockedOnOutgoing);
+      set_state(engine->cx(), State::BlockedOnOutgoing);
     }
 
     uint64_t capacity = 0;
@@ -647,7 +663,7 @@ public:
       }
       capacity = res.unwrap();
       if (capacity > 0) {
-        set_state(State::Ready);
+        set_state(engine->cx(), State::Ready);
       } else {
         engine->queue_async_task(this);
         return true;
@@ -665,7 +681,7 @@ public:
       }
       auto [done, bytes] = std::move(res.unwrap());
       if (bytes.len == 0 && !done) {
-        set_state(State::BlockedOnIncoming);
+        set_state(engine->cx(), State::BlockedOnIncoming);
         engine->queue_async_task(this);
         return true;
       }
@@ -684,7 +700,7 @@ public:
       }
 
       if (done) {
-        set_state(State::Done);
+        set_state(engine->cx(), State::Done);
         return true;
       }
 
@@ -696,7 +712,7 @@ public:
       capacity = capacity_res.unwrap();
     } while (capacity > 0);
 
-    set_state(State::BlockedOnOutgoing);
+    set_state(engine->cx(), State::BlockedOnOutgoing);
     engine->queue_async_task(this);
     return true;
   }
@@ -717,12 +733,13 @@ public:
   }
 
   void trace(JSTracer *trc) override {
-    // Nothing to trace.
+    JS::TraceEdge(trc, &cb_receiver_, "BodyAppendTask completion callback receiver");
   }
 };
 
-Result<Void> HttpOutgoingBody::append(api::Engine *engine, HttpIncomingBody *other) {
-  engine->queue_async_task(new BodyAppendTask(other, this));
+Result<Void> HttpOutgoingBody::append(api::Engine *engine, HttpIncomingBody *other,
+  api::TaskCompletionCallback callback, HandleObject callback_receiver) {
+  engine->queue_async_task(new BodyAppendTask(engine, other, this, callback, callback_receiver));
   return {};
 }
 
