@@ -103,7 +103,9 @@ public:
 
   static const unsigned ctor_length = 1;
 
+  static const jsurl::JSUrl *url(JSObject *self);
   static jsurl::SpecString origin(JSContext *cx, JS::HandleObject self);
+
   static bool origin(JSContext *cx, JS::HandleObject self, JS::MutableHandleValue rval);
   static bool hash(JSContext *cx, JS::HandleObject self, JS::MutableHandleValue rval);
   static bool host(JSContext *cx, JS::HandleObject self, JS::MutableHandleValue rval);

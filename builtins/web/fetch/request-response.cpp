@@ -2112,121 +2112,68 @@ bool Response::bodyUsed_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 // https://fetch.spec.whatwg.org/#dom-response-redirect
 // [NewObject] static Response redirect(USVString url, optional unsigned short status = 302);
-// bool Response::redirect(JSContext *cx, unsigned argc, JS::Value *vp) {
-//   JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
-//   if (!args.requireAtLeast(cx, "redirect", 1)) {
-//     return false;
-//   }
-//   // auto url = args.get(0);
-//   // // 1. Let parsedURL be the result of parsing url with current settings object’s API base
-//   URL.
-//   // JS::RootedObject urlInstance(
-//   //     cx, JS_NewObjectWithGivenProto(cx, &url::URL::class_, url::URL::proto_obj));
-//   // if (!urlInstance) {
-//   //   return false;
-//   // }
-//   // JS::RootedObject parsedURL(
-//   //     cx, url::URL::create(cx, urlInstance, url, worker_location::WorkerLocation::url));
-//   // // 2. If parsedURL is failure, then throw a TypeError.
-//   // if (!parsedURL) {
-//   //   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-//   JSMSG_RESPONSE_REDIRECT_INVALID_URI);
-//   //   return false;
-//   // }
-//   // JS::RootedValue url_val(cx, JS::ObjectValue(*parsedURL));
-//   // auto url_str = core::encode(cx, url_val);
-//   // if (!url_str) {
-//   //   return false;
-//   // }
-//   // 3. If status is not a redirect status, then throw a RangeError.
-//   // A redirect status is a status that is 301, 302, 303, 307, or 308.
-//   auto statusVal = args.get(1);
-//   uint16_t status;
-//   if (statusVal.isUndefined()) {
-//     status = 302;
-//   } else {
-//     if (!JS::ToUint16(cx, statusVal, &status)) {
-//       return false;
-//     }
-//   }
-//   if (status != 301 && status != 302 && status != 303 && status != 307 && status != 308) {
-//     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-//     JSMSG_RESPONSE_REDIRECT_INVALID_STATUS); return false;
-//   }
-//   // 4. Let responseObject be the result of creating a Response object, given a new response,
-//   // "immutable", and this’s relevant Realm.
-//   auto response_handle_res = host_api::HttpResp::make();
-//   if (auto *err = response_handle_res.to_err()) {
-//     HANDLE_ERROR(cx, *err);
-//     return false;
-//   }
+bool Response::redirect(JSContext *cx, unsigned argc, Value *vp) {
+  CallArgs args = JS::CallArgsFromVp(argc, vp);
+  if (!args.requireAtLeast(cx, "redirect", 1)) {
+    return false;
+  }
 
-//   auto response_handle = response_handle_res.unwrap();
-//   if (!response_handle.is_valid()) {
-//     return false;
-//   }
+   // 1. Let parsedURL be the result of parsing url with current settings object’s API base
+   // URL.
+  jsurl::SpecString url_str = core::encode(cx, args.get(0));
+  if (!url_str.data) {
+    return false;
+  }
+  auto parsedURL = new_jsurl_with_base(&url_str, url::URL::url(worker_location::WorkerLocation::url));
+  if (!parsedURL) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+      JSMSG_RESPONSE_REDIRECT_INVALID_URI);
+    return false;
+  }
 
-//   auto make_res = host_api::HttpBody::make(response_handle);
-//   if (auto *err = make_res.to_err()) {
-//     HANDLE_ERROR(cx, *err);
-//     return false;
-//   }
+  // 3. If status is not a redirect status, then throw a RangeError.
+  // A redirect status is a status that is 301, 302, 303, 307, or 308.
+  auto statusVal = args.get(1);
+  uint16_t status;
+  if (statusVal.isUndefined()) {
+   status = 302;
+  } else {
+   if (!ToUint16(cx, statusVal, &status)) {
+     return false;
+   }
+  }
+  if (status != 301 && status != 302 && status != 303 && status != 307 && status != 308) {
+   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+    JSMSG_RESPONSE_REDIRECT_INVALID_STATUS);
+   return false;
+  }
 
-//   auto body = make_res.unwrap();
-//   JS::RootedObject response_instance(cx, JS_NewObjectWithGivenProto(cx, &Response::class_,
-//                                                                     Response::proto_obj));
-//   if (!response_instance) {
-//     return false;
-//   }
-//   JS::RootedObject response(
-//       cx, create(cx, response_instance, response_handle, body, false));
-//   if (!response) {
-//     return false;
-//   }
+   // 4. Let responseObject be the result of creating a Response object, given a new response,
+   // "immutable", and this’s relevant Realm.
+  RootedObject responseObject(cx, create(cx));
+  if (!responseObject) {
+    return false;
+  }
 
-//   // 5. Set responseObject’s response’s status to status.
-//   auto set_res = response_handle.set_status(status);
-//   if (auto *err = set_res.to_err()) {
-//     HANDLE_ERROR(cx, *err);
-//     return false;
-//   }
-//   // To ensure that we really have the same status value as the host,
-//   // we always read it back here.
-//   auto get_res = response_handle.get_status();
-//   if (auto *err = get_res.to_err()) {
-//     HANDLE_ERROR(cx, *err);
-//     return false;
-//   }
-//   status = get_res.unwrap();
+   // 5. Set responseObject’s response’s status to status.
+  SetReservedSlot(responseObject, static_cast<uint32_t>(Slots::Status), JS::Int32Value(status));
+  SetReservedSlot(responseObject, static_cast<uint32_t>(Slots::StatusMessage),
+                  JS::StringValue(JS_GetEmptyString(cx)));
 
-//   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Status), JS::Int32Value(status));
-//   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::StatusMessage),
-//                       JS::StringValue(JS_GetEmptyString(cx)));
-//   // 6. Let value be parsedURL, serialized and isomorphic encoded.
-//   // 7. Append (`Location`, value) to responseObject’s response’s header list.
-//   JS::RootedObject headers(cx);
-//   JS::RootedObject headersInstance(
-//       cx, JS_NewObjectWithGivenProto(cx, &Headers::class_, Headers::proto_obj));
-//   if (!headersInstance)
-//     return false;
+  // 6. Let value be parsedURL, serialized and isomorphic encoded.
+  // 7. Append (`Location`, value) to responseObject’s response’s header list.
+  RootedObject headers(cx, RequestOrResponse::headers(cx, responseObject));
+  if (!headers) {
+    return false;
+  }
+  if (!Headers::set_if_undefined(cx, headers, "location", url_str)) {
+    return false;
+  }
 
-//   headers = Headers::create(cx, headersInstance, Headers::Mode::ProxyToResponse,
-//                                       response);
-//   if (!headers) {
-//     return false;
-//   }
-//   // TODO: support use of baseURL
-//   // if (!Headers::maybe_add(cx, headers, "location", url_str.begin())) {
-//   //   return false;
-//   // }
-//   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Headers),
-//   JS::ObjectValue(*headers)); JS::SetReservedSlot(response,
-//   static_cast<uint32_t>(Slots::Redirected), JS::FalseValue());
-//   // 8. Return responseObject.
-
-//   args.rval().setObjectOrNull(response);
-//   return true;
-// }
+  // 8. Return responseObject.
+  args.rval().setObjectOrNull(responseObject);
+  return true;
+}
 
 // namespace {
 // bool callbackCalled;
@@ -2386,7 +2333,7 @@ bool Response::bodyUsed_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 // }
 
 const JSFunctionSpec Response::static_methods[] = {
-    // JS_FN("redirect", redirect, 1, JSPROP_ENUMERATE),
+    JS_FN("redirect", redirect, 1, JSPROP_ENUMERATE),
     // JS_FN("json", json, 1, JSPROP_ENUMERATE),
     JS_FS_END,
 };
@@ -2476,14 +2423,11 @@ bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  JS::RootedObject responseInstance(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  if (!responseInstance) {
-    return false;
-  }
-  JS::RootedObject response(cx, create(cx, responseInstance));
+  JS::RootedObject response(cx, JS_NewObjectForConstructor(cx, &class_, args));
   if (!response) {
     return false;
   }
+  init_slots(response);
 
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Headers), JS::ObjectValue(*headers));
 
@@ -2550,8 +2494,16 @@ bool Response::init_class(JSContext *cx, JS::HandleObject global) {
          (type_error_atom = JS_AtomizeAndPinString(cx, "error"));
 }
 
-JSObject *Response::create(JSContext *cx, JS::HandleObject response) {
-  MOZ_ASSERT(cx);
+JSObject *Response::create(JSContext *cx){
+  RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
+  if (!self) {
+    return nullptr;
+  }
+  init_slots(self);
+  return self;
+}
+
+JSObject *Response::init_slots(HandleObject response) {
   MOZ_ASSERT(is_instance(response));
 
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Response), JS::PrivateValue(nullptr));
@@ -2564,8 +2516,8 @@ JSObject *Response::create(JSContext *cx, JS::HandleObject response) {
   return response;
 }
 
-JSObject * Response::create_incoming(JSContext *cx, HandleObject obj, host_api::HttpIncomingResponse *response) {
-  RootedObject self(cx, create(cx, obj));
+JSObject * Response::create_incoming(JSContext *cx, host_api::HttpIncomingResponse *response) {
+  RootedObject self(cx, create(cx));
   if (!self) {
     return nullptr;
   }

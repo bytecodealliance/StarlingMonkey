@@ -40,6 +40,11 @@ struct SpecString {
       cap(cap)
   {}
 
+
+  /// Conversion to a `jsurl::SpecString`.
+  operator const std::string_view() const {
+    return std::string_view(reinterpret_cast<char *>(this->data), this->len);
+  }
 };
 
 /// This type exists to transfer &str-likes over FFI.
