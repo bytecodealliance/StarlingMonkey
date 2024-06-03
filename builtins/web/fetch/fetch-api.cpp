@@ -11,64 +11,6 @@ namespace builtins::web::fetch {
 
 static api::Engine *ENGINE;
 
-class ResponseFutureTask final : public api::AsyncTask {
-  Heap<JSObject *> request_;
-  host_api::FutureHttpIncomingResponse *future_;
-
-public:
-  explicit ResponseFutureTask(const HandleObject request,
-                              host_api::FutureHttpIncomingResponse *future)
-      : request_(request), future_(future) {
-    auto res = future->subscribe();
-    MOZ_ASSERT(!res.is_err(), "Subscribing to a future should never fail");
-    handle_ = res.unwrap();
-  }
-
-  [[nodiscard]] bool run(api::Engine *engine) override {
-    // MOZ_ASSERT(ready());
-    JSContext *cx = engine->cx();
-
-    const RootedObject request(cx, request_);
-    RootedObject response_promise(cx, Request::response_promise(request));
-
-    auto res = future_->maybe_response();
-    if (res.is_err()) {
-      JS_ReportErrorUTF8(cx, "NetworkError when attempting to fetch resource.");
-      return RejectPromiseWithPendingError(cx, response_promise);
-    }
-
-    auto maybe_response = res.unwrap();
-    MOZ_ASSERT(maybe_response.has_value());
-    auto response = maybe_response.value();
-    RootedObject response_obj(
-        cx, JS_NewObjectWithGivenProto(cx, &Response::class_, Response::proto_obj));
-    if (!response_obj) {
-      return false;
-    }
-
-    response_obj = Response::create_incoming(cx, response_obj, response);
-    if (!response_obj) {
-      return false;
-    }
-
-    RequestOrResponse::set_url(response_obj, RequestOrResponse::url(request));
-    RootedValue response_val(cx, ObjectValue(*response_obj));
-    if (!ResolvePromise(cx, response_promise, response_val)) {
-      return false;
-    }
-
-    return cancel(engine);
-  }
-
-  [[nodiscard]] bool cancel(api::Engine *engine) override {
-    // TODO(TS): implement
-    handle_ = -1;
-    return true;
-  }
-
-  void trace(JSTracer *trc) override { TraceEdge(trc, &request_, "Request for response future"); }
-};
-
 // TODO: throw in all Request methods/getters that rely on host calls once a
 // request has been sent. The host won't let us act on them anymore anyway.
 /**
@@ -158,8 +100,10 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
     ENGINE->queue_async_task(new ResponseFutureTask(request_obj, pending_handle));
   }
 
-  JS::SetReservedSlot(request_obj, static_cast<uint32_t>(Request::Slots::ResponsePromise),
-                      ObjectValue(*response_promise));
+  SetReservedSlot(request_obj, static_cast<uint32_t>(Request::Slots::ResponsePromise),
+                  ObjectValue(*response_promise));
+  SetReservedSlot(request_obj, static_cast<uint32_t>(Request::Slots::PendingResponseHandle),
+                  PrivateValue(pending_handle));
 
   args.rval().setObject(*response_promise);
   return true;

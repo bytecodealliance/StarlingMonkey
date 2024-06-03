@@ -906,6 +906,12 @@ bool RequestOrResponse::body_reader_then_handler(JSContext *cx, JS::HandleObject
     return false;
 
   if (done_val.toBoolean()) {
+    auto res = body->close();
+    if (auto *err = res.to_err()) {
+      HANDLE_ERROR(cx, *err);
+      return false;
+    }
+
     // The only response we ever send is the one passed to
     // `FetchEvent#respondWith` to send to the client. As such, we can be
     // certain that if we have a response here, we can advance the FetchState to
@@ -916,10 +922,13 @@ bool RequestOrResponse::body_reader_then_handler(JSContext *cx, JS::HandleObject
                                          fetch_event::FetchEvent::State::responseDone);
     }
 
-    auto res = body->close();
-    if (auto *err = res.to_err()) {
-      HANDLE_ERROR(cx, *err);
-      return false;
+    if (Request::is_instance(body_owner)) {
+      auto pending_handle =
+          static_cast<host_api::FutureHttpIncomingResponse *>(
+              GetReservedSlot(body_owner,
+                              static_cast<uint32_t>(Request::Slots::PendingResponseHandle))
+                  .toPrivate());
+      ENGINE->queue_async_task(new ResponseFutureTask(body_owner, pending_handle));
     }
 
     return true;
