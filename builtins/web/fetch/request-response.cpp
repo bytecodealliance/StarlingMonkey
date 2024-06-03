@@ -270,11 +270,6 @@ bool RequestOrResponse::body_unusable(JSContext *cx, JS::HandleObject body) {
  * Implementation of the `extract a body` algorithm at
  * https://fetch.spec.whatwg.org/#concept-bodyinit-extract
  *
- * Note: our implementation is somewhat different from what the spec describes
- * in that we immediately write all non-streaming body types to the host instead
- * of creating a stream for them. We don't have threads, so there's nothing "in
- * parallel" to be had anyway.
- *
  * Note: also includes the steps applying the `Content-Type` header from the
  * Request and Response constructors in step 36 and 8 of those, respectively.
  */
@@ -2468,16 +2463,6 @@ bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   // be consumed by the content creating it, so we're lenient about its format.
 
   // 3.  Set `this`’s `response` to a new `response`.
-  // TODO(performance): consider not creating a host-side representation for responses
-  // eagerly. Some applications create Response objects purely for internal use,
-  // e.g. to represent cache entries. While that's perhaps not ideal to begin
-  // with, it exists, so we should handle it in a good way, and not be
-  // superfluously slow.
-  // https://github.com/fastly/js-compute-runtime/issues/219
-  // TODO(performance): enable creating Response objects during the init phase, and only
-  // creating the host-side representation when processing requests.
-  // https://github.com/fastly/js-compute-runtime/issues/220
-
   // 5. (Reordered) Set `this`’s `response`’s `status` to `init`["status"].
 
   // 7.  (Reordered) If `init`["headers"] `exists`, then `fill` `this`’s `headers` with
