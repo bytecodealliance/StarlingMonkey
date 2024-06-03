@@ -31,7 +31,7 @@ public:
   static bool is_instance(JSObject *obj);
   static bool is_incoming(JSObject *obj);
   static host_api::HttpRequestResponseBase *handle(JSObject *obj);
-  static host_api::HttpHeaders *headers_handle(JSObject *obj);
+  static host_api::HttpHeadersReadOnly *headers_handle(JSObject *obj);
   static bool has_body(JSObject *obj);
   static host_api::HttpIncomingBody *incoming_body_handle(JSObject *obj);
   static host_api::HttpOutgoingBody *outgoing_body_handle(JSObject *obj);
@@ -49,6 +49,16 @@ public:
    * not.
    */
   static JSObject *maybe_headers(JSObject *obj);
+
+  /**
+   * Returns a handle to a clone of the RequestOrResponse's Headers.
+   *
+   * The main purposes for this function are use in sending outgoing requests/responses and
+   * in the constructor of request/response objects when a HeadersInit object is passed.
+   *
+   * The handle is guaranteed to be uniquely owned by the caller.
+   */
+  static unique_ptr<host_api::HttpHeaders> headers_clone(JSContext *, HandleObject self);
 
   /**
    * Returns the RequestOrResponse's Headers, reifying it if necessary.
@@ -148,8 +158,7 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 
-  static JSObject *create(JSContext *cx, JS::HandleObject requestInstance,
-                          host_api::HttpRequest *request_handle);
+  static JSObject *create(JSContext *cx, JS::HandleObject requestInstance);
   static JSObject *create(JSContext *cx, JS::HandleObject requestInstance, JS::HandleValue input,
                           JS::HandleValue init_val);
 
@@ -198,8 +207,9 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 
-  static JSObject *create(JSContext *cx, JS::HandleObject response,
-                          host_api::HttpResponse *response_handle);
+  static JSObject *create(JSContext *cx, JS::HandleObject response);
+  static JSObject* create_incoming(JSContext * cx, HandleObject self,
+                                                           host_api::HttpIncomingResponse* response);
 
   static host_api::HttpResponse *response_handle(JSObject *obj);
   static uint16_t status(JSObject *obj);

@@ -80,12 +80,12 @@ StarlingMonkey includes a test runner for the [Web Platform Tests](https://web-p
 
 ### Requirements
 
-The WPT runner requires `Node.js` to be installed, and during build configuration the environment variable `WPT` must be defined.
+The WPT runner requires `Node.js` to be installed, and during build configuration the option `ENABLE_WPT:BOOL=ON` must be set.
 
 When running the test, `WPT_ROOT` must be set to the path of a checkout of the WPT suite at revision `1014eae5e66f8f334610d5a1521756f7a2fb769f`:
 
 ```bash
-WPT=1 WPT_ROOT=[path to your WPT checkout] cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
+WPT_ROOT=[path to your WPT checkout] cmake -S . -B cmake-build-debug -DENABLE_WPT:BOOL=ON -DCMAKE_BUILD_TYPE=Debug
 cmake --build cmake-build-debug --parallel 8 --target wpt-runtime
 cd cmake-build-debug
 ctest --verbose # Note: some of the tests run fairly slowly in debug builds, so be patient
