@@ -127,7 +127,7 @@ public:
     return handle_;
   }
 
-  [[nodiscard]] virtual uint64_t deadline(Engine *engine) {
+  [[nodiscard]] virtual uint64_t deadline() {
     return 0;
   }
 

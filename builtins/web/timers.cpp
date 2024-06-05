@@ -68,7 +68,7 @@ public:
     return true;
   }
 
-  [[nodiscard]] uint64_t deadline(api::Engine *engine) override {
+  [[nodiscard]] uint64_t deadline() override {
     return deadline_;
   }
 
