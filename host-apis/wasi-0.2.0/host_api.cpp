@@ -753,8 +753,11 @@ Result<Void> HttpOutgoingBody::close() {
   {
     wasi_io_0_2_0_streams_stream_error_t err;
     bool success = wasi_io_0_2_0_streams_method_output_stream_blocking_flush(borrow, &err);
-    MOZ_RELEASE_ASSERT(success);
-    // TODO: handle `err`
+    if (!success) {
+      // TODO: validate that this condition applies if `content-length` bytes were written, and
+      //  the host has auto-closed the body.
+      MOZ_RELEASE_ASSERT(err.tag == WASI_IO_0_2_0_STREAMS_STREAM_ERROR_CLOSED);
+    }
   }
 
   if (state->pollable_handle_ != INVALID_POLLABLE_HANDLE) {
