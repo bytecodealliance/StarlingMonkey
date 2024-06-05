@@ -32,7 +32,7 @@ const JSPropertySpec properties[] = {
   JS_PSGS("baseURL", baseURL_get, baseURL_set, JSPROP_ENUMERATE),
 JS_PS_END};
 
-namespace wpt_builtins {
+namespace wpt_support {
 
 bool install(api::Engine* engine) {
   engine->enable_module_mode(false);

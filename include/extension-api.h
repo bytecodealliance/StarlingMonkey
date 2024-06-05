@@ -38,6 +38,9 @@ public:
   JSContext *cx();
   HandleObject global();
 
+  /// Initialize the engine with the given filename
+  bool initialize(const char * filename);
+
   /**
    * Define a new builtin module
    *
@@ -62,6 +65,11 @@ public:
    */
   void enable_module_mode(bool enable);
   bool eval_toplevel(const char *path, MutableHandleValue result);
+  bool eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char *path,
+                     MutableHandleValue result);
+
+  bool is_preinitializing();
+  bool toplevel_evaluated();
 
   /**
    * Run the async event loop as long as there's interest registered in keeping it running.
@@ -111,6 +119,9 @@ public:
   void dump_pending_exception(const char *description = "");
   void dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp);
 };
+
+
+typedef bool (*TaskCompletionCallback)(JSContext* cx, HandleObject receiver);
 
 class AsyncTask {
 protected:
