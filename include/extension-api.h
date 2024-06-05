@@ -127,6 +127,10 @@ public:
     return handle_;
   }
 
+  [[nodiscard]] virtual uint64_t deadline() {
+    return 0;
+  }
+
   virtual void trace(JSTracer *trc) = 0;
 
   /**
