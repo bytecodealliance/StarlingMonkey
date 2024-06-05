@@ -247,10 +247,10 @@ public:
   }
 };
 
-size_t api::AsyncTask::select(std::vector<AsyncTask *> *tasks) {
+size_t api::AsyncTask::select(std::vector<AsyncTask *> &tasks) {
   auto count = tasks->size();
   vector<WASIHandle<host_api::Pollable>::Borrowed> handles;
-  for (const auto task : *tasks) {
+  for (const auto task : tasks) {
     handles.emplace_back(task->id());
   }
   auto list = list_borrow_pollable_t{ handles.data(), count};

@@ -147,7 +147,7 @@ public:
   /**
    * Select for the next available ready task, providing the oldest ready first.
    */
-  static size_t select(std::vector<AsyncTask *> *handles);
+  static size_t select(std::vector<AsyncTask *> &handles);
 };
 
 } // namespace api

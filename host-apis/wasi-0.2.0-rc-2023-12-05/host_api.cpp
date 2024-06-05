@@ -99,10 +99,10 @@ template <> struct HandleOps<Pollable> {
 
 } // namespace
 
-size_t api::AsyncTask::select(std::vector<api::AsyncTask *> *tasks) {
-  auto count = tasks->size();
+size_t api::AsyncTask::select(std::vector<api::AsyncTask *> &tasks) {
+  auto count = tasks.size();
   vector<Borrow<Pollable>> handles;
-  for (const auto task : *tasks) {
+  for (const auto task : tasks) {
     handles.emplace_back(task->id());
   }
   auto list = list_borrow_pollable_t{

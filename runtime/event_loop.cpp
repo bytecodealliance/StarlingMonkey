@@ -84,7 +84,7 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
     }
 
     // Select the next task to run according to event-loop semantics of oldest-first.
-    size_t task_idx = api::AsyncTask::select(tasks);
+    size_t task_idx = api::AsyncTask::select(*tasks);
 
     auto task = tasks->at(task_idx);
     bool success = task->run(engine);
