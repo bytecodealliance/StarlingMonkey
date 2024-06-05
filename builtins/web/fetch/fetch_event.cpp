@@ -32,6 +32,9 @@ void inc_pending_promise_count(JSObject *self) {
           .toInt32();
   count++;
   MOZ_ASSERT(count > 0);
+  if (count == 1) {
+    ENGINE->incr_event_loop_interest();
+  }
   JS::SetReservedSlot(self, static_cast<uint32_t>(FetchEvent::Slots::PendingPromiseCount),
                       JS::Int32Value(count));
 }
@@ -43,8 +46,9 @@ void dec_pending_promise_count(JSObject *self) {
           .toInt32();
   MOZ_ASSERT(count > 0);
   count--;
-  if (count == 0)
+  if (count == 0) {
     ENGINE->decr_event_loop_interest();
+  }
   JS::SetReservedSlot(self, static_cast<uint32_t>(FetchEvent::Slots::PendingPromiseCount),
                       JS::Int32Value(count));
 }
@@ -360,6 +364,14 @@ bool FetchEvent::waitUntil(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+void FetchEvent::increase_interest() {
+  inc_pending_promise_count(INSTANCE);
+}
+
+void FetchEvent::decrease_interest() {
+  dec_pending_promise_count(INSTANCE);
+}
+
 const JSFunctionSpec FetchEvent::static_methods[] = {
     JS_FS_END,
 };
@@ -566,9 +578,6 @@ bool handle_incoming_request(host_api::HttpIncomingRequest * request) {
   double total_compute = 0;
 
   dispatch_fetch_event(fetch_event, &total_compute);
-
-  // track fetch event interest, which when decremented ends the event loop
-  ENGINE->incr_event_loop_interest();
 
   bool success = ENGINE->run_event_loop();
 
