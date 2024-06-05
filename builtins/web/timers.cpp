@@ -68,6 +68,10 @@ public:
     return true;
   }
 
+  [[nodiscard]] uint64_t deadline(api::Engine *engine) override {
+    return deadline_;
+  }
+
   void trace(JSTracer *trc) override {
     TraceEdge(trc, &callback_, "Timer callback");
     for (auto &arg : arguments_) {
