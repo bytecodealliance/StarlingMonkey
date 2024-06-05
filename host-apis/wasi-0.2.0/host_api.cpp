@@ -290,10 +290,10 @@ auto string_view_to_world_string = from_string_view<bindings_string_t>;
 
 HostString scheme_to_string(const wasi_http_0_2_0_types_scheme_t &scheme) {
   if (scheme.tag == WASI_HTTP_0_2_0_TYPES_SCHEME_HTTP) {
-    return {"http:"};
+    return {"http"};
   }
   if (scheme.tag == WASI_HTTP_0_2_0_TYPES_SCHEME_HTTPS) {
-    return {"https:"};
+    return {"https"};
   }
   return to_host_string(scheme.val.other);
 }
@@ -511,6 +511,7 @@ string_view HttpRequestResponseBase::url() {
 
   HostString scheme_str = scheme_to_string(scheme);
   _url = new std::string(scheme_str.ptr.release(), scheme_str.len);
+  _url->append("://");
   _url->append(string_view(bindings_string_to_host_string(authority)));
   _url->append(string_view(bindings_string_to_host_string(path)));
 
