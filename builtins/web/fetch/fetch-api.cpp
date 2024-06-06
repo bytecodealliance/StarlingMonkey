@@ -52,14 +52,7 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
-  unique_ptr<host_api::HttpHeaders> headers;
-  RootedObject headers_obj(cx, RequestOrResponse::maybe_headers(request_obj));
-  if (headers_obj) {
-    headers = Headers::handle_clone(cx, headers_obj);
-  } else {
-    headers = std::make_unique<host_api::HttpHeaders>();
-  }
-
+  unique_ptr<host_api::HttpHeaders> headers = RequestOrResponse::headers_clone(cx, request_obj);
   if (!headers) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }

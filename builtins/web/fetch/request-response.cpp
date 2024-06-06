@@ -429,7 +429,12 @@ unique_ptr<host_api::HttpHeaders> RequestOrResponse::headers_clone(JSContext* cx
     return Headers::handle_clone(cx, headers);
   }
 
-  auto res = handle(self)->headers();
+  auto handle = RequestOrResponse::handle(self);
+  if (!handle) {
+    return std::make_unique<host_api::HttpHeaders>();
+  }
+
+  auto res = handle->headers();
   if (auto *err = res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return nullptr;
