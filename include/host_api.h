@@ -319,6 +319,12 @@ public:
   void unsubscribe() override;
 };
 
+enum class HttpHeadersGuard {
+  None,
+  Request,
+  Response,
+};
+
 class HttpHeadersReadOnly : public Resource {
   friend HttpIncomingResponse;
   friend HttpIncomingRequest;
@@ -335,7 +341,9 @@ public:
   explicit HttpHeadersReadOnly(std::unique_ptr<HandleState> handle);
   HttpHeadersReadOnly(const HttpHeadersReadOnly &headers) = delete;
 
-  HttpHeaders* clone();
+  /// Clone the headers, while removing the headers not passing the given `guard`, as specified
+  /// here: https://fetch.spec.whatwg.org/#headers-validate.
+  HttpHeaders* clone(HttpHeadersGuard guard);
 
   virtual bool is_writable() { return false; };
   virtual HttpHeaders* as_writable() {
@@ -355,13 +363,17 @@ class HttpHeaders final : public HttpHeadersReadOnly {
   friend HttpOutgoingResponse;
   friend HttpOutgoingRequest;
 
-  explicit HttpHeaders(std::unique_ptr<HandleState> handle);
+  HttpHeadersGuard guard_;
+
+  HttpHeaders(HttpHeadersGuard guard, std::unique_ptr<HandleState> handle);
 
 public:
-  HttpHeaders();
-  explicit HttpHeaders(const HttpHeadersReadOnly &headers);
+  HttpHeaders() = delete;
+  explicit HttpHeaders(HttpHeadersGuard guard);
+  explicit HttpHeaders(HttpHeadersGuard guard, const HttpHeadersReadOnly &headers);
 
-  static Result<HttpHeaders*> FromEntries(vector<tuple<HostString, HostString>>& entries);
+  static Result<HttpHeaders*> FromEntries(HttpHeadersGuard guard,
+                                           vector<tuple<HostString, HostString>> &entries);
 
   bool is_writable() override { return true; };
   HttpHeaders* as_writable() override {
@@ -371,6 +383,8 @@ public:
   Result<Void> set(string_view name, string_view value);
   Result<Void> append(string_view name, string_view value);
   Result<Void> remove(string_view name);
+
+  static bool check_guard(HttpHeadersGuard guard, string_view header_name);
 };
 
 class HttpRequestResponseBase : public Resource {

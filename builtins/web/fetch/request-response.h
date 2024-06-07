@@ -58,7 +58,8 @@ public:
    *
    * The handle is guaranteed to be uniquely owned by the caller.
    */
-  static unique_ptr<host_api::HttpHeaders> headers_clone(JSContext *, HandleObject self);
+  static unique_ptr<host_api::HttpHeaders> headers_handle_clone(JSContext *, HandleObject self,
+                                                                host_api::HttpHeadersGuard guard);
 
   /**
    * Returns the RequestOrResponse's Headers, reifying it if necessary.

@@ -167,7 +167,8 @@ bool send_response(host_api::HttpOutgoingResponse *response, JS::HandleObject se
 
 bool start_response(JSContext *cx, JS::HandleObject response_obj, bool streaming) {
   auto status = Response::status(response_obj);
-  auto headers = RequestOrResponse::headers_clone(cx, response_obj);
+  auto headers = RequestOrResponse::headers_handle_clone(cx, response_obj,
+    host_api::HttpHeadersGuard::Response);
   if (!headers) {
     return false;
   }
@@ -314,7 +315,7 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool FetchEvent::respondWithError(JSContext *cx, JS::HandleObject self) {
   MOZ_RELEASE_ASSERT(state(self) == State::unhandled || state(self) == State::waitToRespond);
 
-  auto headers = std::make_unique<host_api::HttpHeaders>();
+  auto headers = std::make_unique<host_api::HttpHeaders>(host_api::HttpHeadersGuard::Response);
   auto *response = host_api::HttpOutgoingResponse::make(500, std::move(headers));
 
   auto body_res = response->body();

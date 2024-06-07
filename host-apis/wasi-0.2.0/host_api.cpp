@@ -2,6 +2,7 @@
 #include "bindings/bindings.h"
 
 #include <exports.h>
+#include <list>
 #ifdef DEBUG
 #include <set>
 #endif
@@ -334,13 +335,15 @@ void MonotonicClock::unsubscribe(const int32_t handle_id) {
   wasi_io_0_2_0_poll_pollable_drop_own(own_pollable_t{handle_id});
 }
 
-HttpHeaders::HttpHeaders(std::unique_ptr<HandleState> state) : HttpHeadersReadOnly(std::move(state)) {}
+HttpHeaders::HttpHeaders(HttpHeadersGuard guard, std::unique_ptr<HandleState> state)
+    : HttpHeadersReadOnly(std::move(state)), guard_(guard) {}
 
-HttpHeaders::HttpHeaders() {
+HttpHeaders::HttpHeaders(HttpHeadersGuard guard) : guard_(guard) {
   handle_state_ = std::make_unique<WASIHandle<HttpHeaders>>(wasi_http_0_2_0_types_constructor_fields());
 }
 
-Result<HttpHeaders*> HttpHeaders::FromEntries(vector<tuple<HostString, HostString>>& entries) {
+Result<HttpHeaders*> HttpHeaders::FromEntries(HttpHeadersGuard guard,
+                                              vector<tuple<HostString, HostString>>& entries) {
   std::vector<wasi_http_0_2_0_types_tuple2_field_key_field_value_t> pairs;
   pairs.reserve(entries.size());
 
@@ -357,17 +360,83 @@ Result<HttpHeaders*> HttpHeaders::FromEntries(vector<tuple<HostString, HostStrin
     return Result<HttpHeaders*>::err(154);
   }
 
-  return Result<HttpHeaders*>::ok(new HttpHeaders(std::unique_ptr<HandleState>(new WASIHandle<HttpHeaders>(ret))));
+  auto headers = new HttpHeaders(guard, std::make_unique<WASIHandle<HttpHeaders>>(ret));
+  return Result<HttpHeaders*>::ok(headers);
 }
 
-HttpHeaders::HttpHeaders(const HttpHeadersReadOnly &headers) : HttpHeadersReadOnly(nullptr) {
+HttpHeaders::HttpHeaders(HttpHeadersGuard guard, const HttpHeadersReadOnly &headers)
+  : HttpHeadersReadOnly(nullptr), guard_(guard) {
   Borrow<HttpHeaders> borrow(headers.handle_state_.get());
   auto handle = wasi_http_0_2_0_types_method_fields_clone(borrow);
   this->handle_state_ = std::unique_ptr<HandleState>(new WASIHandle<HttpHeaders>(handle));
 }
 
-HttpHeaders *HttpHeadersReadOnly::clone() {
-  return new HttpHeaders(*this);
+// We currently only guard against a single request header, instead of the full list in
+// https://fetch.spec.whatwg.org/#forbidden-request-header.
+static std::list forbidden_request_headers = {
+  "host",
+};
+
+// We currently only guard against a single response header, instead of the full list in
+// https://fetch.spec.whatwg.org/#forbidden-request-header.
+static std::list forbidden_response_headers = {
+  "host",
+};
+
+bool HttpHeaders::check_guard(HttpHeadersGuard guard, string_view header_name) {
+  std::list<const char*>* forbidden_headers = nullptr;
+  switch (guard) {
+  case HttpHeadersGuard::None:
+    return true;
+  case HttpHeadersGuard::Request:
+    forbidden_headers = &forbidden_request_headers;
+    break;
+  case HttpHeadersGuard::Response:
+    forbidden_headers = &forbidden_response_headers;
+    break;
+  default:
+    MOZ_ASSERT_UNREACHABLE();
+  }
+
+  if (!forbidden_headers) {
+    return true;
+  }
+
+  for (auto header : *forbidden_headers) {
+    if (header_name.compare(header) == 0) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+HttpHeaders *HttpHeadersReadOnly::clone(HttpHeadersGuard guard) {
+  auto headers = new HttpHeaders(guard, *this);
+  std::list<const char*>* forbidden_headers = nullptr;
+  switch (guard) {
+  case HttpHeadersGuard::Request:
+    forbidden_headers = &forbidden_request_headers;
+    break;
+  case HttpHeadersGuard::Response:
+    break;
+  case HttpHeadersGuard::None:
+    break;
+  default:
+    MOZ_ASSERT_UNREACHABLE();
+  }
+
+  if (!forbidden_headers) {
+    return headers;
+  }
+
+  for (auto header : *forbidden_headers) {
+    if (headers->has(header).unwrap()) {
+      headers->remove(header).unwrap();
+    }
+  }
+
+  return headers;
 }
 
 Result<vector<tuple<HostString, HostString>>> HttpHeadersReadOnly::entries() const {
@@ -440,20 +509,28 @@ Result<bool> HttpHeadersReadOnly::has(string_view name) const {
 }
 
 Result<Void> HttpHeaders::set(string_view name, string_view value) {
+  if (!check_guard(guard_, name)) {
+    return {};
+  }
   auto hdr = from_string_view<field_key>(name);
   auto val = from_string_view<field_value>(value);
   wasi_http_0_2_0_types_list_field_value_t host_values{&val, 1};
   Borrow<HttpHeaders> borrow(this->handle_state_.get());
 
   wasi_http_0_2_0_types_header_error_t err;
-  wasi_http_0_2_0_types_method_fields_set(borrow, &hdr, &host_values, &err);
-
+  if (!wasi_http_0_2_0_types_method_fields_set(borrow, &hdr, &host_values, &err)) {
   // TODO: handle `err`
+    return Result<Void>::err(154);
+  }
+
 
   return {};
 }
 
 Result<Void> HttpHeaders::append(string_view name, string_view value) {
+  if (!check_guard(guard_, name)) {
+    return {};
+  }
   auto hdr = from_string_view<field_key>(name);
   auto val = from_string_view<field_value>(value);
   Borrow<HttpHeaders> borrow(this->handle_state_.get());

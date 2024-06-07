@@ -52,7 +52,8 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
-  unique_ptr<host_api::HttpHeaders> headers = RequestOrResponse::headers_clone(cx, request_obj);
+  unique_ptr<host_api::HttpHeaders> headers = RequestOrResponse::headers_handle_clone(cx,
+  request_obj, host_api::HttpHeadersGuard::Request);
   if (!headers) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }

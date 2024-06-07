@@ -63,6 +63,7 @@ public:
     Handle,
     Entries, // Map holding headers if they are available in-content.
     Mode,
+    Guard,
     Count,
   };
 
@@ -88,6 +89,12 @@ public:
     return static_cast<Mode>(modeVal.toInt32());
   }
 
+  static host_api::HttpHeadersGuard guard(JSObject* self) {
+    MOZ_ASSERT(Headers::is_instance(self));
+    Value modeVal = JS::GetReservedSlot(self, static_cast<size_t>(Slots::Guard));
+    return static_cast<host_api::HttpHeadersGuard>(modeVal.toInt32());
+  }
+
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
@@ -98,10 +105,13 @@ public:
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
 
-  static JSObject *create(JSContext *cx);
-  static JSObject *create(JSContext *cx, HandleValue init_headers);
-  static JSObject *create(JSContext *cx, HandleObject self, HandleValue init_headers);
-  static JSObject *create(JSContext *cx, host_api::HttpHeadersReadOnly *handle);
+  static JSObject *create(JSContext *cx, host_api::HttpHeadersGuard guard);
+  static JSObject *create(JSContext *cx, HandleValue init_headers,
+                          host_api::HttpHeadersGuard guard);
+  static JSObject *create(JSContext *cx, host_api::HttpHeadersReadOnly *handle,
+                          host_api::HttpHeadersGuard guard);
+
+  static JSObject *init_entries(JSContext *cx, HandleObject self, HandleValue init_headers);
 
   /// Returns a Map object containing the headers.
   ///

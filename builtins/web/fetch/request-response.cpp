@@ -420,8 +420,8 @@ JSObject *RequestOrResponse::maybe_headers(JSObject *obj) {
   return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::Headers)).toObjectOrNull();
 }
 
-unique_ptr<host_api::HttpHeaders> RequestOrResponse::headers_clone(JSContext* cx,
-  HandleObject self) {
+unique_ptr<host_api::HttpHeaders> RequestOrResponse::headers_handle_clone(JSContext* cx,
+  HandleObject self, host_api::HttpHeadersGuard guard) {
   MOZ_ASSERT(is_instance(self));
 
   RootedObject headers(cx, maybe_headers(self));
@@ -431,7 +431,7 @@ unique_ptr<host_api::HttpHeaders> RequestOrResponse::headers_clone(JSContext* cx
 
   auto handle = RequestOrResponse::handle(self);
   if (!handle) {
-    return std::make_unique<host_api::HttpHeaders>();
+    return std::make_unique<host_api::HttpHeaders>(guard);
   }
 
   auto res = handle->headers();
@@ -439,7 +439,7 @@ unique_ptr<host_api::HttpHeaders> RequestOrResponse::headers_clone(JSContext* cx
     HANDLE_ERROR(cx, *err);
     return nullptr;
   }
-  return unique_ptr<host_api::HttpHeaders>(res.unwrap()->clone());
+  return unique_ptr<host_api::HttpHeaders>(res.unwrap()->clone(guard));
 }
 
 bool finish_outgoing_body_streaming(JSContext* cx, HandleObject body_owner) {
@@ -496,11 +496,14 @@ bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::Ha
 JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
   JSObject *headers = maybe_headers(obj);
   if (!headers) {
+    host_api::HttpHeadersGuard guard = Request::is_instance(obj)
+      ? host_api::HttpHeadersGuard::Request
+      : host_api::HttpHeadersGuard::Response;
     host_api::HttpHeadersReadOnly *handle;
     if (is_incoming(obj) && (handle = headers_handle(obj))) {
-      headers = Headers::create(cx, handle);
+      headers = Headers::create(cx, handle, guard);
     } else {
-      headers = Headers::create(cx);
+      headers = Headers::create(cx, guard);
     }
     if (!headers) {
       return nullptr;
@@ -1697,12 +1700,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     headers_val.setObject(*input_headers);
   }
   if (!headers_val.isUndefined()) {
-    JS::RootedObject headersInstance(
-        cx, JS_NewObjectWithGivenProto(cx, &Headers::class_, Headers::proto_obj));
-    if (!headersInstance)
-      return nullptr;
-
-    headers = Headers::create(cx, headersInstance, headers_val);
+    headers = Headers::create(cx, headers_val, host_api::HttpHeadersGuard::Request);
     if (!headers) {
       return nullptr;
     }
@@ -2493,13 +2491,7 @@ bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // 7.  (Reordered) If `init`["headers"] `exists`, then `fill` `this`’s `headers` with
   // `init`["headers"].
-  JS::RootedObject headers(cx);
-  JS::RootedObject headersInstance(
-      cx, JS_NewObjectWithGivenProto(cx, &Headers::class_, Headers::proto_obj));
-  if (!headersInstance)
-    return false;
-
-  headers = Headers::create(cx, headersInstance, headers_val);
+  JS::RootedObject headers(cx, Headers::create(cx, headers_val, host_api::HttpHeadersGuard::Response));
   if (!headers) {
     return false;
   }
