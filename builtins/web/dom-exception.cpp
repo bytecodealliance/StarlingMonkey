@@ -185,11 +185,12 @@ JSObject *DOMException::create(JSContext *cx, std::string_view message, std::str
   return instance;
 }
 
-void DOMException::raise(JSContext *cx, std::string_view message, std::string_view name) {
+bool DOMException::raise(JSContext *cx, std::string_view message, std::string_view name) {
   JS::RootedObject errorObj(cx);
   errorObj.set(DOMException::create(cx, message, name));
   JS::RootedValue er(cx, JS::ObjectValue(*errorObj));
   JS_SetPendingException(cx, er);
+  return false;
 }
 
 // constructor(optional DOMString message = "", optional DOMString name = "Error");

@@ -4,22 +4,14 @@
 // TODO: remove these once the warnings are fixed
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
+#include "js/ForOfIterator.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
-#include "js/ForOfIterator.h"
+
+#include <errors.h>
 #pragma clang diagnostic pop
 
 namespace core {
-
-inline bool report_sequence_or_record_arg_error(JSContext *cx, const char *name,
-                                                const char *alt_text) {
-  JS_ReportErrorUTF8(cx,
-                     "Failed to construct %s object. If defined, the first "
-                     "argument must be either a [ ['name', 'value'], ... ] sequence, "
-                     "or a { 'name' : 'value', ... } record%s.",
-                     name, alt_text);
-  return false;
-}
 
 /**
  * Extract <key,value> pairs from the given value if it is either a
@@ -57,14 +49,14 @@ bool maybe_consume_sequence_or_record(JSContext *cx, JS::HandleValue initv, JS::
         break;
 
       if (!entry.isObject())
-        return report_sequence_or_record_arg_error(cx, ctor_name, alt_text);
+        return api::throw_error(cx, api::Errors::InvalidSequence, ctor_name, alt_text);
 
       JS::ForOfIterator entr_iter(cx);
       if (!entr_iter.init(entry, JS::ForOfIterator::AllowNonIterable))
         return false;
 
       if (!entr_iter.valueIsIterable())
-        return report_sequence_or_record_arg_error(cx, ctor_name, alt_text);
+        return api::throw_error(cx, api::Errors::InvalidSequence, ctor_name, alt_text);
 
       {
         bool done;
@@ -73,19 +65,19 @@ bool maybe_consume_sequence_or_record(JSContext *cx, JS::HandleValue initv, JS::
         if (!entr_iter.next(&key, &done))
           return false;
         if (done)
-          return report_sequence_or_record_arg_error(cx, ctor_name, alt_text);
+          return api::throw_error(cx, api::Errors::InvalidSequence, ctor_name, alt_text);
 
         // Extract value.
         if (!entr_iter.next(&value, &done))
           return false;
         if (done)
-          return report_sequence_or_record_arg_error(cx, ctor_name, alt_text);
+          return api::throw_error(cx, api::Errors::InvalidSequence, ctor_name, alt_text);
 
         // Ensure that there aren't any further entries.
         if (!entr_iter.next(&entry, &done))
           return false;
         if (!done)
-          return report_sequence_or_record_arg_error(cx, ctor_name, alt_text);
+          return api::throw_error(cx, api::Errors::InvalidSequence, ctor_name, alt_text);
 
         if (!apply(cx, target, key, value, ctor_name))
           return false;

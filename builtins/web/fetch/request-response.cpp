@@ -232,8 +232,7 @@ bool RequestOrResponse::mark_body_used(JSContext *cx, JS::HandleObject obj) {
       // it's a disturbed ReadableStream. To improve error reporting, we clear
       // the current exception and throw a better one.
       JS_ClearPendingException(cx);
-      JS_ReportErrorLatin1(cx, "The ReadableStream body is already locked and can't be consumed");
-      return false;
+      return api::throw_error(cx, FetchErrors::BodyStreamUnusable);
     }
   }
 
@@ -296,9 +295,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
 
   if (body_obj && JS::IsReadableStream(body_obj)) {
     if (RequestOrResponse::body_unusable(cx, body_obj)) {
-      JS_ReportErrorLatin1(cx, "Can't use a ReadableStream that's locked or has ever been "
-                               "read from or canceled as a Request or Response body.");
-      return false;
+      return api::throw_error(cx, FetchErrors::BodyStreamUnusable);
     }
 
     JS_SetReservedSlot(self, static_cast<uint32_t>(RequestOrResponse::Slots::BodyStream), body_val);
@@ -676,7 +673,7 @@ bool RequestOrResponse::content_stream_read_then_handler(JSContext *cx, JS::Hand
   // The read operation can return anything since this stream comes from the guest
   // If it is not a UInt8Array -- reject with a TypeError
   if (!val.isObject() || !JS_IsUint8Array(&val.toObject())) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_RESPONSE_VALUE_NOT_UINT8ARRAY);
+    api::throw_error(cx, FetchErrors::InvalidStreamChunk);
     JS::RootedObject result_promise(cx);
     result_promise =
         &JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise)).toObject();
@@ -748,8 +745,7 @@ bool RequestOrResponse::consume_content_stream_for_bodyAll(JSContext *cx, JS::Ha
   }
   MOZ_ASSERT(JS::IsReadableStream(stream));
   if (RequestOrResponse::body_unusable(cx, stream)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_RESPONSE_BODY_DISTURBED_OR_LOCKED);
+    api::throw_error(cx, FetchErrors::BodyStreamUnusable);
     JS::RootedObject result_promise(cx);
     result_promise =
         &JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise)).toObject();
@@ -813,8 +809,7 @@ template <RequestOrResponse::BodyReadResult result_type>
 bool RequestOrResponse::bodyAll(JSContext *cx, JS::CallArgs args, JS::HandleObject self) {
   // TODO: mark body as consumed when operating on stream, too.
   if (body_used(self)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_RESPONSE_BODY_DISTURBED_OR_LOCKED);
+    api::throw_error(cx, FetchErrors::BodyStreamUnusable);
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
@@ -939,8 +934,7 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
     if (Request::is_instance(body_owner)) {
       JS::RootedObject response_promise(cx, Request::response_promise(body_owner));
 
-      // TODO: this should be a TypeError, but I'm not sure how to make that work
-      JS_ReportErrorUTF8(cx, "TypeError");
+      api::throw_error(cx, FetchErrors::InvalidStreamChunk);
       return RejectPromiseWithPendingError(cx, response_promise);
     }
 
@@ -1018,9 +1012,7 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
   }
 
   if (body_unusable(cx, stream)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_RESPONSE_BODY_DISTURBED_OR_LOCKED);
-    return false;
+    return api::throw_error(cx, FetchErrors::BodyStreamUnusable);
   }
 
   // If the body stream is backed by an HTTP body handle, we can directly pipe
@@ -1514,8 +1506,7 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
       return false;
     }
   } else if (!init_val.isNullOrUndefined()) {
-    JS_ReportErrorLatin1(cx, "Request constructor: |init| parameter can't be converted to "
-                             "a dictionary");
+    api::throw_error(cx, FetchErrors::InvalidCtorInitArg, "Request");
     return false;
   }
 
@@ -1677,7 +1668,7 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
   // non-null, and `request`’s method is ``GET`` or ``HEAD``, then throw a
   // TypeError.
   if ((input_has_body || !body_val.isNullOrUndefined()) && is_get_or_head) {
-    JS_ReportErrorLatin1(cx, "Request constructor: HEAD or GET Request cannot have a body.");
+    api::throw_error(cx, FetchErrors::NonBodyRequestWithBody);
     return false;
   }
 
@@ -1744,7 +1735,7 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
     // Throw an error if the input request's body isn't usable.
     if (RequestOrResponse::body_used(input_request) ||
         (inputBody && RequestOrResponse::body_unusable(cx, inputBody))) {
-      JS_ReportErrorLatin1(cx, "Request constructor: the input request's body isn't usable.");
+      api::throw_error(cx, FetchErrors::BodyStreamUnusable);
       return false;
     }
 
@@ -2370,16 +2361,14 @@ bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     }
 
   } else if (!init_val.isNullOrUndefined()) {
-    JS_ReportErrorLatin1(cx, "Response constructor: |init| parameter can't be converted to "
-                             "a dictionary");
-    return false;
+    return api::throw_error(cx, FetchErrors::InvalidCtorInitArg, "Response");
   }
 
   // 1.  If `init`["status"] is not in the range 200 to 599, inclusive, then
   // `throw` a ``RangeError``.
   if (status < 200 || status > 599) {
-    JS_ReportErrorLatin1(cx, "Response constructor: invalid status %u", status);
-    return false;
+    auto status_str = std::to_string(status);
+    return api::throw_error(cx, FetchErrors::InvalidStatus, status_str.c_str());
   }
 
   // 2.  If `init`["statusText"] does not match the `reason-phrase` token
@@ -2433,9 +2422,8 @@ bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     //     1.  If `init`["status"] is a `null body status`, then `throw` a
     //     ``TypeError``.
     if (status == 204 || status == 205 || status == 304) {
-      JS_ReportErrorLatin1(cx, "Response constructor: Response body is given "
-                               "with a null body status.");
-      return false;
+      auto status_str = std::to_string(status);
+      return api::throw_error(cx, FetchErrors::NonBodyResponseWithBody, status_str.c_str());
     }
 
     //     2.  Let `Content-Type` be null.

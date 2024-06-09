@@ -24,7 +24,7 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
   static JSObject *create(JSContext *cx, std::string_view message, std::string_view name);
-  static void raise(JSContext *cx, std::string_view message, std::string_view name);
+  static bool raise(JSContext *cx, std::string_view message, std::string_view name);
 };
 
 bool install(api::Engine *engine);

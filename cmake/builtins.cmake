@@ -78,10 +78,7 @@ add_builtin(
     SRC
         builtins/web/fetch/fetch_event.cpp
     DEPENDENCIES
-        host_api
-    INCLUDE_DIRS
-        runtime
-        ${HOST_API}/bindings/)
+        host_api)
 
 add_builtin(
     builtins::web::crypto

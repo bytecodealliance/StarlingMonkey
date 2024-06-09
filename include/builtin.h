@@ -114,20 +114,12 @@ const JSErrorFormatString *GetErrorMessage(void *userRef, unsigned errorNumber);
 
 #define REQUEST_HANDLER_ONLY(name)                                                                 \
   if (isWizening()) {                                                                              \
-    JS_ReportErrorUTF8(cx,                                                                         \
-                       "%s can only be used during request handling, "                             \
-                       "not during initialization",                                                \
-                       name);                                                                      \
-    return false;                                                                                  \
+    return api::throw_error(cx, api::Errors::RequestHandlerOnly, name);                            \
   }
 
 #define INIT_ONLY(name)                                                                            \
   if (hasWizeningFinished()) {                                                                     \
-    JS_ReportErrorUTF8(cx,                                                                         \
-                       "%s can only be used during initialization, "                               \
-                       "not during request handling",                                              \
-                       name);                                                                      \
-    return false;                                                                                  \
+    return api::throw_error(cx, api::Errors::InitializationOnly, name);                            \
   }
 
 inline bool ThrowIfNotConstructing(JSContext *cx, const CallArgs &args, const char *builtinName) {
