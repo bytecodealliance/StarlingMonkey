@@ -1050,14 +1050,6 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
     return false;
   }
 
-  if (streams::TransformStream::is_ts_readable(cx, stream)) {
-    JSObject *ts = streams::TransformStream::ts_from_readable(cx, stream);
-    if (streams::TransformStream::readable_used_as_body(ts)) {
-      *requires_streaming = true;
-      return true;
-    }
-  }
-
   // If the body stream is backed by an HTTP body handle, we can directly pipe
   // that handle into the body we're about to send.
   if (streams::NativeStreamSource::stream_is_body(cx, stream)) {
