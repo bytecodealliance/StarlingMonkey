@@ -20,35 +20,33 @@ JS::Result<std::string> convertJSValueToByteString(JSContext *cx, JS::Handle<JS:
   // Conversion from JavaScript string to ByteString is only valid if all
   // characters < 256. This is always the case for Latin1 strings.
   size_t length;
+  UniqueChars result = nullptr;
   if (!JS::StringHasLatin1Chars(s)) {
-    // Creating an exception can GC, so we first scan the string for bad chars
-    // and report the error outside the AutoCheckCannotGC scope.
-    bool foundBadChar = false;
-    {
-      JS::AutoCheckCannotGC nogc;
-      const char16_t *chars = JS_GetTwoByteStringCharsAndLength(cx, nogc, s, &length);
-      if (!chars) {
-        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_INVALID_CHARACTER_ERROR);
-        return JS::Result<std::string>(JS::Error());
-      }
-
-      for (size_t i = 0; i < length; i++) {
-        if (chars[i] > 255) {
-          foundBadChar = true;
-          break;
-        }
-      }
-    }
-
-    if (foundBadChar) {
+    JS::AutoCheckCannotGC nogc(cx);
+    const char16_t *chars = JS_GetTwoByteStringCharsAndLength(cx, nogc, s, &length);
+    if (!chars) {
+      // Reset the nogc guard, since otherwise we can't throw errors.
+      nogc.reset();
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_INVALID_CHARACTER_ERROR);
       return JS::Result<std::string>(JS::Error());
     }
+
+    for (size_t i = 0; i < length; i++) {
+      if (chars[i] > 255) {
+        // Reset the nogc guard, since otherwise we can't throw errors.
+        nogc.reset();
+        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_INVALID_CHARACTER_ERROR);
+        return JS::Result<std::string>(JS::Error());
+      }
+    }
+    auto latin1_z =
+        JS::LossyTwoByteCharsToNewLatin1CharsZ(cx, chars, length);
+    result = UniqueChars(reinterpret_cast<char*>(latin1_z.get()));
   } else {
     length = JS::GetStringLength(s);
+    result = JS_EncodeStringToLatin1(cx, s);
   }
 
-  UniqueChars result = JS_EncodeStringToLatin1(cx, s);
   if (!result) {
     return JS::Result<std::string>(JS::Error());
   }
