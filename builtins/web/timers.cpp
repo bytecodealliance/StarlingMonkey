@@ -134,7 +134,6 @@ template <bool repeat> bool setTimeout_or_interval(JSContext *cx, const unsigned
  * https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html#dom-clearinterval
  */
 template <bool interval> bool clearTimeout_or_interval(JSContext *cx, unsigned argc, Value *vp) {
-  REQUEST_HANDLER_ONLY(interval ? "clearInterval" : "clearTimeout");
   const CallArgs args = CallArgsFromVp(argc, vp);
   if (!args.requireAtLeast(cx, interval ? "clearInterval" : "clearTimeout", 1)) {
     return false;
