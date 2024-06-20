@@ -31,6 +31,12 @@ export const handler = serveTest(async (t) => {
       }
     });
   });
+  await t.asyncTest("setTimeout-cleared-in-callback", (resolve, reject) => {
+    let id = setTimeout.call(undefined, () => {
+      clearTimeout(id);
+      resolve();
+    }, 1);
+  });
   t.test("setInterval-exposed-as-global", () => {
     strictEqual(typeof setInterval, "function", `typeof setInterval`);
   });
@@ -341,6 +347,9 @@ export const handler = serveTest(async (t) => {
   });
   t.test("setTimeout-called-unbound", () => {
     setTimeout.call(undefined, () => {}, 1);
+  });
+  t.test("setTimeout-cleared-in-callback", () => {
+    let id = setTimeout.call(undefined, () => { clearTimeout(id); }, 1);
   });
 
   t.test("clearInterval-exposed-as-global", () => {

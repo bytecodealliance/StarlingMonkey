@@ -23,7 +23,10 @@ static PersistentRooted<TaskQueue> queue;
 
 namespace core {
 
-void EventLoop::queue_async_task(api::AsyncTask *task) { queue.get().tasks.emplace_back(task); }
+void EventLoop::queue_async_task(api::AsyncTask *task) {
+  MOZ_ASSERT(task);
+  queue.get().tasks.emplace_back(task);
+}
 
 bool EventLoop::cancel_async_task(api::Engine *engine, const int32_t id) {
   const auto tasks = &queue.get().tasks;
@@ -87,8 +90,8 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
     size_t task_idx = api::AsyncTask::select(tasks);
 
     auto task = tasks->at(task_idx);
-    bool success = task->run(engine);
     tasks->erase(tasks->begin() + task_idx);
+    bool success = task->run(engine);
     if (!success) {
       exit_event_loop();
       return false;
