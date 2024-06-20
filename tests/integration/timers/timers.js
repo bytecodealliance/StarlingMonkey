@@ -2,34 +2,30 @@ import { serveTest } from "../test-server.js";
 import { assert, strictEqual, throws, deepStrictEqual } from "../assert.js";
 
 export const handler = serveTest(async (t) => {
-  await t.test("setTimeout", async () => {
+  await t.asyncTest("setTimeout-order", (resolve, reject) => {
     let first = false;
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        first = true;
-      }, 10);
-      setTimeout(() => {
-        try {
-          assert(first, 'first timeout should trigger first');
-        } catch (e) {
-          reject(e);
-          return;
-        }
-        resolve();
-      }, 20);
-    });
+    setTimeout(() => {
+      first = true;
+    }, 10);
+    setTimeout(() => {
+      try {
+        assert(first, 'first timeout should trigger first');
+      } catch (e) {
+        reject(e);
+        return;
+      }
+      resolve();
+    }, 20);
   });
-  await t.test("setInterval", async () => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        reject(new AssertionError("Expected setInterval to be called 10 times quickly"));
-      }, 1000);
-      let cnt = 0;
-      setInterval(() => {
-        cnt++;
-        if (cnt === 10)
-          resolve();
-      });
+  await t.asyncTest("setInterval-10-times", (resolve, reject) => {
+    setTimeout(() => {
+      reject(new AssertionError("Expected setInterval to be called 10 times quickly"));
+    }, 1000);
+    let cnt = 0;
+    setInterval(() => {
+      cnt++;
+      if (cnt === 10)
+        resolve();
     });
   });
   t.test("setInterval-exposed-as-global", () => {
