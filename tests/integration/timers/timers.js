@@ -1,5 +1,5 @@
 import { serveTest } from "../test-server.js";
-import { assert, strictEqual, throws, deepStrictEqual } from "../assert.js";
+import { assert, strictEqual, throws, deepStrictEqual, AssertionError } from "../assert.js";
 
 export const handler = serveTest(async (t) => {
   await t.asyncTest("setTimeout-order", (resolve, reject) => {
@@ -18,14 +18,17 @@ export const handler = serveTest(async (t) => {
     }, 20);
   });
   await t.asyncTest("setInterval-10-times", (resolve, reject) => {
-    setTimeout(() => {
+    let timeout = setTimeout(() => {
       reject(new AssertionError("Expected setInterval to be called 10 times quickly"));
     }, 1000);
     let cnt = 0;
-    setInterval(() => {
+    let interval = setInterval(() => {
       cnt++;
-      if (cnt === 10)
+      if (cnt === 10) {
+        clearTimeout(timeout);
+        clearInterval(interval);
         resolve();
+      }
     });
   });
   t.test("setInterval-exposed-as-global", () => {
