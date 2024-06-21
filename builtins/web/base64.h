@@ -17,6 +17,7 @@ extern const char base64URLEncodeTable[65];
 std::string forgivingBase64Encode(std::string_view data, const char *encodeTable);
 JS::Result<std::string> forgivingBase64Decode(std::string_view data, const uint8_t *decodeTable);
 
+JS::Result<std::string> convertJSValueToByteString(JSContext *cx, HandleValue v);
 JS::Result<std::string> convertJSValueToByteString(JSContext *cx, std::string v);
 
 } // namespace base64
