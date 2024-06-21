@@ -621,71 +621,44 @@ bool RequestOrResponse::content_stream_read_then_handler(JSContext *cx, JS::Hand
     if (!JS::GetArrayLength(cx, contents, &contentsLength)) {
       return false;
     }
-    // TODO(performance): investigate whether we can infer the size directly from `contents`
-    size_t buf_size = HANDLE_READ_CHUNK_SIZE;
-    // TODO(performance): make use of malloc slack.
-    // https://github.com/fastly/js-compute-runtime/issues/217
-    size_t offset = 0;
-    // In this loop we are finding the length of each entry in `contents` and resizing the `buf`
-    // until it is large enough to fit all the entries in `contents`
-    for (uint32_t index = 0; index < contentsLength; index++) {
-      JS::RootedValue val(cx);
+
+    size_t total_length = 0;
+    RootedValue val(cx);
+
+    for (size_t index = 0; index < contentsLength; index++) {
       if (!JS_GetElement(cx, contents, index, &val)) {
         return false;
       }
-      {
-        JS::AutoCheckCannotGC nogc;
-        MOZ_ASSERT(val.isObject());
-        JSObject *array = &val.toObject();
-        MOZ_ASSERT(JS_IsUint8Array(array));
-        size_t length = JS_GetTypedArrayByteLength(array);
-        if (length) {
-          offset += length;
-          // if buf is not big enough to fit the next uint8array's bytes then resize
-          if (offset > buf_size) {
-            buf_size =
-                buf_size + (HANDLE_READ_CHUNK_SIZE * ((length / HANDLE_READ_CHUNK_SIZE) + 1));
-          }
-        }
-      }
+      JSObject *array = &val.toObject();
+      size_t length = JS_GetTypedArrayByteLength(array);
+      total_length += length;
     }
 
-    JS::UniqueChars buf{static_cast<char *>(JS_malloc(cx, buf_size + 1))};
+    JS::UniqueChars buf{static_cast<char *>(JS_malloc(cx, total_length))};
     if (!buf) {
       JS_ReportOutOfMemory(cx);
       return false;
     }
-    // reset the offset for the next loop
-    offset = 0;
+
+    size_t offset = 0;
     // In this loop we are inserting each entry in `contents` into `buf`
     for (uint32_t index = 0; index < contentsLength; index++) {
-      JS::RootedValue val(cx);
       if (!JS_GetElement(cx, contents, index, &val)) {
         return false;
       }
-      {
-        JS::AutoCheckCannotGC nogc;
-        MOZ_ASSERT(val.isObject());
-        JSObject *array = &val.toObject();
-        MOZ_ASSERT(JS_IsUint8Array(array));
-        bool is_shared;
-        size_t length = JS_GetTypedArrayByteLength(array);
-        if (length) {
-          static_assert(CHAR_BIT == 8, "Strange char");
-          auto bytes = reinterpret_cast<char *>(JS_GetUint8ArrayData(array, &is_shared, nogc));
-          memcpy(buf.get() + offset, bytes, length);
-          offset += length;
-        }
-      }
+      JSObject *array = &val.toObject();
+      bool is_shared;
+      size_t length = JS_GetTypedArrayByteLength(array);
+      JS::AutoCheckCannotGC nogc(cx);
+      auto bytes = reinterpret_cast<char *>(JS_GetUint8ArrayData(array, &is_shared, nogc));
+      memcpy(buf.get() + offset, bytes, length);
+      offset += length;
     }
-    buf[offset] = '\0';
-#ifdef DEBUG
-    bool foundBodyParser;
-    if (!JS_HasElement(cx, catch_handler, 2, &foundBodyParser)) {
-      return false;
-    }
+
+    mozilla::DebugOnly foundBodyParser = false;
+    MOZ_ASSERT(JS_HasElement(cx, catch_handler, 2, &foundBodyParser));
     MOZ_ASSERT(foundBodyParser);
-#endif
+
     // Now we can call parse_body on the result
     JS::RootedValue body_parser(cx);
     if (!JS_GetElement(cx, catch_handler, 2, &body_parser)) {

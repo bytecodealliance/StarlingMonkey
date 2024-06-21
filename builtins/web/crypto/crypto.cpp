@@ -54,6 +54,7 @@ bool Crypto::get_random_values(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   auto res = host_api::Random::get_bytes(byte_length);
   if (auto *err = res.to_err()) {
+    noGC.reset();
     HANDLE_ERROR(cx, *err);
     return false;
   }
