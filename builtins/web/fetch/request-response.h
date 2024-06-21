@@ -204,9 +204,9 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 
-  static JSObject *create(JSContext *cx, JS::HandleObject response);
-  static JSObject* create_incoming(JSContext * cx, HandleObject self,
-                                                           host_api::HttpIncomingResponse* response);
+  static JSObject *create(JSContext *cx);
+  static JSObject *init_slots(HandleObject response);
+  static JSObject* create_incoming(JSContext * cx, host_api::HttpIncomingResponse* response);
 
   static host_api::HttpResponse *response_handle(JSObject *obj);
   static uint16_t status(JSObject *obj);
@@ -243,13 +243,7 @@ public:
     auto maybe_response = res.unwrap();
     MOZ_ASSERT(maybe_response.has_value());
     auto response = maybe_response.value();
-    RootedObject response_obj(
-        cx, JS_NewObjectWithGivenProto(cx, &Response::class_, Response::proto_obj));
-    if (!response_obj) {
-      return false;
-    }
-
-    response_obj = Response::create_incoming(cx, response_obj, response);
+    RootedObject response_obj(cx, Response::create_incoming(cx, response));
     if (!response_obj) {
       return false;
     }

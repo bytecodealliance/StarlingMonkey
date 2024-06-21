@@ -146,6 +146,11 @@ struct HostString final {
     return jsurl::SpecString(reinterpret_cast<uint8_t *>(this->ptr.release()), this->len,
                              this->len);
   }
+
+  /// Conversion to a `jsurl::SpecString`.
+  operator const jsurl::SpecString() const {
+    return jsurl::SpecString(reinterpret_cast<uint8_t *>(this->ptr.get()), this->len, this->len);
+  }
 };
 
 struct HostBytes final {
