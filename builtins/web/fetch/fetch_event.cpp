@@ -71,11 +71,11 @@ bool add_pending_promise(JSContext *cx, JS::HandleObject self, JS::HandleObject 
 } // namespace
 
 JSObject *FetchEvent::prepare_downstream_request(JSContext *cx) {
-  JS::RootedObject requestInstance(
-      cx, JS_NewObjectWithGivenProto(cx, &Request::class_, Request::proto_obj));
-  if (!requestInstance)
+  JS::RootedObject request(cx, Request::create(cx));
+  if (!request)
     return nullptr;
-  return Request::create(cx, requestInstance);
+  Request::init_slots(request);
+  return request;
 }
 
 bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
@@ -528,49 +528,68 @@ static void dispatch_fetch_event(HandleObject event, double *total_compute) {
   // LOG("Request handler took %fms\n", diff / 1000);
 }
 
-bool handle_incoming_request(host_api::HttpIncomingRequest * request) {
-  if (!ENGINE->toplevel_evaluated()) {
-    JS::SourceText<mozilla::Utf8Unit> source;
-    auto body = request->body().unwrap();
-    auto pollable = body->subscribe().unwrap();
-    size_t len = 0;
-    vector<host_api::HostBytes> chunks;
+/**
+ * Reads the incoming request's body and evaluates it as a script.
+ *
+ * Mainly useful for debugging purposes, and only even reachable in components that
+ * were created without an input script during wizening.
+ */
+bool eval_request_body(host_api::HttpIncomingRequest *request) {
+  JS::SourceText<mozilla::Utf8Unit> source;
+  auto body = request->body().unwrap();
+  auto pollable = body->subscribe().unwrap();
+  size_t len = 0;
+  vector<host_api::HostBytes> chunks;
 
-    while (true) {
-      host_api::block_on_pollable_handle(pollable);
-      auto result = body->read(4096);
-      if (result.unwrap().done) {
-        break;
-      }
-
-      auto chunk = std::move(result.unwrap().bytes);
-      len += chunk.size();
-      chunks.push_back(std::move(chunk));
+  while (true) {
+    host_api::block_on_pollable_handle(pollable);
+    auto result = body->read(4096);
+    if (result.unwrap().done) {
+      break;
     }
 
-    // Merge all chunks into one buffer
-    auto buffer = new char[len];
-    size_t offset = 0;
-    for (auto &chunk : chunks) {
-      memcpy(buffer + offset, chunk.ptr.get(), chunk.size());
-      offset += chunk.size();
-    }
-
-    if (!source.init(CONTEXT, buffer, len, JS::SourceOwnership::TakeOwnership)) {
-      return false;
-    }
-
-    RootedValue rval(ENGINE->cx());
-    if (!ENGINE->eval_toplevel(source, "<runtime eval>", &rval)) {
-      if (JS_IsExceptionPending(ENGINE->cx())) {
-        ENGINE->dump_pending_exception("Runtime script evaluation");
-      }
-      return false;
-    }
+    auto chunk = std::move(result.unwrap().bytes);
+    len += chunk.size();
+    chunks.push_back(std::move(chunk));
   }
+
+  // Merge all chunks into one buffer
+  auto buffer = new char[len];
+  size_t offset = 0;
+  for (auto &chunk : chunks) {
+    memcpy(buffer + offset, chunk.ptr.get(), chunk.size());
+    offset += chunk.size();
+  }
+
+  if (!source.init(CONTEXT, buffer, len, JS::SourceOwnership::TakeOwnership)) {
+    return false;
+  }
+
+  RootedValue rval(ENGINE->cx());
+  if (!ENGINE->eval_toplevel(source, "<runtime eval>", &rval)) {
+    if (JS_IsExceptionPending(ENGINE->cx())) {
+      ENGINE->dump_pending_exception("Runtime script evaluation");
+    }
+    return false;
+  }
+  return true;
+}
+
+bool handle_incoming_request(host_api::HttpIncomingRequest * request) {
+#ifdef DEBUG
+  fprintf(stderr, "Warning: Using a DEBUG build. Expect things to be SLOW.\n");
+#endif
 
   HandleObject fetch_event = FetchEvent::instance();
   MOZ_ASSERT(FetchEvent::is_instance(fetch_event));
+
+  if (!ENGINE->toplevel_evaluated()) {
+    if (!eval_request_body(request)) {
+      FetchEvent::respondWithError(ENGINE->cx(), fetch_event);
+      return true;
+    }
+  }
+
   if (!FetchEvent::init_incoming_request(ENGINE->cx(), fetch_event, request)) {
     ENGINE->dump_pending_exception("initialization of FetchEvent");
     return false;

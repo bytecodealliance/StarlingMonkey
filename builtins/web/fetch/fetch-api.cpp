@@ -26,13 +26,12 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
-  RootedObject request_obj(
-      cx, JS_NewObjectWithGivenProto(cx, &Request::class_, Request::proto_obj));
+  RootedObject request_obj(cx, Request::create(cx));
   if (!request_obj) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
-  if (!Request::create(cx, request_obj, args[0], args.get(1))) {
+  if (!Request::initialize(cx, request_obj, args[0], args.get(1))) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 

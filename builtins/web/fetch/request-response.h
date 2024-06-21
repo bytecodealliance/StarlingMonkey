@@ -155,11 +155,11 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 
-  static JSObject *create(JSContext *cx, JS::HandleObject requestInstance);
-  static JSObject *create(JSContext *cx, JS::HandleObject requestInstance, JS::HandleValue input,
-                          JS::HandleValue init_val);
+  static JSObject *create(JSContext *cx);
+  static bool initialize(JSContext *cx, JS::HandleObject requestInstance, JS::HandleValue input,
+                         JS::HandleValue init_val);
 
-  static JSObject *create_instance(JSContext *cx);
+  static void init_slots(JSObject *requestInstance);
 };
 
 class Response final : public BuiltinImpl<Response> {

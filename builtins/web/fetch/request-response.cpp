@@ -1389,7 +1389,7 @@ bool Request::init_class(JSContext *cx, JS::HandleObject global) {
   return !!GET_atom;
 }
 
-JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance) {
+void Request::init_slots(JSObject *requestInstance) {
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::Request), JS::PrivateValue(nullptr));
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::Headers), JS::NullValue());
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::BodyStream), JS::NullValue());
@@ -1397,8 +1397,6 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance) {
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::BodyUsed), JS::FalseValue());
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::Method),
                       JS::StringValue(GET_atom));
-
-  return requestInstance;
 }
 
 /**
@@ -1408,9 +1406,9 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance) {
  * "Roughly" because not all aspects of Request handling make sense in C@E.
  * The places where we deviate from the spec are called out inline.
  */
-JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::HandleValue input,
-                          JS::HandleValue init_val) {
-  create(cx, requestInstance);
+bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValue input,
+                         JS::HandleValue init_val) {
+  init_slots(request);
   JS::RootedString url_str(cx);
   JS::RootedString method_str(cx);
   bool method_needs_normalization = false;
@@ -1451,7 +1449,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     // method: `request`’s method.
     method_str = Request::method(cx, input_request);
     if (!method_str) {
-      return nullptr;
+      return false;
     }
 
     // referrer: `request`’s referrer.
@@ -1488,14 +1486,14 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     JS::RootedObject url_instance(
         cx, JS_NewObjectWithGivenProto(cx, &url::URL::class_, url::URL::proto_obj));
     if (!url_instance)
-      return nullptr;
+      return false;
 
     JS::RootedObject parsedURL(
         cx, url::URL::create(cx, url_instance, input, worker_location::WorkerLocation::url));
 
     // 2.  If `parsedURL` is failure, then throw a `TypeError`.
     if (!parsedURL) {
-      return nullptr;
+      return false;
     }
 
     // 3.  If `parsedURL` includes credentials, then throw a `TypeError`.
@@ -1506,7 +1504,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     JS::RootedValue url_val(cx, JS::ObjectValue(*parsedURL));
     url_str = JS::ToString(cx, url_val);
     if (!url_str) {
-      return nullptr;
+      return false;
     }
 
     // 5.  Set `fallbackMode` to "`cors`".
@@ -1540,12 +1538,12 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     if (!JS_GetProperty(cx, init, "method", &method_val) ||
         !JS_GetProperty(cx, init, "headers", &headers_val) ||
         !JS_GetProperty(cx, init, "body", &body_val)) {
-      return nullptr;
+      return false;
     }
   } else if (!init_val.isNullOrUndefined()) {
     JS_ReportErrorLatin1(cx, "Request constructor: |init| parameter can't be converted to "
                              "a dictionary");
-    return nullptr;
+    return false;
   }
 
   // 13.  If `init` is not empty, then:
@@ -1605,7 +1603,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     // 1.  Let `method` be `init["method"]`.
     method_str = JS::ToString(cx, method_val);
     if (!method_str) {
-      return nullptr;
+      return false;
     }
 
     // 2.  If `method` is not a method or `method` is a forbidden method, then
@@ -1626,13 +1624,13 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
   // This only needs to happen if the method was set explicitly and isn't the
   // default `GET`.
   if (method_str && !JS_StringEqualsLiteral(cx, method_str, "GET", &is_get)) {
-    return nullptr;
+    return false;
   }
 
   if (!is_get) {
     method = core::encode(cx, method_str);
     if (!method) {
-      return nullptr;
+      return false;
     }
 
     if (method_needs_normalization) {
@@ -1640,7 +1638,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
         // Replace the JS string with the normalized name.
         method_str = JS_NewStringCopyN(cx, method.begin(), method.len);
         if (!method_str) {
-          return nullptr;
+          return false;
         }
       }
     }
@@ -1693,7 +1691,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
   if (!headers_val.isUndefined()) {
     headers = Headers::create(cx, headers_val, host_api::HttpHeadersGuard::Request);
     if (!headers) {
-      return nullptr;
+      return false;
     }
   }
 
@@ -1707,7 +1705,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
   // TypeError.
   if ((input_has_body || !body_val.isNullOrUndefined()) && is_get_or_head) {
     JS_ReportErrorLatin1(cx, "Request constructor: HEAD or GET Request cannot have a body.");
-    return nullptr;
+    return false;
   }
 
   // 35.  Let `initBody` be null.
@@ -1720,16 +1718,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
 
   auto url = core::encode(cx, url_str);
   if (!url) {
-    return nullptr;
-  }
-
-  // Actually create the instance, now that we have all the parts required for
-  // it. We have to delay this step to here because the wasi-http API requires
-  // that all the request's properties are provided to the constructor.
-  // auto request_handle = host_api::HttpOutgoingRequest::make(method, std::move(url), headers);
-  RootedObject request(cx, create(cx, requestInstance));
-  if (!request) {
-    return nullptr;
+    return false;
   }
 
   // Store the URL, method, and headers derived above on the JS object.
@@ -1754,7 +1743,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     //     this’s headers.
     // Note: these steps are all inlined into RequestOrResponse::extract_body.
     if (!RequestOrResponse::extract_body(cx, request, body_val)) {
-      return nullptr;
+      return false;
     }
   } else if (input_has_body) {
     // 37.  Let `inputOrInitBody` be `initBody` if it is non-null; otherwise
@@ -1783,7 +1772,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     if (RequestOrResponse::body_used(input_request) ||
         (inputBody && RequestOrResponse::body_unusable(cx, inputBody))) {
       JS_ReportErrorLatin1(cx, "Request constructor: the input request's body isn't usable.");
-      return nullptr;
+      return false;
     }
 
     if (!inputBody) {
@@ -1795,7 +1784,7 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
     } else {
       inputBody = streams::TransformStream::create_rs_proxy(cx, inputBody);
       if (!inputBody) {
-        return nullptr;
+        return false;
       }
 
       streams::TransformStream::set_readable_used_as_body(cx, inputBody, request);
@@ -1809,21 +1798,21 @@ JSObject *Request::create(JSContext *cx, JS::HandleObject requestInstance, JS::H
   // 41.  Set this’s requests body to `finalBody`.
   // (implicit)
 
-  return request;
+  return true;
 }
 
-JSObject *Request::create_instance(JSContext *cx) {
+JSObject *Request::create(JSContext *cx) {
   JS::RootedObject requestInstance(
       cx, JS_NewObjectWithGivenProto(cx, &Request::class_, Request::proto_obj));
   return requestInstance;
 }
 
 bool Request::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
-  CTOR_HEADER("Reques", 1);
-  JS::RootedObject requestInstance(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  JS::RootedObject request(cx, create(cx, requestInstance, args[0], args.get(1)));
-  if (!request)
+  CTOR_HEADER("Request", 1);
+  JS::RootedObject request(cx, JS_NewObjectForConstructor(cx, &class_, args));
+  if (!request || !initialize(cx, request, args[0], args.get(1))) {
     return false;
+  }
 
   args.rval().setObject(*request);
   return true;
