@@ -248,7 +248,7 @@ public:
 };
 
 size_t api::AsyncTask::select(std::vector<AsyncTask *> &tasks) {
-  auto count = tasks->size();
+  auto count = tasks.size();
   vector<WASIHandle<host_api::Pollable>::Borrowed> handles;
   for (const auto task : tasks) {
     handles.emplace_back(task->id());
