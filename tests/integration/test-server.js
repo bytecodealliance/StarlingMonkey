@@ -35,6 +35,21 @@ export function serveTest (handler) {
             curSubtest = null;
             subtestCnt++;
           }
+        },
+        async asyncTest (name, subtest) {
+          if (!filter(name))
+            return;
+          curSubtest = name;
+          let resolve, reject;
+          let promise = new Promise((res, rej) => {
+            resolve = res;
+            reject = rej;
+          });
+          subtest(resolve, reject);
+          evt.waitUntil(promise);
+          await promise;
+          curSubtest = null;
+          subtestCnt++;
         }
       });
     }

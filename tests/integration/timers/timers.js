@@ -1,36 +1,41 @@
 import { serveTest } from "../test-server.js";
-import { assert, strictEqual, throws, deepStrictEqual } from "../assert.js";
+import { assert, strictEqual, throws, deepStrictEqual, AssertionError } from "../assert.js";
 
 export const handler = serveTest(async (t) => {
-  await t.test("setTimeout", async () => {
+  await t.asyncTest("setTimeout-order", (resolve, reject) => {
     let first = false;
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        first = true;
-      }, 10);
-      setTimeout(() => {
-        try {
-          assert(first, 'first timeout should trigger first');
-        } catch (e) {
-          reject(e);
-          return;
-        }
+    setTimeout(() => {
+      first = true;
+    }, 10);
+    setTimeout(() => {
+      try {
+        assert(first, 'first timeout should trigger first');
+      } catch (e) {
+        reject(e);
+        return;
+      }
+      resolve();
+    }, 20);
+  });
+  await t.asyncTest("setInterval-10-times", (resolve, reject) => {
+    let timeout = setTimeout(() => {
+      reject(new AssertionError("Expected setInterval to be called 10 times quickly"));
+    }, 1000);
+    let cnt = 0;
+    let interval = setInterval(() => {
+      cnt++;
+      if (cnt === 10) {
+        clearTimeout(timeout);
+        clearInterval(interval);
         resolve();
-      }, 20);
+      }
     });
   });
-  await t.test("setInterval", async () => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        reject(new AssertionError("Expected setInterval to be called 10 times quickly"));
-      }, 1000);
-      let cnt = 0;
-      setInterval(() => {
-        cnt++;
-        if (cnt === 10)
-          resolve();
-      });
-    });
+  await t.asyncTest("setTimeout-cleared-in-callback", (resolve, reject) => {
+    let id = setTimeout.call(undefined, () => {
+      clearTimeout(id);
+      resolve();
+    }, 1);
   });
   t.test("setInterval-exposed-as-global", () => {
     strictEqual(typeof setInterval, "function", `typeof setInterval`);
@@ -342,6 +347,9 @@ export const handler = serveTest(async (t) => {
   });
   t.test("setTimeout-called-unbound", () => {
     setTimeout.call(undefined, () => {}, 1);
+  });
+  t.test("setTimeout-cleared-in-callback", () => {
+    let id = setTimeout.call(undefined, () => { clearTimeout(id); }, 1);
   });
 
   t.test("clearInterval-exposed-as-global", () => {

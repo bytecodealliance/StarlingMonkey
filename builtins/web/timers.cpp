@@ -6,6 +6,7 @@
 #include <host_api.h>
 #include <iostream>
 #include <list>
+#include <map>
 #include <vector>
 
 #define S_TO_NS(s) ((s) * 1000000000)
@@ -15,6 +16,11 @@ static api::Engine *ENGINE;
 
 class TimerTask final : public api::AsyncTask {
   using TimerArgumentsVector = std::vector<JS::Heap<JS::Value>>;
+
+  static std::map<int32_t, PollableHandle> timer_ids_;
+  static int32_t next_timer_id;
+
+  int32_t timer_id_;
   int64_t delay_;
   int64_t deadline_;
   bool repeat_;
@@ -34,6 +40,8 @@ public:
     }
 
     handle_ = host_api::MonotonicClock::subscribe(deadline_, true);
+    timer_id_ = next_timer_id++;
+    timer_ids_.emplace(timer_id_, handle_);
   }
 
   [[nodiscard]] bool run(api::Engine *engine) override {
@@ -55,14 +63,25 @@ public:
       return false;
     }
 
-    if (repeat_) {
-      engine->queue_async_task(new TimerTask(delay_, true, callback, argv));
+    // The task might've been canceled during the callback.
+    if (handle_ != INVALID_POLLABLE_HANDLE) {
+      host_api::MonotonicClock::unsubscribe(handle_);
     }
 
-    return cancel(engine);
+    if (repeat_ && timer_ids_.contains(timer_id_)) {
+      deadline_ = host_api::MonotonicClock::now() + delay_;
+      handle_ = host_api::MonotonicClock::subscribe(deadline_, true);
+      engine->queue_async_task(this);
+    }
+
+    return true;
   }
 
   [[nodiscard]] bool cancel(api::Engine *engine) override {
+    if (!timer_ids_.contains(timer_id_)) {
+      return false;
+    }
+
     host_api::MonotonicClock::unsubscribe(id());
     handle_ = -1;
     return true;
@@ -72,13 +91,30 @@ public:
     return deadline_;
   }
 
+  [[nodiscard]] int32_t timer_id() const {
+    return timer_id_;
+  }
+
   void trace(JSTracer *trc) override {
     TraceEdge(trc, &callback_, "Timer callback");
     for (auto &arg : arguments_) {
       TraceEdge(trc, &arg, "Timer callback arguments");
     }
   }
+
+  static bool clear(int32_t timer_id) {
+    if (!timer_ids_.contains(timer_id)) {
+      return false;
+    }
+
+    ENGINE->cancel_async_task(timer_ids_[timer_id]);
+    timer_ids_.erase(timer_id);
+    return true;
+  }
 };
+
+std::map<int32_t, PollableHandle> TimerTask::timer_ids_ = {};
+int32_t TimerTask::next_timer_id = 0;
 
 namespace builtins::web::timers {
 
@@ -123,7 +159,7 @@ template <bool repeat> bool setTimeout_or_interval(JSContext *cx, const unsigned
 
   const auto timer = new TimerTask(delay, repeat, handler, handler_args);
   ENGINE->queue_async_task(timer);
-  args.rval().setInt32(timer->id());
+  args.rval().setInt32(timer->timer_id());
 
   return true;
 }
@@ -144,7 +180,7 @@ template <bool interval> bool clearTimeout_or_interval(JSContext *cx, unsigned a
     return false;
   }
 
-  ENGINE->cancel_async_task(id);
+  TimerTask::clear(id);
 
   args.rval().setUndefined();
   return true;
