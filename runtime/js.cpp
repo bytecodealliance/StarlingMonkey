@@ -16,42 +16,10 @@ bool WIZENED = false;
 extern "C" void __wasm_call_ctors();
 
 api::Engine *engine;
-extern bool install_builtins(api::Engine *engine);
-
-#ifdef DEBUG
-static bool trap(JSContext *cx, unsigned argc, JS::Value *vp) {
-  JS::CallArgs args = CallArgsFromVp(argc, vp);
-  engine->dump_value(args.get(0));
-  MOZ_ASSERT(false, "trap function called");
-  return false;
-}
-#endif
 
 bool initialize(const char *filename) {
   auto engine = api::Engine();
-
-  if (!install_builtins(&engine)) {
-    return false;
-  }
-
-#ifdef DEBUG
-  if (!JS_DefineFunction(engine.cx(), engine.global(), "trap", trap, 1, 0)) {
-    return false;
-  }
-#endif
-
-  RootedValue result(engine.cx());
-  
-  if (!engine.eval_toplevel(filename, &result)) {
-    if (JS_IsExceptionPending(engine.cx())) {
-      engine.dump_pending_exception("pre-initializing");
-    }
-    return false;
-  }
-
-  js::ResetMathRandomSeed(engine.cx());
-
-  return true;
+  return engine.initialize(filename);
 }
 
 extern "C" bool exports_wasi_cli_run_run() {

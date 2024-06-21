@@ -65,6 +65,9 @@ public:
   static bool response_started(JSObject *self);
 
   static JS::HandleObject instance();
+
+  static void increase_interest();
+  static void decrease_interest();
 };
 
 bool install(api::Engine *engine);
