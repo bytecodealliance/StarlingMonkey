@@ -14,6 +14,7 @@ function relativePath(path) {
   return new URL(path, import.meta.url).pathname;
 }
 
+const SKIP_PREFIX = "SKIP ";
 const SLOW_PREFIX = "SLOW ";
 
 const config = {
@@ -280,9 +281,9 @@ async function startWptServer(root, logLevel) {
 
 async function ensureWasmtime(config, logLevel) {
   if (config.external) {
-    let wasmtime = { ...config };
+    let wasmtime = { ...config, host: `http://${config.addr}/` };
     if (logLevel > LogLevel.Quiet) {
-      console.info(`Using external Wasmtime host ${config.host}`);
+      console.info(`Using external Wasmtime host ${wasmtime.host}`);
     }
     return wasmtime;
   } else {
@@ -379,6 +380,7 @@ function getTests(pattern) {
     console.log(`Loading tests list from ${config.tests.list}`);
 
   let testPaths = JSON.parse(readFileSync(config.tests.list, { encoding: "utf-8" }));
+  testPaths = testPaths.filter(path => !path.startsWith(SKIP_PREFIX));
   let totalCount = testPaths.length;
   if (config.skipSlowTests) {
     testPaths = testPaths.filter(path => !path.startsWith(SLOW_PREFIX));
@@ -412,10 +414,11 @@ async function runTests(testPaths, wasmtime, resultCallback, errorCallback) {
     let t1 = Date.now();
     let response, body;
     try {
-      response = await fetch(`${wasmtime.host}${path}`);
-      body = await response.text();
+      if (config.logLevel >= LogLevel.VeryVerbose) {
+        console.log(`Sending request to ${wasmtime.host}${path}`);
+      }
     } catch (e) {
-      shutdown(`Wasmtime bailed while running test ${path}`);
+      shutdown(`Error while running test ${path}: ${e}`);
     }
     let stats = {
       count: 0,
@@ -428,6 +431,8 @@ async function runTests(testPaths, wasmtime, resultCallback, errorCallback) {
     totalStats.duration += stats.duration;
     let results;
     try {
+      response = await fetch(`${wasmtime.host}${path}`);
+      body = await response.text();
       results = JSON.parse(body);
       if (response.status == 500) {
         throw {message: results.error.message, stack: results.error.stack};

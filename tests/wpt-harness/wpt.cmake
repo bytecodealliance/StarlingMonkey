@@ -1,7 +1,8 @@
 enable_testing()
 
-add_builtin(wpt_builtins SRC "${CMAKE_CURRENT_LIST_DIR}/wpt_builtins.cpp")
-target_include_directories(wpt_builtins PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/builtins/web/")
+add_builtin(wpt_support
+    SRC "${CMAKE_CURRENT_LIST_DIR}/wpt_builtins.cpp"
+    INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/builtins/web/")
 
 if(NOT DEFINED ENV{WPT_ROOT})
     message(FATAL_ERROR "WPT_ROOT environment variable is not set")
