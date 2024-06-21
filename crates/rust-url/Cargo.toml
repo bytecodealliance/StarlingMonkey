@@ -7,7 +7,7 @@ edition = "2018"
 crate-type = ["staticlib"]
 
 [dependencies]
-url = "2.5.0"
+url = "2.5.2"
 
 [profile.release]
 lto = true
