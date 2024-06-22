@@ -28,7 +28,7 @@ void EventLoop::queue_async_task(api::AsyncTask *task) {
   queue.get().tasks.emplace_back(task);
 }
 
-bool EventLoop::remove_async_task(api::Engine *engine, api::AsyncTask *task) {
+bool EventLoop::cancel_async_task(api::Engine *engine, api::AsyncTask *task) {
   const auto tasks = &queue.get().tasks;
   for (auto it = tasks->begin(); it != tasks->end(); ++it) {
     if (*it == task) {

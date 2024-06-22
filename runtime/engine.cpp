@@ -506,6 +506,6 @@ bool api::Engine::debug_logging_enabled() { return ::debug_logging_enabled(); }
 bool api::Engine::has_pending_async_tasks() { return core::EventLoop::has_pending_async_tasks(); }
 
 void api::Engine::queue_async_task(AsyncTask *task) { core::EventLoop::queue_async_task(task); }
-bool api::Engine::remove_async_task(AsyncTask *task) {
-  return core::EventLoop::remove_async_task(this, task);
+bool api::Engine::cancel_async_task(AsyncTask *task) {
+  return core::EventLoop::cancel_async_task(this, task);
 }

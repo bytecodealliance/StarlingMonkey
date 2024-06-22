@@ -111,7 +111,7 @@ public:
       return false;
     }
 
-    ENGINE->remove_async_task(timer_ids_[timer_id]);
+    ENGINE->cancel_async_task(timer_ids_[timer_id]);
     timer_ids_.erase(timer_id);
     return true;
   }

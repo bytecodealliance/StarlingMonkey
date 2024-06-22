@@ -46,7 +46,7 @@ public:
   /**
    * Remove a queued async task.
    */
-  static bool remove_async_task(api::Engine *engine, api::AsyncTask *task);
+  static bool cancel_async_task(api::Engine *engine, api::AsyncTask *task);
 };
 
 } // namespace core
