@@ -17,7 +17,7 @@ static api::Engine *ENGINE;
 class TimerTask final : public api::AsyncTask {
   using TimerArgumentsVector = std::vector<JS::Heap<JS::Value>>;
 
-  static std::map<int32_t, PollableHandle> timer_ids_;
+  static std::map<int32_t, api::AsyncTask*> timer_ids_;
   static int32_t next_timer_id;
 
   int32_t timer_id_;
@@ -41,7 +41,7 @@ public:
 
     handle_ = host_api::MonotonicClock::subscribe(deadline_, true);
     timer_id_ = next_timer_id++;
-    timer_ids_.emplace(timer_id_, handle_);
+    timer_ids_.emplace(timer_id_, this);
   }
 
   [[nodiscard]] bool run(api::Engine *engine) override {
@@ -68,10 +68,14 @@ public:
       host_api::MonotonicClock::unsubscribe(handle_);
     }
 
-    if (repeat_ && timer_ids_.contains(timer_id_)) {
-      deadline_ = host_api::MonotonicClock::now() + delay_;
-      handle_ = host_api::MonotonicClock::subscribe(deadline_, true);
-      engine->queue_async_task(this);
+    if (timer_ids_.contains(timer_id_)) {
+      if (repeat_) {
+        deadline_ = host_api::MonotonicClock::now() + delay_;
+        handle_ = host_api::MonotonicClock::subscribe(deadline_, true);
+        engine->queue_async_task(this);
+      } else {
+        timer_ids_.erase(timer_id_);
+      }
     }
 
     return true;
@@ -107,13 +111,13 @@ public:
       return false;
     }
 
-    ENGINE->cancel_async_task(timer_ids_[timer_id]);
+    ENGINE->remove_async_task(timer_ids_[timer_id]);
     timer_ids_.erase(timer_id);
     return true;
   }
 };
 
-std::map<int32_t, PollableHandle> TimerTask::timer_ids_ = {};
+std::map<int32_t, api::AsyncTask*> TimerTask::timer_ids_ = {};
 int32_t TimerTask::next_timer_id = 1;
 
 namespace builtins::web::timers {
