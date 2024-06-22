@@ -2,6 +2,16 @@ import { serveTest } from "../test-server.js";
 import { assert, strictEqual, throws, deepStrictEqual, AssertionError } from "../assert.js";
 
 export const handler = serveTest(async (t) => {
+  await t.asyncTest("clearTimeout invalid", (resolve, reject) => {
+    // cleartimeout can be called with arbitrary stuff
+    clearTimeout('blah');
+
+    const dontDeleteTimeout = setTimeout(resolve, 100);
+
+    // null converts to zero, which must not delete a real timer
+    clearTimeout(null);
+  });
+
   await t.asyncTest("setTimeout-order", (resolve, reject) => {
     let first = false;
     setTimeout(() => {

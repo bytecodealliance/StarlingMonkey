@@ -114,7 +114,7 @@ public:
 };
 
 std::map<int32_t, PollableHandle> TimerTask::timer_ids_ = {};
-int32_t TimerTask::next_timer_id = 0;
+int32_t TimerTask::next_timer_id = 1;
 
 namespace builtins::web::timers {
 
