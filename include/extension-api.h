@@ -27,11 +27,17 @@ using JS::PersistentRootedVector;
 typedef int32_t PollableHandle;
 constexpr PollableHandle INVALID_POLLABLE_HANDLE = -1;
 
+#define DEF_ERR(name, exception, format, count) \
+static constexpr JSErrorFormatString name = { #name, format, count, exception };
+
 namespace api {
+
+#include "errors.h"
 
 class AsyncTask;
 
 class Engine {
+
 
 public:
   Engine();

@@ -5,7 +5,7 @@
 #include "encode.h"
 #include "request-response.h"
 
-#include "bindings.h"
+#include "../dom-exception.h"
 
 #include <allocator.h>
 #include <js/SourceText.h>
@@ -225,9 +225,7 @@ bool response_promise_then_handler(JSContext *cx, JS::HandleObject event, JS::Ha
   // of a Promise wrapping it, so either the value is a Response, or we have to
   // bail.
   if (!Response::is_instance(args.get(0))) {
-    JS_ReportErrorUTF8(cx, "FetchEvent#respondWith must be called with a Response "
-                           "object or a Promise resolving to a Response object as "
-                           "the first argument");
+    api::throw_error(cx, FetchErrors::InvalidRespondWithArg);
     JS::RootedObject rejection(cx, PromiseRejectedWithPendingError(cx));
     if (!rejection)
       return false;
@@ -275,15 +273,16 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // Step 2
   if (!is_dispatching(self)) {
-    JS_ReportErrorUTF8(cx, "FetchEvent#respondWith must be called synchronously from "
-                           "within a FetchEvent handler");
-    return false;
+    return dom_exception::DOMException::raise(cx,
+      "FetchEvent#respondWith must be called synchronously from within a FetchEvent handler",
+      "InvalidStateError");
   }
 
   // Step 3
   if (state(self) != State::unhandled) {
-    JS_ReportErrorUTF8(cx, "FetchEvent#respondWith can't be called twice on the same event");
-    return false;
+    return dom_exception::DOMException::raise(cx,
+      "FetchEvent#respondWith can't be called twice on the same event",
+      "InvalidStateError");
   }
 
   // Step 4
@@ -352,8 +351,10 @@ bool FetchEvent::waitUntil(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // Step 2
   if (!is_active(self)) {
-    JS_ReportErrorUTF8(cx, "FetchEvent#waitUntil called on inactive event");
-    return false;
+    return dom_exception::DOMException::raise(
+      cx,
+      "waitUntil called on a FetchEvent that isn't active anymore",
+      "InvalidStateError");
   }
 
   // Steps 3-4

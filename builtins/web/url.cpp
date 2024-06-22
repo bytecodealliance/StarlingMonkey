@@ -336,9 +336,7 @@ bool URLSearchParams::forEach(JSContext *cx, unsigned argc, JS::Value *vp) {
   const auto params = get_params(self);
 
   if (!args[0].isObject() || !JS::IsCallable(&args[0].toObject())) {
-    JS_ReportErrorASCII(cx, "Failed to execute 'forEach' on 'URLSearchParams': "
-                            "parameter 1 is not of type 'Function'");
-    return false;
+    return api::throw_error(cx, api::Errors::ForEachCallback, "URLSearchParams");
   }
 
   JS::HandleValue callback = args[0];
@@ -612,6 +610,8 @@ bool URL::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+DEF_ERR(InvalidURLError, JSEXN_TYPEERR, "URL constructor: {0} is not a valid URL.", 1);
+
 JSObject *URL::create(JSContext *cx, JS::HandleObject self, jsurl::SpecString url_str,
                       const jsurl::JSUrl *base) {
   jsurl::JSUrl *url;
@@ -622,7 +622,7 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, jsurl::SpecString ur
   }
 
   if (!url) {
-    JS_ReportErrorUTF8(cx, "URL constructor: %s is not a valid URL.", (char *)url_str.data);
+    api::throw_error(cx, InvalidURLError, (char *)url_str.data);
     return nullptr;
   }
 
@@ -666,7 +666,7 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, JS::HandleValue url_
 
     base = jsurl::new_jsurl(&str);
     if (!base) {
-      JS_ReportErrorUTF8(cx, "URL constructor: %s is not a valid URL.", (char *)str.data);
+      api::throw_error(cx, InvalidURLError, (char *)str.data);
       return nullptr;
     }
   }

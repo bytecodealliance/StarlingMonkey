@@ -3,6 +3,7 @@
 
 #include "headers.h"
 #include "host_api.h"
+#include "fetch-errors.h"
 
 namespace builtins {
 namespace web {
@@ -236,7 +237,7 @@ public:
 
     auto res = future_->maybe_response();
     if (res.is_err()) {
-      JS_ReportErrorUTF8(cx, "NetworkError when attempting to fetch resource.");
+      api::throw_error(cx, FetchErrors::FetchNetworkError);
       return RejectPromiseWithPendingError(cx, response_promise);
     }
 
