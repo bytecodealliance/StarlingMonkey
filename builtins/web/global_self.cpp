@@ -14,8 +14,7 @@ bool self_set(JSContext *cx, unsigned argc, Value *vp) {
 
   RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
   if (args.thisv() != ObjectValue(*global)) {
-    JS_ReportErrorLatin1(cx, "globalThis.self setter can only be called on the global object");
-    return false;
+    return api::throw_error(cx, api::Errors::WrongReceiver, "set self", "globalThis");
   }
 
   if (!JS_DefineProperty(cx, global, "self", args[0], JSPROP_ENUMERATE)) {

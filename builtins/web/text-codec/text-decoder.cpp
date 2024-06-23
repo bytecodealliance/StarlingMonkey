@@ -2,12 +2,19 @@
 #include "encode.h"
 #include "rust-encoding.h"
 
+#include "text-codec-errors.h"
+
 namespace builtins {
 namespace web {
 namespace text_codec {
 
 bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
+
+  // TODO: Change this class so that its prototype isn't an instance of the class
+  if (self == proto_obj) {
+    return api::throw_error(cx, api::Errors::WrongReceiver, "decode", "TextDecoder");
+  }
 
   auto source_value = args.get(0);
   std::optional<std::span<uint8_t>> src;
@@ -25,9 +32,8 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (args.hasDefined(1)) {
     auto options_value = args.get(1);
     if (!options_value.isObject()) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_TEXT_DECODER_DECODE_OPTIONS_NOT_DICTIONARY);
-      return false;
+      return api::throw_error(cx, api::Errors::WrongType, "TextDecoder.decode",
+        "options", "be an object or undefined");
     }
     JS::RootedObject options(cx, &options_value.toObject());
     JS::RootedValue stream_value(cx);
@@ -57,8 +63,7 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
     result = jsencoding::decoder_decode_to_utf16_without_replacement(decoder, src->data(), &srcLen,
                                                                      dest.get(), &destLen, !stream);
     if (result != 0) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TEXT_DECODER_DECODING_FAILED);
-      return false;
+      return api::throw_error(cx, TextCodecErrors::DecodingFailed);
     }
   } else {
     bool hadReplacements;
@@ -83,8 +88,7 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedString str(cx,
                        JS_NewUCStringCopyN(cx, reinterpret_cast<char16_t *>(dest.get()), destLen));
   if (!str) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TEXT_DECODER_DECODING_FAILED);
-    return false;
+    return api::throw_error(cx, TextCodecErrors::DecodingFailed);
   }
 
   args.rval().setString(str);
@@ -93,15 +97,9 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 bool TextDecoder::encoding_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
-
-  JS::RootedObject result(cx);
-  if (!JS_GetPrototype(cx, self, &result)) {
-    return false;
-  }
-  if (result != TextDecoder::proto_obj) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_INTERFACE, "encoding get",
-                              "TextDecoder");
-    return false;
+  // TODO: Change this class so that its prototype isn't an instance of the class
+  if (self == proto_obj) {
+    return api::throw_error(cx, api::Errors::WrongReceiver, "encoding get", "TextDecoder");
   }
 
   auto encoding = reinterpret_cast<jsencoding::Encoding *>(
@@ -131,14 +129,9 @@ bool TextDecoder::encoding_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool TextDecoder::fatal_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
 
-  JS::RootedObject result(cx);
-  if (!JS_GetPrototype(cx, self, &result)) {
-    return false;
-  }
-  if (result != TextDecoder::proto_obj) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_INTERFACE, "fatal get",
-                              "TextDecoder");
-    return false;
+  // TODO: Change this class so that its prototype isn't an instance of the class
+  if (self == proto_obj) {
+    return api::throw_error(cx, api::Errors::WrongReceiver, "fatal get", "TextDecoder");
   }
 
   auto fatal =
@@ -151,14 +144,9 @@ bool TextDecoder::fatal_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool TextDecoder::ignoreBOM_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
 
-  JS::RootedObject result(cx);
-  if (!JS_GetPrototype(cx, self, &result)) {
-    return false;
-  }
-  if (result != TextDecoder::proto_obj) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_INTERFACE,
-                              "ignoreBOM get", "TextDecoder");
-    return false;
+  // TODO: Change this class so that its prototype isn't an instance of the class
+  if (self == proto_obj) {
+    return api::throw_error(cx, api::Errors::WrongReceiver, "ignoreBOM get", "TextDecoder");
   }
 
   auto ignoreBOM =
@@ -212,8 +200,7 @@ bool TextDecoder::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
         reinterpret_cast<uint8_t *>(label_chars.begin()), label_chars.len));
   }
   if (!encoding) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TEXT_DECODER_INVALID_ENCODING);
-    return false;
+    return api::throw_error(cx, TextCodecErrors::InvalidEncoding);
   }
   bool fatal = false;
   bool ignoreBOM = false;
@@ -232,9 +219,8 @@ bool TextDecoder::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
       }
       ignoreBOM = JS::ToBoolean(ignoreBOM_value);
     } else if (!options_val.isNull()) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_TEXT_DECODER_OPTIONS_NOT_DICTIONARY);
-      return false;
+      return api::throw_error(cx, api::Errors::WrongType, "TextDecoder constructor",
+        "options", "be an object or undefined");
     }
   }
   JS::RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));

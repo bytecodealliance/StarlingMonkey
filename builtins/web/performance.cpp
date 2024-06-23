@@ -57,11 +57,6 @@ bool Performance::create(JSContext *cx, JS::HandleObject global) {
   return JS_DefineFunctions(cx, performance, methods);
 }
 
-bool Performance::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
-  JS_ReportErrorUTF8(cx, "%s can't be instantiated directly", class_name);
-  return false;
-}
-
 bool Performance::init_class(JSContext *cx, JS::HandleObject global) {
   return init_class_impl(cx, global);
 }

@@ -10,6 +10,8 @@
 #include "transform-stream-default-controller.h"
 #include "transform-stream.h"
 
+#include "stream-errors.h"
+
 /**
  * Implementation of the WHATWG TransformStream builtin.
  *
@@ -269,8 +271,8 @@ bool TransformStreamDefaultController::Terminate(JSContext *cx, JS::HandleObject
   // allow us to create a proper error object with the right stack and all
   // without actually throwing it. So we do that and then immediately clear the
   // pending exception.
+  api::throw_error(cx, StreamErrors::TransformStreamTerminated);
   JS::RootedValue error(cx);
-  JS_ReportErrorLatin1(cx, "The TransformStream has been terminated");
   if (!JS_GetPendingException(cx, &error)) {
     return false;
   }

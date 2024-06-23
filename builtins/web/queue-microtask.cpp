@@ -15,8 +15,8 @@ bool queueMicrotask(JSContext *cx, unsigned argc, Value *vp) {
   }
 
   if (!args[0].isObject() || !JS::IsCallable(&args[0].toObject())) {
-    JS_ReportErrorLatin1(cx, "queueMicrotask: Argument 1 is not a function");
-    return false;
+    return api::throw_error(cx, api::Errors::WrongType, "queueMicrotask", "first argument",
+      "be a function");
   }
 
   RootedObject callback(cx, &args[0].toObject());

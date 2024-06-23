@@ -7,7 +7,7 @@ namespace builtins {
 namespace web {
 namespace worker_location {
 
-class WorkerLocation : public BuiltinImpl<WorkerLocation> {
+class WorkerLocation : public BuiltinNoConstructor<WorkerLocation> {
 private:
 public:
   static constexpr const char *class_name = "WorkerLocation";
@@ -20,8 +20,6 @@ public:
 
   static JS::PersistentRooted<JSObject *> url;
   static bool toString(JSContext *cx, unsigned argc, JS::Value *vp);
-
-  static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 
   static bool init_class(JSContext *cx, JS::HandleObject global);
 };

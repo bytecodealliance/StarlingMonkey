@@ -1196,12 +1196,11 @@ JSString *GET_atom;
 //   auto hasBody = RequestOrResponse::has_body(self);
 
 //   if (hasBody) {
-//     if (RequestOrResponse::body_used(self)) {
-//       JS_ReportErrorLatin1(cx, "Request.prototype.clone: the request's body isn't usable.");
-//       return false;
+//     if (RequestOrResponse::body_unusable(self)) {
+//       return api::throw_error(cx, FetchErrors::BodyStreamUnusable);
 //     }
 
-//     // Here we get the current requests body stream and call ReadableStream.prototype.tee to
+//     // Here we get the current request's body stream and call ReadableStream.prototype.tee to
 //     return
 //     // two versions of the stream. Once we get the two streams, we create a new request handle
 //     and
@@ -1250,9 +1249,7 @@ JSString *GET_atom;
 //     }
 //     body_stream.set(&body1_val.toObject());
 //     if (RequestOrResponse::body_unusable(cx, body_stream)) {
-//       JS_ReportErrorLatin1(cx, "Can't use a ReadableStream that's locked or has ever been "
-//                                "read from or canceled as a Request body.");
-//       return false;
+//       return api::throw_error(cx, FetchErrors::BodyStreamUnusable);
 //     }
 
 //     JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::Body),
@@ -1506,7 +1503,7 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
       return false;
     }
   } else if (!init_val.isNullOrUndefined()) {
-    api::throw_error(cx, FetchErrors::InvalidCtorInitArg, "Request");
+    api::throw_error(cx, FetchErrors::InvalidInitArg, "Request constructor");
     return false;
   }
 
@@ -2090,9 +2087,7 @@ bool Response::redirect(JSContext *cx, unsigned argc, Value *vp) {
   }
   auto parsedURL = new_jsurl_with_base(&url_str, url::URL::url(worker_location::WorkerLocation::url));
   if (!parsedURL) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-      JSMSG_RESPONSE_REDIRECT_INVALID_URI);
-    return false;
+    return api::throw_error(cx, api::Errors::WrongType, "Response.redirect", "url", "be a valid URL");
   }
 
   // 3. If status is not a redirect status, then throw a RangeError.
@@ -2107,9 +2102,9 @@ bool Response::redirect(JSContext *cx, unsigned argc, Value *vp) {
    }
   }
   if (status != 301 && status != 302 && status != 303 && status != 307 && status != 308) {
-   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-    JSMSG_RESPONSE_REDIRECT_INVALID_STATUS);
-   return false;
+    auto status_str = std::to_string(status);
+    return api::throw_error(cx, FetchErrors::InvalidStatus, "Response.redirect",
+      status_str.c_str());
   }
 
    // 4. Let responseObject be the result of creating a Response object, given a new response,
@@ -2167,8 +2162,7 @@ bool Response::redirect(JSContext *cx, unsigned argc, Value *vp) {
 //     return false;
 //   }
 //   if (!callbackCalled) {
-//     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_RESPONSE_JSON_INVALID_VALUE);
-//     return false;
+//     return api::throw_error(cx, api::Errors::WrongType, "Response.json", "data", "be a valid JSON value");
 //   }
 //   // 2. Let body be the result of extracting bytes.
 
@@ -2194,9 +2188,9 @@ bool Response::redirect(JSContext *cx, unsigned argc, Value *vp) {
 //     }
 
 //     if (status == 204 || status == 205 || status == 304) {
-//       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-//                                 JSMSG_RESPONSE_NULL_BODY_STATUS_WITH_BODY);
-//       return false;
+//       auto status_str = std::to_string(status);
+//       return api::throw_error(cx, FetchErrors::NonBodyResponseWithBody, "Response.json",
+//         status_str.c_str());
 //     }
 
 //     if (!statusText_val.isUndefined() && !(statusText = JS::ToString(cx, statusText_val))) {
@@ -2204,9 +2198,7 @@ bool Response::redirect(JSContext *cx, unsigned argc, Value *vp) {
 //     }
 
 //   } else if (!init_val.isNullOrUndefined()) {
-//     JS_ReportErrorLatin1(cx, "Response constructor: |init| parameter can't be converted to "
-//                              "a dictionary");
-//     return false;
+//     return api::throw_error(cx, FetchErrors::InvalidInitArg, "Response.json");
 //   }
 
 //   auto response_handle_res = host_api::HttpResp::make();
@@ -2361,14 +2353,14 @@ bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     }
 
   } else if (!init_val.isNullOrUndefined()) {
-    return api::throw_error(cx, FetchErrors::InvalidCtorInitArg, "Response");
+    return api::throw_error(cx, FetchErrors::InvalidInitArg, "Response constructor");
   }
 
   // 1.  If `init`["status"] is not in the range 200 to 599, inclusive, then
   // `throw` a ``RangeError``.
   if (status < 200 || status > 599) {
     auto status_str = std::to_string(status);
-    return api::throw_error(cx, FetchErrors::InvalidStatus, status_str.c_str());
+    return api::throw_error(cx, FetchErrors::InvalidStatus, "Response constructor", status_str.c_str());
   }
 
   // 2.  If `init`["statusText"] does not match the `reason-phrase` token
@@ -2423,7 +2415,8 @@ bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     //     ``TypeError``.
     if (status == 204 || status == 205 || status == 304) {
       auto status_str = std::to_string(status);
-      return api::throw_error(cx, FetchErrors::NonBodyResponseWithBody, status_str.c_str());
+      return api::throw_error(cx, FetchErrors::NonBodyResponseWithBody, "Response constructor",
+        status_str.c_str());
     }
 
     //     2.  Let `Content-Type` be null.

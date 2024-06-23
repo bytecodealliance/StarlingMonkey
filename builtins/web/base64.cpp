@@ -1,6 +1,8 @@
 #include "base64.h"
 #include "mozilla/Try.h"
 
+DEF_ERR(InvalidCharacterError, JSEXN_RANGEERR, "String contains an invalid character", 0)
+
 namespace builtins {
 namespace web {
 namespace base64 {
@@ -12,7 +14,7 @@ JS::Result<std::string> convertJSValueToByteString(JSContext *cx, JS::Handle<JS:
   } else {
     s = JS::ToString(cx, v);
     if (!s) {
-      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_INVALID_CHARACTER_ERROR);
+      api::throw_error(cx, InvalidCharacterError);
       return JS::Result<std::string>(JS::Error());
     }
   }
@@ -27,7 +29,7 @@ JS::Result<std::string> convertJSValueToByteString(JSContext *cx, JS::Handle<JS:
     if (!chars) {
       // Reset the nogc guard, since otherwise we can't throw errors.
       nogc.reset();
-      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_INVALID_CHARACTER_ERROR);
+      api::throw_error(cx, InvalidCharacterError);
       return JS::Result<std::string>(JS::Error());
     }
 
@@ -35,7 +37,7 @@ JS::Result<std::string> convertJSValueToByteString(JSContext *cx, JS::Handle<JS:
       if (chars[i] > 255) {
         // Reset the nogc guard, since otherwise we can't throw errors.
         nogc.reset();
-        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_INVALID_CHARACTER_ERROR);
+        api::throw_error(cx, InvalidCharacterError);
         return JS::Result<std::string>(JS::Error());
       }
     }
@@ -307,8 +309,7 @@ bool atob(JSContext *cx, unsigned argc, Value *vp) {
   // 2. If decodedData is failure, then throw an "InvalidCharacterError"
   // DOMException.
   if (decoded_result.isErr()) {
-    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_INVALID_CHARACTER_ERROR);
-    return false;
+    return api::throw_error(cx, InvalidCharacterError);
   }
   auto decoded = decoded_result.unwrap();
   RootedString decodedData(cx, JS_NewStringCopyN(cx, decoded.c_str(), decoded.length()));
@@ -415,9 +416,7 @@ bool btoa(JSContext *cx, unsigned argc, Value *vp) {
 
   JSString *str = JS_NewStringCopyN(cx, result.c_str(), result.length());
   if (!str) {
-    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_INVALID_CHARACTER_ERROR);
-
-    return false;
+    return api::throw_error(cx, InvalidCharacterError);
   }
 
   out.setString(str);

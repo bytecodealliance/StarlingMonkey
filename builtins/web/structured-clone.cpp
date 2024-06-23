@@ -45,6 +45,8 @@ JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r,
   return params_obj;
 }
 
+DEF_ERR(CloningFailed, JSEXN_TYPEERR, "The object could not be cloned", 0)
+
 /**
  * Writes non-JS builtins during structured cloning.
  *
@@ -56,8 +58,7 @@ JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r,
 bool WriteStructuredClone(JSContext *cx, JSStructuredCloneWriter *w, JS::HandleObject obj,
                           bool *sameProcessScopeRequired, void *closure) {
   if (!url::URLSearchParams::is_instance(obj)) {
-    JS_ReportErrorLatin1(cx, "The object could not be cloned");
-    return false;
+    return api::throw_error(cx, CloningFailed);
   }
 
   auto slice = url::URLSearchParams::serialize(cx, obj);

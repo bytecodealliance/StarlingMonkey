@@ -64,11 +64,6 @@ const JSPropertySpec WorkerLocation::properties[] = {
     JS_STRING_SYM_PS(toStringTag, "Location", JSPROP_READONLY),
     JS_PS_END};
 
-bool WorkerLocation::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
-  JS_ReportErrorLatin1(cx, "Illegal constructor WorkerLocation");
-  return false;
-}
-
 bool WorkerLocation::init_class(JSContext *cx, JS::HandleObject global) {
   if (!init_class_impl(cx, global)) {
     return false;
