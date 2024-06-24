@@ -1,6 +1,8 @@
 #ifndef FETCH_ERRORS_H
 #define FETCH_ERRORS_H
 
+#include "builtin.h"
+
 namespace FetchErrors {
 DEF_ERR(FetchNetworkError, JSEXN_TYPEERR, "NetworkError when attempting to fetch resource", 0)
 DEF_ERR(InvalidRespondWithArg, JSEXN_TYPEERR, "FetchEvent#respondWith must be called with a Response "

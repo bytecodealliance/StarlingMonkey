@@ -1,6 +1,8 @@
 #ifndef STREAM_ERRORS_H
 #define STREAM_ERRORS_H
 
+#include "builtin.h"
+
 namespace StreamErrors {
 DEF_ERR(CompressingChunkFailed, JSEXN_TYPEERR, "CompressionStream transform: error compressing chunk", 0)
 DEF_ERR(DecompressingChunkFailed, JSEXN_TYPEERR, "DecompressionStream transform: error decompressing chunk", 0)
