@@ -12,13 +12,30 @@
 #define S_TO_NS(s) ((s) * 1000000000)
 #define NS_TO_MS(ns) ((ns) / 1000000)
 
+namespace {
+
+class TimersMap {
+public:
+  std::map<int32_t, api::AsyncTask*> timer_ids_ = {};
+  int32_t next_timer_id = 1;
+  void trace(JSTracer *trc) {
+    for (std::map<int32_t, api::AsyncTask*>::iterator i = timer_ids_.begin(); i != timer_ids_.end(); i++) {
+      api::AsyncTask *timer = i->second;
+      timer->trace(trc);
+    }
+  }
+};
+
+}
+
+static TimersMap *TIMERS_MAP;
 static api::Engine *ENGINE;
 
 class TimerTask final : public api::AsyncTask {
   using TimerArgumentsVector = std::vector<JS::Heap<JS::Value>>;
 
-  static std::map<int32_t, api::AsyncTask*> timer_ids_;
-  static int32_t next_timer_id;
+  // static std::map<int32_t, api::AsyncTask*> timer_ids_;
+  // static int32_t next_timer_id;
 
   int32_t timer_id_;
   int64_t delay_;
@@ -40,8 +57,8 @@ public:
     }
 
     handle_ = host_api::MonotonicClock::subscribe(deadline_, true);
-    timer_id_ = next_timer_id++;
-    timer_ids_.emplace(timer_id_, this);
+    timer_id_ = TIMERS_MAP->next_timer_id++;
+    TIMERS_MAP->timer_ids_.emplace(timer_id_, this);
   }
 
   [[nodiscard]] bool run(api::Engine *engine) override {
@@ -68,13 +85,13 @@ public:
       host_api::MonotonicClock::unsubscribe(handle_);
     }
 
-    if (timer_ids_.contains(timer_id_)) {
+    if (TIMERS_MAP->timer_ids_.contains(timer_id_)) {
       if (repeat_) {
         deadline_ = host_api::MonotonicClock::now() + delay_;
         handle_ = host_api::MonotonicClock::subscribe(deadline_, true);
         engine->queue_async_task(this);
       } else {
-        timer_ids_.erase(timer_id_);
+        TIMERS_MAP->timer_ids_.erase(timer_id_);
       }
     }
 
@@ -82,7 +99,7 @@ public:
   }
 
   [[nodiscard]] bool cancel(api::Engine *engine) override {
-    if (!timer_ids_.contains(timer_id_)) {
+    if (!TIMERS_MAP->timer_ids_.contains(timer_id_)) {
       return false;
     }
 
@@ -104,21 +121,19 @@ public:
     for (auto &arg : arguments_) {
       TraceEdge(trc, &arg, "Timer callback arguments");
     }
+    TIMERS_MAP->trace(trc);
   }
 
   static bool clear(int32_t timer_id) {
-    if (!timer_ids_.contains(timer_id)) {
+    if (!TIMERS_MAP->timer_ids_.contains(timer_id)) {
       return false;
     }
 
-    ENGINE->cancel_async_task(timer_ids_[timer_id]);
-    timer_ids_.erase(timer_id);
+    ENGINE->cancel_async_task(TIMERS_MAP->timer_ids_[timer_id]);
+    TIMERS_MAP->timer_ids_.erase(timer_id);
     return true;
   }
 };
-
-std::map<int32_t, api::AsyncTask*> TimerTask::timer_ids_ = {};
-int32_t TimerTask::next_timer_id = 1;
 
 namespace builtins::web::timers {
 
@@ -198,6 +213,7 @@ constexpr JSFunctionSpec methods[] = {
 
 bool install(api::Engine *engine) {
   ENGINE = engine;
+  TIMERS_MAP = new TimersMap();
   return JS_DefineFunctions(engine->cx(), engine->global(), methods);
 }
 
