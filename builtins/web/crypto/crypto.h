@@ -7,7 +7,7 @@ namespace builtins {
 namespace web {
 namespace crypto {
 
-class Crypto : public BuiltinImpl<Crypto> {
+class Crypto : public BuiltinNoConstructor<Crypto> {
 private:
 public:
   static constexpr const char *class_name = "Crypto";
@@ -25,7 +25,6 @@ public:
   static bool get_random_values(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool random_uuid(JSContext *cx, unsigned argc, JS::Value *vp);
 
-  static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool init_class(JSContext *cx, JS::HandleObject global);
 };
 

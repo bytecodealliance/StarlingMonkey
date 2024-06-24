@@ -7,8 +7,7 @@ namespace builtins {
 namespace web {
 namespace performance {
 
-class Performance : public BuiltinImpl<Performance> {
-private:
+class Performance : public BuiltinNoConstructor<Performance> {
 public:
   static constexpr const char *class_name = "Performance";
   static const int ctor_length = 0;
@@ -23,7 +22,6 @@ public:
   static bool timeOrigin_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
   static bool create(JSContext *cx, JS::HandleObject global);
-  static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool init_class(JSContext *cx, JS::HandleObject global);
 };
 

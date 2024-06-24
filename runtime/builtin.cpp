@@ -20,20 +20,11 @@ bool api::throw_error(JSContext* cx, const JSErrorFormatString &error,
   return false;
 }
 
-const JSErrorFormatString *GetErrorMessage(void *userRef, unsigned errorNumber) {
-  if (errorNumber > 0 && errorNumber < JSErrNum_Limit) {
-    return &js_ErrorFormatString[errorNumber];
-  }
-
-  return nullptr;
-}
-
 std::optional<std::span<uint8_t>> value_to_buffer(JSContext *cx, JS::HandleValue val,
                                                   const char *val_desc) {
   if (!val.isObject() ||
       !(JS_IsArrayBufferViewObject(&val.toObject()) || JS::IsArrayBufferObject(&val.toObject()))) {
-    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_INVALID_BUFFER_ARG, val_desc,
-                             val.type());
+    api::throw_error(cx, api::Errors::InvalidBuffer, val_desc);
     return std::nullopt;
   }
 

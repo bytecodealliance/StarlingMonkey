@@ -10,9 +10,8 @@ static bool baseURL_set(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (args.get(0).isNullOrUndefined()) {
     WorkerLocation::url.set(nullptr);
   } else if (!builtins::web::url::URL::is_instance(args.get(0))) {
-    JS_ReportErrorUTF8(cx, "Invalid value assigned to baseURL, must be an instance of "
-                           "URL, null, or undefined");
-    return false;
+    return api::throw_error(cx, api::Errors::TypeError, "baseURL setter", "value",
+      "be a URL object, null, or undefined");
   }
 
   WorkerLocation::url.set(&args.get(0).toObject());

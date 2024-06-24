@@ -10,6 +10,7 @@
 #include "../base64.h"
 #include "../dom-exception.h"
 #include "crypto-algorithm.h"
+
 #include "crypto-key-ec-components.h"
 #include "crypto-key-rsa-components.h"
 #include "encode.h"
@@ -895,12 +896,10 @@ JSObject *CryptoAlgorithmECDSA_Sign_Verify::sign(JSContext *cx, JS::HandleObject
   // 7. Return the result of creating an ArrayBuffer containing result.
   JS::RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, resultSize, result.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
   if (!buffer) {
-    // We can be here is the array buffer was too large -- if that was the case then a
-    // JSMSG_BAD_ARRAY_LENGTH will have been created. No other failure scenarios in this path will
-    // create a JS exception and so we need to create one.
+    // We can be here if the array buffer was too large -- if that was the case then a
+    // JSMSG_BAD_ARRAY_LENGTH will have been created. Otherwise we're probably out of memory.
     if (!JS_IsExceptionPending(cx)) {
-      // TODO Rename error to InternalError
-      JS_ReportErrorLatin1(cx, "InternalError");
+      js::ReportOutOfMemory(cx);
     }
     return nullptr;
   }
@@ -1049,12 +1048,10 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify::sign(JSContext *cx, JS::
   // containing the bytes of signature.
   JS::RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, signature_length, signature.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
   if (!buffer) {
-    // We can be here is the array buffer was too large -- if that was the case then a
-    // JSMSG_BAD_ARRAY_LENGTH will have been created. No other failure scenarios in this path will
-    // create a JS exception and so we need to create one.
+    // We can be here if the array buffer was too large -- if that was the case then a
+    // JSMSG_BAD_ARRAY_LENGTH will have been created. Otherwise we're probably out of memory.
     if (!JS_IsExceptionPending(cx)) {
-      // TODO Rename error to InternalError
-      JS_ReportErrorLatin1(cx, "InternalError");
+      js::ReportOutOfMemory(cx);
     }
     return nullptr;
   }
@@ -1201,8 +1198,8 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
 
   // 2. If usages contains an entry which is not "sign" or "verify", then throw a SyntaxError.
   if (!usages.canOnlySignOrVerify()) {
-    // TODO Rename error to SyntaxError
-    JS_ReportErrorLatin1(cx, "HMAC keys only support 'sign' and 'verify' operations");
+    DOMException::raise(cx, "HMAC keys only support 'sign' and 'verify' operations",
+                        "SyntaxError");
     return nullptr;
   }
 
@@ -1231,7 +1228,7 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
       // 6.3 Throw a DataError.
     auto jwk = std::get<JsonWebKey *>(keyData);
     if (!jwk) {
-      JS_ReportErrorLatin1(cx, "Supplied format is not a JSONWebKey");
+      DOMException::raise(cx, "Supplied keyData is not a JSONWebKey", "DataError");
       return nullptr;
     }
     // 6.4 If the kty field of jwk is not "oct", then throw a DataError.
@@ -1451,7 +1448,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
         // Throw a DataError.
       auto jwk = std::get<JsonWebKey *>(keyData);
       if (!jwk) {
-        JS_ReportErrorLatin1(cx, "Supplied format is not a JSONWebKey");
+        DOMException::raise(cx, "Supplied keyData is not a JSONWebKey", "DataError");
         return nullptr;
       }
       // 2.2. If the "d" field is present and usages contains a value which is not "sign",
@@ -1709,7 +1706,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
       // Throw a DataError.
     auto jwk = std::get<JsonWebKey *>(keyData);
     if (!jwk) {
-      JS_ReportErrorLatin1(cx, "Supplied format is not a JSONWebKey");
+      DOMException::raise(cx, "Supplied keyData is not a JSONWebKey", "DataError");
       return nullptr;
     }
 
@@ -1726,10 +1723,9 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
       isUsagesAllowed = usages.canOnlyVerify();
     }
     if (!isUsagesAllowed) {
-      // TODO Rename error to SyntaxError
-      JS_ReportErrorLatin1(cx,
-                           "The JWK 'key_ops' member was inconsistent with that specified by the "
-                           "Web Crypto call. The JWK usage must be a superset of those requested");
+      DOMException::raise(cx,
+                          "The JWK 'key_ops' member was inconsistent with that specified by the "
+                          "Web Crypto call. The JWK usage must be a superset of those requested", "DataError");
       return nullptr;
     }
 
@@ -1805,8 +1801,9 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
     }
     }
     if (!isMatched) {
-      JS_ReportErrorLatin1(
-          cx, "The JWK 'alg' member was inconsistent with that specified by the Web Crypto call");
+      DOMException::raise(cx,
+                          "The JWK 'alg' member was inconsistent with that specified by the Web Crypto call",
+                          "DataError");
       return nullptr;
     }
 

@@ -10,6 +10,8 @@
 #include "native-stream-sink.h"
 #include "native-stream-source.h"
 
+#include "stream-errors.h"
+
 // A JS class to use as the underlying source for native readable streams, used
 // for Request/Response bodies and TransformStream.
 namespace builtins {
@@ -87,8 +89,7 @@ bool NativeStreamSource::lock_stream(JSContext *cx, JS::HandleObject stream) {
   bool locked;
   JS::ReadableStreamIsLocked(cx, stream, &locked);
   if (locked) {
-    JS_ReportErrorLatin1(cx, "Can't lock an already locked ReadableStream");
-    return false;
+    return api::throw_error(cx, StreamErrors::StreamAlreadyLocked);
   }
 
   JS::RootedObject self(cx, get_stream_source(cx, stream));

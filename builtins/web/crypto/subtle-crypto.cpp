@@ -89,7 +89,7 @@ bool SubtleCrypto::importKey(JSContext *cx, unsigned argc, JS::Value *vp) {
     auto format_arg = args.get(0);
     // Convert into a String following https://tc39.es/ecma262/#sec-tostring
     auto format_chars = core::encode(cx, format_arg);
-    if (!format_chars || format_chars.len == 0) {
+    if (!format_chars.ptr) {
       return ReturnPromiseRejectedWithPendingError(cx, args);
     }
     std::string_view format_string = format_chars;
@@ -102,9 +102,10 @@ bool SubtleCrypto::importKey(JSContext *cx, unsigned argc, JS::Value *vp) {
     } else if (format_string == "raw") {
       format = CryptoKeyFormat::Raw;
     } else {
-      // TODO: Change to a SyntaxError instance
-      JS_ReportErrorLatin1(cx, "Provided format parameter is not supported. Supported formats are: "
-                               "'spki', 'pkcs8', 'jwk', and 'raw'");
+      DOMException::raise(cx,
+        "crypto.subtle.importkey: Provided format parameter is not supported. "
+          "Supported formats are: 'spki', 'pkcs8', 'jwk', and 'raw'",
+        "NotSupportedError");
       return ReturnPromiseRejectedWithPendingError(cx, args);
     }
   }
@@ -115,8 +116,7 @@ bool SubtleCrypto::importKey(JSContext *cx, unsigned argc, JS::Value *vp) {
   {
     auto usages_arg = args.get(4);
 
-    std::string_view error_message("SubtleCrypto.importKey: Invalid keyUsages argument");
-    auto keyUsageMaskResult = CryptoKeyUsages::from(cx, usages_arg, error_message);
+    auto keyUsageMaskResult = CryptoKeyUsages::from(cx, usages_arg);
     if (keyUsageMaskResult.isErr()) {
       return ReturnPromiseRejectedWithPendingError(cx, args);
     }
@@ -134,7 +134,6 @@ bool SubtleCrypto::importKey(JSContext *cx, unsigned argc, JS::Value *vp) {
   // 5. Let promise be a new Promise.
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
   if (!promise) {
-    JS_ReportErrorASCII(cx, "InternalError");
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
@@ -184,20 +183,17 @@ bool SubtleCrypto::sign(JSContext *cx, unsigned argc, JS::Value *vp) {
   // respectively.
   auto algorithm = args.get(0);
   auto key_arg = args.get(1);
-  if (!key_arg.isObject()) {
-    JS_ReportErrorLatin1(cx, "parameter 2 is not of type 'CryptoKey'");
+  if (!CryptoKey::is_instance(key_arg)) {
+    api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.sign", "key",
+      "be a CryptoKey object");
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
   JS::RootedObject key(cx, &key_arg.toObject());
-  if (!CryptoKey::is_instance(key)) {
-    JS_ReportErrorLatin1(cx, "parameter 2 is not of type 'CryptoKey'");
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
 
   // 2. Let data be the result of getting a copy of the bytes held by the data parameter passed to
   // the sign() method.
   std::optional<std::span<uint8_t>> dataOptional =
-      value_to_buffer(cx, args.get(2), "SubtleCrypto.sign: data");
+      value_to_buffer(cx, args.get(2), "crypto.subtle.sign: data");
   if (!dataOptional.has_value()) {
     // value_to_buffer would have already created a JS exception so we don't need to create one
     // ourselves.
@@ -280,17 +276,12 @@ bool SubtleCrypto::verify(JSContext *cx, unsigned argc, JS::Value *vp) {
   // respectively.
   auto algorithm = args.get(0);
   auto key_arg = args.get(1);
-  if (!key_arg.isObject()) {
-    JS_ReportErrorLatin1(cx, "parameter 2 is not of type 'CryptoKey'");
+  if (!CryptoKey::is_instance(key_arg)) {
+    api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.verify", "key",
+      "be a CryptoKey object");
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
   JS::RootedObject key(cx, &key_arg.toObject());
-
-  if (!CryptoKey::is_instance(key)) {
-    JS_ReportErrorASCII(
-        cx, "SubtleCrypto.verify: key (argument 2)  does not implement interface CryptoKey");
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
 
   // 2. Let signature be the result of getting a copy of the bytes held by the signature
   // parameter passed to the verify() method.
@@ -373,12 +364,7 @@ const JSFunctionSpec SubtleCrypto::methods[] = {
 const JSPropertySpec SubtleCrypto::properties[] = {
     JS_STRING_SYM_PS(toStringTag, "SubtleCrypto", JSPROP_READONLY), JS_PS_END};
 
-bool SubtleCrypto::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ILLEGAL_CTOR);
-  return false;
-}
-
 bool SubtleCrypto::init_class(JSContext *cx, JS::HandleObject global) {
-  return BuiltinImpl<SubtleCrypto>::init_class_impl(cx, global);
+  return init_class_impl(cx, global);
 }
 } // namespace builtins::web::crypto

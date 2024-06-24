@@ -65,8 +65,7 @@ CryptoKeyUsages CryptoKeyUsages::from(std::vector<std::string> key_usages) {
   return CryptoKeyUsages(mask);
 }
 
-JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue key_usages,
-                                                  std::string_view error_message) {
+JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue key_usages) {
   bool key_usages_is_array;
   if (!JS::IsArrayObject(cx, key_usages, &key_usages_is_array)) {
     return JS::Result<CryptoKeyUsages>(JS::Error());
@@ -75,28 +74,20 @@ JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue
   if (!key_usages_is_array) {
     // TODO: This should check if the JS::HandleValue is iterable and if so, should convert it into
     // a JS Array
-    JS_ReportErrorASCII(cx, "The provided value cannot be converted to a sequence");
+    api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.importKey",
+      "keyUsages", "be a sequence");
     return JS::Result<CryptoKeyUsages>(JS::Error());
   }
 
-  uint32_t key_usages_length;
   JS::RootedObject array(cx, &key_usages.toObject());
-  if (!array) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_SUBTLE_CRYPTO_ERROR,
-                              error_message.data());
-    return JS::Result<CryptoKeyUsages>(JS::Error());
-  }
+  uint32_t key_usages_length;
   if (!JS::GetArrayLength(cx, array, &key_usages_length)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_SUBTLE_CRYPTO_ERROR,
-                              error_message.data());
     return JS::Result<CryptoKeyUsages>(JS::Error());
   }
   uint8_t mask = 0;
   for (uint32_t index = 0; index < key_usages_length; index++) {
     JS::RootedValue val(cx);
     if (!JS_GetElement(cx, array, index, &val)) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_SUBTLE_CRYPTO_ERROR,
-                                error_message.data());
       return JS::Result<CryptoKeyUsages>(JS::Error());
     }
 
@@ -124,8 +115,11 @@ JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue
     } else if (usage == "unwrapKey") {
       mask |= unwrap_key_flag;
     } else {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_SUBTLE_CRYPTO_ERROR,
-                                error_message.data());
+      api::throw_error(cx, api::Errors::TypeError,
+        "crypto.subtle.importKey",
+        "each value in the 'keyUsages' list",
+        "be one of 'encrypt', 'decrypt', 'sign', 'verify', 'deriveKey', 'deriveBits', "
+        "'wrapKey', or 'unwrapKey'");
       return JS::Result<CryptoKeyUsages>(JS::Error());
     }
   }
@@ -135,14 +129,9 @@ JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue
 bool CryptoKey::algorithm_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
 
-  // TODO: Should we move this into the METHOD_HEADER macro?
-  // CryptoKey.prototype passes the receiver check in the above macro but is not actually an
-  // instance of CryptoKey. We check if `self` is `CryptoKey.prototype` and if it is, we throw a JS
-  // Error.
+  // TODO: Change this class so that its prototype isn't an instance of the class
   if (self == proto_obj.get()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INCOMPATIBLE_INSTANCE, __func__,
-                              CryptoKey::class_.name);
-    return false;
+    return api::throw_error(cx, api::Errors::WrongReceiver, "algorithm get", "CryptoKey");
   }
 
   auto algorithm = &JS::GetReservedSlot(self, Slots::Algorithm).toObject();
@@ -158,14 +147,9 @@ bool CryptoKey::algorithm_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool CryptoKey::extractable_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
 
-  // TODO: Should we move this into the METHOD_HEADER macro?
-  // CryptoKey.prototype passes the receiver check in the above macro but is not actually an
-  // instance of CryptoKey. We check if `self` is `CryptoKey.prototype` and if it is, we throw a JS
-  // Error.
+  // TODO: Change this class so that its prototype isn't an instance of the class
   if (self == proto_obj.get()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_INTERFACE,
-                              "extractable get", "CryptoKey");
-    return false;
+    return api::throw_error(cx, api::Errors::WrongReceiver, "extractable get", "CryptoKey");
   }
 
   auto extractable = JS::GetReservedSlot(self, Slots::Extractable).toBoolean();
@@ -177,15 +161,11 @@ bool CryptoKey::extractable_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool CryptoKey::type_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
 
-  // TODO: Should we move this into the METHOD_HEADER macro?
-  // CryptoKey.prototype passes the receiver check in the above macro but is not actually an
-  // instance of CryptoKey. We check if `self` is `CryptoKey.prototype` and if it is, we throw a JS
-  // Error.
+  // TODO: Change this class so that its prototype isn't an instance of the class
   if (self == proto_obj.get()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_INTERFACE, "type get",
-                              "CryptoKey");
-    return false;
+    return api::throw_error(cx, api::Errors::WrongReceiver, "type get", "CryptoKey");
   }
+
   auto type = static_cast<CryptoKeyType>(JS::GetReservedSlot(self, Slots::Type).toInt32());
 
   // We store the type internally as a CryptoKeyType variant and need to
@@ -225,14 +205,9 @@ bool CryptoKey::type_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool CryptoKey::usages_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
 
-  // TODO: Should we move this into the METHOD_HEADER macro?
-  // CryptoKey.prototype passes the receiver check in the above macro but is not actually an
-  // instance of CryptoKey. We check if `self` is `CryptoKey.prototype` and if it is, we throw a JS
-  // Error.
+  // TODO: Change this class so that its prototype isn't an instance of the class
   if (self == proto_obj.get()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_INTERFACE, "usages get",
-                              "CryptoKey");
-    return false;
+    return api::throw_error(cx, api::Errors::WrongReceiver, "usages get", "CryptoKey");
   }
 
   // If the JS Array has already been created previously, return it.
@@ -329,14 +304,6 @@ const JSPropertySpec CryptoKey::properties[] = {
     JS_PSG("usages", CryptoKey::usages_get, JSPROP_ENUMERATE),
     JS_STRING_SYM_PS(toStringTag, "CryptoKey", JSPROP_READONLY),
     JS_PS_END};
-
-// There is no directly exposed constructor in the CryptoKey interface
-// https://w3c.github.io/webcrypto/#cryptokey-interface We throw a JS Error if the application
-// attempts to call the CryptoKey constructor directly
-bool CryptoKey::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ILLEGAL_CTOR);
-  return false;
-}
 
 bool CryptoKey::init_class(JSContext *cx, JS::HandleObject global) {
   return BuiltinImpl<CryptoKey>::init_class_impl(cx, global);
@@ -665,11 +632,9 @@ JSObject *CryptoKey::createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_I
   // if the call was not successful, we need to free `p` before exiting from the function.
   if (!buffer) {
     // We can be here if the array buffer was too large -- if that was the case then a
-    // JSMSG_BAD_ARRAY_LENGTH will have been created. No other failure scenarios in this path will
-    // create a JS exception and so we need to create one.
+    // JSMSG_BAD_ARRAY_LENGTH will have been created. Otherwise we're probably out of memory.
     if (!JS_IsExceptionPending(cx)) {
-      // TODO Rename error to InternalError
-      JS_ReportErrorLatin1(cx, "InternalError");
+      js::ReportOutOfMemory(cx);
     }
     return nullptr;
   }

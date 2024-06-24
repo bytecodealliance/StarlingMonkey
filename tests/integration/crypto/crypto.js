@@ -103,8 +103,7 @@ export const handler = serveTest(async (t) => {
         () => {
           new crypto.subtle.importKey();
         },
-        TypeError,
-        "crypto.subtle.importKey is not a constructor"
+        TypeError
       );
     });
     await t.test("subtle.importKey.called-with-wrong-this", async () => {
@@ -120,8 +119,7 @@ export const handler = serveTest(async (t) => {
             publicRsaJsonWebKeyData.key_ops
           );
         },
-        TypeError,
-        "Method SubtleCrypto.importKey called on receiver that's not an instance of SubtleCrypto"
+        TypeError
       );
     });
     await t.test("subtle.importKey.called-with-no-arguments", async () => {
@@ -129,8 +127,7 @@ export const handler = serveTest(async (t) => {
         async () => {
           await crypto.subtle.importKey();
         },
-        TypeError,
-        "SubtleCrypto.importKey: At least 5 arguments required, but only 0 passed"
+        TypeError
       );
     });
 
@@ -164,7 +161,7 @@ export const handler = serveTest(async (t) => {
         }
       );
       await t.test(
-        "subtle.importKey.first-parameter-non-existant-format",
+        "subtle.importKey.first-parameter-non-existent-format",
         async () => {
           const publicRsaJsonWebKeyData = createPublicRsaJsonWebKeyData();
           await rejects(
@@ -177,8 +174,7 @@ export const handler = serveTest(async (t) => {
                 publicRsaJsonWebKeyData.key_ops
               );
             },
-            Error,
-            "Provided format parameter is not supported. Supported formats are: 'spki', 'pkcs8', 'jwk', and 'raw'"
+            DOMException, null, "NotSupportedError"
           );
         }
       );
@@ -200,8 +196,7 @@ export const handler = serveTest(async (t) => {
                 publicRsaJsonWebKeyData.key_ops
               );
             },
-            Error,
-            "The provided value is not of type JsonWebKey"
+            TypeError
           );
         }
       );
@@ -222,8 +217,7 @@ export const handler = serveTest(async (t) => {
                   publicRsaJsonWebKeyData.key_ops
                 );
               },
-              DOMException,
-              "Data provided to an operation does not meet requirements"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -270,8 +264,7 @@ export const handler = serveTest(async (t) => {
                   publicRsaJsonWebKeyData.key_ops
                 );
               },
-              Error,
-              "The JWK member 'e' could not be base64url decoded or contained padding"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -290,8 +283,7 @@ export const handler = serveTest(async (t) => {
                   publicRsaJsonWebKeyData.key_ops
                 );
               },
-              Error,
-              "The required JWK member 'kty' was missing"
+              TypeError
             );
           }
         );
@@ -310,8 +302,7 @@ export const handler = serveTest(async (t) => {
                   publicRsaJsonWebKeyData.key_ops
                 );
               },
-              Error,
-              "The JWK 'kty' member was not 'RSA'"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -346,8 +337,7 @@ export const handler = serveTest(async (t) => {
                   key_ops
                 );
               },
-              Error,
-              "Failed to read the 'key_ops' property from 'JsonWebKey': The provided value cannot be converted to a sequence"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -383,8 +373,7 @@ export const handler = serveTest(async (t) => {
                   key_ops
                 );
               },
-              Error,
-              "The 'key_ops' member of the JWK dictionary contains duplicate usages"
+                DOMException, null, "DataError"
             );
           }
         );
@@ -404,8 +393,7 @@ export const handler = serveTest(async (t) => {
                   key_ops
                 );
               },
-              TypeError,
-              "Invalid keyUsages argument"
+                DOMException, null, "DataError"
             );
           }
         );
@@ -456,8 +444,7 @@ export const handler = serveTest(async (t) => {
                   publicRsaJsonWebKeyData.key_ops
                 );
               },
-              Error,
-              "Data provided to an operation does not meet requirements"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -504,8 +491,7 @@ export const handler = serveTest(async (t) => {
                   publicRsaJsonWebKeyData.key_ops
                 );
               },
-              Error,
-              "The JWK member 'n' could not be base64url decoded or contained padding"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -531,8 +517,7 @@ export const handler = serveTest(async (t) => {
                   publicEcdsaJsonWebKeyData.key_ops
                 );
               },
-              DOMException,
-              "Data provided to an operation does not meet requirements"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -579,8 +564,7 @@ export const handler = serveTest(async (t) => {
                   publicEcdsaJsonWebKeyData.key_ops
                 );
               },
-              Error,
-              "The JWK member 'x' could not be base64url decoded or contained padding"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -599,8 +583,7 @@ export const handler = serveTest(async (t) => {
                   publicEcdsaJsonWebKeyData.key_ops
                 );
               },
-              DOMException,
-              "Data provided to an operation does not meet requirements"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -647,8 +630,7 @@ export const handler = serveTest(async (t) => {
                   publicEcdsaJsonWebKeyData.key_ops
                 );
               },
-              Error,
-              "The JWK member 'y' could not be base64url decoded or contained padding"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -667,8 +649,7 @@ export const handler = serveTest(async (t) => {
                   publicEcdsaJsonWebKeyData.key_ops
                 );
               },
-              Error,
-              "The required JWK member 'kty' was missing"
+              TypeError
             );
           }
         );
@@ -687,8 +668,7 @@ export const handler = serveTest(async (t) => {
                   publicEcdsaJsonWebKeyData.key_ops
                 );
               },
-              Error,
-              "The JWK 'kty' member was not 'EC'"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -723,8 +703,7 @@ export const handler = serveTest(async (t) => {
                   key_ops
                 );
               },
-              Error,
-              "Failed to read the 'key_ops' property from 'JsonWebKey': The provided value cannot be converted to a sequence"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -760,8 +739,7 @@ export const handler = serveTest(async (t) => {
                   key_ops
                 );
               },
-              Error,
-              "The 'key_ops' member of the JWK dictionary contains duplicate usages"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -781,8 +759,7 @@ export const handler = serveTest(async (t) => {
                   key_ops
                 );
               },
-              TypeError,
-              "Invalid keyUsages argument"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -863,8 +840,7 @@ export const handler = serveTest(async (t) => {
                   privateEcdsaJsonWebKeyData.key_ops
                 );
               },
-              Error,
-              "The JWK member 'd' could not be base64url decoded or contained padding"
+              DOMException, null, "DataError"
             );
           }
         );
@@ -888,8 +864,7 @@ export const handler = serveTest(async (t) => {
               publicRsaJsonWebKeyData.key_ops
             );
           },
-          Error,
-          "Algorithm: Unrecognized name"
+          DOMException, null, "NotSupportedError"
         );
       });
       await t.test(
@@ -936,8 +911,7 @@ export const handler = serveTest(async (t) => {
                 publicRsaJsonWebKeyData.key_ops
               );
             },
-            Error,
-            "Algorithm: Unrecognized name"
+            DOMException, null, "NotSupportedError"
           );
         }
       );
@@ -985,8 +959,7 @@ export const handler = serveTest(async (t) => {
                 publicRsaJsonWebKeyData.key_ops
               );
             },
-            Error,
-            "The JWK 'alg' member was inconsistent with that specified by the Web Crypto call"
+            DOMException, null, "DataError"
           );
         }
       );
@@ -1006,8 +979,7 @@ export const handler = serveTest(async (t) => {
               undefined
             );
           },
-          Error,
-          "The provided value cannot be converted to a sequence"
+          TypeError
         );
       });
       await t.test("subtle.importKey.fifth-parameter-invalid", async () => {
@@ -1022,8 +994,7 @@ export const handler = serveTest(async (t) => {
               ["jake"]
             );
           },
-          Error,
-          "SubtleCrypto.importKey: Invalid keyUsages argument"
+          TypeError
         );
       });
       await t.test(
@@ -1057,8 +1028,7 @@ export const handler = serveTest(async (t) => {
                 ["sign"]
               );
             },
-            Error,
-            "The JWK 'key_ops' member was inconsistent with that specified by the Web Crypto call. The JWK usage must be a superset of those requested"
+            DOMException, null, "DataError"
           );
         }
       );
@@ -1244,8 +1214,7 @@ export const handler = serveTest(async (t) => {
         () => {
           new crypto.subtle.digest();
         },
-        TypeError,
-        "crypto.subtle.digest is not a constructor"
+        TypeError
       );
     });
     await t.test("subtle.digest.called-with-wrong-this", async () => {
@@ -1254,7 +1223,6 @@ export const handler = serveTest(async (t) => {
           await crypto.subtle.digest.call(undefined);
         },
         TypeError,
-        "Method SubtleCrypto.digest called on receiver that's not an instance of SubtleCrypto"
       );
     });
     await t.test("subtle.digest.called-with-no-arguments", async () => {
@@ -1263,7 +1231,6 @@ export const handler = serveTest(async (t) => {
           await crypto.subtle.digest();
         },
         TypeError,
-        "SubtleCrypto.digest: At least 2 arguments required, but only 0 passed"
       );
     });
 
@@ -1294,14 +1261,13 @@ export const handler = serveTest(async (t) => {
         }
       );
       await t.test(
-        "subtle.digest.first-parameter-non-existant-format",
+        "subtle.digest.first-parameter-non-existent-format",
         async () => {
           await rejects(
             async () => {
               await crypto.subtle.digest("jake", data);
             },
-            Error,
-            "Algorithm: Unrecognized name"
+            DOMException, null, "NotSupportedError"
           );
         }
       );
@@ -1313,8 +1279,7 @@ export const handler = serveTest(async (t) => {
           async () => {
             await crypto.subtle.digest("sha-1", undefined);
           },
-          Error,
-          'SubtleCrypto.digest: data must be of type ArrayBuffer or ArrayBufferView but got ""'
+          TypeError,
         );
       });
     }
@@ -1412,8 +1377,7 @@ export const handler = serveTest(async (t) => {
         () => {
           new crypto.subtle.sign();
         },
-        TypeError,
-        "crypto.subtle.sign is not a constructor"
+        TypeError
       );
     });
     await t.test("subtle.sign.called-with-wrong-this", async () => {
@@ -1428,7 +1392,6 @@ export const handler = serveTest(async (t) => {
           );
         },
         TypeError,
-        "Method SubtleCrypto.sign called on receiver that's not an instance of SubtleCrypto"
       );
     });
     await t.test("subtle.sign.called-with-no-arguments", async () => {
@@ -1437,7 +1400,6 @@ export const handler = serveTest(async (t) => {
           await crypto.subtle.sign();
         },
         TypeError,
-        "SubtleCrypto.sign: At least 3 arguments required, but only 0 passed"
       );
     });
     // first-parameter
@@ -1476,7 +1438,7 @@ export const handler = serveTest(async (t) => {
         }
       );
       await t.test(
-        "subtle.sign.first-parameter-non-existant-algorithm",
+        "subtle.sign.first-parameter-non-existent-algorithm",
         async () => {
           const privateRsaJsonWebKeyData = createPrivateRsaJsonWebKeyData();
           await rejects(
@@ -1490,8 +1452,7 @@ export const handler = serveTest(async (t) => {
               );
               await crypto.subtle.sign("jake", key, data);
             },
-            Error,
-            "Algorithm: Unrecognized name"
+            DOMException, null, "NotSupportedError"
           );
         }
       );
@@ -1507,8 +1468,7 @@ export const handler = serveTest(async (t) => {
               data
             );
           },
-          Error,
-          "parameter 2 is not of type 'CryptoKey'"
+          TypeError
         );
       });
       await t.test("subtle.sign.second-parameter-invalid-usages", async () => {
@@ -1524,8 +1484,7 @@ export const handler = serveTest(async (t) => {
             );
             await crypto.subtle.sign(createRsaJsonWebKeyAlgorithm(), key, data);
           },
-          Error,
-          "CryptoKey doesn't support signing"
+          DOMException, null, "InvalidAccessError"
         );
       });
     }
@@ -1548,8 +1507,7 @@ export const handler = serveTest(async (t) => {
               undefined
             );
           },
-          Error,
-          'SubtleCrypto.sign: data must be of type ArrayBuffer or ArrayBufferView but got ""'
+          TypeError
         );
       });
     }
@@ -1666,8 +1624,7 @@ export const handler = serveTest(async (t) => {
         () => {
           new crypto.subtle.verify();
         },
-        TypeError,
-        "crypto.subtle.verify is not a constructor"
+        TypeError
       );
     });
     await t.test("subtle.verify.called-with-wrong-this", async () => {
@@ -1690,7 +1647,6 @@ export const handler = serveTest(async (t) => {
           );
         },
         TypeError,
-        "Method SubtleCrypto.verify called on receiver that's not an instance of SubtleCrypto"
       );
     });
     await t.test("subtle.verify.called-with-no-arguments", async () => {
@@ -1699,7 +1655,6 @@ export const handler = serveTest(async (t) => {
           await crypto.subtle.verify();
         },
         TypeError,
-        "SubtleCrypto.verify: At least 4 arguments required, but only 0 passed"
       );
     });
     // first-parameter
@@ -1739,7 +1694,7 @@ export const handler = serveTest(async (t) => {
         }
       );
       await t.test(
-        "subtle.verify.first-parameter-non-existant-algorithm",
+        "subtle.verify.first-parameter-non-existent-algorithm",
         async () => {
           const publicRsaJsonWebKeyData = createPublicRsaJsonWebKeyData();
           await rejects(
@@ -1758,8 +1713,7 @@ export const handler = serveTest(async (t) => {
                 new Uint8Array()
               );
             },
-            Error,
-            "Algorithm: Unrecognized name"
+            DOMException, null, "NotSupportedError"
           );
         }
       );
@@ -1778,8 +1732,7 @@ export const handler = serveTest(async (t) => {
                 new Uint8Array()
               );
             },
-            Error,
-            "parameter 2 is not of type 'CryptoKey'"
+            TypeError
           );
         }
       );
@@ -1803,8 +1756,7 @@ export const handler = serveTest(async (t) => {
                 new Uint8Array()
               );
             },
-            Error,
-            "CryptoKey doesn't support verification"
+            DOMException, null, "InvalidAccessError"
           );
         }
       );
@@ -1829,8 +1781,7 @@ export const handler = serveTest(async (t) => {
               new Uint8Array()
             );
           },
-          Error,
-          'SubtleCrypto.verify: signature (argument 3) must be of type ArrayBuffer or ArrayBufferView but got ""'
+          TypeError
         );
       });
     }
@@ -1856,8 +1807,7 @@ export const handler = serveTest(async (t) => {
                 undefined
               );
             },
-            Error,
-            'SubtleCrypto.verify: data (argument 4) must be of type ArrayBuffer or ArrayBufferView but got ""'
+            TypeError
           );
         }
       );

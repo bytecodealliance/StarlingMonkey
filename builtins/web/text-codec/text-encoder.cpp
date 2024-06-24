@@ -18,6 +18,11 @@ namespace text_codec {
 bool TextEncoder::encode(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
 
+  // TODO: Change this class so that its prototype isn't an instance of the class
+  if (self == proto_obj) {
+    return api::throw_error(cx, api::Errors::WrongReceiver, "encode", "TextEncoder");
+  }
+
   // Default to empty string if no input is given.
   if (args.get(0).isUndefined()) {
     JS::RootedObject byte_array(cx, JS_NewUint8Array(cx, 0));
@@ -52,6 +57,11 @@ bool TextEncoder::encode(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool TextEncoder::encodeInto(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(2);
 
+  // TODO: Change this class so that its prototype isn't an instance of the class
+  if (self == proto_obj) {
+    return api::throw_error(cx, api::Errors::WrongReceiver, "encodeInto", "TextEncoder");
+  }
+
   auto source = JS::ToString(cx, args.get(0));
   if (!source) {
     return false;
@@ -59,29 +69,19 @@ bool TextEncoder::encodeInto(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto destination_value = args.get(1);
 
   if (!destination_value.isObject()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEXT_ENCODER_ENCODEINTO_INVALID_ARRAY);
-    return false;
+    return api::throw_error(cx, api::Errors::TypeError, "TextEncoder.encodeInto",
+      "destination", "be a Uint8Array");
   }
   JS::RootedObject destination(cx, &destination_value.toObject());
-  if (!JS_IsArrayBufferViewObject(destination)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEXT_ENCODER_ENCODEINTO_INVALID_ARRAY);
-    return false;
-  }
-  if (JS::IsLargeArrayBufferView(destination)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEXT_ENCODER_ENCODEINTO_INVALID_ARRAY);
-    return false;
-  }
 
   uint8_t *data;
   bool is_shared;
   size_t len = 0;
+  // JS_GetObjectAsUint8Array returns nullptr without throwing if the object is not
+  // a Uint8Array, so we don't need to do explicit checks before calling it.
   if (!JS_GetObjectAsUint8Array(destination, &len, &is_shared, &data)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEXT_ENCODER_ENCODEINTO_INVALID_ARRAY);
-    return false;
+    return api::throw_error(cx, api::Errors::TypeError, "TextEncoder.encodeInto",
+      "destination", "be a Uint8Array");
   }
   auto span = AsWritableChars(mozilla::Span(data, len));
   auto maybe = JS_EncodeStringToUTF8BufferPartial(cx, source, span);
@@ -114,14 +114,9 @@ bool TextEncoder::encodeInto(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool TextEncoder::encoding_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
 
-  JS::RootedObject result(cx);
-  if (!JS_GetPrototype(cx, self, &result)) {
-    return false;
-  }
-  if (result != TextEncoder::proto_obj) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_INTERFACE, "encoding get",
-                              "TextEncoder");
-    return false;
+  // TODO: Change this class so that its prototype isn't an instance of the class
+  if (self == proto_obj) {
+    return api::throw_error(cx, api::Errors::WrongReceiver, "encoding get", "TextEncoder");
   }
 
   JS::RootedString str(cx, JS_NewStringCopyN(cx, "utf-8", 5));

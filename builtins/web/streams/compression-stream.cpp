@@ -9,6 +9,7 @@
 
 #include "compression-stream.h"
 #include "encode.h"
+#include "stream-errors.h"
 #include "transform-stream-default-controller.h"
 #include "transform-stream.h"
 
@@ -116,8 +117,7 @@ bool deflate_chunk(JSContext *cx, JS::HandleObject self, JS::HandleValue chunk, 
     zstream->next_out = buffer;
     int err = deflate(zstream, finished ? Z_FINISH : Z_NO_FLUSH);
     if (!((finished && err == Z_STREAM_END) || err == Z_OK)) {
-      JS_ReportErrorASCII(cx, "CompressionStream transform: error compressing chunk");
-      return false;
+      return api::throw_error(cx, StreamErrors::CompressingChunkFailed);
     }
 
     size_t bytes = BUFFER_SIZE - zstream->avail_out;
@@ -274,7 +274,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   int err =
       deflateInit2(zstream, COMPRESSION_LEVEL, Z_DEFLATED, window_bits, 8, Z_DEFAULT_STRATEGY);
   if (err != Z_OK) {
-    JS_ReportErrorASCII(cx, "Error initializing compression stream");
+    api::throw_error(cx, StreamErrors::StreamInitializationFailed, "compression");
     return nullptr;
   }
 
@@ -304,11 +304,7 @@ bool CompressionStream::constructor(JSContext *cx, unsigned argc, JS::Value *vp)
   } else if (!strcmp(format_chars.begin(), "gzip")) {
     format = Format::GZIP;
   } else {
-    JS_ReportErrorUTF8(cx,
-                       "'format' has to be \"deflate\" or \"gzip\", "
-                       "but got \"%s\"",
-                       format_chars.begin());
-    return false;
+    return api::throw_error(cx, StreamErrors::InvalidCompressionFormat, format_chars.begin());
   }
 
   JS::RootedObject compressionStreamInstance(cx, JS_NewObjectForConstructor(cx, &class_, args));

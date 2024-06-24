@@ -22,7 +22,7 @@ enum class Operations : uint8_t {
   GetKeyLength
 };
 
-class SubtleCrypto : public BuiltinImpl<SubtleCrypto> {
+class SubtleCrypto : public BuiltinNoConstructor<SubtleCrypto> {
 private:
 public:
   static constexpr const char *class_name = "SubtleCrypto";
@@ -38,7 +38,6 @@ public:
   static bool sign(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool verify(JSContext *cx, unsigned argc, JS::Value *vp);
 
-  static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool init_class(JSContext *cx, JS::HandleObject global);
 };
 

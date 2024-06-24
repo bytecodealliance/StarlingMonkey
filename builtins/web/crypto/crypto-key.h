@@ -37,8 +37,7 @@ public:
   CryptoKeyUsages(bool encrypt, bool decrypt, bool sign, bool verify, bool derive_key,
                   bool derive_bits, bool wrap_key, bool unwrap_key);
   static CryptoKeyUsages from(std::vector<std::string> key_usages);
-  static JS::Result<CryptoKeyUsages> from(JSContext *cx, JS::HandleValue key_usages,
-                                          std::string_view error_message);
+  static JS::Result<CryptoKeyUsages> from(JSContext *cx, JS::HandleValue key_usages);
 
   uint8_t toInt() { return this->mask; };
 
@@ -65,7 +64,7 @@ public:
   bool canOnlyUnwrapKey() { return this->mask == unwrap_key_flag; };
 };
 
-class CryptoKey : public BuiltinImpl<CryptoKey> {
+class CryptoKey : public BuiltinNoConstructor<CryptoKey> {
 public:
   static const int ctor_length = 0;
   static constexpr const char *class_name = "CryptoKey";
@@ -118,7 +117,7 @@ public:
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
-  static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
+
   static bool init_class(JSContext *cx, JS::HandleObject global);
 
   static JSObject *createHMAC(JSContext *cx, CryptoAlgorithmHMAC_Import *algorithm,

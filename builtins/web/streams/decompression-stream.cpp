@@ -12,6 +12,8 @@
 #include "transform-stream-default-controller.h"
 #include "transform-stream.h"
 
+#include "stream-errors.h"
+
 namespace builtins {
 namespace web {
 namespace streams {
@@ -84,8 +86,7 @@ bool inflate_chunk(JSContext *cx, JS::HandleObject self, JS::HandleValue chunk, 
     // Step 2 of flush:
     // 2.  If the end of the compressed input has not been reached, then throw a TypeError.
     if (zstream->avail_in != 0) {
-      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_DECOMPRESSING_ERROR);
-      return false;
+      return api::throw_error(cx, StreamErrors::DecompressingChunkFailed);
     }
     // This just sets up step 3. The actual decompression happens in the `do` loop
     // below.
@@ -118,8 +119,6 @@ bool inflate_chunk(JSContext *cx, JS::HandleObject self, JS::HandleValue chunk, 
     int err = inflate(zstream, finished ? Z_FINISH : Z_NO_FLUSH);
     if (err != Z_OK && err != Z_STREAM_END && err != Z_BUF_ERROR) {
 
-      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_DECOMPRESSING_ERROR);
-      return false;
     }
 
     size_t bytes = BUFFER_SIZE - zstream->avail_out;
@@ -278,7 +277,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
 
   int err = inflateInit2(zstream, window_bits);
   if (err != Z_OK) {
-    JS_ReportErrorASCII(cx, "Error initializing decompression stream");
+    api::throw_error(cx, StreamErrors::StreamInitializationFailed, "decompression");
     return nullptr;
   }
 
@@ -308,9 +307,8 @@ bool DecompressionStream::constructor(JSContext *cx, unsigned argc, JS::Value *v
   } else if (!strcmp(format_chars.begin(), "gzip")) {
     format = Format::GZIP;
   } else {
-    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_INVALID_COMPRESSION_FORMAT,
-                             format_chars.begin());
-    return false;
+    return api::throw_error(cx, api::Errors::TypeError, "DecompressionStream constructor",
+                            "format", "be 'deflate', 'deflate-raw', or 'gzip'");
   }
 
   JS::RootedObject decompressionStreamInstance(cx, JS_NewObjectForConstructor(cx, &class_, args));

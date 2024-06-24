@@ -144,10 +144,8 @@ export const handler = serveTest(async (t) => {
       throws(
         () => {
           setInterval(type);
-          // TODO: Make a TypeError
         },
-        Error,
-        `First argument to setInterval must be a function`
+        TypeError
       );
     }
   });
@@ -299,10 +297,8 @@ export const handler = serveTest(async (t) => {
       throws(
         () => {
           setTimeout(type);
-          // TODO: Make a TypeError
         },
-        Error,
-        `First argument to setTimeout must be a function`
+        TypeError,
       );
     }
   });
