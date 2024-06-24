@@ -70,13 +70,16 @@ export function throws(func, errorClass, errorMessage) {
   throw new AssertionError(`Expected \`${func.toString()}\` to throw, but it didn't`);
 }
 
-export async function rejects(asyncFunc, errorClass, errorMessage) {
+export async function rejects(asyncFunc, errorClass, errorMessage, errorName) {
   try {
     await asyncFunc();
   } catch (err) {
     if (errorClass) {
       if (!(err instanceof errorClass)) {
         throw new AssertionError(`not expected error instance calling \`${asyncFunc.toString()}\``, errorMessage, err.name + ': ' + err.message, errorClass.name);
+      }
+      if (errorClass === DOMException && errorName && err.name !== errorName) {
+        throw new AssertionError(`expected error name ${errorName} but got ${err.name} when calling \`${asyncFunc.toString()}\``);
       }
     }
     if (errorMessage) {
