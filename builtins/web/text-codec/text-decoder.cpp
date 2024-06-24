@@ -32,7 +32,7 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (args.hasDefined(1)) {
     auto options_value = args.get(1);
     if (!options_value.isObject()) {
-      return api::throw_error(cx, api::Errors::WrongType, "TextDecoder.decode",
+      return api::throw_error(cx, api::Errors::TypeError, "TextDecoder.decode",
         "options", "be an object or undefined");
     }
     JS::RootedObject options(cx, &options_value.toObject());
@@ -219,7 +219,7 @@ bool TextDecoder::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
       }
       ignoreBOM = JS::ToBoolean(ignoreBOM_value);
     } else if (!options_val.isNull()) {
-      return api::throw_error(cx, api::Errors::WrongType, "TextDecoder constructor",
+      return api::throw_error(cx, api::Errors::TypeError, "TextDecoder constructor",
         "options", "be an object or undefined");
     }
   }

@@ -1,5 +1,7 @@
 #include "structured-clone.h"
 
+#include "dom-exception.h"
+
 namespace builtins {
 namespace web {
 namespace structured_clone {
@@ -45,8 +47,6 @@ JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r,
   return params_obj;
 }
 
-DEF_ERR(CloningFailed, JSEXN_TYPEERR, "The object could not be cloned", 0)
-
 /**
  * Writes non-JS builtins during structured cloning.
  *
@@ -58,7 +58,7 @@ DEF_ERR(CloningFailed, JSEXN_TYPEERR, "The object could not be cloned", 0)
 bool WriteStructuredClone(JSContext *cx, JSStructuredCloneWriter *w, JS::HandleObject obj,
                           bool *sameProcessScopeRequired, void *closure) {
   if (!url::URLSearchParams::is_instance(obj)) {
-    return api::throw_error(cx, CloningFailed);
+    return dom_exception::DOMException::raise(cx, "The object could not be cloned", "DataCloneError");
   }
 
   auto slice = url::URLSearchParams::serialize(cx, obj);

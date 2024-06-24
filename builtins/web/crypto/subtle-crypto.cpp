@@ -1,7 +1,6 @@
 #include "subtle-crypto.h"
 #include "../dom-exception.h"
 #include "builtin.h"
-#include "crypto-errors.h"
 #include "encode.h"
 
 namespace builtins::web::crypto {
@@ -103,7 +102,10 @@ bool SubtleCrypto::importKey(JSContext *cx, unsigned argc, JS::Value *vp) {
     } else if (format_string == "raw") {
       format = CryptoKeyFormat::Raw;
     } else {
-      api::throw_error(cx, CryptoErrors::InvalidKeyFormat);
+      DOMException::raise(cx,
+        "crypto.subtle.importkey: Provided format parameter is not supported. "
+          "Supported formats are: 'spki', 'pkcs8', 'jwk', and 'raw'",
+        "NotSupportedError");
       return ReturnPromiseRejectedWithPendingError(cx, args);
     }
   }
@@ -182,7 +184,7 @@ bool SubtleCrypto::sign(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto algorithm = args.get(0);
   auto key_arg = args.get(1);
   if (!CryptoKey::is_instance(key_arg)) {
-    api::throw_error(cx, api::Errors::WrongType, "crypto.subtle.sign", "key",
+    api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.sign", "key",
       "be a CryptoKey object");
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
@@ -275,7 +277,7 @@ bool SubtleCrypto::verify(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto algorithm = args.get(0);
   auto key_arg = args.get(1);
   if (!CryptoKey::is_instance(key_arg)) {
-    api::throw_error(cx, api::Errors::WrongType, "crypto.subtle.verify", "key",
+    api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.verify", "key",
       "be a CryptoKey object");
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }

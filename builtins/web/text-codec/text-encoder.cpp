@@ -69,7 +69,7 @@ bool TextEncoder::encodeInto(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto destination_value = args.get(1);
 
   if (!destination_value.isObject()) {
-    return api::throw_error(cx, api::Errors::WrongType, "TextEncoder.encodeInto",
+    return api::throw_error(cx, api::Errors::TypeError, "TextEncoder.encodeInto",
       "destination", "be a Uint8Array");
   }
   JS::RootedObject destination(cx, &destination_value.toObject());
@@ -80,7 +80,7 @@ bool TextEncoder::encodeInto(JSContext *cx, unsigned argc, JS::Value *vp) {
   // JS_GetObjectAsUint8Array returns nullptr without throwing if the object is not
   // a Uint8Array, so we don't need to do explicit checks before calling it.
   if (!JS_GetObjectAsUint8Array(destination, &len, &is_shared, &data)) {
-    return api::throw_error(cx, api::Errors::WrongType, "TextEncoder.encodeInto",
+    return api::throw_error(cx, api::Errors::TypeError, "TextEncoder.encodeInto",
       "destination", "be a Uint8Array");
   }
   auto span = AsWritableChars(mozilla::Span(data, len));

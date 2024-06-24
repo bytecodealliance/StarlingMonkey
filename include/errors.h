@@ -10,7 +10,7 @@ bool throw_error(JSContext* cx, const JSErrorFormatString &error,
 namespace Errors {
 DEF_ERR(WrongReceiver, JSEXN_TYPEERR, "Method '{0}' called on receiver that's not an instance of {1}", 2)
 DEF_ERR(NoCtorBuiltin, JSEXN_TYPEERR, "{0} builtin can't be instantiated directly", 1)
-DEF_ERR(WrongType, JSEXN_TYPEERR, "{0}: {1} must {2}", 3)
+DEF_ERR(TypeError, JSEXN_TYPEERR, "{0}: {1} must {2}", 3)
 DEF_ERR(CtorCalledWithoutNew, JSEXN_TYPEERR, "calling a builtin {0} constructor without new is forbidden", 1)
 DEF_ERR(InvalidSequence, JSEXN_TYPEERR, "Failed to construct {0} object. If defined, the first "
                      "argument must be either a [ ['name', 'value'], ... ] sequence, "

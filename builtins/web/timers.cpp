@@ -131,7 +131,7 @@ template <bool repeat> bool setTimeout_or_interval(JSContext *cx, const unsigned
   }
 
   if (!(args[0].isObject() && JS::IsCallable(&args[0].toObject()))) {
-    return api::throw_error(cx, api::Errors::WrongType, repeat ? "setInterval" : "setTimeout",
+    return api::throw_error(cx, api::Errors::TypeError, repeat ? "setInterval" : "setTimeout",
       "first argument", "be a function");
   }
   const RootedObject handler(cx, &args[0].toObject());

@@ -114,7 +114,7 @@ bool pipeThrough(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
   if (!args[0].isObject()) {
-    return api::throw_error(cx, api::Errors::WrongType, "ReadableStream.pipeThrough",
+    return api::throw_error(cx, api::Errors::TypeError, "ReadableStream.pipeThrough",
       "transformStream parameter", "be an object");
   }
 
@@ -126,7 +126,7 @@ bool pipeThrough(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!JS_GetProperty(cx, transform, "readable", &val))
     return false;
   if (!val.isObject() || !JS::IsReadableStream(&val.toObject())) {
-    return api::throw_error(cx, api::Errors::WrongType, "ReadableStream.pipeThrough",
+    return api::throw_error(cx, api::Errors::TypeError, "ReadableStream.pipeThrough",
     "transformStream parameter",
     "be an object with a |readable| property that is an instance of ReadableStream");
   }
@@ -136,7 +136,7 @@ bool pipeThrough(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!JS_GetProperty(cx, transform, "writable", &val))
     return false;
   if (!val.isObject() || !JS::IsWritableStream(&val.toObject())) {
-    return api::throw_error(cx, api::Errors::WrongType, "ReadableStream.pipeThrough",
+    return api::throw_error(cx, api::Errors::TypeError, "ReadableStream.pipeThrough",
     "transformStream parameter",
     "be an object with a |writable| property that is an instance of WritableStream");
   }
@@ -198,7 +198,7 @@ bool ExtractFunction(JSContext *cx, JS::HandleObject obj, const char *name,
   }
 
   if (!val.isObject() || !JS::IsCallable(&val.toObject())) {
-    return api::throw_error(cx, api::Errors::WrongType, "TransformStream constructor",
+    return api::throw_error(cx, api::Errors::TypeError, "TransformStream constructor",
       name, "be a function");
   }
 
@@ -214,7 +214,7 @@ bool ExtractStrategy(JSContext *cx, JS::HandleValue strategy, double default_hwm
   }
 
   if (!strategy.isObject()) {
-    return api::throw_error(cx, api::Errors::WrongType, "TransformStream constructor",
+    return api::throw_error(cx, api::Errors::TypeError, "TransformStream constructor",
       "strategy", "be an object");
   }
 
@@ -232,7 +232,7 @@ bool ExtractStrategy(JSContext *cx, JS::HandleValue strategy, double default_hwm
       return false;
     }
     if (std::isnan(*hwm) || *hwm < 0) {
-      return api::throw_error(cx, api::Errors::WrongType, "TransformStream constructor",
+      return api::throw_error(cx, api::Errors::TypeError, "TransformStream constructor",
         "highWaterMark", "be a number >= 0");
     }
   }
@@ -439,7 +439,7 @@ bool TransformStream::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
       return false;
     }
     if (found) {
-      return api::throw_error(cx, api::Errors::WrongType, "TransformStream constructor",
+      return api::throw_error(cx, api::Errors::TypeError, "TransformStream constructor",
         "transformer.readableType", "not be used: it's reserved for future use");
     }
 
@@ -449,7 +449,7 @@ bool TransformStream::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
       return false;
     }
     if (found) {
-      return api::throw_error(cx, api::Errors::WrongType, "TransformStream constructor",
+      return api::throw_error(cx, api::Errors::TypeError, "TransformStream constructor",
         "transformer.writableType", "not be used: it's reserved for future use");
     }
   }

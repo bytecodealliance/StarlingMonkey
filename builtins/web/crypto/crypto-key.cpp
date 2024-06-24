@@ -74,7 +74,7 @@ JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue
   if (!key_usages_is_array) {
     // TODO: This should check if the JS::HandleValue is iterable and if so, should convert it into
     // a JS Array
-    api::throw_error(cx, api::Errors::WrongType, "crypto.subtle.importKey",
+    api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.importKey",
       "keyUsages", "be a sequence");
     return JS::Result<CryptoKeyUsages>(JS::Error());
   }
@@ -115,7 +115,7 @@ JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue
     } else if (usage == "unwrapKey") {
       mask |= unwrap_key_flag;
     } else {
-      api::throw_error(cx, api::Errors::WrongType,
+      api::throw_error(cx, api::Errors::TypeError,
         "crypto.subtle.importKey",
         "each value in the 'keyUsages' list",
         "be one of 'encrypt', 'decrypt', 'sign', 'verify', 'deriveKey', 'deriveBits', "

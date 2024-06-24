@@ -11,7 +11,6 @@
 #include "../dom-exception.h"
 #include "crypto-algorithm.h"
 
-#include "crypto-errors.h"
 #include "crypto-key-ec-components.h"
 #include "crypto-key-rsa-components.h"
 #include "encode.h"
@@ -1199,7 +1198,8 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
 
   // 2. If usages contains an entry which is not "sign" or "verify", then throw a SyntaxError.
   if (!usages.canOnlySignOrVerify()) {
-    api::throw_error(cx, CryptoErrors::InvalidHmacKeyUsage);
+    DOMException::raise(cx, "HMAC keys only support 'sign' and 'verify' operations",
+                        "SyntaxError");
     return nullptr;
   }
 

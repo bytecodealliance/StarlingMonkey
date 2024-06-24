@@ -2087,7 +2087,7 @@ bool Response::redirect(JSContext *cx, unsigned argc, Value *vp) {
   }
   auto parsedURL = new_jsurl_with_base(&url_str, url::URL::url(worker_location::WorkerLocation::url));
   if (!parsedURL) {
-    return api::throw_error(cx, api::Errors::WrongType, "Response.redirect", "url", "be a valid URL");
+    return api::throw_error(cx, api::Errors::TypeError, "Response.redirect", "url", "be a valid URL");
   }
 
   // 3. If status is not a redirect status, then throw a RangeError.

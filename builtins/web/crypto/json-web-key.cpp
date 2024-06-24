@@ -12,10 +12,12 @@
 #include "jsfriendapi.h"
 #pragma clang diagnostic pop
 
+#include "../dom-exception.h"
 #include "builtin.h"
 #include "encode.h"
 #include "json-web-key.h"
-#include "crypto-errors.h"
+
+#include <fmt/format.h>
 
 namespace builtins {
 namespace web {
@@ -47,7 +49,7 @@ extractStringPropertyFromObject(JSContext *cx, JS::HandleObject object, std::str
 std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue value,
                                               std::string_view required_kty_value) {
   if (!value.isObject()) {
-    api::throw_error(cx, api::Errors::WrongType, "crypto.subtle.importKey",
+    api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.importKey",
       "keyData", "be a JSONWebKey");
     return nullptr;
   }
@@ -60,13 +62,15 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
   }
   auto kty_option = kty_result.unwrap();
   if (!kty_option.has_value()) {
-    api::throw_error(cx, api::Errors::WrongType, "crypto.subtle.importKey",
+    api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.importKey",
       "keyData", "be a JSONWebKey");
     return nullptr;
   }
   auto kty = kty_option.value();
   if (kty != required_kty_value) {
-    api::throw_error(cx, CryptoErrors::InvalidJwk, "kty", required_kty_value.data());
+    auto message = fmt::format("crypto.subtle.importkey: The JWK member 'kty' was not '{}'",
+      required_kty_value);
+    dom_exception::DOMException::raise(cx, message, "DataError");
     return nullptr;
   }
 
@@ -201,7 +205,9 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
       }
       if (!key_ops_is_array) {
         // TODO: Check if key_ops_val is iterable via Symbol.iterator and if so, convert to a JS Array
-        api::throw_error(cx, CryptoErrors::InvalidJwk, "key_ops", "a sequence");
+        dom_exception::DOMException::raise(cx,
+          "crypto.subtle.importkey: The JWK member 'key_ops' was not a sequence",
+          "DataError");
         return nullptr;
       }
       uint32_t length;
@@ -235,20 +241,21 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
           std::string op(op_chars.begin(), op_chars.len);
 
           if (op != "encrypt" && op != "decrypt" && op != "sign" && op != "verify" &&
-              op != "deriveKey" && op != "deriveBits" && op != "wrapKey" && op != "unwrapKey") {
-            api::throw_error(cx, api::Errors::WrongType,
-              "crypto.subtle.importKey parameter 'keyData'",
-              "each value in the 'key_ops' list",
-              "be one of 'encrypt', 'decrypt', 'sign', 'verify', 'deriveKey', 'deriveBits', "
-              "'wrapKey', or 'unwrapKey'");
+          op != "deriveKey" && op != "deriveBits" && op != "wrapKey" && op != "unwrapKey") {
+            dom_exception::DOMException::raise(cx,
+              "crypto.subtle.importKey parameter 'keyData': "
+                "each value in the 'key_ops' list must be one of 'encrypt', 'decrypt', "
+                "'sign', 'verify', 'deriveKey', 'deriveBits', 'wrapKey', or 'unwrapKey'",
+              "DataError");
             return nullptr;
           }
 
           // No duplicates allowed
           if (std::find(key_ops.begin(), key_ops.end(), op) != key_ops.end()) {
-            api::throw_error(cx, api::Errors::WrongType,
-              "crypto.subtle.importKey parameter 'keyData'",
-              "'key_ops' list", "not contain duplicate entries");
+            dom_exception::DOMException::raise(cx,
+              "crypto.subtle.importKey parameter 'keyData': "
+                "'key_ops' list must not contain duplicate entries",
+              "DataError");
             return nullptr;
           }
 
@@ -275,7 +282,9 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
       }
       if (!oth_is_array) {
         // TODO: Check if oth_val is iterable via Symbol.iterator and if so, convert to a JS Array
-        api::throw_error(cx, CryptoErrors::InvalidJwk, "oth", "a sequence");
+        dom_exception::DOMException::raise(cx,
+          "crypto.subtle.importkey: The JWK member 'oth' was not a sequence",
+          "DataError");
         return nullptr;
       }
       uint32_t length;
@@ -302,7 +311,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
           }
 
           if (!info_val.isObject()) {
-            api::throw_error(cx, api::Errors::WrongType,
+            api::throw_error(cx, api::Errors::TypeError,
               "crypto.subtle.importKey parameter 'keyData'",
               "'oth' list", "be an RsaOtherPrimesInfo object");
             return nullptr;
@@ -315,7 +324,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
           }
           auto r_chars = core::encode(cx, info_val);
           if (!r_chars) {
-            api::throw_error(cx, api::Errors::WrongType,
+            api::throw_error(cx, api::Errors::TypeError,
               "crypto.subtle.importKey parameter 'keyData'",
               "'oth' list", "be an RsaOtherPrimesInfo object");
             return nullptr;
@@ -327,7 +336,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
           }
           auto d_chars = core::encode(cx, info_val);
           if (!d_chars) {
-            api::throw_error(cx, api::Errors::WrongType,
+            api::throw_error(cx, api::Errors::TypeError,
               "crypto.subtle.importKey parameter 'keyData'",
               "'oth' list", "be an RsaOtherPrimesInfo object");
             return nullptr;
@@ -340,7 +349,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
           }
           auto t_chars = core::encode(cx, info_val);
           if (!t_chars) {
-            api::throw_error(cx, api::Errors::WrongType,
+            api::throw_error(cx, api::Errors::TypeError,
               "crypto.subtle.importKey parameter 'keyData'",
               "'oth' list", "be an RsaOtherPrimesInfo object");
             return nullptr;

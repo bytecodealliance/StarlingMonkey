@@ -307,7 +307,7 @@ bool DecompressionStream::constructor(JSContext *cx, unsigned argc, JS::Value *v
   } else if (!strcmp(format_chars.begin(), "gzip")) {
     format = Format::GZIP;
   } else {
-    return api::throw_error(cx, api::Errors::WrongType, "DecompressionStream constructor",
+    return api::throw_error(cx, api::Errors::TypeError, "DecompressionStream constructor",
                             "format", "be 'deflate', 'deflate-raw', or 'gzip'");
   }
 
