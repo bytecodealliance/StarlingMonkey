@@ -1,5 +1,6 @@
 #include "base64.h"
 #include "mozilla/Try.h"
+#include "builtin.h"
 
 DEF_ERR(InvalidCharacterError, JSEXN_RANGEERR, "String contains an invalid character", 0)
 
