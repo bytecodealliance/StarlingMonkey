@@ -8,7 +8,7 @@ namespace builtins {
 namespace web {
 namespace base64 {
 
-JS::Result<std::string> convertJSValueToByteString(JSContext *cx, JS::Handle<JS::Value> v) {
+JS::Result<std::string> valueToJSByteString(JSContext *cx, JS::Handle<JS::Value> v) {
   JS::RootedString s(cx);
   if (v.isString()) {
     s = v.toString();
@@ -57,10 +57,10 @@ JS::Result<std::string> convertJSValueToByteString(JSContext *cx, JS::Handle<JS:
   return byteString;
 }
 
-JS::Result<std::string> convertJSValueToByteString(JSContext *cx, std::string v) {
+JS::Result<std::string> stringToJSByteString(JSContext *cx, std::string v) {
   JS::RootedValue s(cx);
   s.setString(JS_NewStringCopyN(cx, v.c_str(), v.length()));
-  return convertJSValueToByteString(cx, s);
+  return valueToJSByteString(cx, s);
 }
 
 // Maps an encoded character to a value in the Base64 alphabet, per
@@ -298,7 +298,7 @@ bool atob(JSContext *cx, unsigned argc, Value *vp) {
   if (!args.requireAtLeast(cx, "atob", 1)) {
     return false;
   }
-  auto dataResult = convertJSValueToByteString(cx, args.get(0));
+  auto dataResult = valueToJSByteString(cx, args.get(0));
   if (dataResult.isErr()) {
     return false;
   }
@@ -407,7 +407,7 @@ bool btoa(JSContext *cx, unsigned argc, Value *vp) {
   // Note: We do not check if data contains any character whose code point is
   // greater than U+00FF before calling convertJSValueToByteString as
   // convertJSValueToByteString does the same check
-  auto byteStringResult = convertJSValueToByteString(cx, data);
+  auto byteStringResult = valueToJSByteString(cx, data);
   if (byteStringResult.isErr()) {
     return false;
   }

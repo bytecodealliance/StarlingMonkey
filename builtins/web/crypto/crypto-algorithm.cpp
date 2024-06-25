@@ -167,7 +167,7 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPublicKeyFromJWK(JSContext *cx,
   if (modulus.starts_with('0')) {
     modulus = modulus.erase(0, 1);
   }
-  auto dataResult = base64::convertJSValueToByteString(cx, jwk->e.value());
+  auto dataResult = base64::stringToJSByteString(cx, jwk->e.value());
   if (dataResult.isErr()) {
     DOMException::raise(cx, "Data provided to an operation does not meet requirements",
                         "DataError");
@@ -259,7 +259,7 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPrivateKeyFromJWK(JSContext *cx
   if (modulus.starts_with('0')) {
     modulus = modulus.erase(0, 1);
   }
-  auto dataResult = base64::convertJSValueToByteString(cx, jwk->e.value());
+  auto dataResult = base64::stringToJSByteString(cx, jwk->e.value());
   if (dataResult.isErr()) {
     DOMException::raise(cx, "Data provided to an operation does not meet requirements",
                         "DataError");
