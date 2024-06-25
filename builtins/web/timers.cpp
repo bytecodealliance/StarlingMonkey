@@ -54,7 +54,7 @@ public:
 
     handle_ = host_api::MonotonicClock::subscribe(deadline_, true);
     timer_id_ = TIMERS_MAP->next_timer_id++;
-    TIMERS_MAP->timer_ids_.emplace(timer_id_, this);
+    TIMERS_MAP->timers_.emplace(timer_id_, this);
   }
 
   [[nodiscard]] bool run(api::Engine *engine) override {
@@ -81,13 +81,13 @@ public:
       host_api::MonotonicClock::unsubscribe(handle_);
     }
 
-    if (TIMERS_MAP->timer_ids_.contains(timer_id_)) {
+    if (TIMERS_MAP->timers_.contains(timer_id_)) {
       if (repeat_) {
         deadline_ = host_api::MonotonicClock::now() + delay_;
         handle_ = host_api::MonotonicClock::subscribe(deadline_, true);
         engine->queue_async_task(this);
       } else {
-        TIMERS_MAP->timer_ids_.erase(timer_id_);
+        TIMERS_MAP->timers_.erase(timer_id_);
       }
     }
 
@@ -95,7 +95,7 @@ public:
   }
 
   [[nodiscard]] bool cancel(api::Engine *engine) override {
-    if (!TIMERS_MAP->timer_ids_.contains(timer_id_)) {
+    if (!TIMERS_MAP->timers_.contains(timer_id_)) {
       return false;
     }
 
@@ -120,12 +120,12 @@ public:
   }
 
   static bool clear(int32_t timer_id) {
-    if (!TIMERS_MAP->timer_ids_.contains(timer_id)) {
+    if (!TIMERS_MAP->timers_.contains(timer_id)) {
       return false;
     }
 
-    ENGINE->cancel_async_task(TIMERS_MAP->timer_ids_[timer_id]);
-    TIMERS_MAP->timer_ids_.erase(timer_id);
+    ENGINE->cancel_async_task(TIMERS_MAP->timers_[timer_id]);
+    TIMERS_MAP->timers_.erase(timer_id);
     return true;
   }
 };
