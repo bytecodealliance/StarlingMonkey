@@ -16,11 +16,10 @@ namespace {
 
 class TimersMap {
 public:
-  std::map<int32_t, api::AsyncTask*> timer_ids_ = {};
+  std::map<int32_t, api::AsyncTask*> timers_ = {};
   int32_t next_timer_id = 1;
   void trace(JSTracer *trc) {
-    for (std::map<int32_t, api::AsyncTask*>::iterator i = timer_ids_.begin(); i != timer_ids_.end(); i++) {
-      api::AsyncTask *timer = i->second;
+    for (auto& [id, timer] : timers_) {
       timer->trace(trc);
     }
   }
@@ -28,14 +27,11 @@ public:
 
 }
 
-static TimersMap *TIMERS_MAP;
+static PersistentRooted<TimersMap*> TIMERS_MAP;
 static api::Engine *ENGINE;
 
 class TimerTask final : public api::AsyncTask {
   using TimerArgumentsVector = std::vector<JS::Heap<JS::Value>>;
-
-  // static std::map<int32_t, api::AsyncTask*> timer_ids_;
-  // static int32_t next_timer_id;
 
   int32_t timer_id_;
   int64_t delay_;
@@ -121,7 +117,6 @@ public:
     for (auto &arg : arguments_) {
       TraceEdge(trc, &arg, "Timer callback arguments");
     }
-    TIMERS_MAP->trace(trc);
   }
 
   static bool clear(int32_t timer_id) {
@@ -213,7 +208,7 @@ constexpr JSFunctionSpec methods[] = {
 
 bool install(api::Engine *engine) {
   ENGINE = engine;
-  TIMERS_MAP = new TimersMap();
+  TIMERS_MAP.init(engine->cx(), new TimersMap());
   return JS_DefineFunctions(engine->cx(), engine->global(), methods);
 }
 
