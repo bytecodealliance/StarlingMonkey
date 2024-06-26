@@ -109,7 +109,7 @@ public:
 
   bool has_pending_async_tasks();
   void queue_async_task(AsyncTask *task);
-  bool cancel_async_task(int32_t id);
+  bool cancel_async_task(AsyncTask *task);
 
   void abort(const char *reason);
 

@@ -28,13 +28,12 @@ void EventLoop::queue_async_task(api::AsyncTask *task) {
   queue.get().tasks.emplace_back(task);
 }
 
-bool EventLoop::cancel_async_task(api::Engine *engine, const int32_t id) {
+bool EventLoop::cancel_async_task(api::Engine *engine, api::AsyncTask *task) {
   const auto tasks = &queue.get().tasks;
   for (auto it = tasks->begin(); it != tasks->end(); ++it) {
-    const auto task = *it;
-    if (task->id() == id) {
-      task->cancel(engine);
+    if (*it == task) {
       tasks->erase(it);
+      task->cancel(engine);
       return true;
     }
   }
