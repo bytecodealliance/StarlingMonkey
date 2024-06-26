@@ -27,7 +27,7 @@ public:
 
 }
 
-static PersistentRooted<TimersMap*> TIMERS_MAP;
+static PersistentRooted<js::UniquePtr<TimersMap>> TIMERS_MAP;
 static api::Engine *ENGINE;
 
 class TimerTask final : public api::AsyncTask {
@@ -208,7 +208,7 @@ constexpr JSFunctionSpec methods[] = {
 
 bool install(api::Engine *engine) {
   ENGINE = engine;
-  TIMERS_MAP.init(engine->cx(), new TimersMap());
+  TIMERS_MAP.init(engine->cx(), js::MakeUnique<TimersMap>());
   return JS_DefineFunctions(engine->cx(), engine->global(), methods);
 }
 
