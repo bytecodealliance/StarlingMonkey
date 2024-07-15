@@ -28,10 +28,10 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Install Rust 1.68.2
+    - name: Install Rust 1.77.1
       run: |
-        rustup toolchain install 1.68.2
-        rustup target add wasm32-wasi --toolchain 1.68.2
+        rustup toolchain install 1.77.1
+        rustup target add wasm32-wasi --toolchain 1.77.1
 
     - uses: actions/setup-node@v2
       with:
