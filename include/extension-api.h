@@ -26,11 +26,11 @@ using JS::PersistentRootedVector;
 
 using std::optional;
 
+namespace api {
+
 typedef int32_t PollableHandle;
 constexpr PollableHandle INVALID_POLLABLE_HANDLE = -1;
 constexpr PollableHandle IMMEDIATE_TASK_HANDLE = -2;
-
-namespace api {
 
 class AsyncTask;
 

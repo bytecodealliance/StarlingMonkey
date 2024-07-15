@@ -77,7 +77,7 @@ public:
     }
 
     // The task might've been canceled during the callback.
-    if (handle_ != INVALID_POLLABLE_HANDLE) {
+    if (handle_ != api::INVALID_POLLABLE_HANDLE) {
       host_api::MonotonicClock::unsubscribe(handle_);
     }
 
