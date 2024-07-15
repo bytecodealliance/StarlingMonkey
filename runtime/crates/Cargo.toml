@@ -1,0 +1,37 @@
+[workspace.package]
+version = "0.0.1"
+repository = "https://github.com/bytecodealliance/starlingmonkey"
+license = "MPL-2.0"
+authors = ["The StarlingMonkey project contributors", "The Servo Project Developers"]
+edition = "2021"
+
+[workspace]
+members = [
+    "jsapi-rs",
+    "spidermonkey-rs",
+    "starlingmonkey-rs",
+    "generate-bindings",
+    "test-builtin",
+]
+resolver = "2"
+
+[workspace.dependencies]
+jsapi-rs = { path = "jsapi-rs" }
+starlingmonkey-rs = { path = "starlingmonkey-rs" }
+spidermonkey-rs = { path = "spidermonkey-rs" }
+bindgen = { version = "0.69", default-features = false, features = [
+    "runtime",
+    "prettyplease",
+    "experimental",
+] }
+
+[profile.release]
+lto = true
+panic = 'abort'
+
+[profile.dev]
+lto = true
+panic = 'abort'
+
+[profile.dev.build-override]
+opt-level = 3

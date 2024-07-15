@@ -86,7 +86,7 @@ public:
   static Engine *get(JSContext *cx);
 
   JSContext *cx();
-  HandleObject global();
+  JS::HandleObject global();
   EngineState state();
   bool debugging_enabled();
   bool wpt_mode();
@@ -105,7 +105,7 @@ public:
    *
    * Once loaded, the instance is cached and reused as a singleton.
    */
-  bool define_builtin_module(const char *id, HandleValue builtin);
+  bool define_builtin_module(const char *id, JS::HandleValue builtin);
 
   /**
    * Treat the top-level script as a module or classic JS script.
@@ -166,7 +166,7 @@ public:
    * Get the JS value associated with the top-level script execution -
    * the last expression for a script, or the module namespace for a module.
    */
-  HandleValue script_value();
+  JS::HandleValue script_value();
 
   bool has_pending_async_tasks();
   void queue_async_task(AsyncTask *task);
@@ -182,13 +182,13 @@ public:
 
   bool dump_value(JS::Value val, FILE *fp = stdout);
   bool print_stack(FILE *fp);
-  void dump_error(HandleValue error, FILE *fp = stderr);
+  void dump_error(JS::HandleValue error, FILE *fp = stderr);
   void dump_pending_exception(const char *description = "", FILE *fp = stderr);
-  void dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp = stderr);
+  void dump_promise_rejection(JS::HandleValue reason, JS::HandleObject promise, FILE *fp = stderr);
 };
 
 
-typedef bool (*TaskCompletionCallback)(JSContext* cx, HandleObject receiver);
+typedef bool (*TaskCompletionCallback)(JSContext* cx, JS::HandleObject receiver);
 
 class AsyncTask {
 protected:

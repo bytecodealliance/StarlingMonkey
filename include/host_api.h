@@ -20,6 +20,28 @@
 #include "jsapi.h"
 #pragma clang diagnostic pop
 
+/**
+ * <div rustbindgen="true" replaces="std::optional">
+ */
+template<typename T> class simple_optional {
+  T* ptr;
+};
+
+/**
+ * <div rustbindgen="true" replaces="std::unique_ptr">
+ */
+template<typename T> class simple_unique_ptr {
+  T* ptr;
+};
+
+/**
+ * <div rustbindgen="true" replaces="std::vector">
+ */
+template<typename T> class simple_vector {
+  T* ptr;
+};
+
+using api::PollableHandle;
 using std::optional;
 using std::string_view;
 using std::tuple;

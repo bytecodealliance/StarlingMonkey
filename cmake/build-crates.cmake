@@ -25,6 +25,19 @@ corrosion_import_crate(
         NO_LINKER_OVERRIDE
 )
 
+add_library(rust-glue STATIC ${CMAKE_CURRENT_SOURCE_DIR}/runtime/crates/jsapi-rs/cpp/jsglue.cpp)
+target_include_directories(rust-glue PRIVATE ${SM_INCLUDE_DIR})
+add_dependencies(cargo-prebuild_rust_staticlib rust-glue)
+
+corrosion_set_env_vars(generate-bindings
+        LIBCLANG_PATH=/opt/homebrew/opt/llvm/lib
+        SYSROOT=${WASI_SDK_PREFIX}/share/wasi-sysroot
+        CXXFLAGS="${CMAKE_CXX_FLAGS}"
+        BIN_DIR=${CMAKE_CURRENT_BINARY_DIR}
+        SM_HEADERS=${SM_INCLUDE_DIR}
+        RUST_LOG=bindgen
+)
+
 # Add a Rust library to the staticlib bundle.
 function(add_rust_lib name path)
     add_library(${name} INTERFACE)

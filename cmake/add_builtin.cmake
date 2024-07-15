@@ -95,3 +95,37 @@ function(add_builtin)
     file(APPEND $CACHE{INSTALL_BUILTINS} "NS_DEF(${NS})\n")
     return(PROPAGATE LIB_NAME)
 endfunction()
+
+
+function(add_rust_builtin)
+    # TODO: restore additional config args
+    list(GET ARGN 0 LIB_NAME)
+    set(DEFAULT_ENABLE ON)
+    set(LIB_TARGET_NAME ${LIB_NAME})
+    string(REPLACE "-" "_" LIB_NAME ${LIB_NAME})
+    string(PREPEND LIB_NAME "builtin_")
+    string(TOUPPER ${LIB_NAME} LIB_NAME_UPPER)
+    set(OPT_NAME ENABLE_${LIB_NAME_UPPER})
+    set(DESCRIPTION "${LIB_TARGET_NAME} (option: ${OPT_NAME}, default: ${DEFAULT_ENABLE})")
+
+    # In script-mode, just show the available builtins.
+    if(CMAKE_SCRIPT_MODE_FILE)
+        message(STATUS "  ${DESCRIPTION}")
+        return()
+    endif()
+
+    option(${OPT_NAME} "Enable ${LIB_NAME}" ${DEFAULT_ENABLE})
+    if (${${OPT_NAME}})
+    else()
+        message(STATUS "Skipping builtin ${DESCRIPTION}")
+        return()
+    endif()
+
+    message(STATUS "Adding builtin ${DESCRIPTION}")
+
+    target_link_libraries(builtins PRIVATE ${LIB_TARGET_NAME} rust-glue)
+    add_dependencies(${LIB_TARGET_NAME} rust-bindings)
+
+    file(APPEND $CACHE{INSTALL_BUILTINS} "RS_DEF(${LIB_NAME}_install)\n")
+    return(PROPAGATE LIB_NAME)
+endfunction()
