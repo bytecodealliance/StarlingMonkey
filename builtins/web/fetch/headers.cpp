@@ -189,7 +189,7 @@ bool retrieve_value_for_header_from_handle(JSContext *cx, JS::HandleObject self,
   RootedString res_str(cx);
   RootedString val_str(cx);
   for (auto &str : values.value()) {
-    val_str = JS_NewStringCopyUTF8N(cx, JS::UTF8Chars(str.ptr.get(), str.len));
+    val_str = JS_NewStringCopyN(cx, reinterpret_cast<char *>(str.ptr.get()), str.len);
     if (!val_str) {
       return false;
     }
