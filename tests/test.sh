@@ -11,11 +11,13 @@ wasmtime="${WASMTIME:-wasmtime}"
 
 # Load test expectation fails to check, only those defined apply
 test_serve_body_expectation="$test_dir/expect_serve_body.txt"
+test_serve_headers_expectation="$test_dir/expect_serve_headers.txt"
 test_serve_stdout_expectation="$test_dir/expect_serve_stdout.txt"
 test_serve_stderr_expectation="$test_dir/expect_serve_stderr.txt"
 test_serve_status_expectation=$(cat "$test_dir/expect_serve_status.txt" 2> /dev/null || echo "200")
 
 body_log="$test_dir/body.log"
+headers_log="$test_dir/headers.log"
 stdout_log="$test_dir/stdout.log"
 stderr_log="$test_dir/stderr.log"
 
@@ -25,7 +27,7 @@ if [ -z "$test_component" ]; then
 
    # Run Wizer
    set +e
-   "$test_runtime/componentize.sh" $componentize_flags "$test_dir/$test_name.js" "$test_component" 1> "$stdout_log" 2> "$stderr_log"
+   PREOPEN_DIR="$(dirname $(dirname "$test_dir"))" "$test_runtime/componentize.sh" $componentize_flags "$test_dir/$test_name.js" "$test_component" 1> "$stdout_log" 2> "$stderr_log"
    wizer_result=$?
    set -e
 
@@ -96,14 +98,22 @@ fi
 
 port=$(cat "$stderr_log" | head -n 1 | tail -c 7 | head -c 5)
 
-status_code=$(curl --write-out %{http_code} --silent --output "$body_log" "http://localhost:$port/$test_serve_path")
+status_code=$(curl -A "test-agent" -H "eXample-hEader: Header Value" --write-out %{http_code} --silent -D "$headers_log" --output "$body_log" "http://localhost:$port/$test_serve_path")
 
 if [ ! "$status_code" = "$test_serve_status_expectation" ]; then
    echo "Bad status code $status_code, expected $test_serve_status_expectation"
    >&2 cat "$stderr_log"
    >&2 cat "$stdout_log"
+   >&2 cat "$headers_log"
    >&2 cat "$body_log"
    exit 1
+fi
+
+if [ -f "$test_serve_headers_expectation" ]; then
+   mv "$headers_log" "$headers_log.orig"
+   cat "$headers_log.orig" | head -n $(cat "$test_serve_headers_expectation" | wc -l) | sed 's/\r//g' > "$headers_log"
+   rm "$headers_log.orig"
+   cmp "$headers_log" "$test_serve_headers_expectation"
 fi
 
 if [ -f "$test_serve_body_expectation" ]; then
@@ -120,6 +130,7 @@ if [ -f "$test_serve_stderr_expectation" ]; then
 fi
 
 rm "$body_log"
+rm "$headers_log"
 rm "$stdout_log"
 rm "$stderr_log"
 

@@ -1,5 +1,5 @@
 import { serveTest } from "../test-server.js";
-import { deepStrictEqual, strictEqual, throws, rejects } from "../assert.js";
+import { deepStrictEqual, strictEqual, throws, rejects } from "../../assert.js";
 
 // From https://www.rfc-editor.org/rfc/rfc7517#appendix-A.1
 const createPublicRsaJsonWebKeyData = () => ({

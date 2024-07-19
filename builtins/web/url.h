@@ -25,7 +25,6 @@ public:
 
   static JSObject *create(JSContext *cx, JS::HandleObject params, uint8_t type);
   static bool init_class(JSContext *cx, JS::HandleObject global);
-  static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 };
 
 class URLSearchParams : public BuiltinNoConstructor<URLSearchParams> {

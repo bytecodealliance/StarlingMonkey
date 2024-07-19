@@ -1,5 +1,5 @@
 import { serveTest } from "../test-server.js";
-import { deepStrictEqual, strictEqual, throws } from "../assert.js";
+import { deepStrictEqual, strictEqual, throws } from "../../assert.js";
 
 export const handler = serveTest(async (t) => {
   t.test("Performance-interface", () => {

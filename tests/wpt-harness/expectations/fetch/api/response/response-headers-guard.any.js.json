@@ -1,5 +1,5 @@
 {
   "Ensure response headers are immutable": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }

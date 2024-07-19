@@ -3,34 +3,34 @@
     "status": "PASS"
   },
   "Headers iterator does not combine set-cookie headers": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers iterator does not special case set-cookie2 headers": {
     "status": "PASS"
   },
   "Headers iterator does not combine set-cookie & set-cookie2 headers": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers iterator preserves set-cookie ordering": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers iterator preserves per header ordering, but sorts keys alphabetically": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers iterator preserves per header ordering, but sorts keys alphabetically (and ignores value ordering)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers iterator is correctly updated with set-cookie changes": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers iterator is correctly updated with set-cookie changes #2": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers.prototype.has works for set-cookie": {
     "status": "PASS"
   },
   "Headers.prototype.append works for set-cookie": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers.prototype.set works for set-cookie": {
     "status": "PASS"
@@ -39,31 +39,31 @@
     "status": "PASS"
   },
   "Headers.prototype.getSetCookie with no headers present": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers.prototype.getSetCookie with one header": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers.prototype.getSetCookie with one header created from an object": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers.prototype.getSetCookie with multiple headers": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers.prototype.getSetCookie with an empty header": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers.prototype.getSetCookie with two equal headers": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers.prototype.getSetCookie ignores set-cookie2 headers": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers.prototype.getSetCookie preserves header ordering": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Adding Set-Cookie headers normalizes their value": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Adding invalid Set-Cookie headers throws": {
     "status": "PASS"

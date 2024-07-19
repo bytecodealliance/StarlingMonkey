@@ -1,5 +1,5 @@
 import * as handlers from './handlers.js';
-import { AssertionError } from './assert.js';
+import { AssertionError } from '../assert.js';
 
 export function serveTest (handler) {
   return async function handle (evt) {

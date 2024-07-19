@@ -8,6 +8,7 @@
 
 namespace core {
 
+using host_api::HostBytes;
 using host_api::HostString;
 
 HostString encode(JSContext *cx, JS::HandleString str) {
@@ -29,6 +30,42 @@ HostString encode(JSContext *cx, JS::HandleValue val) {
   }
 
   return encode(cx, str);
+}
+
+HostString encode_byte_string(JSContext *cx, JS::HandleValue val) {
+  JS::RootedString str(cx, JS::ToString(cx, val));
+  if (!str) {
+    return HostString{};
+  }
+  size_t length;
+  if (!JS::StringHasLatin1Chars(str)) {
+    bool foundBadChar = false;
+    {
+      JS::AutoCheckCannotGC nogc;
+      const char16_t* chars = JS_GetTwoByteStringCharsAndLength(cx, nogc, str, &length);
+      if (!chars) {
+        foundBadChar = true;
+      }
+      else {
+        for (size_t i = 0; i < length; i++) {
+          if (chars[i] > 255) {
+            foundBadChar = true;
+            break;
+          }
+        }
+      }
+    }
+    if (foundBadChar) {
+      api::throw_error(cx, core::ByteStringEncodingError);
+      return host_api::HostString{};
+    }
+  } else {
+    length = JS::GetStringLength(str);
+  }
+  char *buf = static_cast<char *>(malloc(length));
+  if (!JS_EncodeStringToBuffer(cx, str, buf, length))
+    MOZ_ASSERT_UNREACHABLE();
+  return HostString(JS::UniqueChars(buf), length);
 }
 
 jsurl::SpecString encode_spec_string(JSContext *cx, JS::HandleValue val) {

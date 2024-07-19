@@ -6,6 +6,7 @@ wizer="${WIZER:-wizer}"
 wasm_tools="${WASM_TOOLS:-wasm-tools}"
 weval="${WEVAL:-@WEVAL_BIN@}"
 aot=@AOT@
+preopen_dir="${PREOPEN_DIR:-}"
 
 usage() {
   echo "Usage: $(basename "$0") [input.js] [--verbose] [-o output.wasm]"
@@ -60,10 +61,12 @@ then
   OUT_FILE="${BASENAME%.*}.wasm"
 fi
 
-PREOPEN_DIR=""
-if [ -n "$IN_FILE" ]
-then
-  PREOPEN_DIR="--dir "$(dirname "$IN_FILE")""
+if [[ -n "$IN_FILE" ]]; then
+  if [[ -n $preopen_dir ]]; then
+    preopen_dir="--dir "$preopen_dir""
+  else
+    preopen_dir="--dir "$(dirname "$IN_FILE")""
+  fi
   echo "Componentizing $IN_FILE into $OUT_FILE"
 else
   echo "Creating runtime-script component $OUT_FILE"
@@ -75,14 +78,14 @@ if [[ $aot -ne 0 ]]; then
         WEVAL_VERBOSE="--verbose --show-stats"
     fi
 
-    echo "$IN_FILE" | WASMTIME_BACKTRACE_DETAILS=1 $weval weval -w $PREOPEN_DIR \
+    echo "$IN_FILE" | WASMTIME_BACKTRACE_DETAILS=1 $weval weval -w $preopen_dir \
          --cache-ro "$(dirname "$0")/starling-ics.wevalcache" \
          $WEVAL_VERBOSE \
          -o "$OUT_FILE" \
          -i "$(dirname "$0")/starling.wasm"
 else
     echo "$IN_FILE" | WASMTIME_BACKTRACE_DETAILS=1 $wizer --allow-wasi --wasm-bulk-memory true \
-         --inherit-stdio true --inherit-env true $PREOPEN_DIR -o "$OUT_FILE" \
+         --inherit-stdio true --inherit-env true $preopen_dir -o "$OUT_FILE" \
          -- "$(dirname "$0")/starling.wasm"
 fi
 $wasm_tools component new -v --adapt "wasi_snapshot_preview1=$(dirname "$0")/preview1-adapter.wasm" --output "$OUT_FILE" "$OUT_FILE"
