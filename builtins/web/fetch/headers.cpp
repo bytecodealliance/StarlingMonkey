@@ -283,18 +283,12 @@ static bool switch_mode(JSContext* cx, HandleObject self, const Headers::Mode mo
   }
 
   if (current_mode == Headers::Mode::Uninitialized) {
-    if (mode == Headers::Mode::ContentOnly) {
-      RootedObject map(cx, JS::NewMapObject(cx));
-      if (!map) {
-        return false;
-      }
-      SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Entries), ObjectValue(*map));
-    } else {
-      MOZ_ASSERT(mode == Headers::Mode::HostOnly);
-      auto handle = new host_api::HttpHeaders(Headers::guard(self));
-      SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Handle), PrivateValue(handle));
+    MOZ_ASSERT(mode == Headers::Mode::ContentOnly);
+    RootedObject map(cx, JS::NewMapObject(cx));
+    if (!map) {
+      return false;
     }
-
+    SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Entries), ObjectValue(*map));
     SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Mode), JS::Int32Value(static_cast<int32_t>(mode)));
     return true;
   }
@@ -403,8 +397,6 @@ static bool switch_mode(JSContext* cx, HandleObject self, const Headers::Mode mo
     auto handle = get_handle(self);
     delete handle;
     SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Handle), PrivateValue(nullptr));
-    SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Mode),
-                    JS::Int32Value(static_cast<int32_t>(Headers::Mode::CachedInContent)));
   }
 
   SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Mode),
