@@ -1,0 +1,23 @@
+{
+  "cancelling the readable side should call transformer.cancel()": {
+    "status": "FAIL"
+  },
+  "cancelling the readable side should reject if transformer.cancel() throws": {
+    "status": "FAIL"
+  },
+  "aborting the writable side should call transformer.abort()": {
+    "status": "FAIL"
+  },
+  "aborting the writable side should reject if transformer.cancel() throws": {
+    "status": "FAIL"
+  },
+  "closing the writable side should reject if a parallel transformer.cancel() throws": {
+    "status": "FAIL"
+  },
+  "readable.cancel() and a parallel writable.close() should reject if a transformer.cancel() calls controller.error()": {
+    "status": "FAIL"
+  },
+  "writable.abort() and readable.cancel() should reject if a transformer.cancel() calls controller.error()": {
+    "status": "FAIL"
+  }
+}

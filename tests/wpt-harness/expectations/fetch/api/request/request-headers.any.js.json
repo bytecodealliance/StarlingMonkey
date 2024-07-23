@@ -41,9 +41,6 @@
   "Adding invalid request header \"Access-Control-Request-Method: KO\"": {
     "status": "FAIL"
   },
-  "Adding invalid request header \"Access-Control-Request-Private-Network: KO\"": {
-    "status": "FAIL"
-  },
   "Adding invalid request header \"Connection: KO\"": {
     "status": "FAIL"
   },

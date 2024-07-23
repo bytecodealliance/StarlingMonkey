@@ -1,0 +1,8 @@
+{
+  "Transferred MessageChannel works as expected": {
+    "status": "FAIL"
+  },
+  "Second branch of owning ReadableStream tee should end up into errors with transfer only values": {
+    "status": "FAIL"
+  }
+}

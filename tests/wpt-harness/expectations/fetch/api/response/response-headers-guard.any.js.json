@@ -1,0 +1,5 @@
+{
+  "Ensure response headers are immutable": {
+    "status": "FAIL"
+  }
+}

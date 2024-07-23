@@ -13,5 +13,8 @@
   },
   "error() during flush should cause writer.close() to reject": {
     "status": "PASS"
+  },
+  "closing the writable side should call transformer.flush() and a parallel readable.cancel() should not reject": {
+    "status": "PASS"
   }
 }

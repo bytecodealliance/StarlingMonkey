@@ -1,0 +1,125 @@
+{
+  "Async iterator instances should have the correct list of properties": {
+    "status": "FAIL"
+  },
+  "Async-iterating a push source": {
+    "status": "FAIL"
+  },
+  "Async-iterating a pull source": {
+    "status": "FAIL"
+  },
+  "Async-iterating a push source with undefined values": {
+    "status": "FAIL"
+  },
+  "Async-iterating a pull source with undefined values": {
+    "status": "FAIL"
+  },
+  "Async-iterating a pull source manually": {
+    "status": "FAIL"
+  },
+  "Async-iterating an errored stream throws": {
+    "status": "FAIL"
+  },
+  "Async-iterating a closed stream never executes the loop body, but works fine": {
+    "status": "FAIL"
+  },
+  "Async-iterating an empty but not closed/errored stream never executes the loop body and stalls the async function": {
+    "status": "FAIL"
+  },
+  "Async-iterating a partially consumed stream": {
+    "status": "FAIL"
+  },
+  "Cancellation behavior when throwing inside loop body; preventCancel = false": {
+    "status": "FAIL"
+  },
+  "Cancellation behavior when throwing inside loop body; preventCancel = true": {
+    "status": "FAIL"
+  },
+  "Cancellation behavior when breaking inside loop body; preventCancel = false": {
+    "status": "FAIL"
+  },
+  "Cancellation behavior when breaking inside loop body; preventCancel = true": {
+    "status": "FAIL"
+  },
+  "Cancellation behavior when returning inside loop body; preventCancel = false": {
+    "status": "FAIL"
+  },
+  "Cancellation behavior when returning inside loop body; preventCancel = true": {
+    "status": "FAIL"
+  },
+  "Cancellation behavior when manually calling return(); preventCancel = false": {
+    "status": "FAIL"
+  },
+  "Cancellation behavior when manually calling return(); preventCancel = true": {
+    "status": "FAIL"
+  },
+  "next() rejects if the stream errors": {
+    "status": "FAIL"
+  },
+  "return() does not rejects if the stream has not errored yet": {
+    "status": "FAIL"
+  },
+  "return() rejects if the stream has errored": {
+    "status": "FAIL"
+  },
+  "next() that succeeds; next() that reports an error; next()": {
+    "status": "FAIL"
+  },
+  "next() that succeeds; next() that reports an error(); next() [no awaiting]": {
+    "status": "FAIL"
+  },
+  "next() that succeeds; next() that reports an error(); return()": {
+    "status": "FAIL"
+  },
+  "next() that succeeds; next() that reports an error(); return() [no awaiting]": {
+    "status": "FAIL"
+  },
+  "next() that succeeds; return()": {
+    "status": "FAIL"
+  },
+  "next() that succeeds; return() [no awaiting]": {
+    "status": "FAIL"
+  },
+  "return(); next()": {
+    "status": "FAIL"
+  },
+  "return(); next() [no awaiting]": {
+    "status": "FAIL"
+  },
+  "return(); next() with delayed cancel()": {
+    "status": "FAIL"
+  },
+  "return(); next() with delayed cancel() [no awaiting]": {
+    "status": "FAIL"
+  },
+  "return(); return()": {
+    "status": "FAIL"
+  },
+  "return(); return() [no awaiting]": {
+    "status": "FAIL"
+  },
+  "values() throws if there's already a lock": {
+    "status": "FAIL"
+  },
+  "Acquiring a reader after exhaustively async-iterating a stream": {
+    "status": "FAIL"
+  },
+  "Acquiring a reader after return()ing from a stream that errors": {
+    "status": "FAIL"
+  },
+  "Acquiring a reader after partially async-iterating a stream": {
+    "status": "FAIL"
+  },
+  "Acquiring a reader and reading the remaining chunks after partially async-iterating a stream with preventCancel = true": {
+    "status": "FAIL"
+  },
+  "return() should unlock the stream synchronously when preventCancel = false": {
+    "status": "FAIL"
+  },
+  "return() should unlock the stream synchronously when preventCancel = true": {
+    "status": "FAIL"
+  },
+  "close() while next() is pending": {
+    "status": "FAIL"
+  }
+}

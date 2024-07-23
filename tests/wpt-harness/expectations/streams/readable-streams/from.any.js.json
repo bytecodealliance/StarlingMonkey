@@ -1,0 +1,119 @@
+{
+  "ReadableStream.from accepts an array of values": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from accepts an array of promises": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from accepts an array iterator": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from accepts a string": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from accepts a Set": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from accepts a Set iterator": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from accepts a sync generator": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from accepts an async generator": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from accepts a sync iterable of values": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from accepts a sync iterable of promises": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from accepts an async iterable": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from accepts a ReadableStream": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from accepts a ReadableStream async iterator": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from throws on invalid iterables; specifically null": {
+    "status": "PASS"
+  },
+  "ReadableStream.from throws on invalid iterables; specifically undefined": {
+    "status": "PASS"
+  },
+  "ReadableStream.from throws on invalid iterables; specifically 0": {
+    "status": "PASS"
+  },
+  "ReadableStream.from throws on invalid iterables; specifically NaN": {
+    "status": "PASS"
+  },
+  "ReadableStream.from throws on invalid iterables; specifically true": {
+    "status": "PASS"
+  },
+  "ReadableStream.from throws on invalid iterables; specifically {}": {
+    "status": "PASS"
+  },
+  "ReadableStream.from throws on invalid iterables; specifically Object.create(null)": {
+    "status": "PASS"
+  },
+  "ReadableStream.from throws on invalid iterables; specifically a function": {
+    "status": "PASS"
+  },
+  "ReadableStream.from throws on invalid iterables; specifically a symbol": {
+    "status": "PASS"
+  },
+  "ReadableStream.from throws on invalid iterables; specifically an object with a non-callable @@iterator method": {
+    "status": "PASS"
+  },
+  "ReadableStream.from throws on invalid iterables; specifically an object with a non-callable @@asyncIterator method": {
+    "status": "PASS"
+  },
+  "ReadableStream.from re-throws errors from calling the @@iterator method": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from re-throws errors from calling the @@asyncIterator method": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from ignores @@iterator if @@asyncIterator exists": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from ignores a null @@asyncIterator": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from accepts an empty iterable": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from: stream errors when next() rejects": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from: stream stalls when next() never settles": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from: calls next() after first read()": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from: cancelling the returned stream calls and awaits return()": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from: return() is not called when iterator completes normally": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from: cancel() rejects when return() fulfills with a non-object": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from: reader.read() inside next()": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from: reader.cancel() inside next()": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from: reader.cancel() inside return()": {
+    "status": "FAIL"
+  },
+  "ReadableStream.from(array), push() to array while reading": {
+    "status": "FAIL"
+  }
+}

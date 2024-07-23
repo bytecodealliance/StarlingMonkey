@@ -1,0 +1,8 @@
+{
+  "redirect response with empty Location, follow mode": {
+    "status": "FAIL"
+  },
+  "redirect response with empty Location, manual mode": {
+    "status": "FAIL"
+  }
+}

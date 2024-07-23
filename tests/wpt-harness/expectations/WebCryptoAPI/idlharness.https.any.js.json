@@ -149,7 +149,7 @@
   "SubtleCrypto interface: operation deriveKey(AlgorithmIdentifier, CryptoKey, AlgorithmIdentifier, boolean, sequence<KeyUsage>)": {
     "status": "FAIL"
   },
-  "SubtleCrypto interface: operation deriveBits(AlgorithmIdentifier, CryptoKey, unsigned long)": {
+  "SubtleCrypto interface: operation deriveBits(AlgorithmIdentifier, CryptoKey, optional unsigned long?)": {
     "status": "FAIL"
   },
   "SubtleCrypto interface: operation importKey(KeyFormat, (BufferSource or JsonWebKey), AlgorithmIdentifier, boolean, sequence<KeyUsage>)": {
@@ -212,10 +212,10 @@
   "SubtleCrypto interface: calling deriveKey(AlgorithmIdentifier, CryptoKey, AlgorithmIdentifier, boolean, sequence<KeyUsage>) on crypto.subtle with too few arguments must throw TypeError": {
     "status": "FAIL"
   },
-  "SubtleCrypto interface: crypto.subtle must inherit property \"deriveBits(AlgorithmIdentifier, CryptoKey, unsigned long)\" with the proper type": {
+  "SubtleCrypto interface: crypto.subtle must inherit property \"deriveBits(AlgorithmIdentifier, CryptoKey, optional unsigned long?)\" with the proper type": {
     "status": "FAIL"
   },
-  "SubtleCrypto interface: calling deriveBits(AlgorithmIdentifier, CryptoKey, unsigned long) on crypto.subtle with too few arguments must throw TypeError": {
+  "SubtleCrypto interface: calling deriveBits(AlgorithmIdentifier, CryptoKey, optional unsigned long?) on crypto.subtle with too few arguments must throw TypeError": {
     "status": "FAIL"
   },
   "SubtleCrypto interface: crypto.subtle must inherit property \"importKey(KeyFormat, (BufferSource or JsonWebKey), AlgorithmIdentifier, boolean, sequence<KeyUsage>)\" with the proper type": {

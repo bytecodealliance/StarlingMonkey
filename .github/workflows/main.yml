@@ -25,8 +25,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
-      with:
-        submodules: recursive
 
     - name: Install Rust 1.77.1
       run: |
@@ -45,3 +43,39 @@ jobs:
     - name: StarlingMonkey E2E & Integration Tests
       run: |
         CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-debug -j4
+
+  wpt:
+    name: Web Platform Tests
+    strategy:
+      matrix:
+        build: [release]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Install Rust 1.77.1
+      run: |
+        rustup toolchain install 1.77.1
+        rustup target add wasm32-wasi --toolchain 1.77.1
+
+    - uses: actions/setup-node@v2
+      with:
+        node-version: 'lts/*'
+
+    - name: Build StarlingMonkey WPT
+      run: |
+        cmake -S . -B cmake-build-${{ matrix.build }} -DENABLE_WPT:BOOL=ON -DCMAKE_BUILD_TYPE=${{ matrix.build == 'release' && 'Release' || 'Debug' }}
+        cmake --build cmake-build-${{ matrix.build }} --parallel 4 --target wpt-runtime
+      env:
+        WPT_ROOT: ../wpt
+
+    - name: Prepare WPT hosts
+      run: |
+        cat deps/wpt-hosts | sudo tee -a /etc/hosts
+
+    - name: StarlingMonkey WPT Test
+      env:
+        CTEST_OUTPUT_ON_FAILURE: 1
+      run: ctest -R wpt --test-dir cmake-build-${{ matrix.build }} --verbose

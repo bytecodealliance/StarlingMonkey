@@ -1,6 +1,6 @@
 {
   "CompressionStream constructor should throw on invalid format": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "deflated empty data should be reinflated back to its origin": {
     "status": "PASS"

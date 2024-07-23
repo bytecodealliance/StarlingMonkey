@@ -1,0 +1,8 @@
+{
+  "original => remote => original with mode: \"no-cors\"": {
+    "status": "FAIL"
+  },
+  "original => remote => original with mode: \"cors\"": {
+    "status": "FAIL"
+  }
+}

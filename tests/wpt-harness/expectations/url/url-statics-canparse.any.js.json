@@ -1,0 +1,23 @@
+{
+  "URL.canParse(undefined, undefined)": {
+    "status": "FAIL"
+  },
+  "URL.canParse(aaa:b, undefined)": {
+    "status": "FAIL"
+  },
+  "URL.canParse(undefined, aaa:b)": {
+    "status": "FAIL"
+  },
+  "URL.canParse(aaa:/b, undefined)": {
+    "status": "FAIL"
+  },
+  "URL.canParse(undefined, aaa:/b)": {
+    "status": "FAIL"
+  },
+  "URL.canParse(https://test:test, undefined)": {
+    "status": "FAIL"
+  },
+  "URL.canParse(a, https://b/)": {
+    "status": "FAIL"
+  }
+}

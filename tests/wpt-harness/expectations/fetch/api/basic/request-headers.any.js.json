@@ -35,6 +35,9 @@
   "Fetch with POST with Int8Array body": {
     "status": "FAIL"
   },
+  "Fetch with POST with Float16Array body": {
+    "status": "FAIL"
+  },
   "Fetch with POST with Float32Array body": {
     "status": "FAIL"
   },

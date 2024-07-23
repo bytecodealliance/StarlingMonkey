@@ -51,6 +51,6 @@
     "status": "FAIL"
   },
   "SHA-* integrity for opaque response": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }

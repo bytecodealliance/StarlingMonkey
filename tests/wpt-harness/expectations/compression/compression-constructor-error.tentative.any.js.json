@@ -1,0 +1,11 @@
+{
+  "\"a\" should cause the constructor to throw": {
+    "status": "PASS"
+  },
+  "no input should cause the constructor to throw": {
+    "status": "PASS"
+  },
+  "non-string input should cause the constructor to throw": {
+    "status": "PASS"
+  }
+}

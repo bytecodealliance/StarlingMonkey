@@ -1,0 +1,689 @@
+{
+  "idl_test setup": {
+    "status": "PASS"
+  },
+  "idl_test validation": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader includes ReadableStreamGenericReader: member names are unique": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBReader includes ReadableStreamGenericReader: member names are unique": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "ReadableStream interface object length": {
+    "status": "PASS"
+  },
+  "ReadableStream interface object name": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: operation from(any)": {
+    "status": "FAIL"
+  },
+  "ReadableStream interface: attribute locked": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: operation cancel(optional any)": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: operation getReader(optional ReadableStreamGetReaderOptions)": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: operation pipeThrough(ReadableWritablePair, optional StreamPipeOptions)": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: operation pipeTo(WritableStream, optional StreamPipeOptions)": {
+    "status": "FAIL"
+  },
+  "ReadableStream interface: operation tee()": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: async iterable<any>": {
+    "status": "FAIL"
+  },
+  "ReadableStream must be primary interface of new ReadableStream()": {
+    "status": "PASS"
+  },
+  "Stringification of new ReadableStream()": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: new ReadableStream() must inherit property \"from(any)\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: calling from(any) on new ReadableStream() with too few arguments must throw TypeError": {
+    "status": "FAIL"
+  },
+  "ReadableStream interface: new ReadableStream() must inherit property \"locked\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: new ReadableStream() must inherit property \"cancel(optional any)\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: calling cancel(optional any) on new ReadableStream() with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: new ReadableStream() must inherit property \"getReader(optional ReadableStreamGetReaderOptions)\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: calling getReader(optional ReadableStreamGetReaderOptions) on new ReadableStream() with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: new ReadableStream() must inherit property \"pipeThrough(ReadableWritablePair, optional StreamPipeOptions)\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: calling pipeThrough(ReadableWritablePair, optional StreamPipeOptions) on new ReadableStream() with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: new ReadableStream() must inherit property \"pipeTo(WritableStream, optional StreamPipeOptions)\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStream interface: calling pipeTo(WritableStream, optional StreamPipeOptions) on new ReadableStream() with too few arguments must throw TypeError": {
+    "status": "FAIL"
+  },
+  "ReadableStream interface: new ReadableStream() must inherit property \"tee()\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader interface object length": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader interface object name": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader interface: operation read()": {
+    "status": "FAIL"
+  },
+  "ReadableStreamDefaultReader interface: operation releaseLock()": {
+    "status": "FAIL"
+  },
+  "ReadableStreamDefaultReader interface: attribute closed": {
+    "status": "FAIL"
+  },
+  "ReadableStreamDefaultReader interface: operation cancel(optional any)": {
+    "status": "FAIL"
+  },
+  "ReadableStreamDefaultReader must be primary interface of (new ReadableStream()).getReader()": {
+    "status": "PASS"
+  },
+  "Stringification of (new ReadableStream()).getReader()": {
+    "status": "FAIL"
+  },
+  "ReadableStreamDefaultReader interface: (new ReadableStream()).getReader() must inherit property \"read()\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader interface: (new ReadableStream()).getReader() must inherit property \"releaseLock()\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader interface: (new ReadableStream()).getReader() must inherit property \"closed\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader interface: (new ReadableStream()).getReader() must inherit property \"cancel(optional any)\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultReader interface: calling cancel(optional any) on (new ReadableStream()).getReader() with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBReader interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBReader interface object length": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBReader interface object name": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBReader interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBReader interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBReader interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBReader interface: operation read(ArrayBufferView, optional ReadableStreamBYOBReaderReadOptions)": {
+    "status": "FAIL"
+  },
+  "ReadableStreamBYOBReader interface: operation releaseLock()": {
+    "status": "FAIL"
+  },
+  "ReadableStreamBYOBReader interface: attribute closed": {
+    "status": "FAIL"
+  },
+  "ReadableStreamBYOBReader interface: operation cancel(optional any)": {
+    "status": "FAIL"
+  },
+  "ReadableStreamBYOBReader must be primary interface of (new ReadableStream({ type: 'bytes' })).getReader({ mode: 'byob' })": {
+    "status": "PASS"
+  },
+  "Stringification of (new ReadableStream({ type: 'bytes' })).getReader({ mode: 'byob' })": {
+    "status": "FAIL"
+  },
+  "ReadableStreamBYOBReader interface: (new ReadableStream({ type: 'bytes' })).getReader({ mode: 'byob' }) must inherit property \"read(ArrayBufferView, optional ReadableStreamBYOBReaderReadOptions)\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBReader interface: calling read(ArrayBufferView, optional ReadableStreamBYOBReaderReadOptions) on (new ReadableStream({ type: 'bytes' })).getReader({ mode: 'byob' }) with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBReader interface: (new ReadableStream({ type: 'bytes' })).getReader({ mode: 'byob' }) must inherit property \"releaseLock()\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBReader interface: (new ReadableStream({ type: 'bytes' })).getReader({ mode: 'byob' }) must inherit property \"closed\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBReader interface: (new ReadableStream({ type: 'bytes' })).getReader({ mode: 'byob' }) must inherit property \"cancel(optional any)\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBReader interface: calling cancel(optional any) on (new ReadableStream({ type: 'bytes' })).getReader({ mode: 'byob' }) with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultController interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultController interface object length": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultController interface object name": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultController interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultController interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultController interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultController interface: attribute desiredSize": {
+    "status": "FAIL"
+  },
+  "ReadableStreamDefaultController interface: operation close()": {
+    "status": "FAIL"
+  },
+  "ReadableStreamDefaultController interface: operation enqueue(optional any)": {
+    "status": "FAIL"
+  },
+  "ReadableStreamDefaultController interface: operation error(optional any)": {
+    "status": "FAIL"
+  },
+  "ReadableStreamDefaultController must be primary interface of self.readableStreamDefaultController": {
+    "status": "PASS"
+  },
+  "Stringification of self.readableStreamDefaultController": {
+    "status": "FAIL"
+  },
+  "ReadableStreamDefaultController interface: self.readableStreamDefaultController must inherit property \"desiredSize\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultController interface: self.readableStreamDefaultController must inherit property \"close()\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultController interface: self.readableStreamDefaultController must inherit property \"enqueue(optional any)\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultController interface: calling enqueue(optional any) on self.readableStreamDefaultController with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultController interface: self.readableStreamDefaultController must inherit property \"error(optional any)\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamDefaultController interface: calling error(optional any) on self.readableStreamDefaultController with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "ReadableByteStreamController interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "ReadableByteStreamController interface object length": {
+    "status": "PASS"
+  },
+  "ReadableByteStreamController interface object name": {
+    "status": "PASS"
+  },
+  "ReadableByteStreamController interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "ReadableByteStreamController interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "ReadableByteStreamController interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "ReadableByteStreamController interface: attribute byobRequest": {
+    "status": "FAIL"
+  },
+  "ReadableByteStreamController interface: attribute desiredSize": {
+    "status": "FAIL"
+  },
+  "ReadableByteStreamController interface: operation close()": {
+    "status": "FAIL"
+  },
+  "ReadableByteStreamController interface: operation enqueue(ArrayBufferView)": {
+    "status": "FAIL"
+  },
+  "ReadableByteStreamController interface: operation error(optional any)": {
+    "status": "FAIL"
+  },
+  "ReadableByteStreamController must be primary interface of self.readableByteStreamController": {
+    "status": "PASS"
+  },
+  "Stringification of self.readableByteStreamController": {
+    "status": "FAIL"
+  },
+  "ReadableByteStreamController interface: self.readableByteStreamController must inherit property \"byobRequest\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableByteStreamController interface: self.readableByteStreamController must inherit property \"desiredSize\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableByteStreamController interface: self.readableByteStreamController must inherit property \"close()\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableByteStreamController interface: self.readableByteStreamController must inherit property \"enqueue(ArrayBufferView)\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableByteStreamController interface: calling enqueue(ArrayBufferView) on self.readableByteStreamController with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "ReadableByteStreamController interface: self.readableByteStreamController must inherit property \"error(optional any)\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableByteStreamController interface: calling error(optional any) on self.readableByteStreamController with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest interface object length": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest interface object name": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest interface: attribute view": {
+    "status": "FAIL"
+  },
+  "ReadableStreamBYOBRequest interface: operation respond(unsigned long long)": {
+    "status": "FAIL"
+  },
+  "ReadableStreamBYOBRequest interface: operation respondWithNewView(ArrayBufferView)": {
+    "status": "FAIL"
+  },
+  "ReadableStreamBYOBRequest must be primary interface of self.readableStreamByobRequest": {
+    "status": "PASS"
+  },
+  "Stringification of self.readableStreamByobRequest": {
+    "status": "FAIL"
+  },
+  "ReadableStreamBYOBRequest interface: self.readableStreamByobRequest must inherit property \"view\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest interface: self.readableStreamByobRequest must inherit property \"respond(unsigned long long)\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest interface: calling respond(unsigned long long) on self.readableStreamByobRequest with too few arguments must throw TypeError": {
+    "status": "FAIL"
+  },
+  "ReadableStreamBYOBRequest interface: self.readableStreamByobRequest must inherit property \"respondWithNewView(ArrayBufferView)\" with the proper type": {
+    "status": "PASS"
+  },
+  "ReadableStreamBYOBRequest interface: calling respondWithNewView(ArrayBufferView) on self.readableStreamByobRequest with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "WritableStream interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "WritableStream interface object length": {
+    "status": "PASS"
+  },
+  "WritableStream interface object name": {
+    "status": "PASS"
+  },
+  "WritableStream interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "WritableStream interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "WritableStream interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "WritableStream interface: attribute locked": {
+    "status": "FAIL"
+  },
+  "WritableStream interface: operation abort(optional any)": {
+    "status": "FAIL"
+  },
+  "WritableStream interface: operation close()": {
+    "status": "FAIL"
+  },
+  "WritableStream interface: operation getWriter()": {
+    "status": "FAIL"
+  },
+  "WritableStream must be primary interface of new WritableStream()": {
+    "status": "PASS"
+  },
+  "Stringification of new WritableStream()": {
+    "status": "FAIL"
+  },
+  "WritableStream interface: new WritableStream() must inherit property \"locked\" with the proper type": {
+    "status": "PASS"
+  },
+  "WritableStream interface: new WritableStream() must inherit property \"abort(optional any)\" with the proper type": {
+    "status": "PASS"
+  },
+  "WritableStream interface: calling abort(optional any) on new WritableStream() with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "WritableStream interface: new WritableStream() must inherit property \"close()\" with the proper type": {
+    "status": "PASS"
+  },
+  "WritableStream interface: new WritableStream() must inherit property \"getWriter()\" with the proper type": {
+    "status": "PASS"
+  },
+  "WritableStreamDefaultWriter interface: existence and properties of interface object": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultWriter interface object length": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultWriter interface object name": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultWriter interface: existence and properties of interface prototype object": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultWriter interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultWriter interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultWriter interface: attribute closed": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultWriter interface: attribute desiredSize": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultWriter interface: attribute ready": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultWriter interface: operation abort(optional any)": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultWriter interface: operation close()": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultWriter interface: operation releaseLock()": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultWriter interface: operation write(optional any)": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultWriter must be primary interface of (new WritableStream()).getWriter()": {
+    "status": "FAIL"
+  },
+  "Stringification of (new WritableStream()).getWriter()": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultWriter interface: (new WritableStream()).getWriter() must inherit property \"closed\" with the proper type": {
+    "status": "PASS"
+  },
+  "WritableStreamDefaultWriter interface: (new WritableStream()).getWriter() must inherit property \"desiredSize\" with the proper type": {
+    "status": "PASS"
+  },
+  "WritableStreamDefaultWriter interface: (new WritableStream()).getWriter() must inherit property \"ready\" with the proper type": {
+    "status": "PASS"
+  },
+  "WritableStreamDefaultWriter interface: (new WritableStream()).getWriter() must inherit property \"abort(optional any)\" with the proper type": {
+    "status": "PASS"
+  },
+  "WritableStreamDefaultWriter interface: calling abort(optional any) on (new WritableStream()).getWriter() with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "WritableStreamDefaultWriter interface: (new WritableStream()).getWriter() must inherit property \"close()\" with the proper type": {
+    "status": "PASS"
+  },
+  "WritableStreamDefaultWriter interface: (new WritableStream()).getWriter() must inherit property \"releaseLock()\" with the proper type": {
+    "status": "PASS"
+  },
+  "WritableStreamDefaultWriter interface: (new WritableStream()).getWriter() must inherit property \"write(optional any)\" with the proper type": {
+    "status": "PASS"
+  },
+  "WritableStreamDefaultWriter interface: calling write(optional any) on (new WritableStream()).getWriter() with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "WritableStreamDefaultController interface: existence and properties of interface object": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultController interface object length": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultController interface object name": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultController interface: existence and properties of interface prototype object": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultController interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultController interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultController interface: attribute signal": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultController interface: operation error(optional any)": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultController must be primary interface of self.writableStreamDefaultController": {
+    "status": "FAIL"
+  },
+  "Stringification of self.writableStreamDefaultController": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultController interface: self.writableStreamDefaultController must inherit property \"signal\" with the proper type": {
+    "status": "FAIL"
+  },
+  "WritableStreamDefaultController interface: self.writableStreamDefaultController must inherit property \"error(optional any)\" with the proper type": {
+    "status": "PASS"
+  },
+  "WritableStreamDefaultController interface: calling error(optional any) on self.writableStreamDefaultController with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "TransformStream interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "TransformStream interface object length": {
+    "status": "PASS"
+  },
+  "TransformStream interface object name": {
+    "status": "PASS"
+  },
+  "TransformStream interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "TransformStream interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "TransformStream interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "TransformStream interface: attribute readable": {
+    "status": "FAIL"
+  },
+  "TransformStream interface: attribute writable": {
+    "status": "FAIL"
+  },
+  "TransformStream must be primary interface of new TransformStream()": {
+    "status": "PASS"
+  },
+  "Stringification of new TransformStream()": {
+    "status": "FAIL"
+  },
+  "TransformStream interface: new TransformStream() must inherit property \"readable\" with the proper type": {
+    "status": "PASS"
+  },
+  "TransformStream interface: new TransformStream() must inherit property \"writable\" with the proper type": {
+    "status": "PASS"
+  },
+  "TransformStreamDefaultController interface: existence and properties of interface object": {
+    "status": "FAIL"
+  },
+  "TransformStreamDefaultController interface object length": {
+    "status": "FAIL"
+  },
+  "TransformStreamDefaultController interface object name": {
+    "status": "FAIL"
+  },
+  "TransformStreamDefaultController interface: existence and properties of interface prototype object": {
+    "status": "FAIL"
+  },
+  "TransformStreamDefaultController interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "FAIL"
+  },
+  "TransformStreamDefaultController interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "FAIL"
+  },
+  "TransformStreamDefaultController interface: attribute desiredSize": {
+    "status": "FAIL"
+  },
+  "TransformStreamDefaultController interface: operation enqueue(optional any)": {
+    "status": "FAIL"
+  },
+  "TransformStreamDefaultController interface: operation error(optional any)": {
+    "status": "FAIL"
+  },
+  "TransformStreamDefaultController interface: operation terminate()": {
+    "status": "FAIL"
+  },
+  "TransformStreamDefaultController must be primary interface of self.transformStreamDefaultController": {
+    "status": "FAIL"
+  },
+  "Stringification of self.transformStreamDefaultController": {
+    "status": "FAIL"
+  },
+  "TransformStreamDefaultController interface: self.transformStreamDefaultController must inherit property \"desiredSize\" with the proper type": {
+    "status": "PASS"
+  },
+  "TransformStreamDefaultController interface: self.transformStreamDefaultController must inherit property \"enqueue(optional any)\" with the proper type": {
+    "status": "PASS"
+  },
+  "TransformStreamDefaultController interface: calling enqueue(optional any) on self.transformStreamDefaultController with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "TransformStreamDefaultController interface: self.transformStreamDefaultController must inherit property \"error(optional any)\" with the proper type": {
+    "status": "PASS"
+  },
+  "TransformStreamDefaultController interface: calling error(optional any) on self.transformStreamDefaultController with too few arguments must throw TypeError": {
+    "status": "PASS"
+  },
+  "TransformStreamDefaultController interface: self.transformStreamDefaultController must inherit property \"terminate()\" with the proper type": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy interface object length": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy interface object name": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy interface: attribute highWaterMark": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy interface: attribute size": {
+    "status": "FAIL"
+  },
+  "ByteLengthQueuingStrategy must be primary interface of new ByteLengthQueuingStrategy({ highWaterMark: 5 })": {
+    "status": "PASS"
+  },
+  "Stringification of new ByteLengthQueuingStrategy({ highWaterMark: 5 })": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy interface: new ByteLengthQueuingStrategy({ highWaterMark: 5 }) must inherit property \"highWaterMark\" with the proper type": {
+    "status": "PASS"
+  },
+  "ByteLengthQueuingStrategy interface: new ByteLengthQueuingStrategy({ highWaterMark: 5 }) must inherit property \"size\" with the proper type": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy interface: existence and properties of interface object": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy interface object length": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy interface object name": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy interface: existence and properties of interface prototype object": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy interface: existence and properties of interface prototype object's \"constructor\" property": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy interface: existence and properties of interface prototype object's @@unscopables property": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy interface: attribute highWaterMark": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy interface: attribute size": {
+    "status": "FAIL"
+  },
+  "CountQueuingStrategy must be primary interface of new CountQueuingStrategy({ highWaterMark: 5 })": {
+    "status": "PASS"
+  },
+  "Stringification of new CountQueuingStrategy({ highWaterMark: 5 })": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy interface: new CountQueuingStrategy({ highWaterMark: 5 }) must inherit property \"highWaterMark\" with the proper type": {
+    "status": "PASS"
+  },
+  "CountQueuingStrategy interface: new CountQueuingStrategy({ highWaterMark: 5 }) must inherit property \"size\" with the proper type": {
+    "status": "PASS"
+  }
+}

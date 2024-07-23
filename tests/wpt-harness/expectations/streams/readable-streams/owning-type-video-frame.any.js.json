@@ -1,0 +1,17 @@
+{
+  "ReadableStream of type owning should close serialized chunks": {
+    "status": "FAIL"
+  },
+  "ReadableStream of type owning should transfer JS chunks with transferred values": {
+    "status": "FAIL"
+  },
+  "ReadableStream of type owning should error when trying to enqueue not serializable values": {
+    "status": "FAIL"
+  },
+  "ReadableStream of type owning should clone serializable objects when teeing": {
+    "status": "FAIL"
+  },
+  "ReadableStream of type owning should clone JS Objects with serializables when teeing": {
+    "status": "FAIL"
+  }
+}

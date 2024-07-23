@@ -1,0 +1,167 @@
+{
+  "Redirect 301 in \"follow\" mode without location": {
+    "status": "PASS"
+  },
+  "Redirect 301 in \"manual\" mode without location": {
+    "status": "FAIL"
+  },
+  "Redirect 301 in \"follow\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 301 in \"manual\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 301 in \"error\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 301 in \"follow\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 301 in \"manual\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 301 in \"error\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 301 in \"follow\" mode with data location": {
+    "status": "FAIL"
+  },
+  "Redirect 301 in \"manual\" mode with data location": {
+    "status": "FAIL"
+  },
+  "Redirect 301 in \"error\" mode with data location": {
+    "status": "FAIL"
+  },
+  "Redirect 302 in \"follow\" mode without location": {
+    "status": "PASS"
+  },
+  "Redirect 302 in \"manual\" mode without location": {
+    "status": "FAIL"
+  },
+  "Redirect 302 in \"follow\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 302 in \"manual\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 302 in \"error\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 302 in \"follow\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 302 in \"manual\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 302 in \"error\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 302 in \"follow\" mode with data location": {
+    "status": "FAIL"
+  },
+  "Redirect 302 in \"manual\" mode with data location": {
+    "status": "FAIL"
+  },
+  "Redirect 302 in \"error\" mode with data location": {
+    "status": "FAIL"
+  },
+  "Redirect 303 in \"follow\" mode without location": {
+    "status": "PASS"
+  },
+  "Redirect 303 in \"manual\" mode without location": {
+    "status": "FAIL"
+  },
+  "Redirect 303 in \"follow\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 303 in \"manual\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 303 in \"error\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 303 in \"follow\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 303 in \"manual\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 303 in \"error\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 303 in \"follow\" mode with data location": {
+    "status": "FAIL"
+  },
+  "Redirect 303 in \"manual\" mode with data location": {
+    "status": "FAIL"
+  },
+  "Redirect 303 in \"error\" mode with data location": {
+    "status": "FAIL"
+  },
+  "Redirect 307 in \"follow\" mode without location": {
+    "status": "PASS"
+  },
+  "Redirect 307 in \"manual\" mode without location": {
+    "status": "FAIL"
+  },
+  "Redirect 307 in \"follow\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 307 in \"manual\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 307 in \"error\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 307 in \"follow\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 307 in \"manual\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 307 in \"error\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 307 in \"follow\" mode with data location": {
+    "status": "FAIL"
+  },
+  "Redirect 307 in \"manual\" mode with data location": {
+    "status": "FAIL"
+  },
+  "Redirect 307 in \"error\" mode with data location": {
+    "status": "FAIL"
+  },
+  "Redirect 308 in \"follow\" mode without location": {
+    "status": "PASS"
+  },
+  "Redirect 308 in \"manual\" mode without location": {
+    "status": "FAIL"
+  },
+  "Redirect 308 in \"follow\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 308 in \"manual\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 308 in \"error\" mode with valid location": {
+    "status": "FAIL"
+  },
+  "Redirect 308 in \"follow\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 308 in \"manual\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 308 in \"error\" mode with invalid location": {
+    "status": "FAIL"
+  },
+  "Redirect 308 in \"follow\" mode with data location": {
+    "status": "FAIL"
+  },
+  "Redirect 308 in \"manual\" mode with data location": {
+    "status": "FAIL"
+  },
+  "Redirect 308 in \"error\" mode with data location": {
+    "status": "FAIL"
+  }
+}

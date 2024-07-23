@@ -1,0 +1,74 @@
+{
+  "Headers.prototype.get combines set-cookie headers in order": {
+    "status": "PASS"
+  },
+  "Headers iterator does not combine set-cookie headers": {
+    "status": "FAIL"
+  },
+  "Headers iterator does not special case set-cookie2 headers": {
+    "status": "PASS"
+  },
+  "Headers iterator does not combine set-cookie & set-cookie2 headers": {
+    "status": "FAIL"
+  },
+  "Headers iterator preserves set-cookie ordering": {
+    "status": "FAIL"
+  },
+  "Headers iterator preserves per header ordering, but sorts keys alphabetically": {
+    "status": "FAIL"
+  },
+  "Headers iterator preserves per header ordering, but sorts keys alphabetically (and ignores value ordering)": {
+    "status": "FAIL"
+  },
+  "Headers iterator is correctly updated with set-cookie changes": {
+    "status": "FAIL"
+  },
+  "Headers iterator is correctly updated with set-cookie changes #2": {
+    "status": "FAIL"
+  },
+  "Headers.prototype.has works for set-cookie": {
+    "status": "PASS"
+  },
+  "Headers.prototype.append works for set-cookie": {
+    "status": "FAIL"
+  },
+  "Headers.prototype.set works for set-cookie": {
+    "status": "PASS"
+  },
+  "Headers.prototype.delete works for set-cookie": {
+    "status": "PASS"
+  },
+  "Headers.prototype.getSetCookie with no headers present": {
+    "status": "FAIL"
+  },
+  "Headers.prototype.getSetCookie with one header": {
+    "status": "FAIL"
+  },
+  "Headers.prototype.getSetCookie with one header created from an object": {
+    "status": "FAIL"
+  },
+  "Headers.prototype.getSetCookie with multiple headers": {
+    "status": "FAIL"
+  },
+  "Headers.prototype.getSetCookie with an empty header": {
+    "status": "FAIL"
+  },
+  "Headers.prototype.getSetCookie with two equal headers": {
+    "status": "FAIL"
+  },
+  "Headers.prototype.getSetCookie ignores set-cookie2 headers": {
+    "status": "FAIL"
+  },
+  "Headers.prototype.getSetCookie preserves header ordering": {
+    "status": "FAIL"
+  },
+  "Adding Set-Cookie headers normalizes their value": {
+    "status": "FAIL"
+  },
+  "Adding invalid Set-Cookie headers throws": {
+    "status": "PASS"
+  },
+  "Set-Cookie is a forbidden response header": {
+    "status": "FAIL"
+  }
+}

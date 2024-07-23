@@ -1,0 +1,20 @@
+{
+  "Label for \"replacement\" should be rejected by API: csiso2022kr": {
+    "status": "PASS"
+  },
+  "Label for \"replacement\" should be rejected by API: hz-gb-2312": {
+    "status": "PASS"
+  },
+  "Label for \"replacement\" should be rejected by API: iso-2022-cn": {
+    "status": "PASS"
+  },
+  "Label for \"replacement\" should be rejected by API: iso-2022-cn-ext": {
+    "status": "PASS"
+  },
+  "Label for \"replacement\" should be rejected by API: iso-2022-kr": {
+    "status": "PASS"
+  },
+  "Label for \"replacement\" should be rejected by API: replacement": {
+    "status": "PASS"
+  }
+}

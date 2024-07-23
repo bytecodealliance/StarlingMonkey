@@ -1,0 +1,20 @@
+{
+  "ReadableStream with non-Uint8Array chunk passed to Response.arrayBuffer() causes TypeError": {
+    "status": "PASS"
+  },
+  "ReadableStream with non-Uint8Array chunk passed to Response.blob() causes TypeError": {
+    "status": "FAIL"
+  },
+  "ReadableStream with non-Uint8Array chunk passed to Response.bytes() causes TypeError": {
+    "status": "FAIL"
+  },
+  "ReadableStream with non-Uint8Array chunk passed to Response.formData() causes TypeError": {
+    "status": "FAIL"
+  },
+  "ReadableStream with non-Uint8Array chunk passed to Response.json() causes TypeError": {
+    "status": "PASS"
+  },
+  "ReadableStream with non-Uint8Array chunk passed to Response.text() causes TypeError": {
+    "status": "PASS"
+  }
+}

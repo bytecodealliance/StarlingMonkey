@@ -1,0 +1,20 @@
+{
+  "[keepalive] simple GET request on 'load' [no payload]; setting up": {
+    "status": "FAIL"
+  },
+  "[keepalive] simple GET request on 'unload' [no payload]; setting up": {
+    "status": "FAIL"
+  },
+  "[keepalive] simple GET request on 'pagehide' [no payload]; setting up": {
+    "status": "FAIL"
+  },
+  "[keepalive] simple POST request on 'load' [no payload]; setting up": {
+    "status": "FAIL"
+  },
+  "[keepalive] simple POST request on 'unload' [no payload]; setting up": {
+    "status": "FAIL"
+  },
+  "[keepalive] simple POST request on 'pagehide' [no payload]; setting up": {
+    "status": "FAIL"
+  }
+}

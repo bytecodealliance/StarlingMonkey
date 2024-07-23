@@ -1,11 +1,11 @@
 {
   "Constructing a Response with a stream on which getReader() is called": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Constructing a Response with a stream on which read() is called": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Constructing a Response with a stream on which read() and releaseLock() are called": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }

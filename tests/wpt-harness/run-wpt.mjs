@@ -215,14 +215,14 @@ async function run() {
 
     console.log(`\n${"Done. Stats:".padEnd(pathLength)} ${formatStats(stats)}`);
 
-    shutdown();
-
     if (config.tests.updateExpectations) {
       console.log(`Expectations updated: ${expectationsUpdated}`);
+      shutdown();
     } else if (stats.unexpectedFail + stats.unexpectedPass != 0 || unexpectedFailure) {
-      process.exitCode = 1;
+      shutdown('Unexpected failures or passes. Verify that these new results match your expectations and run with --update-expectations to update the recorded expectations.');
+    } else {
+      shutdown();
     }
-    return process.exit();
   }
 }
 
@@ -270,6 +270,9 @@ async function startWptServer(root, logLevel) {
   // read the tea leaves a bit, by waiting for a message that is among the very last to be
   // printed during initialization, well after the main http server has started.
   for await(let [chunk] of on(server.stdout, "data")) {
+    if (/CRITICAL/.test(chunk)) {
+      shutdown(new Error('WPT Server Error: ' + chunk));
+    }
     if (/wss on port \d+\] INFO - Listen on/.test(chunk)) {
       if (logLevel > LogLevel.Quiet) {
         console.info(`Started internal WPT server`);

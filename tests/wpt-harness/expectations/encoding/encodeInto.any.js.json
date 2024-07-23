@@ -305,6 +305,12 @@
   "Invalid encodeInto() destination: BigUint64Array, backed by: SharedArrayBuffer": {
     "status": "FAIL"
   },
+  "Invalid encodeInto() destination: Float16Array, backed by: ArrayBuffer": {
+    "status": "PASS"
+  },
+  "Invalid encodeInto() destination: Float16Array, backed by: SharedArrayBuffer": {
+    "status": "FAIL"
+  },
   "Invalid encodeInto() destination: Float32Array, backed by: ArrayBuffer": {
     "status": "PASS"
   },

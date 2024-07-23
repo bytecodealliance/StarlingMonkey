@@ -1,0 +1,98 @@
+{
+  "Same origin redirection, empty init, unsafe-url redirect header ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty init, no-referrer-when-downgrade redirect header ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty init, same-origin redirect header ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty init, origin redirect header ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty init, origin-when-cross-origin redirect header ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty init, no-referrer redirect header ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty init, strict-origin redirect header ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty init, strict-origin-when-cross-origin redirect header ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty redirect header, unsafe-url init ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty redirect header, no-referrer-when-downgrade init ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty redirect header, same-origin init ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty redirect header, origin init ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty redirect header, origin-when-cross-origin init ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty redirect header, no-referrer init ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty redirect header, strict-origin init ": {
+    "status": "FAIL"
+  },
+  "Same origin redirection, empty redirect header, strict-origin-when-cross-origin init ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty init, unsafe-url redirect header ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty init, no-referrer-when-downgrade redirect header ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty init, same-origin redirect header ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty init, origin redirect header ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty init, origin-when-cross-origin redirect header ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty init, no-referrer redirect header ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty init, strict-origin redirect header ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty init, strict-origin-when-cross-origin redirect header ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty redirect header, unsafe-url init ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty redirect header, no-referrer-when-downgrade init ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty redirect header, same-origin init ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty redirect header, origin init ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty redirect header, origin-when-cross-origin init ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty redirect header, no-referrer init ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty redirect header, strict-origin init ": {
+    "status": "FAIL"
+  },
+  "Cross origin redirection, empty redirect header, strict-origin-when-cross-origin init ": {
+    "status": "FAIL"
+  }
+}

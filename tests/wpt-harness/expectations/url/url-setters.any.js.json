@@ -269,6 +269,9 @@
   "URL: Setting <http://example.net/path>.host = 'example.com?stuff' Stuff after a ? delimiter is ignored": {
     "status": "PASS"
   },
+  "URL: Setting <http://example.net/path>.host = 'example.com?stuff:8080' Stuff after a ? delimiter is ignored, trailing 'port'": {
+    "status": "PASS"
+  },
   "URL: Setting <http://example.net/path>.host = 'example.com:8080?stuff' Stuff after a ? delimiter is ignored": {
     "status": "PASS"
   },
@@ -294,6 +297,15 @@
     "status": "PASS"
   },
   "URL: Setting <http://example.net/path>.host = 'example.com:8080+2' Anything other than ASCII digit stops the port parser in a setter but is not an error": {
+    "status": "PASS"
+  },
+  "URL: Setting <http://example.net:8080>.host = 'example.com:invalid' Anything other than ASCII digit stops the port parser in a setter but is not an error": {
+    "status": "FAIL"
+  },
+  "URL: Setting <http://example.net:8080/test>.host = '[::1]:invalid' Anything other than ASCII digit stops the port parser in a setter but is not an error": {
+    "status": "FAIL"
+  },
+  "URL: Setting <http://example.net:8080/test>.host = '[::1]' IPv6 without port": {
     "status": "PASS"
   },
   "URL: Setting <http://example.net/path>.host = 'example.com:65535' Port numbers are 16 bit integers": {
@@ -564,7 +576,7 @@
     "status": "PASS"
   },
   "URL: Setting <foo://somehost/some/path>.pathname = '' Non-special URLs can have their paths erased": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URL: Setting <foo:///some/path>.pathname = '' Non-special URLs with an empty host can have their paths erased": {
     "status": "FAIL"
@@ -684,10 +696,10 @@
     "status": "PASS"
   },
   "URL: Setting <data:space  ?query#fragment>.search = '' Do not drop trailing spaces from non-trailing opaque paths": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URL: Setting <sc:space  ?query#fragment>.search = ''": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URL: Setting <http://example.net>.search = ' ' Trailing space should be encoded": {
     "status": "PASS"

@@ -1,0 +1,221 @@
+{
+  "Setup.": {
+    "status": "PASS"
+  },
+  "\"data://test/,X\"": {
+    "status": "FAIL"
+  },
+  "\"data://test:test/,X\"": {
+    "status": "PASS"
+  },
+  "\"data:,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/html\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/html    ;charset=x   \"": {
+    "status": "FAIL"
+  },
+  "\"data:,\"": {
+    "status": "FAIL"
+  },
+  "\"data:,X#X\"": {
+    "status": "FAIL"
+  },
+  "\"data:,%FF\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/plain,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/plain ,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/plain%20,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/plain\\f,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/plain%0C,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/plain;,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:;x=x;charset=x,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:;x=x,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/plain;charset=windows-1252,%C2%B1\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/plain;Charset=UTF-8,%C2%B1\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/plain;charset=windows-1252,áñçə💩\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/plain;charset=UTF-8,áñçə💩\"": {
+    "status": "FAIL"
+  },
+  "\"data:image/gif,%C2%B1\"": {
+    "status": "FAIL"
+  },
+  "\"data:IMAGE/gif,%C2%B1\"": {
+    "status": "FAIL"
+  },
+  "\"data:IMAGE/gif;hi=x,%C2%B1\"": {
+    "status": "FAIL"
+  },
+  "\"data:IMAGE/gif;CHARSET=x,%C2%B1\"": {
+    "status": "FAIL"
+  },
+  "\"data: ,%FF\"": {
+    "status": "FAIL"
+  },
+  "\"data:%20,%FF\"": {
+    "status": "FAIL"
+  },
+  "\"data:\\f,%FF\"": {
+    "status": "FAIL"
+  },
+  "\"data:%1F,%FF\"": {
+    "status": "FAIL"
+  },
+  "\"data:\\0,%FF\"": {
+    "status": "FAIL"
+  },
+  "\"data:%00,%FF\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/html  ,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:text / html,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:†,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:†/†,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:X,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:image/png,X X\"": {
+    "status": "FAIL"
+  },
+  "\"data:application/javascript,X X\"": {
+    "status": "FAIL"
+  },
+  "\"data:application/xml,X X\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/javascript,X X\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/plain,X X\"": {
+    "status": "FAIL"
+  },
+  "\"data:unknown/unknown,X X\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/plain;a=\\\",\\\",X\"": {
+    "status": "FAIL"
+  },
+  "\"data:text/plain;a=%2C,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:;base64;base64,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:x/x;base64;base64,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:x/x;base64;charset=x,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:x/x;base64;charset=x;base64,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:x/x;base64;base64x,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:;base64,W%20A\"": {
+    "status": "FAIL"
+  },
+  "\"data:;base64,W%0CA\"": {
+    "status": "FAIL"
+  },
+  "\"data:x;base64x,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:x;base64;x,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:x;base64=x,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:; base64,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:;  base64,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:  ;charset=x   ;  base64,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:;base64;,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:;base64 ,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:;base64   ,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:;base 64,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:;BASe64,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:;%62ase64,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:%3Bbase64,WA\"": {
+    "status": "FAIL"
+  },
+  "\"data:;charset=x,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:; charset=x,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:;charset =x,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:;charset= x,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:;charset=,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:;charset,X\"": {
+    "status": "FAIL"
+  },
+  "\"data:;charset=\\\"x\\\",X\"": {
+    "status": "FAIL"
+  },
+  "\"data:;CHARSET=\\\"X\\\",X\"": {
+    "status": "FAIL"
+  }
+}

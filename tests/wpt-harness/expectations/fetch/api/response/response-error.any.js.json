@@ -1,18 +1,18 @@
 {
   "Throws RangeError when responseInit's status is 0": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Throws RangeError when responseInit's status is 100": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Throws RangeError when responseInit's status is 199": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Throws RangeError when responseInit's status is 600": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Throws RangeError when responseInit's status is 1000": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Throws TypeError when responseInit's statusText is \n": {
     "status": "FAIL"
@@ -21,12 +21,12 @@
     "status": "FAIL"
   },
   "Throws TypeError when building a response with body and a body status of 204": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Throws TypeError when building a response with body and a body status of 205": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Throws TypeError when building a response with body and a body status of 304": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }

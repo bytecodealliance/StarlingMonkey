@@ -1,0 +1,17 @@
+{
+  "Redirect to escaped UTF-8": {
+    "status": "FAIL"
+  },
+  "Redirect to unescaped UTF-8": {
+    "status": "FAIL"
+  },
+  "Redirect to escaped and unescaped UTF-8": {
+    "status": "FAIL"
+  },
+  "Escaping produces double-percent": {
+    "status": "FAIL"
+  },
+  "Redirect to invalid UTF-8": {
+    "status": "FAIL"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "[keepalive][new window][unload] same-origin redirect; setting up": {
+    "status": "FAIL"
+  },
+  "[keepalive][new window][unload] same-origin redirect + preflight; setting up": {
+    "status": "FAIL"
+  },
+  "[keepalive][new window][unload] cross-origin redirect; setting up": {
+    "status": "FAIL"
+  },
+  "[keepalive][new window][unload] cross-origin redirect + preflight; setting up": {
+    "status": "FAIL"
+  },
+  "[keepalive][new window][unload] redirect to file URL; setting up": {
+    "status": "FAIL"
+  },
+  "[keepalive][new window][unload] redirect to data URL; setting up": {
+    "status": "FAIL"
+  }
+}

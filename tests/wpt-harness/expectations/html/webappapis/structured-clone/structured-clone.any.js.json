@@ -342,7 +342,7 @@
     "status": "PASS"
   },
   "Serializing a non-serializable platform object fails": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "An object whose interface is deleted from the global must still deserialize": {
     "status": "FAIL"
@@ -351,16 +351,16 @@
     "status": "FAIL"
   },
   "Resizable ArrayBuffer": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Growable SharedArrayBuffer": {
     "status": "FAIL"
   },
   "Length-tracking TypedArray": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Length-tracking DataView": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Serializing OOB TypedArray throws": {
     "status": "FAIL"
@@ -390,13 +390,13 @@
     "status": "FAIL"
   },
   "Resizable ArrayBuffer is transferable": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Length-tracking TypedArray is transferable": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Length-tracking DataView is transferable": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Transferring OOB TypedArray throws": {
     "status": "FAIL"

@@ -1,0 +1,26 @@
+{
+  "new Request() with a 'high' priority does not throw an error": {
+    "status": "PASS"
+  },
+  "new Request() with a 'low' priority does not throw an error": {
+    "status": "PASS"
+  },
+  "new Request() with a 'auto' priority does not throw an error": {
+    "status": "PASS"
+  },
+  "new Request() throws a TypeError if any of RequestInit's members' values are invalid": {
+    "status": "FAIL"
+  },
+  "fetch() with a 'high' priority completes successfully": {
+    "status": "PASS"
+  },
+  "fetch() with a 'low' priority completes successfully": {
+    "status": "PASS"
+  },
+  "fetch() with a 'auto' priority completes successfully": {
+    "status": "PASS"
+  },
+  "fetch() with an invalid priority returns a rejected promise with a TypeError": {
+    "status": "FAIL"
+  }
+}

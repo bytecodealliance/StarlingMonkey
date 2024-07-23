@@ -1,0 +1,17 @@
+{
+  "Fetch upload streaming should be accepted on 303": {
+    "status": "FAIL"
+  },
+  "Fetch upload streaming should fail on 301": {
+    "status": "FAIL"
+  },
+  "Fetch upload streaming should fail on 302": {
+    "status": "FAIL"
+  },
+  "Fetch upload streaming should fail on 307": {
+    "status": "FAIL"
+  },
+  "Fetch upload streaming should fail on 308": {
+    "status": "FAIL"
+  }
+}

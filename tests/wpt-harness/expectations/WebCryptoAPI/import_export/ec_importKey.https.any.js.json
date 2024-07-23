@@ -1,4 +1,19 @@
 {
+  "Good parameters: P-256 bits (spki, buffer(91), {name: ECDSA, namedCurve: P-256}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (spki, buffer(59, compressed), {name: ECDSA, namedCurve: P-256}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-256}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (raw, buffer(65), {name: ECDSA, namedCurve: P-256}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (raw, buffer(33, compressed), {name: ECDSA, namedCurve: P-256}, true, [verify])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-256 bits (spki, buffer(91), {name: ECDSA, namedCurve: P-256}, true, [])": {
     "status": "FAIL"
   },
@@ -14,7 +29,25 @@
   "Good parameters: P-256 bits (raw, buffer(33, compressed), {name: ECDSA, namedCurve: P-256}, true, [])": {
     "status": "FAIL"
   },
+  "Good parameters: P-256 bits (spki, buffer(91), {name: ECDSA, namedCurve: P-256}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (spki, buffer(59, compressed), {name: ECDSA, namedCurve: P-256}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-256}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (raw, buffer(65), {name: ECDSA, namedCurve: P-256}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (raw, buffer(33, compressed), {name: ECDSA, namedCurve: P-256}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-256 bits (pkcs8, buffer(138), {name: ECDSA, namedCurve: P-256}, true, [sign])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (pkcs8, buffer(138), {name: ECDSA, namedCurve: P-256}, true, [sign, sign])": {
     "status": "FAIL"
   },
   "Empty Usages: P-256 bits (pkcs8, buffer(138), {name: ECDSA, namedCurve: P-256}, true, [])": {
@@ -23,7 +56,25 @@
   "Good parameters: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-256}, true, [sign])": {
     "status": "FAIL"
   },
+  "Good parameters: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-256}, true, [sign, sign])": {
+    "status": "FAIL"
+  },
   "Empty Usages: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-256}, true, [])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (spki, buffer(91), {name: ECDSA, namedCurve: P-256}, false, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (spki, buffer(59, compressed), {name: ECDSA, namedCurve: P-256}, false, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-256}, false, [verify])": {
+    "status": "PASS"
+  },
+  "Good parameters: P-256 bits (raw, buffer(65), {name: ECDSA, namedCurve: P-256}, false, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (raw, buffer(33, compressed), {name: ECDSA, namedCurve: P-256}, false, [verify])": {
     "status": "FAIL"
   },
   "Good parameters: P-256 bits (spki, buffer(91), {name: ECDSA, namedCurve: P-256}, false, [])": {
@@ -41,7 +92,25 @@
   "Good parameters: P-256 bits (raw, buffer(33, compressed), {name: ECDSA, namedCurve: P-256}, false, [])": {
     "status": "FAIL"
   },
+  "Good parameters: P-256 bits (spki, buffer(91), {name: ECDSA, namedCurve: P-256}, false, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (spki, buffer(59, compressed), {name: ECDSA, namedCurve: P-256}, false, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-256}, false, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Good parameters: P-256 bits (raw, buffer(65), {name: ECDSA, namedCurve: P-256}, false, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (raw, buffer(33, compressed), {name: ECDSA, namedCurve: P-256}, false, [verify, verify])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-256 bits (pkcs8, buffer(138), {name: ECDSA, namedCurve: P-256}, false, [sign])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (pkcs8, buffer(138), {name: ECDSA, namedCurve: P-256}, false, [sign, sign])": {
     "status": "FAIL"
   },
   "Empty Usages: P-256 bits (pkcs8, buffer(138), {name: ECDSA, namedCurve: P-256}, false, [])": {
@@ -50,7 +119,25 @@
   "Good parameters: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-256}, false, [sign])": {
     "status": "PASS"
   },
+  "Good parameters: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-256}, false, [sign, sign])": {
+    "status": "PASS"
+  },
   "Empty Usages: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-256}, false, [])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (spki, buffer(120), {name: ECDSA, namedCurve: P-384}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (spki, buffer(72, compressed), {name: ECDSA, namedCurve: P-384}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-384}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (raw, buffer(97), {name: ECDSA, namedCurve: P-384}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (raw, buffer(49, compressed), {name: ECDSA, namedCurve: P-384}, true, [verify])": {
     "status": "FAIL"
   },
   "Good parameters: P-384 bits (spki, buffer(120), {name: ECDSA, namedCurve: P-384}, true, [])": {
@@ -68,7 +155,25 @@
   "Good parameters: P-384 bits (raw, buffer(49, compressed), {name: ECDSA, namedCurve: P-384}, true, [])": {
     "status": "FAIL"
   },
+  "Good parameters: P-384 bits (spki, buffer(120), {name: ECDSA, namedCurve: P-384}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (spki, buffer(72, compressed), {name: ECDSA, namedCurve: P-384}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-384}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (raw, buffer(97), {name: ECDSA, namedCurve: P-384}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (raw, buffer(49, compressed), {name: ECDSA, namedCurve: P-384}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-384 bits (pkcs8, buffer(185), {name: ECDSA, namedCurve: P-384}, true, [sign])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (pkcs8, buffer(185), {name: ECDSA, namedCurve: P-384}, true, [sign, sign])": {
     "status": "FAIL"
   },
   "Empty Usages: P-384 bits (pkcs8, buffer(185), {name: ECDSA, namedCurve: P-384}, true, [])": {
@@ -77,7 +182,25 @@
   "Good parameters: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-384}, true, [sign])": {
     "status": "FAIL"
   },
+  "Good parameters: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-384}, true, [sign, sign])": {
+    "status": "FAIL"
+  },
   "Empty Usages: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-384}, true, [])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (spki, buffer(120), {name: ECDSA, namedCurve: P-384}, false, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (spki, buffer(72, compressed), {name: ECDSA, namedCurve: P-384}, false, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-384}, false, [verify])": {
+    "status": "PASS"
+  },
+  "Good parameters: P-384 bits (raw, buffer(97), {name: ECDSA, namedCurve: P-384}, false, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (raw, buffer(49, compressed), {name: ECDSA, namedCurve: P-384}, false, [verify])": {
     "status": "FAIL"
   },
   "Good parameters: P-384 bits (spki, buffer(120), {name: ECDSA, namedCurve: P-384}, false, [])": {
@@ -95,7 +218,25 @@
   "Good parameters: P-384 bits (raw, buffer(49, compressed), {name: ECDSA, namedCurve: P-384}, false, [])": {
     "status": "FAIL"
   },
+  "Good parameters: P-384 bits (spki, buffer(120), {name: ECDSA, namedCurve: P-384}, false, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (spki, buffer(72, compressed), {name: ECDSA, namedCurve: P-384}, false, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-384}, false, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Good parameters: P-384 bits (raw, buffer(97), {name: ECDSA, namedCurve: P-384}, false, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (raw, buffer(49, compressed), {name: ECDSA, namedCurve: P-384}, false, [verify, verify])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-384 bits (pkcs8, buffer(185), {name: ECDSA, namedCurve: P-384}, false, [sign])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (pkcs8, buffer(185), {name: ECDSA, namedCurve: P-384}, false, [sign, sign])": {
     "status": "FAIL"
   },
   "Empty Usages: P-384 bits (pkcs8, buffer(185), {name: ECDSA, namedCurve: P-384}, false, [])": {
@@ -104,7 +245,25 @@
   "Good parameters: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-384}, false, [sign])": {
     "status": "PASS"
   },
+  "Good parameters: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-384}, false, [sign, sign])": {
+    "status": "PASS"
+  },
   "Empty Usages: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-384}, false, [])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (spki, buffer(158), {name: ECDSA, namedCurve: P-521}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (spki, buffer(90, compressed), {name: ECDSA, namedCurve: P-521}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-521}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (raw, buffer(133), {name: ECDSA, namedCurve: P-521}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (raw, buffer(67, compressed), {name: ECDSA, namedCurve: P-521}, true, [verify])": {
     "status": "FAIL"
   },
   "Good parameters: P-521 bits (spki, buffer(158), {name: ECDSA, namedCurve: P-521}, true, [])": {
@@ -122,7 +281,25 @@
   "Good parameters: P-521 bits (raw, buffer(67, compressed), {name: ECDSA, namedCurve: P-521}, true, [])": {
     "status": "FAIL"
   },
+  "Good parameters: P-521 bits (spki, buffer(158), {name: ECDSA, namedCurve: P-521}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (spki, buffer(90, compressed), {name: ECDSA, namedCurve: P-521}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-521}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (raw, buffer(133), {name: ECDSA, namedCurve: P-521}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (raw, buffer(67, compressed), {name: ECDSA, namedCurve: P-521}, true, [verify, verify])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-521 bits (pkcs8, buffer(241), {name: ECDSA, namedCurve: P-521}, true, [sign])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (pkcs8, buffer(241), {name: ECDSA, namedCurve: P-521}, true, [sign, sign])": {
     "status": "FAIL"
   },
   "Empty Usages: P-521 bits (pkcs8, buffer(241), {name: ECDSA, namedCurve: P-521}, true, [])": {
@@ -131,7 +308,25 @@
   "Good parameters: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-521}, true, [sign])": {
     "status": "FAIL"
   },
+  "Good parameters: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-521}, true, [sign, sign])": {
+    "status": "FAIL"
+  },
   "Empty Usages: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-521}, true, [])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (spki, buffer(158), {name: ECDSA, namedCurve: P-521}, false, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (spki, buffer(90, compressed), {name: ECDSA, namedCurve: P-521}, false, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-521}, false, [verify])": {
+    "status": "PASS"
+  },
+  "Good parameters: P-521 bits (raw, buffer(133), {name: ECDSA, namedCurve: P-521}, false, [verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (raw, buffer(67, compressed), {name: ECDSA, namedCurve: P-521}, false, [verify])": {
     "status": "FAIL"
   },
   "Good parameters: P-521 bits (spki, buffer(158), {name: ECDSA, namedCurve: P-521}, false, [])": {
@@ -149,13 +344,34 @@
   "Good parameters: P-521 bits (raw, buffer(67, compressed), {name: ECDSA, namedCurve: P-521}, false, [])": {
     "status": "FAIL"
   },
+  "Good parameters: P-521 bits (spki, buffer(158), {name: ECDSA, namedCurve: P-521}, false, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (spki, buffer(90, compressed), {name: ECDSA, namedCurve: P-521}, false, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-521}, false, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Good parameters: P-521 bits (raw, buffer(133), {name: ECDSA, namedCurve: P-521}, false, [verify, verify])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (raw, buffer(67, compressed), {name: ECDSA, namedCurve: P-521}, false, [verify, verify])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-521 bits (pkcs8, buffer(241), {name: ECDSA, namedCurve: P-521}, false, [sign])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (pkcs8, buffer(241), {name: ECDSA, namedCurve: P-521}, false, [sign, sign])": {
     "status": "FAIL"
   },
   "Empty Usages: P-521 bits (pkcs8, buffer(241), {name: ECDSA, namedCurve: P-521}, false, [])": {
     "status": "FAIL"
   },
   "Good parameters: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-521}, false, [sign])": {
+    "status": "PASS"
+  },
+  "Good parameters: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-521}, false, [sign, sign])": {
     "status": "PASS"
   },
   "Empty Usages: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-521}, false, [])": {
@@ -168,6 +384,9 @@
     "status": "FAIL"
   },
   "Good parameters: P-256 bits (jwk, object(kty, crv, x, y), {name: ECDH, namedCurve: P-256}, true, [])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-256 bits (jwk, object(kty, crv, x, y, alg), {name: ECDH, namedCurve: P-256}, true, [])": {
     "status": "FAIL"
   },
   "Good parameters: P-256 bits (raw, buffer(65), {name: ECDH, namedCurve: P-256}, true, [])": {
@@ -185,16 +404,34 @@
   "Good parameters: P-256 bits (pkcs8, buffer(138), {name: ECDH, namedCurve: P-256}, true, [deriveBits])": {
     "status": "FAIL"
   },
+  "Good parameters: P-256 bits (pkcs8, buffer(138), {name: ECDH, namedCurve: P-256}, true, [deriveKey, deriveBits, deriveKey, deriveBits])": {
+    "status": "FAIL"
+  },
   "Empty Usages: P-256 bits (pkcs8, buffer(138), {name: ECDH, namedCurve: P-256}, true, [])": {
     "status": "FAIL"
   },
   "Good parameters: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-256}, true, [deriveKey])": {
     "status": "FAIL"
   },
+  "ECDH any JWK alg: P-256 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-256}, true, [deriveKey])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-256}, true, [deriveBits, deriveKey])": {
     "status": "FAIL"
   },
+  "ECDH any JWK alg: P-256 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-256}, true, [deriveBits, deriveKey])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-256}, true, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-256 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-256}, true, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-256}, true, [deriveKey, deriveBits, deriveKey, deriveBits])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-256 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-256}, true, [deriveKey, deriveBits, deriveKey, deriveBits])": {
     "status": "FAIL"
   },
   "Empty Usages: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-256}, true, [])": {
@@ -207,6 +444,9 @@
     "status": "FAIL"
   },
   "Good parameters: P-256 bits (jwk, object(kty, crv, x, y), {name: ECDH, namedCurve: P-256}, false, [])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-256 bits (jwk, object(kty, crv, x, y, alg), {name: ECDH, namedCurve: P-256}, false, [])": {
     "status": "FAIL"
   },
   "Good parameters: P-256 bits (raw, buffer(65), {name: ECDH, namedCurve: P-256}, false, [])": {
@@ -224,16 +464,34 @@
   "Good parameters: P-256 bits (pkcs8, buffer(138), {name: ECDH, namedCurve: P-256}, false, [deriveBits])": {
     "status": "FAIL"
   },
+  "Good parameters: P-256 bits (pkcs8, buffer(138), {name: ECDH, namedCurve: P-256}, false, [deriveKey, deriveBits, deriveKey, deriveBits])": {
+    "status": "FAIL"
+  },
   "Empty Usages: P-256 bits (pkcs8, buffer(138), {name: ECDH, namedCurve: P-256}, false, [])": {
     "status": "FAIL"
   },
   "Good parameters: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-256}, false, [deriveKey])": {
     "status": "FAIL"
   },
+  "ECDH any JWK alg: P-256 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-256}, false, [deriveKey])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-256}, false, [deriveBits, deriveKey])": {
     "status": "FAIL"
   },
+  "ECDH any JWK alg: P-256 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-256}, false, [deriveBits, deriveKey])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-256}, false, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-256 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-256}, false, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-256}, false, [deriveKey, deriveBits, deriveKey, deriveBits])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-256 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-256}, false, [deriveKey, deriveBits, deriveKey, deriveBits])": {
     "status": "FAIL"
   },
   "Empty Usages: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-256}, false, [])": {
@@ -246,6 +504,9 @@
     "status": "FAIL"
   },
   "Good parameters: P-384 bits (jwk, object(kty, crv, x, y), {name: ECDH, namedCurve: P-384}, true, [])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-384 bits (jwk, object(kty, crv, x, y, alg), {name: ECDH, namedCurve: P-384}, true, [])": {
     "status": "FAIL"
   },
   "Good parameters: P-384 bits (raw, buffer(97), {name: ECDH, namedCurve: P-384}, true, [])": {
@@ -263,16 +524,34 @@
   "Good parameters: P-384 bits (pkcs8, buffer(185), {name: ECDH, namedCurve: P-384}, true, [deriveBits])": {
     "status": "FAIL"
   },
+  "Good parameters: P-384 bits (pkcs8, buffer(185), {name: ECDH, namedCurve: P-384}, true, [deriveKey, deriveBits, deriveKey, deriveBits])": {
+    "status": "FAIL"
+  },
   "Empty Usages: P-384 bits (pkcs8, buffer(185), {name: ECDH, namedCurve: P-384}, true, [])": {
     "status": "FAIL"
   },
   "Good parameters: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-384}, true, [deriveKey])": {
     "status": "FAIL"
   },
+  "ECDH any JWK alg: P-384 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-384}, true, [deriveKey])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-384}, true, [deriveBits, deriveKey])": {
     "status": "FAIL"
   },
+  "ECDH any JWK alg: P-384 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-384}, true, [deriveBits, deriveKey])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-384}, true, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-384 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-384}, true, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-384}, true, [deriveKey, deriveBits, deriveKey, deriveBits])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-384 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-384}, true, [deriveKey, deriveBits, deriveKey, deriveBits])": {
     "status": "FAIL"
   },
   "Empty Usages: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-384}, true, [])": {
@@ -285,6 +564,9 @@
     "status": "FAIL"
   },
   "Good parameters: P-384 bits (jwk, object(kty, crv, x, y), {name: ECDH, namedCurve: P-384}, false, [])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-384 bits (jwk, object(kty, crv, x, y, alg), {name: ECDH, namedCurve: P-384}, false, [])": {
     "status": "FAIL"
   },
   "Good parameters: P-384 bits (raw, buffer(97), {name: ECDH, namedCurve: P-384}, false, [])": {
@@ -302,16 +584,34 @@
   "Good parameters: P-384 bits (pkcs8, buffer(185), {name: ECDH, namedCurve: P-384}, false, [deriveBits])": {
     "status": "FAIL"
   },
+  "Good parameters: P-384 bits (pkcs8, buffer(185), {name: ECDH, namedCurve: P-384}, false, [deriveKey, deriveBits, deriveKey, deriveBits])": {
+    "status": "FAIL"
+  },
   "Empty Usages: P-384 bits (pkcs8, buffer(185), {name: ECDH, namedCurve: P-384}, false, [])": {
     "status": "FAIL"
   },
   "Good parameters: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-384}, false, [deriveKey])": {
     "status": "FAIL"
   },
+  "ECDH any JWK alg: P-384 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-384}, false, [deriveKey])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-384}, false, [deriveBits, deriveKey])": {
     "status": "FAIL"
   },
+  "ECDH any JWK alg: P-384 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-384}, false, [deriveBits, deriveKey])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-384}, false, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-384 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-384}, false, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-384}, false, [deriveKey, deriveBits, deriveKey, deriveBits])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-384 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-384}, false, [deriveKey, deriveBits, deriveKey, deriveBits])": {
     "status": "FAIL"
   },
   "Empty Usages: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-384}, false, [])": {
@@ -324,6 +624,9 @@
     "status": "FAIL"
   },
   "Good parameters: P-521 bits (jwk, object(kty, crv, x, y), {name: ECDH, namedCurve: P-521}, true, [])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-521 bits (jwk, object(kty, crv, x, y, alg), {name: ECDH, namedCurve: P-521}, true, [])": {
     "status": "FAIL"
   },
   "Good parameters: P-521 bits (raw, buffer(133), {name: ECDH, namedCurve: P-521}, true, [])": {
@@ -341,16 +644,34 @@
   "Good parameters: P-521 bits (pkcs8, buffer(241), {name: ECDH, namedCurve: P-521}, true, [deriveBits])": {
     "status": "FAIL"
   },
+  "Good parameters: P-521 bits (pkcs8, buffer(241), {name: ECDH, namedCurve: P-521}, true, [deriveKey, deriveBits, deriveKey, deriveBits])": {
+    "status": "FAIL"
+  },
   "Empty Usages: P-521 bits (pkcs8, buffer(241), {name: ECDH, namedCurve: P-521}, true, [])": {
     "status": "FAIL"
   },
   "Good parameters: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-521}, true, [deriveKey])": {
     "status": "FAIL"
   },
+  "ECDH any JWK alg: P-521 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-521}, true, [deriveKey])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-521}, true, [deriveBits, deriveKey])": {
     "status": "FAIL"
   },
+  "ECDH any JWK alg: P-521 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-521}, true, [deriveBits, deriveKey])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-521}, true, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-521 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-521}, true, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-521}, true, [deriveKey, deriveBits, deriveKey, deriveBits])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-521 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-521}, true, [deriveKey, deriveBits, deriveKey, deriveBits])": {
     "status": "FAIL"
   },
   "Empty Usages: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-521}, true, [])": {
@@ -363,6 +684,9 @@
     "status": "FAIL"
   },
   "Good parameters: P-521 bits (jwk, object(kty, crv, x, y), {name: ECDH, namedCurve: P-521}, false, [])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-521 bits (jwk, object(kty, crv, x, y, alg), {name: ECDH, namedCurve: P-521}, false, [])": {
     "status": "FAIL"
   },
   "Good parameters: P-521 bits (raw, buffer(133), {name: ECDH, namedCurve: P-521}, false, [])": {
@@ -380,16 +704,34 @@
   "Good parameters: P-521 bits (pkcs8, buffer(241), {name: ECDH, namedCurve: P-521}, false, [deriveBits])": {
     "status": "FAIL"
   },
+  "Good parameters: P-521 bits (pkcs8, buffer(241), {name: ECDH, namedCurve: P-521}, false, [deriveKey, deriveBits, deriveKey, deriveBits])": {
+    "status": "FAIL"
+  },
   "Empty Usages: P-521 bits (pkcs8, buffer(241), {name: ECDH, namedCurve: P-521}, false, [])": {
     "status": "FAIL"
   },
   "Good parameters: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-521}, false, [deriveKey])": {
     "status": "FAIL"
   },
+  "ECDH any JWK alg: P-521 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-521}, false, [deriveKey])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-521}, false, [deriveBits, deriveKey])": {
     "status": "FAIL"
   },
+  "ECDH any JWK alg: P-521 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-521}, false, [deriveBits, deriveKey])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-521}, false, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-521 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-521}, false, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "Good parameters: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-521}, false, [deriveKey, deriveBits, deriveKey, deriveBits])": {
+    "status": "FAIL"
+  },
+  "ECDH any JWK alg: P-521 bits (jwk, object(kty, crv, x, y, d, alg), {name: ECDH, namedCurve: P-521}, false, [deriveKey, deriveBits, deriveKey, deriveBits])": {
     "status": "FAIL"
   },
   "Empty Usages: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-521}, false, [])": {
