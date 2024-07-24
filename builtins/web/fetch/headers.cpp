@@ -530,7 +530,6 @@ JSObject *Headers::create(JSContext *cx, host_api::HttpHeadersReadOnly *handle, 
     return nullptr;
   }
 
-  MOZ_ASSERT(Headers::is_instance(self));
   MOZ_ASSERT(Headers::mode(self) == Headers::Mode::Uninitialized);
   SetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Mode),
                   JS::Int32Value(static_cast<int32_t>(Headers::Mode::HostOnly)));
