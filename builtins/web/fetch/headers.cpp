@@ -283,18 +283,12 @@ static bool switch_mode(JSContext* cx, HandleObject self, const Headers::Mode mo
   }
 
   if (current_mode == Headers::Mode::Uninitialized) {
-    if (mode == Headers::Mode::ContentOnly) {
-      RootedObject map(cx, JS::NewMapObject(cx));
-      if (!map) {
-        return false;
-      }
-      SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Entries), ObjectValue(*map));
-    } else {
-      MOZ_ASSERT(mode == Headers::Mode::HostOnly);
-      auto handle = new host_api::HttpHeaders(Headers::guard(self));
-      SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Handle), PrivateValue(handle));
+    MOZ_ASSERT(mode == Headers::Mode::ContentOnly);
+    RootedObject map(cx, JS::NewMapObject(cx));
+    if (!map) {
+      return false;
     }
-
+    SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Entries), ObjectValue(*map));
     SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Mode), JS::Int32Value(static_cast<int32_t>(mode)));
     return true;
   }
@@ -403,8 +397,6 @@ static bool switch_mode(JSContext* cx, HandleObject self, const Headers::Mode mo
     auto handle = get_handle(self);
     delete handle;
     SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Handle), PrivateValue(nullptr));
-    SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Mode),
-                    JS::Int32Value(static_cast<int32_t>(Headers::Mode::CachedInContent)));
   }
 
   SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Mode),
@@ -519,14 +511,6 @@ bool Headers::append_header_value(JSContext *cx, JS::HandleObject self, JS::Hand
   return true;
 }
 
-void init_from_handle(JSObject* self, host_api::HttpHeadersReadOnly* handle) {
-  MOZ_ASSERT(Headers::is_instance(self));
-  MOZ_ASSERT(Headers::mode(self) == Headers::Mode::Uninitialized);
-  SetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Mode),
-                  JS::Int32Value(static_cast<int32_t>(Headers::Mode::HostOnly)));
-  SetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Handle), PrivateValue(handle));
-}
-
 JSObject *Headers::create(JSContext *cx, host_api::HttpHeadersGuard guard) {
   JSObject* self = JS_NewObjectWithGivenProto(cx, &class_, proto_obj);
   if (!self) {
@@ -546,7 +530,10 @@ JSObject *Headers::create(JSContext *cx, host_api::HttpHeadersReadOnly *handle, 
     return nullptr;
   }
 
-  init_from_handle(self, handle);
+  MOZ_ASSERT(Headers::mode(self) == Headers::Mode::Uninitialized);
+  SetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Mode),
+                  JS::Int32Value(static_cast<int32_t>(Headers::Mode::HostOnly)));
+  SetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Handle), PrivateValue(handle));
   return self;
 }
 
@@ -555,24 +542,28 @@ JSObject *Headers::create(JSContext *cx, HandleValue init_headers, host_api::Htt
   if (!self) {
     return nullptr;
   }
-  return init_entries(cx, self, init_headers);
+  if (!init_entries(cx, self, init_headers)) {
+    return nullptr;
+  }
+  MOZ_ASSERT(mode(self) == Headers::Mode::ContentOnly || mode(self) == Headers::Mode::Uninitialized);
+  return self;
 }
 
-JSObject *Headers::init_entries(JSContext *cx, HandleObject self, HandleValue initv) {
+bool Headers::init_entries(JSContext *cx, HandleObject self, HandleValue initv) {
   // TODO: check if initv is a Headers instance and clone its handle if so.
   // TODO: But note: forbidden headers have to be applied correctly.
   bool consumed = false;
   if (!core::maybe_consume_sequence_or_record<append_header_value>(cx, initv, self,
                                                                    &consumed, "Headers")) {
-    return nullptr;
+    return false;
   }
 
   if (!consumed) {
     api::throw_error(cx, api::Errors::InvalidSequence, "Headers", "");
-    return nullptr;
+    return false;
   }
 
-  return self;
+  return true;
 }
 
 bool Headers::get(JSContext *cx, unsigned argc, JS::Value *vp) {
@@ -879,12 +870,10 @@ bool Headers::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
   SetReservedSlot(headersInstance, static_cast<uint32_t>(Slots::Guard),
                   JS::Int32Value(static_cast<int32_t>(host_api::HttpHeadersGuard::None)));
-  JS::RootedObject headers(cx, init_entries(cx, headersInstance, headersInit));
-  if (!headers) {
+  if (!init_entries(cx, headersInstance, headersInit)) {
     return false;
   }
-
-  args.rval().setObject(*headers);
+  args.rval().setObject(*headersInstance);
   return true;
 }
 

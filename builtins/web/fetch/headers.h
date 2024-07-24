@@ -111,7 +111,7 @@ public:
   static JSObject *create(JSContext *cx, host_api::HttpHeadersReadOnly *handle,
                           host_api::HttpHeadersGuard guard);
 
-  static JSObject *init_entries(JSContext *cx, HandleObject self, HandleValue init_headers);
+  static bool init_entries(JSContext *cx, HandleObject self, HandleValue init_headers);
 
   /// Returns a Map object containing the headers.
   ///
