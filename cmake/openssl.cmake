@@ -7,7 +7,7 @@ include(ExternalProject)
 ExternalProject_Add(
         OpenSSL
         SOURCE_DIR ${OPENSSL_SOURCE_DIR}
-        URL https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
+        URL https://openssl.org/source/old/3.0/openssl-${OPENSSL_VERSION}.tar.gz
         URL_HASH SHA256=83049d042a260e696f62406ac5c08bf706fd84383f945cf21bd61e9ed95c396e
         USES_TERMINAL_DOWNLOAD TRUE
         PATCH_COMMAND
