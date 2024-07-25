@@ -1,0 +1,122 @@
+{
+  "[GET] Redirect 301 Same origin to same origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 301 Same origin to other origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 301 Other origin to other origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 301 Other origin to same origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 301 Same origin to same origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 301 Same origin to other origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 301 Other origin to other origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 301 Other origin to same origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 302 Same origin to same origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 302 Same origin to other origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 302 Other origin to other origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 302 Other origin to same origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 302 Same origin to same origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 302 Same origin to other origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 302 Other origin to other origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 302 Other origin to same origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 303 Same origin to same origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 303 Same origin to other origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 303 Other origin to other origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 303 Other origin to same origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 303 Same origin to same origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 303 Same origin to other origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 303 Other origin to other origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 303 Other origin to same origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 307 Same origin to same origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 307 Same origin to other origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 307 Other origin to other origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 307 Other origin to same origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 307 Same origin to same origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 307 Same origin to other origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 307 Other origin to other origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 307 Other origin to same origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 308 Same origin to same origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 308 Same origin to other origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 308 Other origin to other origin": {
+    "status": "FAIL"
+  },
+  "[GET] Redirect 308 Other origin to same origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 308 Same origin to same origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 308 Same origin to other origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 308 Other origin to other origin": {
+    "status": "FAIL"
+  },
+  "[POST] Redirect 308 Other origin to same origin": {
+    "status": "FAIL"
+  }
+}

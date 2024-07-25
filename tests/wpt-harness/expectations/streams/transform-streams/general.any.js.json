@@ -59,7 +59,10 @@
   "controller.terminate() should do nothing the second time it is called": {
     "status": "PASS"
   },
-  "terminate() should do nothing after readable.cancel()": {
+  "terminate() should abort writable immediately after readable.cancel()": {
+    "status": "FAIL"
+  },
+  "terminate() should do nothing after readable.cancel() resolves": {
     "status": "PASS"
   },
   "start() should not be called twice": {

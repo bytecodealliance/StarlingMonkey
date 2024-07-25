@@ -11,9 +11,6 @@
   "Access-Control-Request-Method is a forbidden request header": {
     "status": "FAIL"
   },
-  "Access-Control-Request-Private-Network is a forbidden request header": {
-    "status": "FAIL"
-  },
   "Connection is a forbidden request header": {
     "status": "FAIL"
   },

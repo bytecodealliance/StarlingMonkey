@@ -1,0 +1,245 @@
+{
+  "Setup.": {
+    "status": "PASS"
+  },
+  "data: URL base64 handling: \"\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcd\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \" abcd\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcd \"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \" abcd===\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcd=== \"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcd ===\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"a\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abc\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcde\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"𐀀\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"=\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"==\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"===\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"====\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"=====\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"a=\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"a==\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"a===\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"a====\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"a=====\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab=\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab==\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab===\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab====\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab=====\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abc=\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abc==\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abc===\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abc====\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abc=====\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcd=\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcd==\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcd===\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcd====\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcd=====\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcde=\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcde==\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcde===\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcde====\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcde=====\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"=a\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"=a=\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"a=b\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"a=b=\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab=c\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab=c=\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abc=d\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abc=d=\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab\\vcd\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab　cd\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab、cd\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab\\tcd\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab\\ncd\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab\\fcd\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab\\rcd\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab cd\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab cd\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab\\t\\n\\f\\r cd\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \" \\t\\n\\f\\r ab\\t\\n\\f\\r cd\\t\\n\\f\\r \"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"ab\\t\\n\\f\\r =\\t\\n\\f\\r =\\t\\n\\f\\r \"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"A\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"/A\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"//A\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"///A\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"////A\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"/\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"A/\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"AA/\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"AAAA/\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"AAA/\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"\\0nonsense\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"abcd\\0nonsense\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"YQ\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"YR\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"~~\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"..\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"--\"": {
+    "status": "FAIL"
+  },
+  "data: URL base64 handling: \"__\"": {
+    "status": "FAIL"
+  }
+}

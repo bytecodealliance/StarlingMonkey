@@ -1,0 +1,17 @@
+{
+  "FormData is cloned": {
+    "status": "FAIL"
+  },
+  "URLSearchParams is cloned": {
+    "status": "FAIL"
+  },
+  "TypedArray is cloned": {
+    "status": "PASS"
+  },
+  "ArrayBuffer is cloned": {
+    "status": "PASS"
+  },
+  "Blob is cloned": {
+    "status": "FAIL"
+  }
+}

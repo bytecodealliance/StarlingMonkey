@@ -12,7 +12,7 @@
     "status": "PASS"
   },
   "Create headers with 1 should throw": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Create headers with sequence": {
     "status": "PASS"

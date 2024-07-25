@@ -28,5 +28,8 @@
   },
   "ReadableStream cancellation: cancelling before start finishes should prevent pull() from being called": {
     "status": "PASS"
+  },
+  "ReadableStream cancellation: underlyingSource.cancel() should called, even with pending pull": {
+    "status": "PASS"
   }
 }

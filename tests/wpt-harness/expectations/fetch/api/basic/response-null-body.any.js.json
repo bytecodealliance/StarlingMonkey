@@ -1,0 +1,35 @@
+{
+  "Response.body is null for responses with status=204 (method=GET)": {
+    "status": "PASS"
+  },
+  "Response.body is null for responses with status=204 (method=POST)": {
+    "status": "PASS"
+  },
+  "Response.body is null for responses with status=204 (method=OPTIONS)": {
+    "status": "PASS"
+  },
+  "Response.body is null for responses with status=205 (method=GET)": {
+    "status": "PASS"
+  },
+  "Response.body is null for responses with status=205 (method=POST)": {
+    "status": "PASS"
+  },
+  "Response.body is null for responses with status=205 (method=OPTIONS)": {
+    "status": "PASS"
+  },
+  "Response.body is null for responses with status=304 (method=GET)": {
+    "status": "PASS"
+  },
+  "Response.body is null for responses with status=304 (method=POST)": {
+    "status": "PASS"
+  },
+  "Response.body is null for responses with status=304 (method=OPTIONS)": {
+    "status": "PASS"
+  },
+  "Response.body is null for responses with method=HEAD": {
+    "status": "FAIL"
+  },
+  "Null body status with subresource integrity should abort": {
+    "status": "PASS"
+  }
+}

@@ -23,6 +23,9 @@
   "chunk of type Uint32Array should work for deflate": {
     "status": "PASS"
   },
+  "chunk of type Float16Array should work for deflate": {
+    "status": "PASS"
+  },
   "chunk of type Float32Array should work for deflate": {
     "status": "PASS"
   },
@@ -56,6 +59,9 @@
   "chunk of type Uint32Array should work for gzip": {
     "status": "PASS"
   },
+  "chunk of type Float16Array should work for gzip": {
+    "status": "PASS"
+  },
   "chunk of type Float32Array should work for gzip": {
     "status": "PASS"
   },
@@ -87,6 +93,9 @@
     "status": "PASS"
   },
   "chunk of type Uint32Array should work for deflate-raw": {
+    "status": "PASS"
+  },
+  "chunk of type Float16Array should work for deflate-raw": {
     "status": "PASS"
   },
   "chunk of type Float32Array should work for deflate-raw": {

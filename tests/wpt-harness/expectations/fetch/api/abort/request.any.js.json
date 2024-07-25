@@ -1,0 +1,56 @@
+{
+  "Calling arrayBuffer() on an aborted request": {
+    "status": "FAIL"
+  },
+  "Aborting a request after calling arrayBuffer()": {
+    "status": "FAIL"
+  },
+  "Calling arrayBuffer() on an aborted consumed empty request": {
+    "status": "FAIL"
+  },
+  "Calling arrayBuffer() on an aborted consumed nonempty request": {
+    "status": "FAIL"
+  },
+  "Calling blob() on an aborted request": {
+    "status": "FAIL"
+  },
+  "Aborting a request after calling blob()": {
+    "status": "FAIL"
+  },
+  "Calling blob() on an aborted consumed empty request": {
+    "status": "FAIL"
+  },
+  "Calling blob() on an aborted consumed nonempty request": {
+    "status": "FAIL"
+  },
+  "Calling formData() on an aborted request": {
+    "status": "FAIL"
+  },
+  "Aborting a request after calling formData()": {
+    "status": "FAIL"
+  },
+  "Calling formData() on an aborted consumed nonempty request": {
+    "status": "FAIL"
+  },
+  "Calling json() on an aborted request": {
+    "status": "FAIL"
+  },
+  "Aborting a request after calling json()": {
+    "status": "FAIL"
+  },
+  "Calling json() on an aborted consumed nonempty request": {
+    "status": "FAIL"
+  },
+  "Calling text() on an aborted request": {
+    "status": "FAIL"
+  },
+  "Aborting a request after calling text()": {
+    "status": "FAIL"
+  },
+  "Calling text() on an aborted consumed empty request": {
+    "status": "FAIL"
+  },
+  "Calling text() on an aborted consumed nonempty request": {
+    "status": "FAIL"
+  }
+}

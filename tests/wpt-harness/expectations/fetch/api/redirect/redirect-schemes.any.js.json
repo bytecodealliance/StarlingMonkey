@@ -1,0 +1,20 @@
+{
+  "redirect-schemes": {
+    "status": "FAIL"
+  },
+  "redirect-schemes 1": {
+    "status": "FAIL"
+  },
+  "redirect-schemes 2": {
+    "status": "FAIL"
+  },
+  "redirect-schemes 3": {
+    "status": "FAIL"
+  },
+  "redirect-schemes 4": {
+    "status": "FAIL"
+  },
+  "redirect-schemes 5": {
+    "status": "FAIL"
+  }
+}

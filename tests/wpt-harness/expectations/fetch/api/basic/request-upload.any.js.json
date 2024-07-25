@@ -20,6 +20,9 @@
   "Fetch with POST with Int8Array body": {
     "status": "PASS"
   },
+  "Fetch with POST with Float16Array body": {
+    "status": "PASS"
+  },
   "Fetch with POST with Float32Array body": {
     "status": "PASS"
   },
@@ -33,19 +36,19 @@
     "status": "FAIL"
   },
   "Fetch with POST with ReadableStream containing String": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Fetch with POST with ReadableStream containing null": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Fetch with POST with ReadableStream containing number": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Fetch with POST with ReadableStream containing ArrayBuffer": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Fetch with POST with ReadableStream containing Blob": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Fetch with POST with text body on 421 response should be retried once on new connection.": {
     "status": "FAIL"

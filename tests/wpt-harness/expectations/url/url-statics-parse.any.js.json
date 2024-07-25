@@ -1,0 +1,26 @@
+{
+  "URL.parse(undefined, undefined)": {
+    "status": "FAIL"
+  },
+  "URL.parse(aaa:b, undefined)": {
+    "status": "FAIL"
+  },
+  "URL.parse(undefined, aaa:b)": {
+    "status": "FAIL"
+  },
+  "URL.parse(aaa:/b, undefined)": {
+    "status": "FAIL"
+  },
+  "URL.parse(undefined, aaa:/b)": {
+    "status": "FAIL"
+  },
+  "URL.parse(https://test:test, undefined)": {
+    "status": "FAIL"
+  },
+  "URL.parse(a, https://b/)": {
+    "status": "FAIL"
+  },
+  "URL.parse() should return a unique object": {
+    "status": "FAIL"
+  }
+}

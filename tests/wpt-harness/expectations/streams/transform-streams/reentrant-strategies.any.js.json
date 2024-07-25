@@ -30,6 +30,6 @@
     "status": "PASS"
   },
   "writer.abort() inside size() should work": {
-    "status": "PASS"
+    "status": "FAIL"
   }
 }

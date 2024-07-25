@@ -140,6 +140,12 @@
   "Origin parsing: <http:\\\\a\\b:c\\d@foo.com\\> against <http://example.org/foo/bar>": {
     "status": "PASS"
   },
+  "Origin parsing: <http://a:b@c\\> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <ws://a@b\\c> without base": {
+    "status": "PASS"
+  },
   "Origin parsing: <foo:/> against <http://example.org/foo/bar>": {
     "status": "PASS"
   },
@@ -785,9 +791,6 @@
   "Origin parsing: <wow:￿> without base": {
     "status": "PASS"
   },
-  "Origin parsing: <http://example.com/U+d800𐟾U+dfff﷐﷏﷯ﷰ￾￿?U+d800𐟾U+dfff﷐﷏﷯ﷰ￾￿> without base": {
-    "status": "PASS"
-  },
   "Origin parsing: <http://!\"$&'()*+,-.;=_`{}~/> without base": {
     "status": "PASS"
   },
@@ -959,9 +962,6 @@
   "Origin parsing: <blob:about:blank> without base": {
     "status": "PASS"
   },
-  "Origin parsing: <blob:file://host/path> without base": {
-    "status": "PASS"
-  },
   "Origin parsing: <blob:ftp://host/path> without base": {
     "status": "FAIL"
   },
@@ -1092,6 +1092,9 @@
     "status": "PASS"
   },
   "Origin parsing: <west://x:0> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <http://example.com/U+d800𐟾U+dfff﷐﷏﷯ﷰ￾￿?U+d800𐟾U+dfff﷐﷏﷯ﷰ￾￿> without base": {
     "status": "PASS"
   }
 }

@@ -1,0 +1,23 @@
+{
+  "searchParams on location object": {
+    "status": "FAIL"
+  },
+  "Setting URL's href attribute and base URLs": {
+    "status": "FAIL"
+  },
+  "URL.domainToASCII should be undefined": {
+    "status": "PASS"
+  },
+  "URL.domainToUnicode should be undefined": {
+    "status": "PASS"
+  },
+  "URL: no structured serialize/deserialize support": {
+    "status": "PASS"
+  },
+  "URLSearchParams: no structured serialize/deserialize support": {
+    "status": "FAIL"
+  },
+  "Constructor only takes strings": {
+    "status": "FAIL"
+  }
+}

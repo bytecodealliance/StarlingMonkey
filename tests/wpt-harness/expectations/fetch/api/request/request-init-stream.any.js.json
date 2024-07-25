@@ -3,22 +3,22 @@
     "status": "PASS"
   },
   "Constructing a Request with a stream on which getReader() is called": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Constructing a Request with a stream on which read() is called": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Constructing a Request with a stream on which read() and releaseLock() are called": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Constructing a Request with a Request on which body.getReader() is called": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Constructing a Request with a Request on which body.getReader().read() is called": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Constructing a Request with a Request on which read() and releaseLock() are called": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "It is OK to omit .duplex when the body is null.": {
     "status": "PASS"

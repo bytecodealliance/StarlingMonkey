@@ -1,0 +1,668 @@
+{
+  "unicode-1-1-utf-8 => UTF-8": {
+    "status": "PASS"
+  },
+  "unicode11utf8 => UTF-8": {
+    "status": "PASS"
+  },
+  "unicode20utf8 => UTF-8": {
+    "status": "PASS"
+  },
+  "utf-8 => UTF-8": {
+    "status": "PASS"
+  },
+  "utf8 => UTF-8": {
+    "status": "PASS"
+  },
+  "x-unicode20utf8 => UTF-8": {
+    "status": "PASS"
+  },
+  "866 => IBM866": {
+    "status": "PASS"
+  },
+  "cp866 => IBM866": {
+    "status": "PASS"
+  },
+  "csibm866 => IBM866": {
+    "status": "PASS"
+  },
+  "ibm866 => IBM866": {
+    "status": "PASS"
+  },
+  "csisolatin2 => ISO-8859-2": {
+    "status": "PASS"
+  },
+  "iso-8859-2 => ISO-8859-2": {
+    "status": "PASS"
+  },
+  "iso-ir-101 => ISO-8859-2": {
+    "status": "PASS"
+  },
+  "iso8859-2 => ISO-8859-2": {
+    "status": "PASS"
+  },
+  "iso88592 => ISO-8859-2": {
+    "status": "PASS"
+  },
+  "iso_8859-2 => ISO-8859-2": {
+    "status": "PASS"
+  },
+  "iso_8859-2:1987 => ISO-8859-2": {
+    "status": "PASS"
+  },
+  "l2 => ISO-8859-2": {
+    "status": "PASS"
+  },
+  "latin2 => ISO-8859-2": {
+    "status": "PASS"
+  },
+  "csisolatin3 => ISO-8859-3": {
+    "status": "PASS"
+  },
+  "iso-8859-3 => ISO-8859-3": {
+    "status": "PASS"
+  },
+  "iso-ir-109 => ISO-8859-3": {
+    "status": "PASS"
+  },
+  "iso8859-3 => ISO-8859-3": {
+    "status": "PASS"
+  },
+  "iso88593 => ISO-8859-3": {
+    "status": "PASS"
+  },
+  "iso_8859-3 => ISO-8859-3": {
+    "status": "PASS"
+  },
+  "iso_8859-3:1988 => ISO-8859-3": {
+    "status": "PASS"
+  },
+  "l3 => ISO-8859-3": {
+    "status": "PASS"
+  },
+  "latin3 => ISO-8859-3": {
+    "status": "PASS"
+  },
+  "csisolatin4 => ISO-8859-4": {
+    "status": "PASS"
+  },
+  "iso-8859-4 => ISO-8859-4": {
+    "status": "PASS"
+  },
+  "iso-ir-110 => ISO-8859-4": {
+    "status": "PASS"
+  },
+  "iso8859-4 => ISO-8859-4": {
+    "status": "PASS"
+  },
+  "iso88594 => ISO-8859-4": {
+    "status": "PASS"
+  },
+  "iso_8859-4 => ISO-8859-4": {
+    "status": "PASS"
+  },
+  "iso_8859-4:1988 => ISO-8859-4": {
+    "status": "PASS"
+  },
+  "l4 => ISO-8859-4": {
+    "status": "PASS"
+  },
+  "latin4 => ISO-8859-4": {
+    "status": "PASS"
+  },
+  "csisolatincyrillic => ISO-8859-5": {
+    "status": "PASS"
+  },
+  "cyrillic => ISO-8859-5": {
+    "status": "PASS"
+  },
+  "iso-8859-5 => ISO-8859-5": {
+    "status": "PASS"
+  },
+  "iso-ir-144 => ISO-8859-5": {
+    "status": "PASS"
+  },
+  "iso8859-5 => ISO-8859-5": {
+    "status": "PASS"
+  },
+  "iso88595 => ISO-8859-5": {
+    "status": "PASS"
+  },
+  "iso_8859-5 => ISO-8859-5": {
+    "status": "PASS"
+  },
+  "iso_8859-5:1988 => ISO-8859-5": {
+    "status": "PASS"
+  },
+  "arabic => ISO-8859-6": {
+    "status": "PASS"
+  },
+  "asmo-708 => ISO-8859-6": {
+    "status": "PASS"
+  },
+  "csiso88596e => ISO-8859-6": {
+    "status": "PASS"
+  },
+  "csiso88596i => ISO-8859-6": {
+    "status": "PASS"
+  },
+  "csisolatinarabic => ISO-8859-6": {
+    "status": "PASS"
+  },
+  "ecma-114 => ISO-8859-6": {
+    "status": "PASS"
+  },
+  "iso-8859-6 => ISO-8859-6": {
+    "status": "PASS"
+  },
+  "iso-8859-6-e => ISO-8859-6": {
+    "status": "PASS"
+  },
+  "iso-8859-6-i => ISO-8859-6": {
+    "status": "PASS"
+  },
+  "iso-ir-127 => ISO-8859-6": {
+    "status": "PASS"
+  },
+  "iso8859-6 => ISO-8859-6": {
+    "status": "PASS"
+  },
+  "iso88596 => ISO-8859-6": {
+    "status": "PASS"
+  },
+  "iso_8859-6 => ISO-8859-6": {
+    "status": "PASS"
+  },
+  "iso_8859-6:1987 => ISO-8859-6": {
+    "status": "PASS"
+  },
+  "csisolatingreek => ISO-8859-7": {
+    "status": "PASS"
+  },
+  "ecma-118 => ISO-8859-7": {
+    "status": "PASS"
+  },
+  "elot_928 => ISO-8859-7": {
+    "status": "PASS"
+  },
+  "greek => ISO-8859-7": {
+    "status": "PASS"
+  },
+  "greek8 => ISO-8859-7": {
+    "status": "PASS"
+  },
+  "iso-8859-7 => ISO-8859-7": {
+    "status": "PASS"
+  },
+  "iso-ir-126 => ISO-8859-7": {
+    "status": "PASS"
+  },
+  "iso8859-7 => ISO-8859-7": {
+    "status": "PASS"
+  },
+  "iso88597 => ISO-8859-7": {
+    "status": "PASS"
+  },
+  "iso_8859-7 => ISO-8859-7": {
+    "status": "PASS"
+  },
+  "iso_8859-7:1987 => ISO-8859-7": {
+    "status": "PASS"
+  },
+  "sun_eu_greek => ISO-8859-7": {
+    "status": "PASS"
+  },
+  "csiso88598e => ISO-8859-8": {
+    "status": "PASS"
+  },
+  "csisolatinhebrew => ISO-8859-8": {
+    "status": "PASS"
+  },
+  "hebrew => ISO-8859-8": {
+    "status": "PASS"
+  },
+  "iso-8859-8 => ISO-8859-8": {
+    "status": "PASS"
+  },
+  "iso-8859-8-e => ISO-8859-8": {
+    "status": "PASS"
+  },
+  "iso-ir-138 => ISO-8859-8": {
+    "status": "PASS"
+  },
+  "iso8859-8 => ISO-8859-8": {
+    "status": "PASS"
+  },
+  "iso88598 => ISO-8859-8": {
+    "status": "PASS"
+  },
+  "iso_8859-8 => ISO-8859-8": {
+    "status": "PASS"
+  },
+  "iso_8859-8:1988 => ISO-8859-8": {
+    "status": "PASS"
+  },
+  "visual => ISO-8859-8": {
+    "status": "PASS"
+  },
+  "csiso88598i => ISO-8859-8-I": {
+    "status": "PASS"
+  },
+  "iso-8859-8-i => ISO-8859-8-I": {
+    "status": "PASS"
+  },
+  "logical => ISO-8859-8-I": {
+    "status": "PASS"
+  },
+  "csisolatin6 => ISO-8859-10": {
+    "status": "PASS"
+  },
+  "iso-8859-10 => ISO-8859-10": {
+    "status": "PASS"
+  },
+  "iso-ir-157 => ISO-8859-10": {
+    "status": "PASS"
+  },
+  "iso8859-10 => ISO-8859-10": {
+    "status": "PASS"
+  },
+  "iso885910 => ISO-8859-10": {
+    "status": "PASS"
+  },
+  "l6 => ISO-8859-10": {
+    "status": "PASS"
+  },
+  "latin6 => ISO-8859-10": {
+    "status": "PASS"
+  },
+  "iso-8859-13 => ISO-8859-13": {
+    "status": "PASS"
+  },
+  "iso8859-13 => ISO-8859-13": {
+    "status": "PASS"
+  },
+  "iso885913 => ISO-8859-13": {
+    "status": "PASS"
+  },
+  "iso-8859-14 => ISO-8859-14": {
+    "status": "PASS"
+  },
+  "iso8859-14 => ISO-8859-14": {
+    "status": "PASS"
+  },
+  "iso885914 => ISO-8859-14": {
+    "status": "PASS"
+  },
+  "csisolatin9 => ISO-8859-15": {
+    "status": "PASS"
+  },
+  "iso-8859-15 => ISO-8859-15": {
+    "status": "PASS"
+  },
+  "iso8859-15 => ISO-8859-15": {
+    "status": "PASS"
+  },
+  "iso885915 => ISO-8859-15": {
+    "status": "PASS"
+  },
+  "iso_8859-15 => ISO-8859-15": {
+    "status": "PASS"
+  },
+  "l9 => ISO-8859-15": {
+    "status": "PASS"
+  },
+  "iso-8859-16 => ISO-8859-16": {
+    "status": "PASS"
+  },
+  "cskoi8r => KOI8-R": {
+    "status": "PASS"
+  },
+  "koi => KOI8-R": {
+    "status": "PASS"
+  },
+  "koi8 => KOI8-R": {
+    "status": "PASS"
+  },
+  "koi8-r => KOI8-R": {
+    "status": "PASS"
+  },
+  "koi8_r => KOI8-R": {
+    "status": "PASS"
+  },
+  "koi8-ru => KOI8-U": {
+    "status": "PASS"
+  },
+  "koi8-u => KOI8-U": {
+    "status": "PASS"
+  },
+  "csmacintosh => macintosh": {
+    "status": "PASS"
+  },
+  "mac => macintosh": {
+    "status": "PASS"
+  },
+  "macintosh => macintosh": {
+    "status": "PASS"
+  },
+  "x-mac-roman => macintosh": {
+    "status": "PASS"
+  },
+  "dos-874 => windows-874": {
+    "status": "PASS"
+  },
+  "iso-8859-11 => windows-874": {
+    "status": "PASS"
+  },
+  "iso8859-11 => windows-874": {
+    "status": "PASS"
+  },
+  "iso885911 => windows-874": {
+    "status": "PASS"
+  },
+  "tis-620 => windows-874": {
+    "status": "PASS"
+  },
+  "windows-874 => windows-874": {
+    "status": "PASS"
+  },
+  "cp1250 => windows-1250": {
+    "status": "PASS"
+  },
+  "windows-1250 => windows-1250": {
+    "status": "PASS"
+  },
+  "x-cp1250 => windows-1250": {
+    "status": "PASS"
+  },
+  "cp1251 => windows-1251": {
+    "status": "PASS"
+  },
+  "windows-1251 => windows-1251": {
+    "status": "PASS"
+  },
+  "x-cp1251 => windows-1251": {
+    "status": "PASS"
+  },
+  "ansi_x3.4-1968 => windows-1252": {
+    "status": "PASS"
+  },
+  "ascii => windows-1252": {
+    "status": "PASS"
+  },
+  "cp1252 => windows-1252": {
+    "status": "PASS"
+  },
+  "cp819 => windows-1252": {
+    "status": "PASS"
+  },
+  "csisolatin1 => windows-1252": {
+    "status": "PASS"
+  },
+  "ibm819 => windows-1252": {
+    "status": "PASS"
+  },
+  "iso-8859-1 => windows-1252": {
+    "status": "PASS"
+  },
+  "iso-ir-100 => windows-1252": {
+    "status": "PASS"
+  },
+  "iso8859-1 => windows-1252": {
+    "status": "PASS"
+  },
+  "iso88591 => windows-1252": {
+    "status": "PASS"
+  },
+  "iso_8859-1 => windows-1252": {
+    "status": "PASS"
+  },
+  "iso_8859-1:1987 => windows-1252": {
+    "status": "PASS"
+  },
+  "l1 => windows-1252": {
+    "status": "PASS"
+  },
+  "latin1 => windows-1252": {
+    "status": "PASS"
+  },
+  "us-ascii => windows-1252": {
+    "status": "PASS"
+  },
+  "windows-1252 => windows-1252": {
+    "status": "PASS"
+  },
+  "x-cp1252 => windows-1252": {
+    "status": "PASS"
+  },
+  "cp1253 => windows-1253": {
+    "status": "PASS"
+  },
+  "windows-1253 => windows-1253": {
+    "status": "PASS"
+  },
+  "x-cp1253 => windows-1253": {
+    "status": "PASS"
+  },
+  "cp1254 => windows-1254": {
+    "status": "PASS"
+  },
+  "csisolatin5 => windows-1254": {
+    "status": "PASS"
+  },
+  "iso-8859-9 => windows-1254": {
+    "status": "PASS"
+  },
+  "iso-ir-148 => windows-1254": {
+    "status": "PASS"
+  },
+  "iso8859-9 => windows-1254": {
+    "status": "PASS"
+  },
+  "iso88599 => windows-1254": {
+    "status": "PASS"
+  },
+  "iso_8859-9 => windows-1254": {
+    "status": "PASS"
+  },
+  "iso_8859-9:1989 => windows-1254": {
+    "status": "PASS"
+  },
+  "l5 => windows-1254": {
+    "status": "PASS"
+  },
+  "latin5 => windows-1254": {
+    "status": "PASS"
+  },
+  "windows-1254 => windows-1254": {
+    "status": "PASS"
+  },
+  "x-cp1254 => windows-1254": {
+    "status": "PASS"
+  },
+  "cp1255 => windows-1255": {
+    "status": "PASS"
+  },
+  "windows-1255 => windows-1255": {
+    "status": "PASS"
+  },
+  "x-cp1255 => windows-1255": {
+    "status": "PASS"
+  },
+  "cp1256 => windows-1256": {
+    "status": "PASS"
+  },
+  "windows-1256 => windows-1256": {
+    "status": "PASS"
+  },
+  "x-cp1256 => windows-1256": {
+    "status": "PASS"
+  },
+  "cp1257 => windows-1257": {
+    "status": "PASS"
+  },
+  "windows-1257 => windows-1257": {
+    "status": "PASS"
+  },
+  "x-cp1257 => windows-1257": {
+    "status": "PASS"
+  },
+  "cp1258 => windows-1258": {
+    "status": "PASS"
+  },
+  "windows-1258 => windows-1258": {
+    "status": "PASS"
+  },
+  "x-cp1258 => windows-1258": {
+    "status": "PASS"
+  },
+  "x-mac-cyrillic => x-mac-cyrillic": {
+    "status": "PASS"
+  },
+  "x-mac-ukrainian => x-mac-cyrillic": {
+    "status": "PASS"
+  },
+  "chinese => GBK": {
+    "status": "PASS"
+  },
+  "csgb2312 => GBK": {
+    "status": "PASS"
+  },
+  "csiso58gb231280 => GBK": {
+    "status": "PASS"
+  },
+  "gb2312 => GBK": {
+    "status": "PASS"
+  },
+  "gb_2312 => GBK": {
+    "status": "PASS"
+  },
+  "gb_2312-80 => GBK": {
+    "status": "PASS"
+  },
+  "gbk => GBK": {
+    "status": "PASS"
+  },
+  "iso-ir-58 => GBK": {
+    "status": "PASS"
+  },
+  "x-gbk => GBK": {
+    "status": "PASS"
+  },
+  "gb18030 => gb18030": {
+    "status": "PASS"
+  },
+  "big5 => Big5": {
+    "status": "PASS"
+  },
+  "big5-hkscs => Big5": {
+    "status": "PASS"
+  },
+  "cn-big5 => Big5": {
+    "status": "PASS"
+  },
+  "csbig5 => Big5": {
+    "status": "PASS"
+  },
+  "x-x-big5 => Big5": {
+    "status": "PASS"
+  },
+  "cseucpkdfmtjapanese => EUC-JP": {
+    "status": "PASS"
+  },
+  "euc-jp => EUC-JP": {
+    "status": "PASS"
+  },
+  "x-euc-jp => EUC-JP": {
+    "status": "PASS"
+  },
+  "csiso2022jp => ISO-2022-JP": {
+    "status": "PASS"
+  },
+  "iso-2022-jp => ISO-2022-JP": {
+    "status": "PASS"
+  },
+  "csshiftjis => Shift_JIS": {
+    "status": "PASS"
+  },
+  "ms932 => Shift_JIS": {
+    "status": "PASS"
+  },
+  "ms_kanji => Shift_JIS": {
+    "status": "PASS"
+  },
+  "shift-jis => Shift_JIS": {
+    "status": "PASS"
+  },
+  "shift_jis => Shift_JIS": {
+    "status": "PASS"
+  },
+  "sjis => Shift_JIS": {
+    "status": "PASS"
+  },
+  "windows-31j => Shift_JIS": {
+    "status": "PASS"
+  },
+  "x-sjis => Shift_JIS": {
+    "status": "PASS"
+  },
+  "cseuckr => EUC-KR": {
+    "status": "PASS"
+  },
+  "csksc56011987 => EUC-KR": {
+    "status": "PASS"
+  },
+  "euc-kr => EUC-KR": {
+    "status": "PASS"
+  },
+  "iso-ir-149 => EUC-KR": {
+    "status": "PASS"
+  },
+  "korean => EUC-KR": {
+    "status": "PASS"
+  },
+  "ks_c_5601-1987 => EUC-KR": {
+    "status": "PASS"
+  },
+  "ks_c_5601-1989 => EUC-KR": {
+    "status": "PASS"
+  },
+  "ksc5601 => EUC-KR": {
+    "status": "PASS"
+  },
+  "ksc_5601 => EUC-KR": {
+    "status": "PASS"
+  },
+  "windows-949 => EUC-KR": {
+    "status": "PASS"
+  },
+  "unicodefffe => UTF-16BE": {
+    "status": "PASS"
+  },
+  "utf-16be => UTF-16BE": {
+    "status": "PASS"
+  },
+  "csunicode => UTF-16LE": {
+    "status": "PASS"
+  },
+  "iso-10646-ucs-2 => UTF-16LE": {
+    "status": "PASS"
+  },
+  "ucs-2 => UTF-16LE": {
+    "status": "PASS"
+  },
+  "unicode => UTF-16LE": {
+    "status": "PASS"
+  },
+  "unicodefeff => UTF-16LE": {
+    "status": "PASS"
+  },
+  "utf-16 => UTF-16LE": {
+    "status": "PASS"
+  },
+  "utf-16le => UTF-16LE": {
+    "status": "PASS"
+  },
+  "x-user-defined => x-user-defined": {
+    "status": "PASS"
+  }
+}

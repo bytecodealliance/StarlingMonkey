@@ -1,6 +1,6 @@
 {
   "fetch() with value %00": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "fetch() with value %01": {
     "status": "FAIL"
@@ -30,10 +30,10 @@
     "status": "PASS"
   },
   "fetch() with value %0A": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "fetch() with value %0D": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "fetch() with value %0E": {
     "status": "FAIL"

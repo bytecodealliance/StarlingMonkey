@@ -41,7 +41,7 @@
   "TextDecoder interface: existence and properties of interface prototype object's @@unscopables property": {
     "status": "PASS"
   },
-  "TextDecoder interface: operation decode(optional BufferSource, optional TextDecodeOptions)": {
+  "TextDecoder interface: operation decode(optional AllowSharedBufferSource, optional TextDecodeOptions)": {
     "status": "PASS"
   },
   "TextDecoder interface: attribute encoding": {
@@ -59,10 +59,10 @@
   "Stringification of new TextDecoder()": {
     "status": "PASS"
   },
-  "TextDecoder interface: new TextDecoder() must inherit property \"decode(optional BufferSource, optional TextDecodeOptions)\" with the proper type": {
+  "TextDecoder interface: new TextDecoder() must inherit property \"decode(optional AllowSharedBufferSource, optional TextDecodeOptions)\" with the proper type": {
     "status": "PASS"
   },
-  "TextDecoder interface: calling decode(optional BufferSource, optional TextDecodeOptions) on new TextDecoder() with too few arguments must throw TypeError": {
+  "TextDecoder interface: calling decode(optional AllowSharedBufferSource, optional TextDecodeOptions) on new TextDecoder() with too few arguments must throw TypeError": {
     "status": "PASS"
   },
   "TextDecoder interface: new TextDecoder() must inherit property \"encoding\" with the proper type": {

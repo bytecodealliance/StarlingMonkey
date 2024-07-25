@@ -1,4 +1,7 @@
 {
+  "Float16 arrays": {
+    "status": "PASS"
+  },
   "Float arrays": {
     "status": "PASS"
   },

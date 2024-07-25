@@ -51,25 +51,25 @@
     "status": "PASS"
   },
   "Parsing: <http://f:b/c> against <http://example.org/foo/bar>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://f: /c> against <http://example.org/foo/bar>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://f:\n/c> against <http://example.org/foo/bar>": {
     "status": "PASS"
   },
   "Parsing: <http://f:fifty-two/c> against <http://example.org/foo/bar>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://f:999999/c> against <http://example.org/foo/bar>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <non-special://f:999999/c> against <http://example.org/foo/bar>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://f: 21 / b ? d # e > against <http://example.org/foo/bar>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <> against <http://example.org/foo/bar>": {
     "status": "PASS"
@@ -161,6 +161,12 @@
   "Parsing: <http:\\\\a\\b:c\\d@foo.com\\> against <http://example.org/foo/bar>": {
     "status": "PASS"
   },
+  "Parsing: <http://a:b@c\\> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <ws://a@b\\c> without base": {
+    "status": "PASS"
+  },
   "Parsing: <foo:/> against <http://example.org/foo/bar>": {
     "status": "PASS"
   },
@@ -198,16 +204,16 @@
     "status": "PASS"
   },
   "Parsing: <http://[1::2]:3:4> against <http://example.org/foo/bar>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://2001::1> against <http://example.org/foo/bar>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://2001::1]> against <http://example.org/foo/bar>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://2001::1]:80> against <http://example.org/foo/bar>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://[2001::1]> against <http://example.org/foo/bar>": {
     "status": "PASS"
@@ -216,7 +222,7 @@
     "status": "PASS"
   },
   "Parsing: <http://[::127.0.0.1.]> against <http://example.org/foo/bar>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://[0:0:0:0:0:0:13.1.68.3]> against <http://example.org/foo/bar>": {
     "status": "PASS"
@@ -240,16 +246,16 @@
     "status": "PASS"
   },
   "Parsing: <file://example:1/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file://example:test/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file://example%/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file://[example]/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <ftps:/example.com/> against <http://example.org/foo/bar>": {
     "status": "PASS"
@@ -386,6 +392,21 @@
   "Parsing: <file:test> against <file:///tmp/mock/path>": {
     "status": "PASS"
   },
+  "Parsing: <file:///w|m> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <file:///w||m> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <file:///w|/m> without base": {
+    "status": "FAIL"
+  },
+  "Parsing: <file:C|/m/> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <file:C||/m/> without base": {
+    "status": "PASS"
+  },
   "Parsing: <http://example.com/././foo> without base": {
     "status": "PASS"
   },
@@ -516,7 +537,7 @@
     "status": "PASS"
   },
   "Parsing: <http://user:pass@/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://%25DOMAIN:foobar@foodomain.com/> without base": {
     "status": "PASS"
@@ -534,7 +555,7 @@
     "status": "PASS"
   },
   "Parsing: <http://foo:-80/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://foo:443/> without base": {
     "status": "PASS"
@@ -678,34 +699,34 @@
     "status": "PASS"
   },
   "Parsing: <http:/:@/www.example.com> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://user@/www.example.com> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http:@/www.example.com> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http:/@/www.example.com> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://@/www.example.com> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https:@/www.example.com> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http:a:b@/www.example.com> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http:/a:b@/www.example.com> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a:b@/www.example.com> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http::@/www.example.com> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http:a:@www.example.com> without base": {
     "status": "PASS"
@@ -720,13 +741,13 @@
     "status": "PASS"
   },
   "Parsing: <http:@:www.example.com> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http:/@:www.example.com> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://@:www.example.com> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://:@www.example.com> without base": {
     "status": "PASS"
@@ -776,23 +797,29 @@
   "Parsing: <file:a> against <http://www.example.com/test>": {
     "status": "PASS"
   },
+  "Parsing: <file:.> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <file:.> against <http://www.example.com/test>": {
+    "status": "PASS"
+  },
   "Parsing: <http://ExAmPlE.CoM> against <http://other.com/>": {
     "status": "PASS"
   },
   "Parsing: <http://example example.com> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://Goo%20 goo%7C|.com> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://[]> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://[:]> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://GOO 　goo.com> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://GOO​⁠﻿goo.com> against <http://other.com/>": {
     "status": "PASS"
@@ -804,52 +831,52 @@
     "status": "PASS"
   },
   "Parsing: <http://﷐zyx.com> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://%ef%b7%90zyx.com> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://�> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://%EF%BF%BD> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://x/�?�#�> without base": {
     "status": "PASS"
   },
   "Parsing: <http://a.b.c.xn--pokxncvks> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://10.0.0.xn--pokxncvks> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a.b.c.XN--pokxncvks> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a.b.c.Xn--pokxncvks> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://10.0.0.XN--pokxncvks> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://10.0.0.xN--pokxncvks> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://Ｇｏ.com> against <http://other.com/>": {
     "status": "PASS"
   },
   "Parsing: <http://％４１.com> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://%ef%bc%85%ef%bc%94%ef%bc%91.com> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://％００.com> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://%ef%bc%85%ef%bc%90%ef%bc%90.com> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://你好你好> against <http://other.com/>": {
     "status": "PASS"
@@ -861,13 +888,13 @@
     "status": "PASS"
   },
   "Parsing: <http://%zz%66%a.com> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://%25> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://hello%00> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://%30%78%63%30%2e%30%32%35%30.01> against <http://other.com/>": {
     "status": "PASS"
@@ -876,16 +903,16 @@
     "status": "PASS"
   },
   "Parsing: <http://192.168.0.257> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://%3g%78%63%30%2e%30%32%35%30%2E.01> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://192.168.0.1 hello> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://x x:12> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://０Ｘｃ０．０２５０．０１> against <http://other.com/>": {
     "status": "PASS"
@@ -900,34 +927,34 @@
     "status": "PASS"
   },
   "Parsing: <http://[www.google.com]/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://[google.com]> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://[::1.2.3.4x]> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://[::1.2.3.]> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://[::1.2.]> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://[::.1.2]> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://[::1.]> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://[::.1]> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://[::%31]> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://%5B::1]> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://foo:💩@example.com/bar> against <http://other.com/>": {
     "status": "PASS"
@@ -975,10 +1002,10 @@
     "status": "PASS"
   },
   "Parsing: <i> against <sc:sd>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <i> against <sc:sd/sd>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <i> against <sc:/pa/pa>": {
     "status": "PASS"
@@ -990,10 +1017,10 @@
     "status": "PASS"
   },
   "Parsing: <../i> against <sc:sd>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <../i> against <sc:sd/sd>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <../i> against <sc:/pa/pa>": {
     "status": "PASS"
@@ -1005,10 +1032,10 @@
     "status": "PASS"
   },
   "Parsing: </i> against <sc:sd>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: </i> against <sc:sd/sd>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: </i> against <sc:/pa/pa>": {
     "status": "PASS"
@@ -1020,10 +1047,10 @@
     "status": "PASS"
   },
   "Parsing: <?i> against <sc:sd>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <?i> against <sc:sd/sd>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <?i> against <sc:/pa/pa>": {
     "status": "PASS"
@@ -1068,16 +1095,16 @@
     "status": "PASS"
   },
   "Parsing: <sc://@/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <sc://te@s:t@/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <sc://:/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <sc://:12/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <x> against <sc://ñ>": {
     "status": "PASS"
@@ -1097,35 +1124,32 @@
   "Parsing: <wow:￿> without base": {
     "status": "PASS"
   },
-  "Parsing: <http://example.com/U+d800𐟾U+dfff﷐﷏﷯ﷰ￾￿?U+d800𐟾U+dfff﷐﷏﷯ﷰ￾￿> without base": {
+  "Parsing: <sc://a\u0000b/> without base": {
     "status": "PASS"
   },
-  "Parsing: <sc://a\u0000b/> without base": {
-    "status": "FAIL"
-  },
   "Parsing: <sc://a b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <sc://a<b> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <sc://a>b> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <sc://a[b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <sc://a\\b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <sc://a]b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <sc://a^b> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <sc://a|b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <foo://ho\tst/> without base": {
     "status": "PASS"
@@ -1137,118 +1161,118 @@
     "status": "PASS"
   },
   "Parsing: <http://a\u0000b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0001b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0002b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0003b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0004b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0005b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0006b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0007b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\bb/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u000bb/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\fb/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u000eb/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u000fb/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0010b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0011b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0012b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0013b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0014b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0015b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0016b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0017b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0018b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u0019b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u001ab/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u001bb/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u001cb/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u001db/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u001eb/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a\u001fb/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a%b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a<b> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a>b> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a[b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a]b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a^b> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://a|b/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ab/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho\tst/> without base": {
     "status": "PASS"
@@ -1260,142 +1284,142 @@
     "status": "PASS"
   },
   "Parsing: <http://ho%00st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%01st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%02st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%03st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%04st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%05st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%06st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%07st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%08st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%09st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%0Ast/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%0Bst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%0Cst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%0Dst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%0Est/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%0Fst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%10st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%11st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%12st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%13st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%14st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%15st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%16st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%17st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%18st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%19st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%1Ast/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%1Bst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%1Cst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%1Dst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%1Est/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%1Fst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%20st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%23st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%25st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%2Fst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%3Ast/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%3Cst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%3Est/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%3Fst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%40st/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%5Bst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%5Cst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%5Dst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%7Cst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://ho%7Fst/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://!\"$&'()*+,-.;=_`{}~/> without base": {
     "status": "PASS"
@@ -1404,16 +1428,16 @@
     "status": "PASS"
   },
   "Parsing: <ftp://example.com%80/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <ftp://example.com%A0/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://example.com%80/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://example.com%A0/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <ftp://%e2%98%83> without base": {
     "status": "PASS"
@@ -1443,7 +1467,7 @@
     "status": "PASS"
   },
   "Parsing: <http:> against <https://example.org/foo/bar>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <sc:> against <https://example.org/foo/bar>": {
     "status": "PASS"
@@ -1494,7 +1518,7 @@
     "status": "PASS"
   },
   "Parsing: <http://10000000000> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://10000000000.com> against <http://other.com/>": {
     "status": "PASS"
@@ -1503,25 +1527,25 @@
     "status": "PASS"
   },
   "Parsing: <http://4294967296> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://0xffffffff> against <http://other.com/>": {
     "status": "PASS"
   },
   "Parsing: <http://0xffffffff1> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://256.256.256.256> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://0x.0x.0> without base": {
     "status": "PASS"
   },
   "Parsing: <https://0x100000000/test> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://256.0.0.1/test> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file:///C%3A/> without base": {
     "status": "PASS"
@@ -1530,25 +1554,25 @@
     "status": "PASS"
   },
   "Parsing: <file://%43%3A> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file://%43%7C> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file://%43|> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file://C%7C> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file://%43%7C/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://%43%7C/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <asdf://%43|/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <asdf://%43%7C/> without base": {
     "status": "PASS"
@@ -1752,7 +1776,7 @@
     "status": "PASS"
   },
   "Parsing: <\\\\\\.\\Y:> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file:///y:> without base": {
     "status": "PASS"
@@ -1767,7 +1791,7 @@
     "status": "PASS"
   },
   "Parsing: <\\\\\\.\\y:> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file://localhost//a//../..//foo> without base": {
     "status": "FAIL"
@@ -1806,43 +1830,43 @@
     "status": "PASS"
   },
   "Parsing: <http://[0:1:2:3:4:5:6:7:8]> against <http://example.net/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://[0::0::0]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://[0:.0]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://[0:0:]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://[0:1:2:3:4:5:6:7.0.0.0.1]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://[0:1.00.0.0.0]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://[0:1.290.0.0.0]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://[0:1.23.23]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://?> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://#> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://f:4294967377/c> against <http://example.org/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://f:18446744073709551697/c> against <http://example.org/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://f:340282366920938463463374607431768211537/c> against <http://example.org/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <sc://ñ> without base": {
     "status": "PASS"
@@ -1965,7 +1989,7 @@
     "status": "PASS"
   },
   "Parsing: <non-special://[:80/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <blob:https://example.com:443/> without base": {
     "status": "PASS"
@@ -2010,7 +2034,7 @@
     "status": "PASS"
   },
   "Parsing: <http://[::127.0.0.0.1]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://[0:1:0:1:0:1:0:1]> without base": {
     "status": "PASS"
@@ -2046,19 +2070,19 @@
     "status": "PASS"
   },
   "Parsing: <a> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <a/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <a//> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <test-a-colon.html> against <a:>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <test-a-colon-b.html> against <a:b>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <test-a-colon-slash.html> against <a:/>": {
     "status": "PASS"
@@ -2100,13 +2124,13 @@
     "status": "PASS"
   },
   "Parsing: <file://­/p> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file://%C2%AD/p> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file://xn--/p> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <#link> against <https://example.org/##link>": {
     "status": "PASS"
@@ -2169,103 +2193,103 @@
     "status": "PASS"
   },
   "Parsing: <#> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <?> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://1.2.3.4.5> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://1.2.3.4.5.> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://0..0x300/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://0..0x300./> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://256.256.256.256.256> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://256.256.256.256.256.> against <http://other.com/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://1.2.3.08> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://1.2.3.08.> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://1.2.3.09> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://09.2.3.4> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://09.2.3.4.> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://01.2.3.4.5> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://01.2.3.4.5.> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://0x100.2.3.4> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://0x100.2.3.4.> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://0x1.2.3.4.5> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://0x1.2.3.4.5.> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://foo.1.2.3.4> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://foo.1.2.3.4.> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://foo.2.3.4> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://foo.2.3.4.> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://foo.09> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://foo.09.> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://foo.0x4> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://foo.0x4.> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://foo.09..> without base": {
     "status": "PASS"
   },
   "Parsing: <http://0999999999999999999/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://foo.0x> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://foo.0XFfFfFfFfFfFfFfFfFfAcE123> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <http://💩.123/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://\u0000y> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://x/\u0000y> without base": {
     "status": "PASS"
@@ -2277,7 +2301,7 @@
     "status": "PASS"
   },
   "Parsing: <https://￿y> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://x/￿y> without base": {
     "status": "PASS"
@@ -2313,7 +2337,7 @@
     "status": "PASS"
   },
   "Parsing: <> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://example.com/\"quoted\"> without base": {
     "status": "PASS"
@@ -2322,13 +2346,13 @@
     "status": "PASS"
   },
   "Parsing: <https://­/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://%C2%AD/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <https://xn--/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <data://example.com:8080/pathname?search#hash> without base": {
     "status": "PASS"
@@ -2340,13 +2364,13 @@
     "status": "PASS"
   },
   "Parsing: <data://:443> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <data://test:test> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <data://[:1]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <javascript://example.com:8080/pathname?search#hash> without base": {
     "status": "PASS"
@@ -2358,13 +2382,13 @@
     "status": "PASS"
   },
   "Parsing: <javascript://:443> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <javascript://test:test> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <javascript://[:1]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <mailto://example.com:8080/pathname?search#hash> without base": {
     "status": "PASS"
@@ -2376,13 +2400,13 @@
     "status": "PASS"
   },
   "Parsing: <mailto://:443> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <mailto://test:test> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <mailto://[:1]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <intent://example.com:8080/pathname?search#hash> without base": {
     "status": "PASS"
@@ -2394,13 +2418,13 @@
     "status": "PASS"
   },
   "Parsing: <intent://:443> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <intent://test:test> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <intent://[:1]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <urn://example.com:8080/pathname?search#hash> without base": {
     "status": "PASS"
@@ -2412,13 +2436,13 @@
     "status": "PASS"
   },
   "Parsing: <urn://:443> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <urn://test:test> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <urn://[:1]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <turn://example.com:8080/pathname?search#hash> without base": {
     "status": "PASS"
@@ -2430,13 +2454,13 @@
     "status": "PASS"
   },
   "Parsing: <turn://:443> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <turn://test:test> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <turn://[:1]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <stun://example.com:8080/pathname?search#hash> without base": {
     "status": "PASS"
@@ -2448,18 +2472,54 @@
     "status": "PASS"
   },
   "Parsing: <stun://:443> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <stun://test:test> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <stun://[:1]> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <w://x:0> without base": {
     "status": "PASS"
   },
   "Parsing: <west://x:0> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <///test> against <http://example.org/>": {
+    "status": "FAIL"
+  },
+  "Parsing: <///\\//\\//test> against <http://example.org/>": {
+    "status": "FAIL"
+  },
+  "Parsing: <///example.org/path> against <http://example.org/>": {
+    "status": "FAIL"
+  },
+  "Parsing: <///example.org/../path> against <http://example.org/>": {
+    "status": "FAIL"
+  },
+  "Parsing: <///example.org/../../> against <http://example.org/>": {
+    "status": "FAIL"
+  },
+  "Parsing: <///example.org/../path/../../> against <http://example.org/>": {
+    "status": "FAIL"
+  },
+  "Parsing: <///example.org/../path/../../path> against <http://example.org/>": {
+    "status": "FAIL"
+  },
+  "Parsing: </\\/\\//example.org/../path> against <http://example.org/>": {
+    "status": "PASS"
+  },
+  "Parsing: <///abcdef/../> against <file:///>": {
+    "status": "PASS"
+  },
+  "Parsing: </\\//\\/a/../> against <file:///>": {
+    "status": "FAIL"
+  },
+  "Parsing: <//a/../> against <file:///>": {
+    "status": "PASS"
+  },
+  "Parsing: <http://example.com/U+d800𐟾U+dfff﷐﷏﷯ﷰ￾￿?U+d800𐟾U+dfff﷐﷏﷯ﷰ￾￿> without base": {
     "status": "PASS"
   }
 }
