@@ -68,8 +68,6 @@ jobs:
       run: |
         cmake -S . -B cmake-build-${{ matrix.build }} -DENABLE_WPT:BOOL=ON -DCMAKE_BUILD_TYPE=${{ matrix.build == 'release' && 'Release' || 'Debug' }}
         cmake --build cmake-build-${{ matrix.build }} --parallel 4 --target wpt-runtime
-      env:
-        WPT_ROOT: ../wpt
 
     - name: Prepare WPT hosts
       run: |
