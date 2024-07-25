@@ -165,7 +165,7 @@ bool send_response(host_api::HttpOutgoingResponse *response, JS::HandleObject se
   return true;
 }
 
-bool start_response(JSContext *cx, JS::HandleObject response_obj, bool streaming) {
+bool start_response(JSContext *cx, JS::HandleObject response_obj) {
   auto status = Response::status(response_obj);
   auto headers = RequestOrResponse::headers_handle_clone(cx, response_obj,
     host_api::HttpHeadersGuard::Response);
@@ -175,38 +175,23 @@ bool start_response(JSContext *cx, JS::HandleObject response_obj, bool streaming
 
   host_api::HttpOutgoingResponse* response =
     host_api::HttpOutgoingResponse::make(status, std::move(headers));
-  if (streaming) {
-    // Get the body here, so it will be stored on the response object.
-    // Otherwise, it'd not be available anymore, because the response handle itself
-    // is consumed by sending it off.
-    auto body = response->body().unwrap();
-    MOZ_RELEASE_ASSERT(body);
-  }
-  MOZ_RELEASE_ASSERT(response);
 
   auto existing_handle = Response::response_handle(response_obj);
   if (existing_handle) {
     MOZ_ASSERT(existing_handle->is_incoming());
-    if (streaming) {
-      auto *source_body = static_cast<host_api::HttpIncomingResponse*>(existing_handle)->body().unwrap();
-      auto *dest_body = response->body().unwrap();
-
-      // TODO: check if we should add a callback here and do something in response to body
-      //  streaming being finished.
-      auto res = dest_body->append(ENGINE, source_body, nullptr, nullptr);
-      if (auto *err = res.to_err()) {
-        HANDLE_ERROR(cx, *err);
-        return false;
-      }
-      MOZ_RELEASE_ASSERT(RequestOrResponse::mark_body_used(cx, response_obj));
-    }
   } else {
     SetReservedSlot(response_obj, static_cast<uint32_t>(Response::Slots::Response),
                     PrivateValue(response));
   }
 
-  if (streaming && response->has_body()) {
+  bool streaming = false;
+  if (!RequestOrResponse::maybe_stream_body(cx, response_obj, response, &streaming)) {
+    return false;
+  }
+
+  if (streaming) {
     STREAMING_BODY = response->body().unwrap();
+    FetchEvent::increase_interest();
   }
 
   return send_response(response, FetchEvent::instance(),
@@ -236,13 +221,7 @@ bool response_promise_then_handler(JSContext *cx, JS::HandleObject event, JS::Ha
   // Step 10.2 (very roughly: the way we handle responses and their bodies is
   // very different.)
   JS::RootedObject response_obj(cx, &args[0].toObject());
-
-  bool streaming = false;
-  if (!RequestOrResponse::maybe_stream_body(cx, response_obj, &streaming)) {
-    return false;
-  }
-
-  return start_response(cx, response_obj, streaming);
+  return start_response(cx, response_obj);
 }
 
 // Steps in this function refer to the spec at
@@ -460,9 +439,18 @@ FetchEvent::State FetchEvent::state(JSObject *self) {
 
 void FetchEvent::set_state(JSObject *self, State new_state) {
   MOZ_ASSERT(is_instance(self));
-  MOZ_ASSERT((uint8_t)new_state > (uint8_t)state(self));
+  auto current_state = state(self);
+  MOZ_ASSERT((uint8_t)new_state > (uint8_t)current_state);
   JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::State),
                       JS::Int32Value(static_cast<int32_t>(new_state)));
+
+  if (current_state == State::responseStreaming &&
+    (new_state == State::responseDone || new_state == State::respondedWithError)) {
+    if (STREAMING_BODY && STREAMING_BODY->valid()) {
+      STREAMING_BODY->close();
+    }
+    decrease_interest();
+  }
 }
 
 bool FetchEvent::response_started(JSObject *self) {
@@ -560,6 +548,13 @@ bool eval_request_body(host_api::HttpIncomingRequest *request) {
   for (auto &chunk : chunks) {
     memcpy(buffer + offset, chunk.ptr.get(), chunk.size());
     offset += chunk.size();
+  }
+
+  if (len == 0) {
+    fprintf(stderr, "Error: Failed to evaluate incoming request body. "
+                    "Components without an initialized script have to be invoked with a body"
+                    "that can be run as a JS script\n");
+    return false;
   }
 
   if (!source.init(CONTEXT, buffer, len, JS::SourceOwnership::TakeOwnership)) {
