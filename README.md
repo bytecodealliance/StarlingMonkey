@@ -86,12 +86,16 @@ ctest -R wpt --verbose # Note: some of the tests run fairly slowly in debug buil
 
 The Web Platform Tests checkout can also be customized by setting the `WPT_ROOT=[path to your WPT checkout]` environment variable to the cmake command.
 
-WPT tests can be filtered with the `WPT_FILTER=string` variable.
-
-Custom flags can be passed to the test runner via `WPT_FLAGS="..."`, for example to update expectations use:
+WPT tests can be filtered with the `WPT_FILTER=string` variable, for example:
 
 ```bash
-WPT_FLAGS="--update-expectations" cmake -S . -B cmake-build-debug -DENABLE_WPT:BOOL=ON -DCMAKE_BUILD_TYPE=Debug
+WPT_FILTER=fetch ctest -R wpt -v
+```
+
+Custom flags can also be passed to the test runner via `WPT_FLAGS="..."`, for example to update expectations use:
+
+```bash
+WPT_FLAGS="--update-expectations" ctest -R wpt -v
 ```
 
 ## Configuring available builtins

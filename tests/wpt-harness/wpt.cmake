@@ -34,5 +34,5 @@ endif ()
 add_test(
         NAME wpt
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMAND ${CMAKE_COMMAND} -E env PATH=${WASMTIME_DIR}:$ENV{PATH} WASMTIME_BACKTRACE_DETAILS=${BT_DETAILS} node ${CMAKE_CURRENT_SOURCE_DIR}/tests/wpt-harness/run-wpt.mjs --wpt-root=${WPT_ROOT} $ENV{WPT_FLAGS} -vv $ENV{WPT_FILTER}
+        COMMAND ${CMAKE_COMMAND} -E env PATH=${WASMTIME_DIR}:$ENV{PATH} WASMTIME_BACKTRACE_DETAILS=${BT_DETAILS} node ${CMAKE_CURRENT_SOURCE_DIR}/tests/wpt-harness/run-wpt.mjs --wpt-root=${WPT_ROOT} -vv
 )

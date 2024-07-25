@@ -154,7 +154,11 @@ function applyConfig(argv) {
 let childProcesses = {};
 
 async function run() {
-  if (!applyConfig(process.argv)) {
+  if (!applyConfig([
+    ...process.argv,
+    ...process.env.WPT_FLAGS ? process.env.WPT_FLAGS.split(' ') : [],
+    ...process.env.WPT_FILTER ? [process.env.WPT_FILTER] : []
+  ])) {
     return process.exit(1);
   }
 
