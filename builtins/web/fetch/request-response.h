@@ -103,6 +103,7 @@ public:
    * to `true`.
    */
   static bool maybe_stream_body(JSContext *cx, JS::HandleObject body_owner,
+                                host_api::HttpOutgoingBodyOwner *destination,
                                 bool *requires_streaming);
 
   static JSObject *create_body_stream(JSContext *cx, JS::HandleObject owner);

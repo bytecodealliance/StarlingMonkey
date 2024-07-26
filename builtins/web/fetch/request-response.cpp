@@ -440,21 +440,24 @@ unique_ptr<host_api::HttpHeaders> RequestOrResponse::headers_handle_clone(JSCont
 }
 
 bool finish_outgoing_body_streaming(JSContext* cx, HandleObject body_owner) {
-  // The only response we ever send is the one passed to
-  // `FetchEvent#respondWith` to send to the client. As such, we can be
-  // certain that if we have a response here, we can advance the FetchState to
+  // If no `body_owner` was passed, that means we sent a response: those aren't always
+  // reified during `respondWith` processing, and we don't need the instance here.
+  // That means, if we don't have the `body_owner`, we can advance the FetchState to
   // `responseDone`.
+  // (Note that even if we encountered an error while streaming, `responseDone` is the
+  // right state: `respondedWithError` is for when sending a response at all failed.)
   // TODO(TS): factor this out to remove dependency on fetch-event.h
+  if (!body_owner || Response::is_instance(body_owner)) {
+    fetch_event::FetchEvent::set_state(fetch_event::FetchEvent::instance(),
+                                       fetch_event::FetchEvent::State::responseDone);
+    return true;
+  }
+
   auto body = RequestOrResponse::outgoing_body_handle(body_owner);
   auto res = body->close();
   if (auto *err = res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
-  }
-
-  if (Response::is_instance(body_owner)) {
-    fetch_event::FetchEvent::set_state(fetch_event::FetchEvent::instance(),
-                                       fetch_event::FetchEvent::State::responseDone);
   }
 
   if (Request::is_instance(body_owner)) {
@@ -472,6 +475,7 @@ bool finish_outgoing_body_streaming(JSContext* cx, HandleObject body_owner) {
 bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::HandleObject source) {
   MOZ_ASSERT(!body_used(source));
   MOZ_ASSERT(!body_used(self));
+  MOZ_ASSERT(self != source);
   host_api::HttpIncomingBody *source_body = incoming_body_handle(source);
   host_api::HttpOutgoingBody *dest_body = outgoing_body_handle(self);
   auto res = dest_body->append(ENGINE, source_body, finish_outgoing_body_streaming, self);
@@ -920,7 +924,6 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
     return false;
 
   if (done_val.toBoolean()) {
-    fetch_event::FetchEvent::decrease_interest();
     return finish_outgoing_body_streaming(cx, body_owner);
   }
 
@@ -984,24 +987,30 @@ bool reader_for_outgoing_body_catch_handler(JSContext *cx, JS::HandleObject body
   fprintf(stderr, "Warning: body ReadableStream closed during body streaming. Exception: ");
   ENGINE->dump_value(args.get(0), stderr);
 
-  // The only response we ever send is the one passed to
-  // `FetchEvent#respondWith` to send to the client. As such, we can be certain
-  // that if we have a response here, we can advance the FetchState to
-  // `responseDone`. (Note that even though we encountered an error,
-  // `responseDone` is the right state: `respondedWithError` is for when sending
-  // a response at all failed.)
-  // TODO(TS): investigate why this is disabled.
-  // if (Response::is_instance(body_owner)) {
-  //   FetchEvent::set_state(FetchEvent::instance(), FetchEvent::State::responseDone);
-  // }
   return finish_outgoing_body_streaming(cx, body_owner);
 }
 
 bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_owner,
+                                          host_api::HttpOutgoingBodyOwner* destination,
                                           bool *requires_streaming) {
   *requires_streaming = false;
+  if (!has_body(body_owner)) {
+    return true;
+  }
 
-  if (is_incoming(body_owner) && has_body(body_owner)) {
+  // First, handle direct forwarding of incoming bodies.
+  // Those can be handled by direct use of async tasks and the host API, without needing
+  // to use JS streams at all.
+  if (is_incoming(body_owner)) {
+    auto *source_body = incoming_body_handle(body_owner);
+    auto *dest_body = destination->body().unwrap();
+    auto res = dest_body->append(ENGINE, source_body, finish_outgoing_body_streaming, nullptr);
+    if (auto *err = res.to_err()) {
+      HANDLE_ERROR(cx, *err);
+      return false;
+    }
+    MOZ_RELEASE_ASSERT(RequestOrResponse::mark_body_used(cx, body_owner));
+
     *requires_streaming = true;
     return true;
   }
@@ -1059,8 +1068,6 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
     return false;
   if (!JS::AddPromiseReactions(cx, promise, then_handler, catch_handler))
     return false;
-
-  fetch_event::FetchEvent::increase_interest();
 
   *requires_streaming = true;
   return true;

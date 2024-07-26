@@ -68,7 +68,7 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
 
   bool streaming = false;
-  if (!RequestOrResponse::maybe_stream_body(cx, request_obj, &streaming)) {
+  if (!RequestOrResponse::maybe_stream_body(cx, request_obj, request, &streaming)) {
     return false;
   }
   if (streaming) {
