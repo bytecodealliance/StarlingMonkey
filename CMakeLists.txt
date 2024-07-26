@@ -58,23 +58,35 @@ add_executable(starling.wasm
         runtime/script_loader.cpp
 )
 
-# For release builds, use wasm-opt to optimize the generated wasm file.
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_custom_command(
-            TARGET starling.wasm
-            POST_BUILD
-            COMMAND ${WASM_OPT} --strip-debug -O3 -o starling.wasm starling.wasm
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
-elseif (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    add_custom_command(
-            TARGET starling.wasm
-            POST_BUILD
-            COMMAND ${WASM_OPT} -O3 -o starling.wasm starling.wasm
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
-endif()
+option(USE_WASM_OPT "use wasm-opt to optimize the StarlingMonkey binary" ON)
 
+# For release builds, use wasm-opt to optimize the generated wasm file.
+if (USE_WASM_OPT)
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_custom_command(
+                TARGET starling.wasm
+                POST_BUILD
+                COMMAND ${WASM_OPT} --strip-debug -O3 -o starling.wasm starling.wasm
+                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+    elseif (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+        add_custom_command(
+                TARGET starling.wasm
+                POST_BUILD
+                COMMAND ${WASM_OPT} -O3 -o starling.wasm starling.wasm
+                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+    endif()
+else()
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_custom_command(
+            TARGET starling.wasm
+            POST_BUILD
+            COMMAND ${WASM_TOOLS_BIN} strip -a -o starling.wasm starling.wasm
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+    endif()
+endif()
 
 target_link_libraries(starling.wasm PRIVATE host_api extension_api builtins spidermonkey rust-url)
 
