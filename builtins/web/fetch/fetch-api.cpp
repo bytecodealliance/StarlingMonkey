@@ -35,11 +35,7 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
-  RootedString method_str(cx, Request::method(cx, request_obj));
-  if (!method_str) {
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
-
+  RootedString method_str(cx, Request::method(request_obj));
   host_api::HostString method = core::encode(cx, method_str);
   if (!method.ptr) {
     return ReturnPromiseRejectedWithPendingError(cx, args);

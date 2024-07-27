@@ -1137,7 +1137,7 @@ JSObject *Request::response_promise(JSObject *obj) {
               .toObject();
 }
 
-JSString *Request::method(JSContext *cx, JS::HandleObject obj) {
+JSString *Request::method(HandleObject obj) {
   MOZ_ASSERT(is_instance(obj));
   return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::Method)).toString();
 }
@@ -1145,11 +1145,7 @@ JSString *Request::method(JSContext *cx, JS::HandleObject obj) {
 bool Request::method_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
 
-  JSString *method = Request::method(cx, self);
-  if (!method)
-    return false;
-
-  args.rval().setString(method);
+  args.rval().setString(Request::method(self));
   return true;
 }
 
@@ -1409,10 +1405,7 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
     url_str = RequestOrResponse::url(input_request).toString();
 
     // method: `request`’s method.
-    method_str = Request::method(cx, input_request);
-    if (!method_str) {
-      return false;
-    }
+    method_str = Request::method(input_request);
 
     // referrer: `request`’s referrer.
     // TODO: evaluate whether we want to implement support for setting the
