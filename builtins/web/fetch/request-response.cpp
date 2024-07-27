@@ -1416,7 +1416,14 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
 
     // header list: A copy of `request`’s header list.
     // Note: copying the headers is postponed, see step 32 below.
-    input_headers = RequestOrResponse::maybe_headers(input_request);
+    // Note: we're forcing reification of the input request's headers here. That is suboptimal,
+    // because we might end up not using them. Additionally, if the headers are represented
+    // internally as a handle (e.g. because the input is an incoming request), we would in
+    // principle not need to ever reify it just to get a clone.
+    // Applying these optimizations is somewhat complex though, so for now we're not doing so.
+    if (!(input_headers = RequestOrResponse::headers(cx, input_request))) {
+      return false;
+    }
 
     // The following properties aren't applicable:
     // unsafe-request flag: Set.
