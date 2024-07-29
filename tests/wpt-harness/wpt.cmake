@@ -1,6 +1,13 @@
 enable_testing()
 
 include("wasmtime")
+include("weval")
+
+if(WEVAL)
+    set(COMPONENTIZE_FLAGS "--aot")
+else()
+    set(COMPONENTIZE_FLAGS "")
+endif()
 
 if(DEFINED ENV{WPT_ROOT})
     set(WPT_ROOT ENV{WPT_ROOT})
@@ -21,7 +28,7 @@ add_builtin(wpt_support
 add_custom_command(
         OUTPUT wpt-runtime.wasm
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMAND ${CMAKE_COMMAND} -E env PATH=${WASM_TOOLS_DIR}:${WIZER_DIR}:$ENV{PATH} WPT_ROOT=${WPT_ROOT} ${CMAKE_CURRENT_SOURCE_DIR}/tests/wpt-harness/build-wpt-runtime.sh
+        COMMAND ${CMAKE_COMMAND} -E env PATH=${WASM_TOOLS_DIR}:${WIZER_DIR}:$ENV{PATH} env "COMPONENTIZE_FLAGS=${COMPONENTIZE_FLAGS}" WPT_ROOT=${WPT_ROOT} ${CMAKE_CURRENT_SOURCE_DIR}/tests/wpt-harness/build-wpt-runtime.sh
         DEPENDS starling.wasm componentize.sh tests/wpt-harness/build-wpt-runtime.sh tests/wpt-harness/pre-harness.js tests/wpt-harness/post-harness.js
         VERBATIM
 )
