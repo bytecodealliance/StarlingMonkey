@@ -160,3 +160,55 @@ name of one of the directories. Currently, only an implementation in terms of [w
 (host-apis/wasi-0.2.0) is provided, and used by default.
 
 To provide a custom host API implementation, you can set `HOST_API` to the (absolute) path of a directory containing that implementation.
+
+## Developing Changes to SpiderMonkey
+
+StarlingMonkey uses SpiderMonkey as its underlying JS engine, and by default,
+downloads build artifacts from [a wrapper
+repository](https://github.com/bytecodealliance/spidermonkey-wasi-embedding)
+around [our local SpiderMonkey
+tree](https://github.com/bytecodealliance/gecko-dev). That wrapper repository
+contains a SpiderMonkey commit-hash in a file, and its CI jobs build the
+artifacts that StarlingMonkey downloads during its build.
+
+This flow is optimized for ease of development of StarlingMonkey, and avoiding
+the need to build SpiderMonkey locally, which requires some additional tools
+and is resource-intensive. However, sometimes it is necessary or desirable to
+make modifications to SpiderMonkey directly, whether to make fixes or optimize
+performance.
+
+In order to do so, first clone the above two repositories, with `gecko-dev`
+(SpiderMonkey itself) as a subdirectory to `spidermonkey-wasi-embedding`:
+
+```shell
+git clone https://github.com/bytecodealliance/spidermonkey-wasi-embedding
+cd spidermonkey-wasi-embedding/
+git clone https://github.com/bytecodealliance/gecko-dev
+```
+
+and switch to the commit that we are currently using:
+
+```shell
+git checkout `cat ../gecko-revision`
+# now edit the source
+```
+
+Then make changes as necessary, eventually rebuilding from the
+`spidermonkey-wasi-embedding` root:
+
+```shell
+cd ../ # back to spidermonkey-wasi-embedding
+./rebuild.sh release
+```
+
+This will produce a `release/` directory with artifacts of the same form
+normally downloaded by StarlingMonkey. So, finally, from within StarlingMonkey,
+set an environment variable `SPIDERMONKEY_BINARIES`:
+
+```shell
+export SPIDERMONKEY_BINARIES=/path/to/spidermonkey-wasi-embedding/release
+cmake -S . -B cmake-build-release -DCMAKE_BUILD_TYPE=Release
+cmake --build cmake-build-release --parallel 8
+```
+
+and use/test as above.
