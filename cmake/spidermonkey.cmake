@@ -1,9 +1,17 @@
-set(SM_REV ffbf1c4641440e74174199def6558c710b3ac323)
+set(SM_REV bbaee9532ff88b38c31c7f38d0aba1204a6aa9d6)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(SM_BUILD_TYPE debug)
 else()
     set(SM_BUILD_TYPE release)
+endif()
+set(SM_BUILD_TYPE_DASH ${SM_BUILD_TYPE})
+
+option(WEVAL "Build with a SpiderMonkey variant that supports weval-based AOT compilation" OFF)
+
+if (WEVAL)
+    set(SM_BUILD_TYPE_DASH "${SM_BUILD_TYPE}-weval")
+    set(SM_BUILD_TYPE "${SM_BUILD_TYPE}_weval")
 endif()
 
 # If the developer has specified an alternate local set of SpiderMonkey

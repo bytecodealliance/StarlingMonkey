@@ -28,6 +28,7 @@ include("init-corrosion")
 include("wasm-tools")
 include("binaryen")
 include("wizer")
+include("weval")
 include("wasmtime")
 
 include("fmt")
@@ -90,9 +91,25 @@ endif()
 
 target_link_libraries(starling.wasm PRIVATE host_api extension_api builtins spidermonkey rust-url)
 
+# build a compilation cache of ICs
+if(WEVAL)
+    include("weval")
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/null.js "function main() {}")
+    add_custom_target(
+        starling-ics.wevalcache
+        ALL
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMAND rm -f starling-ics.wevalcache
+        COMMAND echo ./null.js | ${WEVAL_BIN} weval --dir . --show-stats --cache starling-ics.wevalcache -w -i starling.wasm -o /dev/null
+        DEPENDS starling.wasm
+        VERBATIM
+    )
+    set(WEVAL_CACHE_FILE "starling-ics.wevalcache")
+endif()
+
 set(RUNTIME_FILE "starling.wasm")
 set(ADAPTER_FILE "preview1-adapter.wasm")
-configure_file("componentize.sh" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh" COPYONLY)
+configure_file("componentize.sh" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh" @ONLY)
 configure_file(${ADAPTER} "${CMAKE_CURRENT_BINARY_DIR}/${ADAPTER_FILE}" COPYONLY)
 configure_file(spin.toml spin.toml COPYONLY)
 
@@ -105,13 +122,23 @@ function(componentize OUTPUT)
     list(JOIN ARG_SOURCES " " SOURCES)
     get_target_property(RUNTIME_DIR starling.wasm BINARY_DIR)
 
-    add_custom_command(
-            OUTPUT ${OUTPUT}.wasm
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR};${WIZER_DIR};$ENV{PATH}" ${RUNTIME_DIR}/componentize.sh ${SOURCES} -o ${OUTPUT}.wasm
-            DEPENDS ${ARG_SOURCES} ${RUNTIME_DIR}/componentize.sh starling.wasm
-            VERBATIM
-    )
+    if(WEVAL)
+        add_custom_command(
+                OUTPUT ${OUTPUT}.wasm
+                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR};${WEVAL_DIR};$ENV{PATH}" ${RUNTIME_DIR}/componentize.sh ${SOURCES} --aot -o ${OUTPUT}.wasm
+                DEPENDS ${ARG_SOURCES} ${RUNTIME_DIR}/componentize.sh starling.wasm starling-ics.wevalcache
+                VERBATIM
+        )
+    else()
+        add_custom_command(
+                OUTPUT ${OUTPUT}.wasm
+                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR};${WIZER_DIR};$ENV{PATH}" ${RUNTIME_DIR}/componentize.sh ${SOURCES} -o ${OUTPUT}.wasm
+                DEPENDS ${ARG_SOURCES} ${RUNTIME_DIR}/componentize.sh starling.wasm
+                VERBATIM
+        )
+    endif()
     add_custom_target(${OUTPUT} DEPENDS ${OUTPUT}.wasm)
 endfunction()
 
