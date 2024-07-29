@@ -82,7 +82,7 @@ else()
         add_custom_command(
             TARGET starling.wasm
             POST_BUILD
-            COMMAND ${WASM_TOOLS_BIN} strip -a -o starling.wasm starling.wasm
+            COMMAND ${WASM_OPT} --strip-debug -O0 -o starling.wasm starling.wasm
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
     endif()
