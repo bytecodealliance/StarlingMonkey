@@ -2,8 +2,8 @@ enable_testing()
 
 include("wasmtime")
 
-if(DEFINED $ENV{WPT_ROOT})
-    set(WPT_ROOT $ENV{WPT_ROOT})
+if(DEFINED ENV{WPT_ROOT})
+    set(WPT_ROOT ENV{WPT_ROOT})
 else()
 	CPMAddPackage(
 	  NAME wpt-suite
