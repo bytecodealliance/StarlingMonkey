@@ -1201,23 +1201,25 @@ bool Request::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
   init_slots(new_request);
 
-  RootedValue cloned_headers_val(cx);
+  RootedValue cloned_headers_val(cx, JS::NullValue());
   RootedObject headers(cx, RequestOrResponse::maybe_headers(self));
   if (headers) {
     RootedValue headers_val(cx, ObjectValue(*headers));
-    RootedObject cloned_headers(
-        cx, Headers::create(cx, headers_val, host_api::HttpHeadersGuard::Request));
+    JSObject *cloned_headers =
+        Headers::create(cx, headers_val, host_api::HttpHeadersGuard::Request);
     if (!cloned_headers) {
       return false;
     }
+    cloned_headers_val.set(ObjectValue(*cloned_headers));
   } else if (RequestOrResponse::handle(self)) {
     auto handle =
         RequestOrResponse::headers_handle_clone(cx, self, host_api::HttpHeadersGuard::Request);
-    RootedObject cloned_headers(
-        cx, Headers::create(cx, handle.release(), host_api::HttpHeadersGuard::Request));
+    JSObject *cloned_headers =
+        Headers::create(cx, handle.release(), host_api::HttpHeadersGuard::Request);
     if (!cloned_headers) {
       return false;
     }
+    cloned_headers_val.set(ObjectValue(*cloned_headers));
   }
 
   SetReservedSlot(new_request, static_cast<uint32_t>(Slots::Headers), cloned_headers_val);
