@@ -11,6 +11,7 @@ setup({ explicit_done: true });
 
 async function handleRequest(event) {
   let url = new URL(event.request.url);
+  console.log(`running test ${url.pathname}`);
   let input = `http://web-platform.test:8000${url.pathname}${url.search}`;
   globalThis.baseURL = new URL(input);
   globalThis.location = baseURL;
