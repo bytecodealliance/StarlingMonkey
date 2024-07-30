@@ -105,6 +105,9 @@ if(WEVAL)
         VERBATIM
     )
     set(WEVAL_CACHE_FILE "starling-ics.wevalcache")
+    set(AOT 1)
+else()
+    set(AOT 0)
 endif()
 
 set(RUNTIME_FILE "starling.wasm")
@@ -122,23 +125,13 @@ function(componentize OUTPUT)
     list(JOIN ARG_SOURCES " " SOURCES)
     get_target_property(RUNTIME_DIR starling.wasm BINARY_DIR)
 
-    if(WEVAL)
-        add_custom_command(
-                OUTPUT ${OUTPUT}.wasm
-                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR};${WEVAL_DIR};$ENV{PATH}" ${RUNTIME_DIR}/componentize.sh ${SOURCES} --aot -o ${OUTPUT}.wasm
-                DEPENDS ${ARG_SOURCES} ${RUNTIME_DIR}/componentize.sh starling.wasm starling-ics.wevalcache
-                VERBATIM
-        )
-    else()
-        add_custom_command(
-                OUTPUT ${OUTPUT}.wasm
-                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR};${WIZER_DIR};$ENV{PATH}" ${RUNTIME_DIR}/componentize.sh ${SOURCES} -o ${OUTPUT}.wasm
-                DEPENDS ${ARG_SOURCES} ${RUNTIME_DIR}/componentize.sh starling.wasm
-                VERBATIM
-        )
-    endif()
+    add_custom_command(
+            OUTPUT ${OUTPUT}.wasm
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            COMMAND ${CMAKE_COMMAND} -E env "PATH=${WASM_TOOLS_DIR};${WIZER_DIR};$ENV{PATH}" ${RUNTIME_DIR}/componentize.sh ${SOURCES} -o ${OUTPUT}.wasm
+            DEPENDS ${ARG_SOURCES} ${RUNTIME_DIR}/componentize.sh starling.wasm
+            VERBATIM
+    )
     add_custom_target(${OUTPUT} DEPENDS ${OUTPUT}.wasm)
 endfunction()
 

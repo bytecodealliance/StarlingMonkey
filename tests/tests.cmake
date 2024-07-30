@@ -5,16 +5,10 @@ include("wizer")
 include("wasmtime")
 include("weval")
 
-if(WEVAL)
-    set(COMPONENTIZE_FLAGS "--aot")
-else()
-    set(COMPONENTIZE_FLAGS "")
-endif()
-
 function(test_e2e TEST_NAME)
     get_target_property(RUNTIME_DIR starling.wasm BINARY_DIR)
     add_test(${TEST_NAME} ${BASH_PROGRAM} ${CMAKE_SOURCE_DIR}/tests/test.sh ${RUNTIME_DIR} ${CMAKE_SOURCE_DIR}/tests/e2e/${TEST_NAME})
-    set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT "COMPONENTIZE_FLAGS=${COMPONENTIZE_FLAGS};WASMTIME=${WASMTIME};WIZER=${WIZER_DIR}/wizer;WASM_TOOLS=${WASM_TOOLS_DIR}/wasm-tools")
+    set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT "WASMTIME=${WASMTIME};WIZER=${WIZER_DIR}/wizer;WASM_TOOLS=${WASM_TOOLS_DIR}/wasm-tools")
     set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 120)
 endfunction()
 
@@ -26,7 +20,7 @@ function(test_integration TEST_NAME)
     add_custom_command(
         OUTPUT test-server.wasm
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMAND ${CMAKE_COMMAND} -E env "WASM_TOOLS=${WASM_TOOLS_DIR}/wasm-tools" env "WIZER=${WIZER_DIR}/wizer" ${RUNTIME_DIR}/componentize.sh ${COMPONENTIZE_FLAGS} ${CMAKE_SOURCE_DIR}/tests/integration/test-server.js test-server.wasm
+        COMMAND ${CMAKE_COMMAND} -E env "WASM_TOOLS=${WASM_TOOLS_DIR}/wasm-tools" env "WIZER=${WIZER_DIR}/wizer" ${RUNTIME_DIR}/componentize.sh ${CMAKE_SOURCE_DIR}/tests/integration/test-server.js test-server.wasm
         DEPENDS ${ARG_SOURCES} ${RUNTIME_DIR}/componentize.sh starling.wasm
         VERBATIM
     )

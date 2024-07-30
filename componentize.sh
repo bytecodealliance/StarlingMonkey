@@ -5,9 +5,10 @@
 wizer="${WIZER:-wizer}"
 wasm_tools="${WASM_TOOLS:-wasm-tools}"
 weval="${WEVAL:-@WEVAL_BIN@}"
+aot=@AOT@
 
 usage() {
-  echo "Usage: $(basename "$0") [input.js] [--aot] [-o output.wasm]"
+  echo "Usage: $(basename "$0") [input.js] [--verbose] [-o output.wasm]"
   echo "       Providing an input file but no output uses the input base name with a .wasm extension"
   echo "       Providing an output file but no input creates a component without running any top-level script"
   exit 1
@@ -20,7 +21,7 @@ fi
 
 IN_FILE=""
 OUT_FILE=""
-AOT=0
+VERBOSE=0
 
 while [ $# -gt 0 ]
 do
@@ -29,8 +30,8 @@ do
             OUT_FILE="$2"
             shift 2
             ;;
-        --aot)
-            AOT=1
+        --verbose)
+            VERBOSE=1
             shift
             ;;
         *)
@@ -68,10 +69,15 @@ else
   echo "Creating runtime-script component $OUT_FILE"
 fi
 
-if [[ $AOT -ne 0 ]]; then
+if [[ $aot -ne 0 ]]; then
+    WEVAL_VERBOSE=""
+    if [[ $VERBOSE -ne 0 ]]; then
+        WEVAL_VERBOSE="--verbose --show-stats"
+    fi
+
     echo "$IN_FILE" | WASMTIME_BACKTRACE_DETAILS=1 $weval weval -w $PREOPEN_DIR \
          --cache-ro "$(dirname "$0")/starling-ics.wevalcache" \
-         --show-stats \
+         $WEVAL_VERBOSE \
          -o "$OUT_FILE" \
          -i "$(dirname "$0")/starling.wasm"
 else
