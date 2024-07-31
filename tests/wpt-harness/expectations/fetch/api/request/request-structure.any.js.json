@@ -1,6 +1,6 @@
 {
   "Request has clone method": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Request has arrayBuffer method": {
     "status": "PASS"

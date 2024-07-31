@@ -142,7 +142,7 @@ public:
   };
 
   static JSObject *response_promise(JSObject *obj);
-  static JSString *method(JSContext *cx, JS::HandleObject obj);
+  static JSString *method(JS::HandleObject obj);
   static host_api::HttpRequest *request_handle(JSObject *obj);
   static host_api::HttpOutgoingRequest *outgoing_handle(JSObject *obj);
   static host_api::HttpIncomingRequest *incoming_handle(JSObject *obj);
