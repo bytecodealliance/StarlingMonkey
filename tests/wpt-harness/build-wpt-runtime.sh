@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+componentize_flags="${COMPONENTIZE_FLAGS:-}"
+
 if [ -z "${WPT_ROOT:-}" ]; then
   echo "The WPT_ROOT environment variable is not set"
   exit 1
@@ -16,4 +18,4 @@ inputs=(
 )
 
 cat "${inputs[@]}" > wpt-test-runner.js
-./componentize.sh wpt-test-runner.js wpt-runtime.wasm
+./componentize.sh $componentize_flags wpt-test-runner.js wpt-runtime.wasm

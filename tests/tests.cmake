@@ -3,6 +3,7 @@ enable_testing()
 find_program(BASH_PROGRAM bash)
 include("wizer")
 include("wasmtime")
+include("weval")
 
 function(test_e2e TEST_NAME)
     get_target_property(RUNTIME_DIR starling.wasm BINARY_DIR)

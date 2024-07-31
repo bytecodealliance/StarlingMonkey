@@ -5,6 +5,7 @@ test_runtime="$1"
 test_component="${3:-}"
 test_name="$(basename $test_dir)"
 test_serve_path="${4:-}"
+componentize_flags="${COMPONENTIZE_FLAGS:-}"
 
 wasmtime="${WASMTIME:-wasmtime}"
 
@@ -24,7 +25,7 @@ if [ -z "$test_component" ]; then
 
    # Run Wizer
    set +e
-   "$test_runtime/componentize.sh" "$test_dir/$test_name.js" "$test_component" 1> "$stdout_log" 2> "$stderr_log"
+   "$test_runtime/componentize.sh" $componentize_flags "$test_dir/$test_name.js" "$test_component" 1> "$stdout_log" 2> "$stderr_log"
    wizer_result=$?
    set -e
 
