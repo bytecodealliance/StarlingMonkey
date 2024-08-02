@@ -177,8 +177,19 @@ inline bool ThrowIfNotConstructing(JSContext *cx, const CallArgs &args, const ch
 namespace builtins {
 
 template <typename Impl> class BuiltinImpl {
-  static constexpr JSClassOps class_ops{};
-  static constexpr uint32_t class_flags = 0;
+  static constexpr JSClassOps class_ops{
+    nullptr,                      // addProperty
+    nullptr,                      // delProperty
+    nullptr,                      // enumerate
+    nullptr,                      // newEnumerate
+    nullptr,                      // resolve
+    nullptr,                      // mayResolve
+    Impl::finalize,               // finalize
+    nullptr,                      // call
+    nullptr,                      // construct
+    nullptr,                      // trace
+  };
+  static constexpr uint32_t class_flags = JSCLASS_FOREGROUND_FINALIZE;
 
 public:
   static constexpr JSClass class_{
@@ -228,6 +239,8 @@ public:
 
     return proto_obj != nullptr;
   }
+
+  static void finalize(JS::GCContext* gcx, JSObject* obj) {}
 };
 
 template <typename Impl> PersistentRooted<JSObject *> BuiltinImpl<Impl>::proto_obj{};
