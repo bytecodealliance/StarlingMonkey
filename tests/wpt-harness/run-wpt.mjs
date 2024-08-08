@@ -222,8 +222,8 @@ async function run() {
     if (config.tests.updateExpectations) {
       console.log(`Expectations updated: ${expectationsUpdated}`);
       shutdown();
-    } else if (stats.unexpectedFail + stats.unexpectedPass != 0 || unexpectedFailure) {
-      shutdown('Unexpected failures or passes. Verify that these new results match your expectations and run with --update-expectations to update the recorded expectations.');
+    } else if (stats.unexpectedFail + stats.unexpectedPass + stats.missing != 0 || unexpectedFailure) {
+      shutdown('Unexpected failures, passes or missing results. Verify that these new results match your expectations and run with --update-expectations to update the recorded expectations.');
     } else {
       shutdown();
     }
@@ -331,7 +331,7 @@ async function startWasmtime(runtime, addr, logLevel) {
   });
 
   let backtrace = "";
-  let backtrace_re = /Error \{\s+context: "error while executing at wasm backtrace:(.+?)",\s+source: "(.+?)"/s;
+  let backtrace_re = /Error \{\s+context: "error while executing at wasm backtrace:(.+?)",\s+source: (.+?)/s;
   wasmtime.stderr.on("data", data => {
     if (backtrace.length > 0 || data.includes("error while executing at wasm backtrace:")) {
       backtrace += data;
@@ -489,7 +489,8 @@ async function runTests(testPaths, wasmtime, resultCallback, errorCallback) {
       await resultCallback(path, results, stats);
     } catch (e) {
       if (!results) {
-        e = new Error(`Parsing test results as JSON failed. Output was:\n  ${body}`);
+        e = new Error(`\nMISSING TEST RESULTS: ${path}\nParsing test results as JSON failed. Output was:\n  ${body}`);
+        totalStats.missing += Math.max(Object.keys(expectations).length, 1);
       }
       if (config.logLevel >= LogLevel.Verbose) {
         console.log(`Error running file ${path}: ${e.message}, stack:\n${e.stack}`);
