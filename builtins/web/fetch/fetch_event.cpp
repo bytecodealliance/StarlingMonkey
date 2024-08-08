@@ -167,8 +167,7 @@ bool send_response(host_api::HttpOutgoingResponse *response, JS::HandleObject se
 
 bool start_response(JSContext *cx, JS::HandleObject response_obj) {
   auto status = Response::status(response_obj);
-  auto headers = RequestOrResponse::headers_handle_clone(cx, response_obj,
-    host_api::HttpHeadersGuard::Response);
+  auto headers = RequestOrResponse::headers_handle_clone(cx, response_obj);
   if (!headers) {
     return false;
   }
@@ -252,16 +251,15 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // Step 2
   if (!is_dispatching(self)) {
-    return dom_exception::DOMException::raise(cx,
-      "FetchEvent#respondWith must be called synchronously from within a FetchEvent handler",
-      "InvalidStateError");
+    return dom_exception::DOMException::raise(
+        cx, "FetchEvent#respondWith must be called synchronously from within a FetchEvent handler",
+        "InvalidStateError");
   }
 
   // Step 3
   if (state(self) != State::unhandled) {
-    return dom_exception::DOMException::raise(cx,
-      "FetchEvent#respondWith can't be called twice on the same event",
-      "InvalidStateError");
+    return dom_exception::DOMException::raise(
+        cx, "FetchEvent#respondWith can't be called twice on the same event", "InvalidStateError");
   }
 
   // Step 4
@@ -293,7 +291,7 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool FetchEvent::respondWithError(JSContext *cx, JS::HandleObject self) {
   MOZ_RELEASE_ASSERT(state(self) == State::unhandled || state(self) == State::waitToRespond);
 
-  auto headers = std::make_unique<host_api::HttpHeaders>(host_api::HttpHeadersGuard::Response);
+  auto headers = std::make_unique<host_api::HttpHeaders>();
   auto *response = host_api::HttpOutgoingResponse::make(500, std::move(headers));
 
   auto body_res = response->body();
@@ -331,9 +329,7 @@ bool FetchEvent::waitUntil(JSContext *cx, unsigned argc, JS::Value *vp) {
   // Step 2
   if (!is_active(self)) {
     return dom_exception::DOMException::raise(
-      cx,
-      "waitUntil called on a FetchEvent that isn't active anymore",
-      "InvalidStateError");
+        cx, "waitUntil called on a FetchEvent that isn't active anymore", "InvalidStateError");
   }
 
   // Steps 3-4
@@ -345,13 +341,9 @@ bool FetchEvent::waitUntil(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
-void FetchEvent::increase_interest() {
-  inc_pending_promise_count(INSTANCE);
-}
+void FetchEvent::increase_interest() { inc_pending_promise_count(INSTANCE); }
 
-void FetchEvent::decrease_interest() {
-  dec_pending_promise_count(INSTANCE);
-}
+void FetchEvent::decrease_interest() { dec_pending_promise_count(INSTANCE); }
 
 const JSFunctionSpec FetchEvent::static_methods[] = {
     JS_FS_END,
@@ -571,7 +563,7 @@ bool eval_request_body(host_api::HttpIncomingRequest *request) {
   return true;
 }
 
-bool handle_incoming_request(host_api::HttpIncomingRequest * request) {
+bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
 #ifdef DEBUG
   fprintf(stderr, "Warning: Using a DEBUG build. Expect things to be SLOW.\n");
 #endif

@@ -15,27 +15,27 @@
     "status": "PASS"
   },
   "Correct operation ordering with two properties": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Correct operation ordering with two properties one of which has an invalid name": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Correct operation ordering with two properties one of which has an invalid value": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Correct operation ordering with non-enumerable properties": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Correct operation ordering with undefined descriptors": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Correct operation ordering with repeated keys": {
     "status": "PASS"
   },
   "Basic operation with Symbol keys": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Operation with non-enumerable Symbol keys": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }

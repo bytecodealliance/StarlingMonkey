@@ -1,5 +1,5 @@
 import { serveTest } from "../test-server.js";
-import { assert, strictEqual, throws, deepStrictEqual, AssertionError } from "../assert.js";
+import { assert, strictEqual, throws, deepStrictEqual, AssertionError } from "../../assert.js";
 
 export const handler = serveTest(async (t) => {
   await t.asyncTest("clearTimeout invalid", (resolve, reject) => {

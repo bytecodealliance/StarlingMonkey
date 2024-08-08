@@ -7,6 +7,8 @@
 
 #include <memory>
 
+using builtins::web::fetch::Headers;
+
 namespace builtins::web::fetch {
 
 static api::Engine *ENGINE;
@@ -31,7 +33,8 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
-  if (!Request::initialize(cx, request_obj, args[0], args.get(1))) {
+  if (!Request::initialize(cx, request_obj, args[0], args.get(1),
+                           Headers::HeadersGuard::Immutable)) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
@@ -47,14 +50,13 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
-  unique_ptr<host_api::HttpHeaders> headers = RequestOrResponse::headers_handle_clone(cx,
-  request_obj, host_api::HttpHeadersGuard::Request);
+  unique_ptr<host_api::HttpHeaders> headers =
+      RequestOrResponse::headers_handle_clone(cx, request_obj);
   if (!headers) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
-  auto request = host_api::HttpOutgoingRequest::make(method, std::move(url),
-                                                     std::move(headers));
+  auto request = host_api::HttpOutgoingRequest::make(method, std::move(url), std::move(headers));
   MOZ_RELEASE_ASSERT(request);
   JS_SetReservedSlot(request_obj, static_cast<uint32_t>(Request::Slots::Request),
                      PrivateValue(request));

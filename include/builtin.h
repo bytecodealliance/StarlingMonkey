@@ -103,6 +103,60 @@ void markWizeningAsFinished();
     return false;                                                                                  \
   }
 
+#define ITER_TYPE_ENTRIES 0
+#define ITER_TYPE_KEYS 1
+#define ITER_TYPE_VALUES 2
+
+#define BUILTIN_ITERATOR_METHOD(class_name, method, type)                                          \
+  bool class_name::method(JSContext *cx, unsigned argc, JS::Value *vp) {                           \
+    METHOD_HEADER(0)                                                                               \
+    JS::RootedObject iter(cx, class_name##Iterator::create(cx, self, type));                       \
+    if (!iter)                                                                                     \
+      return false;                                                                                \
+    args.rval().setObject(*iter);                                                                  \
+    return true;                                                                                   \
+  }
+
+// defines entries(), keys(), values(), and forEach(), assuming class_name##Iterator
+#define BUILTIN_ITERATOR_METHODS(class_name)                                                       \
+  BUILTIN_ITERATOR_METHOD(class_name, entries, ITER_TYPE_ENTRIES)                                  \
+  BUILTIN_ITERATOR_METHOD(class_name, keys, ITER_TYPE_KEYS)                                        \
+  BUILTIN_ITERATOR_METHOD(class_name, values, ITER_TYPE_VALUES)                                    \
+                                                                                                   \
+bool class_name::forEach(JSContext *cx, unsigned argc, JS::Value *vp) {                            \
+  METHOD_HEADER(1)                                                                                 \
+  if (!args[0].isObject() || !JS::IsCallable(&args[0].toObject())) {                               \
+    return api::throw_error(cx, api::Errors::ForEachCallback, #class_name);                        \
+  }                                                                                                \
+  JS::RootedValueArray<3> newArgs(cx);                                                             \
+  newArgs[2].setObject(*self);                                                                     \
+  JS::RootedValue rval(cx);                                                                        \
+  JS::RootedObject iter(cx, class_name##Iterator::create(cx, self, ITER_TYPE_ENTRIES));            \
+  if (!iter)                                                                                       \
+    return false;                                                                                  \
+  JS::RootedValue iterable(cx, ObjectValue(*iter));                                                \
+  JS::ForOfIterator it(cx);                                                                        \
+  if (!it.init(iterable))                                                                          \
+    return false;                                                                                  \
+                                                                                                   \
+  JS::RootedValue entry_val(cx);                                                                   \
+  JS::RootedObject entry(cx);                                                                      \
+  while (true) {                                                                                   \
+    bool done;                                                                                     \
+    if (!it.next(&entry_val, &done))                                                               \
+      return false;                                                                                \
+    if (done)                                                                                      \
+      break;                                                                                       \
+                                                                                                   \
+    entry = &entry_val.toObject();                                                                 \
+    JS_GetElement(cx, entry, 1, newArgs[0]);                                                       \
+    JS_GetElement(cx, entry, 0, newArgs[1]);                                                       \
+    if (!JS::Call(cx, args.thisv(), args[0], newArgs, &rval))                                      \
+      return false;                                                                                \
+  }                                                                                                \
+  return true;                                                                                     \
+}
+
 #define REQUEST_HANDLER_ONLY(name)                                                                 \
   if (isWizening()) {                                                                              \
     return api::throw_error(cx, api::Errors::RequestHandlerOnly, name);                            \
