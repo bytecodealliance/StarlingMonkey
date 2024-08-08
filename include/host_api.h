@@ -106,7 +106,12 @@ struct HostString final {
 
   HostString() = default;
   HostString(std::nullptr_t) : HostString() {}
-  HostString(const char *c_str);
+  HostString(const char *c_str) {
+    len = strlen(c_str);
+    ptr = JS::UniqueChars(static_cast<char *>(malloc(len + 1)));
+    std::memcpy(ptr.get(), c_str, len);
+    ptr[len] = '\0';
+  }
   HostString(JS::UniqueChars ptr, size_t len) : ptr{std::move(ptr)}, len{len} {}
 
   HostString(const HostString &other) = delete;

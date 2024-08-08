@@ -412,7 +412,8 @@ bool append_valid_normalized_header(JSContext *cx, HandleObject self, string_vie
   } else {
     MOZ_ASSERT(mode == Headers::Mode::ContentOnly);
 
-    Headers::HeadersList *list = Headers::get_list(cx, self);
+    Headers::HeadersList *list = static_cast<Headers::HeadersList *>(
+        GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersList)).toPrivate());
     MOZ_ASSERT(list);
 
     list->emplace_back(host_api::HostString::from_copy(header_name),
