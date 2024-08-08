@@ -331,7 +331,7 @@ async function startWasmtime(runtime, addr, logLevel) {
   });
 
   let backtrace = "";
-  let backtrace_re = /Error \{\s+context: "error while executing at wasm backtrace:(.+?)",\s+source: "(.+?)"/s;
+  let backtrace_re = /Error \{\s+context: "error while executing at wasm backtrace:(.+?)",\s+source: (.+?)/s;
   wasmtime.stderr.on("data", data => {
     if (backtrace.length > 0 || data.includes("error while executing at wasm backtrace:")) {
       backtrace += data;
