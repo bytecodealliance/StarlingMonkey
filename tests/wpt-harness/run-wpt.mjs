@@ -489,7 +489,8 @@ async function runTests(testPaths, wasmtime, resultCallback, errorCallback) {
       await resultCallback(path, results, stats);
     } catch (e) {
       if (!results) {
-        e = new Error(`Parsing test results as JSON failed. Output was:\n  ${body}`);
+        e = new Error(`\nMISSING TEST RESULTS: ${path}\nParsing test results as JSON failed. Output was:\n  ${body}`);
+        totalStats.missing += Math.min(Object.keys(expectations).length, 1);
       }
       if (config.logLevel >= LogLevel.Verbose) {
         console.log(`Error running file ${path}: ${e.message}, stack:\n${e.stack}`);
