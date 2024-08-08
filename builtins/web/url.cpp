@@ -24,14 +24,14 @@ bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) 
   jsurl::params_at(params, index, &param);
 
   if (param.done) {
-    JS_DefineProperty(cx, result, "done", true, JSPROP_ENUMERATE);
+    JS_DefineProperty(cx, result, "done", JS::TrueHandleValue, JSPROP_ENUMERATE);
     JS_DefineProperty(cx, result, "value", JS::UndefinedHandleValue, JSPROP_ENUMERATE);
 
     args.rval().setObject(*result);
     return true;
   }
 
-  JS_DefineProperty(cx, result, "done", false, JSPROP_ENUMERATE);
+  JS_DefineProperty(cx, result, "done", JS::FalseHandleValue, JSPROP_ENUMERATE);
 
   JS::RootedValue key_val(cx);
   JS::RootedValue val_val(cx);

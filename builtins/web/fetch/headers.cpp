@@ -259,7 +259,6 @@ bool retrieve_value_for_header_from_list(JSContext *cx, JS::HandleObject self, s
   size_t len = headers_list->size();
   while (*index + 1 < len) {
     const host_api::HostString *next_key = &std::get<0>(*Headers::get_index(cx, self, *index + 1));
-    val = &std::get<1>(*Headers::get_index(cx, self, *index + 1));
     if (header_compare(*next_key, *key) != Ordering::Equal) {
       break;
     }
@@ -271,6 +270,7 @@ bool retrieve_value_for_header_from_list(JSContext *cx, JS::HandleObject self, s
     if (!str) {
       return false;
     }
+    val = &std::get<1>(*Headers::get_index(cx, self, *index + 1));
     RootedString next_str(cx, core::decode_byte_string(cx, *val));
     if (!next_str) {
       return false;
@@ -1199,12 +1199,11 @@ bool HeadersIterator::next(JSContext *cx, unsigned argc, Value *vp) {
   JS::RootedValue key_val(cx);
   JS::RootedValue val_val(cx);
 
-  // If there was a header prepend, we must recompute the distinct index for proper iteration.
-  // We detect prepends by checking the last_key sorting.
   if (type != ITER_TYPE_VALUES) {
     const host_api::HostString *key = &std::get<0>(*Headers::get_index(cx, headers, index));
-    char16_t *chars = reinterpret_cast<char16_t *>(malloc(key->len * 2));
-    for (int i = 0; i < key->len; ++i) {
+    size_t len = key->len;
+    JS::Latin1Char *chars = reinterpret_cast<JS::Latin1Char *>(malloc(len));
+    for (int i = 0; i < len; ++i) {
       const unsigned char ch = key->ptr[i];
       // headers should already be validated by here
       MOZ_ASSERT(ch <= 127 && VALID_NAME_CHARS[ch]);
@@ -1215,15 +1214,9 @@ bool HeadersIterator::next(JSContext *cx, unsigned argc, Value *vp) {
         chars[i] = ch;
       }
     }
-    JS::RootedString str(cx, JS_NewUCString(cx, JS::UniqueTwoByteChars{chars}, key->len));
-    if (!str) {
-      free(chars);
-      return false;
-    }
-    key_val = JS::StringValue(str);
+    key_val = JS::StringValue(JS_NewLatin1String(cx, JS::UniqueLatin1Chars(chars), len));
   }
 
-  // index is updated for multi-entry headers (but not distinct_index)
   if (type != ITER_TYPE_KEYS) {
     if (!retrieve_value_for_header_from_list(cx, headers, &index, &val_val, true)) {
       return false;
