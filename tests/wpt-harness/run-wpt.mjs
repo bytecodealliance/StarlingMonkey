@@ -222,8 +222,8 @@ async function run() {
     if (config.tests.updateExpectations) {
       console.log(`Expectations updated: ${expectationsUpdated}`);
       shutdown();
-    } else if (stats.unexpectedFail + stats.unexpectedPass != 0 || unexpectedFailure) {
-      shutdown('Unexpected failures or passes. Verify that these new results match your expectations and run with --update-expectations to update the recorded expectations.');
+    } else if (stats.unexpectedFail + stats.unexpectedPass + stats.missing != 0 || unexpectedFailure) {
+      shutdown('Unexpected failures, passes or missing results. Verify that these new results match your expectations and run with --update-expectations to update the recorded expectations.');
     } else {
       shutdown();
     }
