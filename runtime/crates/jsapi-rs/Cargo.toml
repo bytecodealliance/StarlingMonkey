@@ -1,15 +1,13 @@
 [package]
 name = "jsapi-rs"
 description = "Low-level bindings the Mozilla SpiderMonkey JavaScript engine."
-version = "0.124.0"
+version = "0.129.0"
 authors.workspace = true
 repository.workspace = true
 license.workspace = true
 edition.workspace = true
 
 [lib]
-#name = "jsapi_rs"
-#crate-type = ["staticlib"]
 # The generated jsapi.rs contains #[doc] strings which look like
 # doctests but are definitely not.
 doctest = false
@@ -19,10 +17,10 @@ debugmozjs = []
 profilemozjs = []
 jitspew = []
 streams = []
-default = ["debugmozjs", "streams"]
+oom_with_hook = []
+default = ["streams"]
 
 [dependencies]
-#encoding_c = "0.9.8"
-#encoding_c_mem = "0.2.6"
-libc = "0.2"
-#libz-sys = "1.1.13"
+encoding_c = "0.9.8"
+encoding_c_mem = "0.2.6"
+libc.workspace = true

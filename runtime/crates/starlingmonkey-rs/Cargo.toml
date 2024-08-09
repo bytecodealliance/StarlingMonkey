@@ -1,6 +1,6 @@
 [package]
 name = "starlingmonkey-rs"
-description = "Rust bindings to the StarlingMonkey JavaScript runtime."
+description = "Rust bindings for the StarlingMonkey JavaScript runtime."
 authors.workspace = true
 version.workspace = true
 repository.workspace = true
@@ -9,12 +9,6 @@ edition.workspace = true
 
 [lib]
 
-[features]
-debugmozjs = ['spidermonkey-rs/debugmozjs']
-jitspew = ['spidermonkey-rs/jitspew']
-profilemozjs = ['spidermonkey-rs/profilemozjs']
-streams = ['spidermonkey-rs/streams']
-
 [dependencies]
 spidermonkey-rs.workspace = true
-wit-bindgen = "0.28.0"
+wit-bindgen = "0.29.0"

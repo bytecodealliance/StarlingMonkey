@@ -7,9 +7,6 @@ repository.workspace = true
 license.workspace = true
 edition.workspace = true
 
-[lib]
-doctest = false
-
 [features]
 debugmozjs = ['jsapi-rs/debugmozjs']
 jitspew = ['jsapi-rs/jitspew']
@@ -18,9 +15,7 @@ streams = ['jsapi-rs/streams']
 
 [dependencies]
 jsapi-rs.workspace = true
+libc.workspace = true
 lazy_static = "1"
-libc = "0.2"
 log = "0.4"
 num-traits = "0.2"
-
-[build-dependencies]

@@ -121,4 +121,4 @@ add_builtin(
     INCLUDE_DIRS
         runtime)
 
-add_rust_builtin(test-builtin)
+add_rust_builtin(test-builtin "${CMAKE_CURRENT_SOURCE_DIR}/runtime/crates/test-builtin")

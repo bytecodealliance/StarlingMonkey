@@ -97,9 +97,10 @@ function(add_builtin)
 endfunction()
 
 
-function(add_rust_builtin)
+function(add_rust_builtin name path)
     # TODO: restore additional config args
-    list(GET ARGN 0 LIB_NAME)
+    set(LIB_NAME ${name})
+    set(LIB_PATH ${path})
     set(DEFAULT_ENABLE ON)
     set(LIB_TARGET_NAME ${LIB_NAME})
     string(REPLACE "-" "_" LIB_NAME ${LIB_NAME})
@@ -123,7 +124,7 @@ function(add_rust_builtin)
 
     message(STATUS "Adding builtin ${DESCRIPTION}")
 
-    target_link_libraries(builtins PRIVATE ${LIB_TARGET_NAME} rust-glue)
+    add_rust_lib(${name} ${path})
     add_dependencies(${LIB_TARGET_NAME} rust-bindings)
 
     file(APPEND $CACHE{INSTALL_BUILTINS} "RS_DEF(${LIB_NAME}_install)\n")

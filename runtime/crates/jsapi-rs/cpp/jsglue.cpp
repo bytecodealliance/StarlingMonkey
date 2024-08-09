@@ -1394,6 +1394,6 @@ void FinishOffThreadStencil(
 }
 #endif
 
-}
-
 }  // extern "C"
+
+}

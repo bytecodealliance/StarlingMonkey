@@ -148,6 +148,13 @@ fn get_env(name: &str) -> String {
     env::var(name).unwrap_or_else(|_| String::from(""))
 }
 
+fn build_debug_bindings() -> bool {
+    match get_env("DEBUG").as_str() {
+        "1" | "true" | "TRUE" => true,
+        _ => false,
+    }
+}
+
 trait BindgenConfig {
     const UNSAFE_IMPL_SYNC_TYPES: &'static [&'static str] = &[];
     fn unsafe_impl_sync_types(&self) -> &'static [&'static str] {
@@ -214,7 +221,7 @@ trait BindgenConfig {
         Self::BLOCKLIST_TYPES
     }
 
-    const RAW_LINES: &'static [&'static str] = &[];
+    const RAW_LINES: &'static [&'static str];
 
     /// Definitions for types that were blacklisted
     const MODULE_RAW_LINES: &'static [(&'static str, &'static str)];
@@ -242,11 +249,8 @@ trait BindgenConfig {
             "-m32"
         ];
 
-        match get_env("DEBUG").as_str() {
-            "1" | "true" | "TRUE" => {
-                result.extend(& ["-DJS_GC_ZEAL", "-DDEBUG", "-DJS_DEBUG"]);
-            }
-            _ => {}
+        if build_debug_bindings() {
+            result.extend(& ["-DJS_GC_ZEAL", "-DDEBUG", "-DJS_DEBUG"]);
         }
 
         result
@@ -352,7 +356,12 @@ impl BindgenConfig for JSAPIBindgenConfig {
     }
 
     fn out_file(&self) -> &str {
-        "jsapi-rs/src/jsapi/bindings.rs"
+
+        if build_debug_bindings() {
+            "jsapi-rs/src/jsapi/bindings_debug.rs"
+        } else {
+            "jsapi-rs/src/jsapi/bindings_release.rs"
+        }
     }
 }
 

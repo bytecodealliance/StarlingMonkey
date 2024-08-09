@@ -7,7 +7,6 @@ license.workspace = true
 edition.workspace = true
 
 [lib]
-crate-type = ["staticlib"]
 
 [dependencies]
 starlingmonkey-rs.workspace = true
