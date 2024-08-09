@@ -112,6 +112,11 @@ struct HostString final {
     std::memcpy(ptr.get(), c_str, len);
     ptr[len] = '\0';
   }
+  HostString(const string_view &str) {
+    ptr = JS::UniqueChars(
+        static_cast<char *>(std::memcpy(malloc(str.size()), str.data(), str.size())));
+    len = str.size();
+  }
   HostString(JS::UniqueChars ptr, size_t len) : ptr{std::move(ptr)}, len{len} {}
 
   HostString(const HostString &other) = delete;
@@ -131,12 +136,6 @@ struct HostString final {
 
   iterator begin() { return this->ptr.get(); }
   iterator end() { return this->begin() + this->len; }
-
-  static HostString from_copy(string_view str) {
-    JS::UniqueChars ptr(
-        static_cast<char *>(std::memcpy(malloc(str.size()), str.data(), str.size())));
-    return HostString(std::move(ptr), str.size());
-  }
 
   const_iterator begin() const { return this->ptr.get(); }
   const_iterator end() const { return this->begin() + this->len; }

@@ -86,13 +86,18 @@ public:
     Immutable,
   };
 
+  static HeadersList *headers_list(JSObject *self);
+  static HeadersSortList *headers_sort_list(JSObject *self);
+  static Mode mode(JSObject *self);
+  static HeadersGuard guard(JSObject *self);
+
   /// Adds the valid given header name/value to `self`'s list of headers iff `self`
   /// doesn't already contain a header with that name.
   static bool set_valid_if_undefined(JSContext *cx, JS::HandleObject self, string_view name,
                                      string_view value);
 
   /// Validates and normalizes the name and value.
-  static host_api::HostString validate_header_name(JSContext *cx, HandleValue name_val, bool *err,
+  static host_api::HostString validate_header_name(JSContext *cx, HandleValue name_val,
                                                    const char *fun_name);
   /// Appends a value for a header name.
   static bool append_valid_header(JSContext *cx, JS::HandleObject self,
@@ -107,21 +112,6 @@ public:
   /// necessary in the process.
   static std::tuple<host_api::HostString, host_api::HostString> *
   get_index(JSContext *cx, JS::HandleObject self, size_t idx);
-
-  static Mode mode(JSObject *self) {
-    MOZ_ASSERT(Headers::is_instance(self));
-    Value modeVal = JS::GetReservedSlot(self, static_cast<size_t>(Slots::Mode));
-    if (modeVal.isUndefined()) {
-      return Mode::Uninitialized;
-    }
-    return static_cast<Mode>(modeVal.toInt32());
-  }
-
-  static HeadersGuard guard(JSObject *self) {
-    MOZ_ASSERT(Headers::is_instance(self));
-    Value modeVal = JS::GetReservedSlot(self, static_cast<size_t>(Slots::Guard));
-    return static_cast<HeadersGuard>(modeVal.toInt32());
-  }
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];

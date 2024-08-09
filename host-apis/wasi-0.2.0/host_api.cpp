@@ -385,7 +385,6 @@ std::vector<string_view> HttpHeaders::get_forbidden_response_headers() {
   return list;
 }
 
-// TODO: actually use WASI fields->clone() to avoid mutating the input!
 HttpHeaders *HttpHeadersReadOnly::clone() { return new HttpHeaders(*this); }
 
 Result<vector<tuple<HostString, HostString>>> HttpHeadersReadOnly::entries() const {

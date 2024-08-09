@@ -67,9 +67,8 @@ bool maybe_consume_sequence_or_record(JSContext *cx, JS::HandleValue initv, JS::
         if (done)
           return api::throw_error(cx, api::Errors::InvalidSequence, ctor_name, alt_text);
 
-        bool err = false;
-        T validated_key = validate(cx, key, &err, ctor_name);
-        if (err)
+        T validated_key = validate(cx, key, ctor_name);
+        if (!validated_key)
           return false;
 
         // Extract value.
@@ -109,9 +108,8 @@ bool maybe_consume_sequence_or_record(JSContext *cx, JS::HandleValue initv, JS::
       if (desc.isNothing() || !desc->enumerable())
         continue;
       // Get call is observable and must come after any value validation
-      bool err = false;
-      T validated_key = validate(cx, key, &err, ctor_name);
-      if (err)
+      T validated_key = validate(cx, key, ctor_name);
+      if (!validated_key)
         return false;
       if (!JS_GetPropertyById(cx, init, curId, &value))
         return false;

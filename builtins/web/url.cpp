@@ -164,8 +164,7 @@ jsurl::JSUrlSearchParams *URLSearchParams::get_params(JSObject *self) {
 }
 
 namespace {
-jsurl::SpecString append_impl_validate(JSContext *cx, JS::HandleValue key, bool *err,
-                                       const char *_) {
+jsurl::SpecString append_impl_validate(JSContext *cx, JS::HandleValue key, const char *_) {
   return core::encode_spec_string(cx, key);
 }
 bool append_impl(JSContext *cx, JS::HandleObject self, jsurl::SpecString key, JS::HandleValue val,
@@ -187,8 +186,7 @@ jsurl::SpecSlice URLSearchParams::serialize(JSContext *cx, JS::HandleObject self
 
 bool URLSearchParams::append(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(2)
-  bool err = false;
-  auto value = append_impl_validate(cx, args[0], &err, "append");
+  auto value = append_impl_validate(cx, args[0], "append");
   if (!append_impl(cx, self, value, args[1], "append"))
     return false;
 
