@@ -1,18 +1,10 @@
 [package]
 name = "rust-url"
 version = "0.1.0"
-edition = "2018"
+license = "Apache-2.0 WITH LLVM-exception"
+edition = "2021"
 
 [lib]
-crate-type = ["staticlib"]
 
 [dependencies]
 url = "2.5.2"
-
-[profile.release]
-lto = true
-panic = 'abort'
-
-[profile.dev]
-lto = true
-panic = 'abort'

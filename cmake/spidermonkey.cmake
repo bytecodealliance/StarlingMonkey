@@ -39,6 +39,6 @@ file(GLOB SM_OBJS ${SM_SOURCE_DIR}/lib/*.o)
 add_library(spidermonkey STATIC)
 target_sources(spidermonkey PRIVATE ${SM_OBJS} ${CMAKE_CURRENT_BINARY_DIR}/null.cpp)
 set_property(TARGET spidermonkey PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${SM_INCLUDE_DIR})
-target_link_libraries(spidermonkey PUBLIC ${SM_SOURCE_DIR}/lib/libjs_static.a ${SM_SOURCE_DIR}/lib/libjsrust.a)
+target_link_libraries(spidermonkey PUBLIC ${SM_SOURCE_DIR}/lib/libjs_static.a)
 
 add_compile_definitions("MOZ_JS_STREAMS")

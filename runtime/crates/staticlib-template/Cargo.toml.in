@@ -1,0 +1,24 @@
+[package]
+name = "rust-staticlib"
+edition = "2021"
+resolver = "2"
+
+[lib]
+crate-type = ["staticlib"]
+path = "rust-staticlib.rs"
+
+# Prevent inclusion in top-level workspace of the CMake src directory.
+[workspace]
+
+[profile.release]
+lto = true
+panic = 'abort'
+
+[profile.dev]
+lto = true
+panic = 'abort'
+
+[dependencies]
+spidermonkey-rs = { path = "${CMAKE_CURRENT_SOURCE_DIR}/runtime/crates/spidermonkey-rs", features = [${DEBUGMOZJS_FEATURE}] }
+starlingmonkey-rs = { path = "${CMAKE_CURRENT_SOURCE_DIR}/runtime/crates/starlingmonkey-rs" }
+# Additional dependencies appended by the CMake build system below here:

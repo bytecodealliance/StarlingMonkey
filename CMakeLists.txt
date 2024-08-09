@@ -37,9 +37,9 @@ include("openssl")
 include("host_api")
 include("build-crates")
 
-add_library(extension_api INTERFACE include/extension-api.h runtime/encode.h runtime/decode.h)
+add_library(extension_api INTERFACE include/extension-api.h runtime/cpp/encode.h runtime/cpp/decode.h)
 target_link_libraries(extension_api INTERFACE rust-url spidermonkey)
-target_include_directories(extension_api INTERFACE include deps/include runtime)
+target_include_directories(extension_api INTERFACE include deps/include runtime/cpp)
 
 include("builtins")
 
@@ -49,14 +49,14 @@ if (ENABLE_WPT)
 endif()
 
 add_executable(starling.wasm
-        runtime/js.cpp
-        runtime/allocator.cpp
-        runtime/encode.cpp
-        runtime/decode.cpp
-        runtime/engine.cpp
-        runtime/event_loop.cpp
-        runtime/builtin.cpp
-        runtime/script_loader.cpp
+        runtime/cpp/js.cpp
+        runtime/cpp/allocator.cpp
+        runtime/cpp/encode.cpp
+        runtime/cpp/decode.cpp
+        runtime/cpp/engine.cpp
+        runtime/cpp/event_loop.cpp
+        runtime/cpp/builtin.cpp
+        runtime/cpp/script_loader.cpp
 )
 
 option(USE_WASM_OPT "use wasm-opt to optimize the StarlingMonkey binary" ON)
@@ -89,7 +89,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(starling.wasm PRIVATE host_api extension_api builtins spidermonkey rust-url)
+target_link_libraries(starling.wasm PRIVATE host_api extension_api builtins spidermonkey rust_staticlib rust-glue)
 
 # build a compilation cache of ICs
 if(WEVAL)
@@ -112,9 +112,8 @@ endif()
 
 set(RUNTIME_FILE "starling.wasm")
 set(ADAPTER_FILE "preview1-adapter.wasm")
-configure_file("componentize.sh" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh" @ONLY)
+configure_file("componentize.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh" @ONLY)
 configure_file(${ADAPTER} "${CMAKE_CURRENT_BINARY_DIR}/${ADAPTER_FILE}" COPYONLY)
-configure_file(spin.toml spin.toml COPYONLY)
 
 function(componentize OUTPUT)
     set(options)

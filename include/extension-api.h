@@ -24,10 +24,10 @@ using JS::MutableHandleValue;
 using JS::PersistentRooted;
 using JS::PersistentRootedVector;
 
+namespace api {
+
 typedef int32_t PollableHandle;
 constexpr PollableHandle INVALID_POLLABLE_HANDLE = -1;
-
-namespace api {
 
 class AsyncTask;
 
@@ -37,7 +37,7 @@ class Engine {
 public:
   Engine();
   JSContext *cx();
-  HandleObject global();
+  JS::HandleObject global();
 
   /// Initialize the engine with the given filename
   bool initialize(const char * filename);
@@ -54,7 +54,7 @@ public:
    *
    * Once loaded, the instance is cached and reused as a singleton.
    */
-  bool define_builtin_module(const char *id, HandleValue builtin);
+  bool define_builtin_module(const char *id, JS::HandleValue builtin);
 
   /**
    * Treat the top-level script as a module or classic JS script.
@@ -105,7 +105,7 @@ public:
    * Get the JS value associated with the top-level script execution -
    * the last expression for a script, or the module namespace for a module.
    */
-  HandleValue script_value();
+  JS::HandleValue script_value();
 
   bool has_pending_async_tasks();
   void queue_async_task(AsyncTask *task);
@@ -118,11 +118,11 @@ public:
   bool dump_value(JS::Value val, FILE *fp = stdout);
   bool print_stack(FILE *fp);
   void dump_pending_exception(const char *description = "");
-  void dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp);
+  void dump_promise_rejection(HandleValue reason, JS::HandleObject promise, FILE *fp);
 };
 
 
-typedef bool (*TaskCompletionCallback)(JSContext* cx, HandleObject receiver);
+typedef bool (*TaskCompletionCallback)(JSContext* cx, JS::HandleObject receiver);
 
 class AsyncTask {
 protected:

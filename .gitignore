@@ -22,7 +22,7 @@
 /.spin
 
 # Rust compilation output
-/target
+/runtime/crates/target/
 
 /tests/e2e/*/*.wasm
 /tests/e2e/*/*.log

@@ -213,7 +213,7 @@ class IncomingBodyHandle final : public WASIHandle<host_api::HttpIncomingBody> {
 
 public:
   explicit IncomingBodyHandle(HandleOps<host_api::HttpIncomingBody>::owned handle)
-      : WASIHandle(handle), pollable_handle_(INVALID_POLLABLE_HANDLE) {
+      : WASIHandle(handle), pollable_handle_(api::INVALID_POLLABLE_HANDLE) {
     HandleOps<InputStream>::owned stream{};
     if (!wasi_http_0_2_0_types_method_incoming_body_stream(borrow(), &stream)) {
       MOZ_ASSERT_UNREACHABLE("Getting a body's stream should never fail");
@@ -234,7 +234,7 @@ class OutgoingBodyHandle final : public WASIHandle<host_api::HttpOutgoingBody> {
 
 public:
   explicit OutgoingBodyHandle(HandleOps<host_api::HttpOutgoingBody>::owned handle)
-      : WASIHandle(handle), pollable_handle_(INVALID_POLLABLE_HANDLE) {
+      : WASIHandle(handle), pollable_handle_(api::INVALID_POLLABLE_HANDLE) {
     HandleOps<OutputStream>::owned stream{};
     if (!wasi_http_0_2_0_types_method_outgoing_body_write(borrow(), &stream)) {
       MOZ_ASSERT_UNREACHABLE("Getting a body's stream should never fail");
@@ -837,7 +837,7 @@ Result<Void> HttpOutgoingBody::close() {
     }
   }
 
-  if (state->pollable_handle_ != INVALID_POLLABLE_HANDLE) {
+  if (state->pollable_handle_ != api::INVALID_POLLABLE_HANDLE) {
     wasi_io_0_2_0_poll_pollable_drop_own(own_pollable_t{state->pollable_handle_});
   }
   wasi_io_0_2_0_streams_output_stream_drop_own({state->stream_handle_});
@@ -852,7 +852,7 @@ Result<Void> HttpOutgoingBody::close() {
 }
 Result<PollableHandle> HttpOutgoingBody::subscribe() {
   auto state = static_cast<OutgoingBodyHandle *>(handle_state_.get());
-  if (state->pollable_handle_ == INVALID_POLLABLE_HANDLE) {
+  if (state->pollable_handle_ == api::INVALID_POLLABLE_HANDLE) {
     Borrow<OutputStream> borrow(state->stream_handle_);
     state->pollable_handle_ = wasi_io_0_2_0_streams_method_output_stream_subscribe(borrow).__handle;
   }
@@ -861,11 +861,11 @@ Result<PollableHandle> HttpOutgoingBody::subscribe() {
 
 void HttpOutgoingBody::unsubscribe() {
   auto state = static_cast<OutgoingBodyHandle *>(handle_state_.get());
-  if (state->pollable_handle_ == INVALID_POLLABLE_HANDLE) {
+  if (state->pollable_handle_ == api::INVALID_POLLABLE_HANDLE) {
     return;
   }
   wasi_io_0_2_0_poll_pollable_drop_own(own_pollable_t{state->pollable_handle_});
-  state->pollable_handle_ = INVALID_POLLABLE_HANDLE;
+  state->pollable_handle_ = api::INVALID_POLLABLE_HANDLE;
 }
 
 static const char *http_method_names[9] = {"GET",     "HEAD",    "POST",  "PUT",  "DELETE",
@@ -1039,11 +1039,11 @@ Result<PollableHandle> HttpIncomingBody::subscribe() {
 }
 void HttpIncomingBody::unsubscribe() {
   auto state = static_cast<IncomingBodyHandle *>(handle_state_.get());
-  if (state->pollable_handle_ == INVALID_POLLABLE_HANDLE) {
+  if (state->pollable_handle_ == api::INVALID_POLLABLE_HANDLE) {
     return;
   }
   wasi_io_0_2_0_poll_pollable_drop_own(own_pollable_t{state->pollable_handle_});
-  state->pollable_handle_ = INVALID_POLLABLE_HANDLE;
+  state->pollable_handle_ = api::INVALID_POLLABLE_HANDLE;
 }
 
 FutureHttpIncomingResponse::FutureHttpIncomingResponse(std::unique_ptr<HandleState> state) {
