@@ -2,7 +2,7 @@
 # NOTE: This file must not be called `corrosion.cmake`, because otherwise it'll be called recursively instead of the
 # same-named one coming with Corrosion.
 
-set(Rust_CARGO_TARGET wasm32-wasi)
+set(Rust_CARGO_TARGET wasm32-wasip1)
 # Necessary to make cross-compiling to wasm32-wasi work for crates with -sys dependencies.
 set(Rust_CARGO_TARGET_LINK_NATIVE_LIBS "")
 
