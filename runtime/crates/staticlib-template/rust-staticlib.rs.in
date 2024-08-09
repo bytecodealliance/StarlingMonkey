@@ -1,0 +1,5 @@
+// Build-system generated use statements for all crates treated as dependencies by the CMake build
+// system.
+// Instead of compiling all of them to individual static libraries, we will compile them to a single
+// one, avoiding issues with duplicated symbols that arise from linking multiple static libraries
+// compiled from Rust.

@@ -4,15 +4,6 @@ version = "0.1.0"
 edition = "2018"
 
 [lib]
-crate-type = ["staticlib"]
 
 [dependencies]
 url = "2.5.2"
-
-[profile.release]
-lto = true
-panic = 'abort'
-
-[profile.dev]
-lto = true
-panic = 'abort'

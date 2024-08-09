@@ -1,0 +1,22 @@
+[package]
+name = "rust-staticlib"
+edition = "2021"
+resolver = "2"
+
+[lib]
+crate-type = ["staticlib"]
+path = "rust-staticlib.rs"
+
+# Prevent inclusion in top-level workspace of the CMake src directory.
+[workspace]
+
+[profile.release]
+lto = true
+panic = 'abort'
+
+[profile.dev]
+lto = true
+panic = 'abort'
+
+[dependencies]
+# Dependencies appended by the CMake build system below here:

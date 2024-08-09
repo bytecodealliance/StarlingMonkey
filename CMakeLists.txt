@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.27)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 if (DEFINED ENV{HOST_API})
     set(HOST_API $ENV{HOST_API})
@@ -66,7 +67,7 @@ add_executable(starling-raw.wasm
         runtime/debugger.cpp
 )
 
-target_link_libraries(starling-raw.wasm PRIVATE host_api extension_api builtins spidermonkey rust-url multipart)
+target_link_libraries(starling-raw.wasm PRIVATE host_api extension_api builtins spidermonkey rust-crates)
 
 option(USE_WASM_OPT "use wasm-opt to optimize the StarlingMonkey binary" ON)
 
@@ -119,11 +120,10 @@ endif()
 
 set(RUNTIME_FILE "starling-raw.wasm")
 set(ADAPTER_FILE "preview1-adapter.wasm")
-configure_file("componentize.sh" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh" @ONLY)
+configure_file("componentize.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh" @ONLY)
 if(EXISTS ${ADAPTER})
     configure_file(${ADAPTER} "${CMAKE_CURRENT_BINARY_DIR}/${ADAPTER_FILE}" COPYONLY)
 endif()
-configure_file(spin.toml spin.toml COPYONLY)
 
 function(componentize OUTPUT)
     set(options)
