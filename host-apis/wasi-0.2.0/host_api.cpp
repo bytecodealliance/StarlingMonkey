@@ -359,30 +359,22 @@ HttpHeaders::HttpHeaders(const HttpHeadersReadOnly &headers) : HttpHeadersReadOn
 
 // We currently only guard against a single request header, instead of the full list in
 // https://fetch.spec.whatwg.org/#forbidden-request-header.
-static std::vector forbidden_request_headers = {
+static const std::vector forbidden_request_headers = {
     "host",
 };
 
 // We currently only guard against a single response header, instead of the full list in
 // https://fetch.spec.whatwg.org/#forbidden-request-header.
-static std::vector forbidden_response_headers = {
+static const std::vector forbidden_response_headers = {
     "host",
 };
 
-std::vector<string_view> HttpHeaders::get_forbidden_request_headers() {
-  std::vector<string_view> list;
-  for (auto it = forbidden_request_headers.begin(); it != forbidden_request_headers.end(); ++it) {
-    list.push_back(*it);
-  }
-  return list;
+const std::vector<const char *> &HttpHeaders::get_forbidden_request_headers() {
+  return forbidden_request_headers;
 }
 
-std::vector<string_view> HttpHeaders::get_forbidden_response_headers() {
-  std::vector<string_view> list;
-  for (auto it = forbidden_response_headers.begin(); it != forbidden_response_headers.end(); ++it) {
-    list.push_back(*it);
-  }
-  return list;
+const std::vector<const char *> &HttpHeaders::get_forbidden_response_headers() {
+  return forbidden_response_headers;
 }
 
 HttpHeaders *HttpHeadersReadOnly::clone() { return new HttpHeaders(*this); }

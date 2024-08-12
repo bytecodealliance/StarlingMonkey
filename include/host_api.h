@@ -386,8 +386,8 @@ public:
   Result<Void> append(string_view name, string_view value);
   Result<Void> remove(string_view name);
 
-  static std::vector<string_view> get_forbidden_request_headers();
-  static std::vector<string_view> get_forbidden_response_headers();
+  static const std::vector<const char *> &get_forbidden_request_headers();
+  static const std::vector<const char *> &get_forbidden_response_headers();
 };
 
 class HttpRequestResponseBase : public Resource {

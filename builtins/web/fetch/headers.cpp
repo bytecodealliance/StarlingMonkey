@@ -107,8 +107,8 @@ host_api::HostString normalize_and_validate_header_value(JSContext *cx, HandleVa
   return value;
 }
 
-static std::vector<string_view> forbidden_request_headers;
-static std::vector<string_view> forbidden_response_headers;
+static const std::vector<const char *> *forbidden_request_headers;
+static const std::vector<const char *> *forbidden_response_headers;
 
 enum class Ordering { Less, Equal, Greater };
 
@@ -349,7 +349,7 @@ bool validate_guard(JSContext *cx, HandleObject self, string_view header_name, c
   case Headers::HeadersGuard::Immutable:
     return api::throw_error(cx, FetchErrors::HeadersImmutable, fun_name);
   case Headers::HeadersGuard::Request:
-    for (auto forbidden_header_name : forbidden_request_headers) {
+    for (auto forbidden_header_name : *forbidden_request_headers) {
       if (header_compare(header_name, forbidden_header_name) == Ordering::Equal) {
         *is_valid = false;
         return true;
@@ -358,7 +358,7 @@ bool validate_guard(JSContext *cx, HandleObject self, string_view header_name, c
     *is_valid = true;
     return true;
   case Headers::HeadersGuard::Response:
-    for (auto forbidden_header_name : forbidden_response_headers) {
+    for (auto forbidden_header_name : *forbidden_response_headers) {
       if (header_compare(header_name, forbidden_header_name) == Ordering::Equal) {
         *is_valid = false;
         return true;
@@ -1017,12 +1017,16 @@ bool Headers::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 bool Headers::init_class(JSContext *cx, JS::HandleObject global) {
   // get the host forbidden headers for guard checks
-  forbidden_request_headers = host_api::HttpHeaders::get_forbidden_request_headers();
-  forbidden_response_headers = host_api::HttpHeaders::get_forbidden_response_headers();
+  forbidden_request_headers = &host_api::HttpHeaders::get_forbidden_request_headers();
+  forbidden_response_headers = &host_api::HttpHeaders::get_forbidden_response_headers();
 
   // sort the forbidden headers with the lowercase-invariant comparator
-  std::sort(forbidden_request_headers.begin(), forbidden_request_headers.end(), HeaderCompare());
-  std::sort(forbidden_response_headers.begin(), forbidden_response_headers.end(), HeaderCompare());
+  MOZ_RELEASE_ASSERT(std::is_sorted(forbidden_request_headers->begin(),
+                                    forbidden_request_headers->end(), HeaderCompare()),
+                     "Forbidden request headers must be sorted");
+  MOZ_RELEASE_ASSERT(std::is_sorted(forbidden_response_headers->begin(),
+                                    forbidden_response_headers->end(), HeaderCompare()),
+                     "Forbidden response headers must be sorted");
 
   if (!init_class_impl(cx, global)) {
     return false;
