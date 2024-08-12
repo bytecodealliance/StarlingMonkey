@@ -2,6 +2,7 @@
 #define JS_RUNTIME_HOST_API_H
 
 #include <cstdint>
+#include <list>
 #include <optional>
 #include <span>
 #include <string>
@@ -105,7 +106,17 @@ struct HostString final {
 
   HostString() = default;
   HostString(std::nullptr_t) : HostString() {}
-  HostString(const char *c_str);
+  HostString(const char *c_str) {
+    len = strlen(c_str);
+    ptr = JS::UniqueChars(static_cast<char *>(malloc(len + 1)));
+    std::memcpy(ptr.get(), c_str, len);
+    ptr[len] = '\0';
+  }
+  HostString(const string_view &str) {
+    ptr = JS::UniqueChars(
+        static_cast<char *>(std::memcpy(malloc(str.size()), str.data(), str.size())));
+    len = str.size();
+  }
   HostString(JS::UniqueChars ptr, size_t len) : ptr{std::move(ptr)}, len{len} {}
 
   HostString(const HostString &other) = delete;
@@ -218,7 +229,7 @@ public:
   virtual ~Resource();
 
   typedef uint8_t HandleNS;
-  static HandleNS next_handle_ns(const char* ns_name);
+  static HandleNS next_handle_ns(const char *ns_name);
 
   /// Returns true if this resource handle has been initialized and is still valid.
   bool valid() const;
@@ -324,12 +335,6 @@ public:
   void unsubscribe() override;
 };
 
-enum class HttpHeadersGuard {
-  None,
-  Request,
-  Response,
-};
-
 class HttpHeadersReadOnly : public Resource {
   friend HttpIncomingResponse;
   friend HttpIncomingRequest;
@@ -346,12 +351,10 @@ public:
   explicit HttpHeadersReadOnly(std::unique_ptr<HandleState> handle);
   HttpHeadersReadOnly(const HttpHeadersReadOnly &headers) = delete;
 
-  /// Clone the headers, while removing the headers not passing the given `guard`, as specified
-  /// here: https://fetch.spec.whatwg.org/#headers-validate.
-  HttpHeaders* clone(HttpHeadersGuard guard);
+  HttpHeaders *clone();
 
   virtual bool is_writable() { return false; };
-  virtual HttpHeaders* as_writable() {
+  virtual HttpHeaders *as_writable() {
     MOZ_ASSERT_UNREACHABLE();
     return nullptr;
   };
@@ -368,28 +371,23 @@ class HttpHeaders final : public HttpHeadersReadOnly {
   friend HttpOutgoingResponse;
   friend HttpOutgoingRequest;
 
-  HttpHeadersGuard guard_;
-
-  HttpHeaders(HttpHeadersGuard guard, std::unique_ptr<HandleState> handle);
+  HttpHeaders(std::unique_ptr<HandleState> handle);
 
 public:
-  HttpHeaders() = delete;
-  explicit HttpHeaders(HttpHeadersGuard guard);
-  explicit HttpHeaders(HttpHeadersGuard guard, const HttpHeadersReadOnly &headers);
+  HttpHeaders();
+  HttpHeaders(const HttpHeadersReadOnly &headers);
 
-  static Result<HttpHeaders*> FromEntries(HttpHeadersGuard guard,
-                                           vector<tuple<HostString, HostString>> &entries);
+  static Result<HttpHeaders *> FromEntries(vector<tuple<HostString, HostString>> &entries);
 
   bool is_writable() override { return true; };
-  HttpHeaders* as_writable() override {
-    return this;
-  };
+  HttpHeaders *as_writable() override { return this; };
 
   Result<Void> set(string_view name, string_view value);
   Result<Void> append(string_view name, string_view value);
   Result<Void> remove(string_view name);
 
-  static bool check_guard(HttpHeadersGuard guard, string_view header_name);
+  static const std::vector<const char *> &get_forbidden_request_headers();
+  static const std::vector<const char *> &get_forbidden_response_headers();
 };
 
 class HttpRequestResponseBase : public Resource {
@@ -442,7 +440,7 @@ public:
 
 class HttpIncomingRequest final : public HttpRequest, public HttpIncomingBodyOwner {
 public:
-  using RequestHandler = bool (*)(HttpIncomingRequest* request);
+  using RequestHandler = bool (*)(HttpIncomingRequest *request);
 
   HttpIncomingRequest() = delete;
   explicit HttpIncomingRequest(std::unique_ptr<HandleState> handle);

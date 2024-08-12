@@ -40,6 +40,8 @@ struct SpecString {
       cap(cap)
   {}
 
+  /// Conversion to a bool, testing for an empty pointer.
+  operator bool() const { return this->data != nullptr; }
 
   /// Conversion to a `jsurl::SpecString`.
   operator const std::string_view() const {

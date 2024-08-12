@@ -15,6 +15,6 @@
     "status": "PASS"
   },
   "Iterate combined values in sorted order": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }

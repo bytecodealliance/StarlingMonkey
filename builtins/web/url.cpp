@@ -5,10 +5,6 @@
 #include "sequence.hpp"
 #include "url.h"
 
-constexpr int ITERTYPE_ENTRIES = 0;
-constexpr int ITERTYPE_KEYS = 1;
-constexpr int ITERTYPE_VALUES = 2;
-
 namespace builtins {
 namespace web {
 namespace url {
@@ -28,19 +24,19 @@ bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) 
   jsurl::params_at(params, index, &param);
 
   if (param.done) {
-    JS_DefineProperty(cx, result, "done", true, JSPROP_ENUMERATE);
+    JS_DefineProperty(cx, result, "done", JS::TrueHandleValue, JSPROP_ENUMERATE);
     JS_DefineProperty(cx, result, "value", JS::UndefinedHandleValue, JSPROP_ENUMERATE);
 
     args.rval().setObject(*result);
     return true;
   }
 
-  JS_DefineProperty(cx, result, "done", false, JSPROP_ENUMERATE);
+  JS_DefineProperty(cx, result, "done", JS::FalseHandleValue, JSPROP_ENUMERATE);
 
   JS::RootedValue key_val(cx);
   JS::RootedValue val_val(cx);
 
-  if (type != ITERTYPE_VALUES) {
+  if (type != ITER_TYPE_VALUES) {
     auto chars = JS::UTF8Chars((char *)param.name.data, param.name.len);
     JS::RootedString str(cx, JS_NewStringCopyUTF8N(cx, chars));
     if (!str)
@@ -48,7 +44,7 @@ bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) 
     key_val = JS::StringValue(str);
   }
 
-  if (type != ITERTYPE_KEYS) {
+  if (type != ITER_TYPE_KEYS) {
     auto chars = JS::UTF8Chars((char *)param.value.data, param.value.len);
     JS::RootedString str(cx, JS_NewStringCopyUTF8N(cx, chars));
     if (!str)
@@ -59,7 +55,7 @@ bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) 
   JS::RootedValue result_val(cx);
 
   switch (type) {
-  case ITERTYPE_ENTRIES: {
+  case ITER_TYPE_ENTRIES: {
     JS::RootedObject pair(cx, JS::NewArrayObject(cx, 2));
     if (!pair)
       return false;
@@ -68,11 +64,11 @@ bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) 
     result_val = JS::ObjectValue(*pair);
     break;
   }
-  case ITERTYPE_KEYS: {
+  case ITER_TYPE_KEYS: {
     result_val = key_val;
     break;
   }
-  case ITERTYPE_VALUES: {
+  case ITER_TYPE_VALUES: {
     result_val = val_val;
     break;
   }
@@ -104,13 +100,6 @@ const JSPropertySpec URLSearchParamsIterator::properties[] = {
     JS_PS_END,
 };
 
-// This constructor will be deleted from the class prototype right after class
-// initialization.
-bool URLSearchParamsIterator::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
-  MOZ_RELEASE_ASSERT(false, "Should be deleted");
-  return false;
-}
-
 bool URLSearchParamsIterator::init_class(JSContext *cx, JS::HandleObject global) {
   JS::RootedObject iterator_proto(cx, JS::GetRealmIteratorPrototype(cx));
   if (!iterator_proto)
@@ -127,7 +116,7 @@ bool URLSearchParamsIterator::init_class(JSContext *cx, JS::HandleObject global)
 }
 
 JSObject *URLSearchParamsIterator::create(JSContext *cx, JS::HandleObject params, uint8_t type) {
-  MOZ_RELEASE_ASSERT(type <= ITERTYPE_VALUES);
+  MOZ_RELEASE_ASSERT(type <= ITER_TYPE_VALUES);
 
   JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
   if (!self)
@@ -158,9 +147,9 @@ const JSFunctionSpec URLSearchParams::methods[] = {
     JS_FN("sort", URLSearchParams::sort, 0, JSPROP_ENUMERATE),
     JS_FN("toString", URLSearchParams::toString, 0, JSPROP_ENUMERATE),
     JS_FN("forEach", URLSearchParams::forEach, 0, JSPROP_ENUMERATE),
-    JS_FN("entries", URLSearchParams::entries, 0, 0),
-    JS_FN("keys", URLSearchParams::keys, 0, 0),
-    JS_FN("values", URLSearchParams::values, 0, 0),
+    JS_FN("entries", URLSearchParams::entries, 0, JSPROP_ENUMERATE),
+    JS_FN("keys", URLSearchParams::keys, 0, JSPROP_ENUMERATE),
+    JS_FN("values", URLSearchParams::values, 0, JSPROP_ENUMERATE),
     // [Symbol.iterator] added in init_class.
     JS_FS_END,
 };
@@ -175,19 +164,18 @@ jsurl::JSUrlSearchParams *URLSearchParams::get_params(JSObject *self) {
 }
 
 namespace {
-bool append_impl(JSContext *cx, JS::HandleObject self, JS::HandleValue key, JS::HandleValue val,
+jsurl::SpecString append_impl_validate(JSContext *cx, JS::HandleValue key, const char *_) {
+  return core::encode_spec_string(cx, key);
+}
+bool append_impl(JSContext *cx, JS::HandleObject self, jsurl::SpecString key, JS::HandleValue val,
                  const char *_) {
   const auto params = URLSearchParams::get_params(self);
-
-  auto name = core::encode_spec_string(cx, key);
-  if (!name.data)
-    return false;
 
   auto value = core::encode_spec_string(cx, val);
   if (!value.data)
     return false;
 
-  jsurl::params_append(params, name, value);
+  jsurl::params_append(params, key, value);
   return true;
 }
 } // namespace
@@ -198,7 +186,8 @@ jsurl::SpecSlice URLSearchParams::serialize(JSContext *cx, JS::HandleObject self
 
 bool URLSearchParams::append(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(2)
-  if (!append_impl(cx, self, args[0], args[1], "append"))
+  auto value = append_impl_validate(cx, args[0], "append");
+  if (!append_impl(cx, self, value, args[1], "append"))
     return false;
 
   args.rval().setUndefined();
@@ -331,66 +320,7 @@ bool URLSearchParams::toString(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
-bool URLSearchParams::forEach(JSContext *cx, unsigned argc, JS::Value *vp) {
-  METHOD_HEADER(1)
-  const auto params = get_params(self);
-
-  if (!args[0].isObject() || !JS::IsCallable(&args[0].toObject())) {
-    return api::throw_error(cx, api::Errors::ForEachCallback, "URLSearchParams");
-  }
-
-  JS::HandleValue callback = args[0];
-  JS::HandleValue thisv = args.get(1);
-
-  JS::RootedValueArray<3> newArgs(cx);
-  newArgs[2].setObject(*self);
-  JS::RootedValue rval(cx);
-
-  jsurl::JSSearchParam param{jsurl::SpecSlice(nullptr, 0), jsurl::SpecSlice(nullptr, 0), false};
-  JS::RootedString name_str(cx);
-  JS::RootedString val_str(cx);
-  size_t index = 0;
-  while (true) {
-    jsurl::params_at(params, index, &param);
-    if (param.done)
-      break;
-
-    name_str = JS_NewStringCopyUTF8N(cx, JS::UTF8Chars((char *)param.name.data, param.name.len));
-    if (!name_str)
-      return false;
-    newArgs[1].setString(name_str);
-
-    val_str = JS_NewStringCopyUTF8N(cx, JS::UTF8Chars((char *)param.value.data, param.value.len));
-    if (!val_str)
-      return false;
-    newArgs[0].setString(val_str);
-
-    if (!JS::Call(cx, thisv, callback, newArgs, &rval))
-      return false;
-
-    index++;
-  }
-
-  args.rval().setUndefined();
-  return true;
-}
-
-#define ITERATOR_METHOD(name, type)                                                                \
-  bool URLSearchParams::name(JSContext *cx, unsigned argc, JS::Value *vp) {                        \
-    METHOD_HEADER(0)                                                                               \
-                                                                                                   \
-    JS::RootedObject iter(cx, URLSearchParamsIterator::create(cx, self, type));                    \
-    if (!iter)                                                                                     \
-      return false;                                                                                \
-    args.rval().setObject(*iter);                                                                  \
-    return true;                                                                                   \
-  }
-
-ITERATOR_METHOD(entries, ITERTYPE_ENTRIES);
-ITERATOR_METHOD(keys, ITERTYPE_KEYS);
-ITERATOR_METHOD(values, ITERTYPE_VALUES);
-
-#undef ITERTYPE_VALUES
+BUILTIN_ITERATOR_METHODS(URLSearchParams)
 
 bool URLSearchParams::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("URLSearchParams", 0);
@@ -424,8 +354,8 @@ JSObject *URLSearchParams::create(JSContext *cx, JS::HandleObject self,
 
   bool consumed = false;
   const char *alt_text = ", or a value that can be stringified";
-  if (!core::maybe_consume_sequence_or_record<append_impl>(cx, params_val, self, &consumed,
-                                                           "URLSearchParams", alt_text)) {
+  if (!core::maybe_consume_sequence_or_record<jsurl::SpecString, append_impl_validate, append_impl>(
+          cx, params_val, self, &consumed, "URLSearchParams", alt_text)) {
     return nullptr;
   }
 
@@ -642,7 +572,7 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, JS::HandleValue url_
 
 JSObject *URL::create(JSContext *cx, JS::HandleObject self, JS::HandleValue url_val,
                       JS::HandleObject base_obj) {
-  jsurl::JSUrl* base = nullptr;
+  jsurl::JSUrl *base = nullptr;
   if (is_instance(base_obj)) {
     base = static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(base_obj, Slots::Url).toPrivate());
   }

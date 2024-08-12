@@ -1,5 +1,5 @@
 import { serveTest } from '../test-server.js';
-import { strictEqual, deepStrictEqual, throws } from '../assert.js';
+import { strictEqual, deepStrictEqual, throws } from '../../assert.js';
 
 export const handler = serveTest(async (t) => {
   await t.test('headers-non-ascii-latin1-field-value', async () => {

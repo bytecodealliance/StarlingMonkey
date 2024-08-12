@@ -9,14 +9,15 @@ namespace web {
 namespace fetch {
 
 class Headers final : public BuiltinImpl<Headers> {
-  static bool get(JSContext *cx, unsigned argc, JS::Value *vp);
-  static bool set(JSContext *cx, unsigned argc, JS::Value *vp);
-  static bool has(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool append(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool delete_(JSContext *cx, unsigned argc, JS::Value *vp);
-  static bool forEach(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool entries(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool forEach(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool get(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool getSetCookie(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool has(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool keys(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool set(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool values(JSContext *cx, unsigned argc, JS::Value *vp);
 
 public:
@@ -53,47 +54,64 @@ public:
   /// If a header is added, deleted, or replaced on an instance in `CachedInContent` mode, the
   /// instance transitions to `ContentOnly` mode, and the underlying resource handle is discarded.
   enum class Mode {
-    HostOnly, // Headers are stored in the host.
+    HostOnly,        // Headers are stored in the host.
     CachedInContent, // Host holds canonical headers, content a cached copy.
-    ContentOnly, // Headers are stored in a Map held by the `Entries` slot.
-    Uninitialized, // Headers have not been initialized.
+    ContentOnly,     // Headers are stored in a Map held by the `Entries` slot.
+    Uninitialized,   // Headers have not been initialized.
   };
+
+  // Headers internal data structure is a list of key-value pairs, ready to go on the wire as
+  // owned host strings.
+  using HeadersList = std::vector<std::tuple<host_api::HostString, host_api::HostString>>;
+  // A sort list is maintained of ordered indicies of the the sorted lowercase keys of main headers
+  // list, with each index of HeadersList always being present in this list once and only once.
+  // All lookups are done as indices in this list, which then map to indices in HeadersList.
+  // When this list is empty, that means the sort list is not valid and needs to be computed. For
+  // example, it is cleared after an insertion. It is recomputed lazily for every lookup.
+  using HeadersSortList = std::vector<size_t>;
 
   enum class Slots {
     Handle,
-    Entries, // Map holding headers if they are available in-content.
+    HeadersList,
+    HeadersSortList,
     Mode,
     Guard,
     Count,
   };
 
-  /**
-   * Adds the given header name/value to `self`'s list of headers iff `self`
-   * doesn't already contain a header with that name.
-   */
-  static bool set_if_undefined(JSContext *cx, JS::HandleObject self, string_view name,
-                               string_view value);
+  enum class HeadersGuard {
+    None,
+    Request,
+    Response,
+    Immutable,
+  };
 
-  /// Appends a value for a header name.
-  //
+  static HeadersList *headers_list(JSObject *self);
+  static HeadersSortList *headers_sort_list(JSObject *self);
+  static Mode mode(JSObject *self);
+  static HeadersGuard guard(JSObject *self);
+
+  /// Adds the valid given header name/value to `self`'s list of headers iff `self`
+  /// doesn't already contain a header with that name.
+  static bool set_valid_if_undefined(JSContext *cx, JS::HandleObject self, string_view name,
+                                     string_view value);
+
   /// Validates and normalizes the name and value.
-  static bool append_header_value(JSContext *cx, JS::HandleObject self, JS::HandleValue name,
-                                  JS::HandleValue value, const char *fun_name);
+  static host_api::HostString validate_header_name(JSContext *cx, HandleValue name_val,
+                                                   const char *fun_name);
+  /// Appends a value for a header name.
+  static bool append_valid_header(JSContext *cx, JS::HandleObject self,
+                                  host_api::HostString valid_key, JS::HandleValue value,
+                                  const char *fun_name);
 
-  static Mode mode(JSObject* self) {
-    MOZ_ASSERT(Headers::is_instance(self));
-    Value modeVal = JS::GetReservedSlot(self, static_cast<size_t>(Slots::Mode));
-    if (modeVal.isUndefined()) {
-      return Mode::Uninitialized;
-    }
-    return static_cast<Mode>(modeVal.toInt32());
-  }
+  /// Lookup the given header key, returning the sorted header index.
+  /// This index is guaranteed to be valid, so long as mutations are not made.
+  static std::optional<size_t> lookup(JSContext *cx, JS::HandleObject self, string_view key);
 
-  static host_api::HttpHeadersGuard guard(JSObject* self) {
-    MOZ_ASSERT(Headers::is_instance(self));
-    Value modeVal = JS::GetReservedSlot(self, static_cast<size_t>(Slots::Guard));
-    return static_cast<host_api::HttpHeadersGuard>(modeVal.toInt32());
-  }
+  /// Get the header entry for a given index, ensuring that HeadersSortList is recomputed if
+  /// necessary in the process.
+  static std::tuple<host_api::HostString, host_api::HostString> *
+  get_index(JSContext *cx, JS::HandleObject self, size_t idx);
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -105,19 +123,16 @@ public:
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
 
-  static JSObject *create(JSContext *cx, host_api::HttpHeadersGuard guard);
-  static JSObject *create(JSContext *cx, HandleValue init_headers,
-                          host_api::HttpHeadersGuard guard);
-  static JSObject *create(JSContext *cx, host_api::HttpHeadersReadOnly *handle,
-                          host_api::HttpHeadersGuard guard);
+  static JSObject *create(JSContext *cx, HeadersGuard guard);
+  static JSObject *create(JSContext *cx, HandleValue init_headers, HeadersGuard guard);
+  static JSObject *create(JSContext *cx, host_api::HttpHeadersReadOnly *handle, HeadersGuard guard);
 
   static bool init_entries(JSContext *cx, HandleObject self, HandleValue init_headers);
 
-  /// Returns a Map object containing the headers.
-  ///
+  /// Returns the headers list of entries, constructing it if necessary.
   /// Depending on the `Mode` the instance is in, this can be a cache or the canonical store for
   /// the headers.
-  static JSObject* get_entries(JSContext *cx, HandleObject self);
+  static HeadersList *get_list(JSContext *cx, HandleObject self);
 
   /**
    * Returns a cloned handle representing the contents of this Headers object.
@@ -127,7 +142,30 @@ public:
    *
    * The handle is guaranteed to be uniquely owned by the caller.
    */
-  static unique_ptr<host_api::HttpHeaders> handle_clone(JSContext*, HandleObject self);
+  static unique_ptr<host_api::HttpHeaders> handle_clone(JSContext *, HandleObject self);
+};
+
+class HeadersIterator final : public BuiltinNoConstructor<HeadersIterator> {
+  static bool next(JSContext *cx, unsigned argc, JS::Value *vp);
+
+public:
+  static constexpr const char *class_name = "Headers Iterator";
+
+  enum Slots {
+    Type,
+    Cursor,
+    Headers,
+    Count,
+  };
+
+  static const JSFunctionSpec static_methods[];
+  static const JSPropertySpec static_properties[];
+  static const JSFunctionSpec methods[];
+  static const JSPropertySpec properties[];
+
+  static bool init_class(JSContext *cx, HandleObject global);
+
+  static JSObject *create(JSContext *cx, JS::HandleObject headers, uint8_t iter_type);
 };
 
 } // namespace fetch

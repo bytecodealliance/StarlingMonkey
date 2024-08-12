@@ -42,30 +42,30 @@
     "status": "PASS"
   },
   "Check keys method": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check values method": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check entries method": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check Symbol.iterator method": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check forEach method": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Iteration skips elements removed while iterating": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Removing elements already iterated over causes an element to be skipped during iteration": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Appending a value pair during iteration causes it to be reached during iteration": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Prepending a value pair before the current element position causes it to be skipped during iteration and adds the current element a second time": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }

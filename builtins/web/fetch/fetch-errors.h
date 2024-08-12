@@ -19,6 +19,7 @@ DEF_ERR(EmptyHeaderName, JSEXN_TYPEERR, "{0}: Header name can't be empty", 1)
 DEF_ERR(InvalidHeaderName, JSEXN_TYPEERR, "{0}: Invalid header name \"{1}\"", 2)
 DEF_ERR(InvalidHeaderValue, JSEXN_TYPEERR, "{0}: Invalid header value \"{1}\"", 2)
 DEF_ERR(HeadersCloningFailed, JSEXN_ERR, "Failed to clone headers", 0)
+DEF_ERR(HeadersImmutable, JSEXN_TYPEERR, "{0}: Headers are immutable", 1)
 };     // namespace FetchErrors
 
 #endif // FETCH_ERRORS_H

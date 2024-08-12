@@ -63,7 +63,7 @@
     "status": "FAIL"
   },
   "Adding invalid request header \"Host: KO\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Adding invalid request header \"Keep-Alive: KO\"": {
     "status": "FAIL"

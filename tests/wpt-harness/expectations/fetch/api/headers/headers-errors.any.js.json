@@ -9,7 +9,7 @@
     "status": "PASS"
   },
   "Create headers giving bad header value as init argument": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check headers get with an invalid name invalidĀ": {
     "status": "PASS"
@@ -36,7 +36,7 @@
     "status": "PASS"
   },
   "Check headers set with an invalid value invalidĀ": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check headers append with an invalid name invalidĀ": {
     "status": "PASS"
@@ -45,7 +45,7 @@
     "status": "PASS"
   },
   "Check headers append with an invalid value invalidĀ": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Headers forEach throws if argument is not callable": {
     "status": "PASS"

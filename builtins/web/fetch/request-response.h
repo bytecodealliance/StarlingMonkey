@@ -1,9 +1,9 @@
 #ifndef BUILTIN_REQUEST_RESPONSE
 #define BUILTIN_REQUEST_RESPONSE
 
+#include "fetch-errors.h"
 #include "headers.h"
 #include "host_api.h"
-#include "fetch-errors.h"
 
 namespace builtins {
 namespace web {
@@ -59,8 +59,7 @@ public:
    *
    * The handle is guaranteed to be uniquely owned by the caller.
    */
-  static unique_ptr<host_api::HttpHeaders> headers_handle_clone(JSContext *, HandleObject self,
-                                                                host_api::HttpHeadersGuard guard);
+  static unique_ptr<host_api::HttpHeaders> headers_handle_clone(JSContext *, HandleObject self);
 
   /**
    * Returns the RequestOrResponse's Headers, reifying it if necessary.
@@ -159,7 +158,7 @@ public:
 
   static JSObject *create(JSContext *cx);
   static bool initialize(JSContext *cx, JS::HandleObject requestInstance, JS::HandleValue input,
-                         JS::HandleValue init_val);
+                         JS::HandleValue init_val, Headers::HeadersGuard guard);
 
   static void init_slots(JSObject *requestInstance);
 };
@@ -208,7 +207,7 @@ public:
 
   static JSObject *create(JSContext *cx);
   static JSObject *init_slots(HandleObject response);
-  static JSObject* create_incoming(JSContext * cx, host_api::HttpIncomingResponse* response);
+  static JSObject *create_incoming(JSContext *cx, host_api::HttpIncomingResponse *response);
 
   static host_api::HttpResponse *response_handle(JSObject *obj);
   static uint16_t status(JSObject *obj);
