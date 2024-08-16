@@ -280,6 +280,9 @@ void TransformStream::set_owner(JSObject *self, JSObject *owner) {
 
 JSObject *TransformStream::readable(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
+  if (!JS::GetReservedSlot(self, TransformStream::Slots::Readable).isObject()) {
+    return nullptr;
+  }
   return &JS::GetReservedSlot(self, TransformStream::Slots::Readable).toObject();
 }
 
@@ -323,6 +326,9 @@ void TransformStream::set_readable_used_as_body(JSContext *cx, JS::HandleObject 
 
 JSObject *TransformStream::writable(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
+  if (!JS::GetReservedSlot(self, TransformStream::Slots::Writable).isObject()) {
+    return nullptr;
+  }
   return &JS::GetReservedSlot(self, TransformStream::Slots::Writable).toObject();
 }
 
@@ -372,13 +378,21 @@ void TransformStream::set_used_as_mixin(JSObject *self) {
 
 bool TransformStream::readable_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER_WITH_NAME(0, "get readable")
-  args.rval().setObject(*readable(self));
+  auto readable_val = readable(self);
+  // TODO: determine why this isn't being set in some cases
+  if (readable_val) {
+    args.rval().setObject(*readable_val);
+  }
   return true;
 }
 
 bool TransformStream::writable_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER_WITH_NAME(0, "get writable")
-  args.rval().setObject(*writable(self));
+  auto writable_val = writable(self);
+  // TODO: determine why this isn't being set in some cases
+  if (writable_val) {
+    args.rval().setObject(*writable_val);
+  }
   return true;
 }
 
