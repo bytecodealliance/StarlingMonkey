@@ -76,7 +76,7 @@ jobs:
     name: Web Platform Tests
     strategy:
       matrix:
-        build: [release]
+        build: [release, debug]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
