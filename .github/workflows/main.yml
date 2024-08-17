@@ -70,13 +70,13 @@ jobs:
     - name: Build StarlingMonkey WPT
       if: matrix.build != 'weval'
       run: |
-        cmake -S . -B cmake-build-${{ matrix.build }} -DCMAKE_BUILD_TYPE=${{ matrix.build == 'release' && 'Release' || 'Debug' }}
+        cmake -S . -B cmake-build-${{ matrix.build }} -DENABLE_WPT:BOOL=ON -DCMAKE_BUILD_TYPE=${{ matrix.build == 'release' && 'Release' || 'Debug' }}
         cmake --build cmake-build-${{ matrix.build }} --parallel 4 --target all integration-test-server
 
     - name: Build StarlingMonkey WPT Weval
       if: matrix.build == 'weval'
       run: |
-        cmake -S . -B cmake-build-weval -DCMAKE_BUILD_TYPE=Release -DUSE_WASM_OPT=OFF -DWEVAL=ON
+        cmake -S . -B cmake-build-weval -DCMAKE_BUILD_TYPE=Release -DUSE_WASM_OPT=OFF -DWEVAL=ON -DENABLE_WPT:BOOL=ON
         cmake --build cmake-build-${{ matrix.build }} --parallel 4 --target all integration-test-server starling-ics.wevalcache
 
     - name: Prepare WPT hosts
