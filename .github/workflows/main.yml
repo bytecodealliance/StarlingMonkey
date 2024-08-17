@@ -77,7 +77,8 @@ jobs:
       if: matrix.build == 'weval'
       run: |
         cmake -S . -B cmake-build-weval -DCMAKE_BUILD_TYPE=Release -DUSE_WASM_OPT=OFF -DWEVAL=ON -DENABLE_WPT:BOOL=ON
-        cmake --build cmake-build-${{ matrix.build }} --parallel 4 --target wpt-runtime starling-ics.wevalcache
+        cmake --build cmake-build-weval --parallel 4 --target starling-ics.wevalcache
+        cmake --build cmake-build-weval --parallel 4 --target wpt-runtime
 
     - name: Prepare WPT hosts
       run: |
