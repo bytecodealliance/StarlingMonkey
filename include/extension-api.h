@@ -91,6 +91,11 @@ public:
   bool run_event_loop();
 
   /**
+   * Stop running the event loop as soon as possible, regardless of interest.
+   */
+  void exit_event_loop();
+
+  /**
    * Add an event loop interest to track
    */
   void incr_event_loop_interest();

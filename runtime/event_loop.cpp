@@ -49,9 +49,13 @@ void EventLoop::decr_event_loop_interest() {
   queue.get().interest_cnt--;
 }
 
-inline bool interest_complete() { return queue.get().interest_cnt == 0; }
+inline bool interest_complete() {
+  return !queue.get().event_loop_running || queue.get().interest_cnt == 0;
+}
 
-inline void exit_event_loop() { queue.get().event_loop_running = false; }
+inline void EventLoop::exit_event_loop() {
+  queue.get().event_loop_running = false;
+}
 
 bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
   if (queue.get().event_loop_running) {
@@ -69,6 +73,7 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
       exit_event_loop();
       return false;
     }
+
     // if there is no interest in the event loop at all, just run one tick
     if (interest_complete()) {
       exit_event_loop();
@@ -79,7 +84,6 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
     size_t tasks_size = tasks->size();
     if (tasks_size == 0) {
       exit_event_loop();
-      MOZ_ASSERT(!interest_complete());
       fprintf(stderr, "event loop error - both task and job queues are empty, but expected "
                       "operations did not resolve");
       return false;

@@ -30,6 +30,11 @@ public:
    */
   static bool run_event_loop(api::Engine *engine, double total_compute);
 
+  /**
+   * Stops running the event loop as soon as possible, regardless of interest.
+   */
+  static void exit_event_loop();
+
   static void incr_event_loop_interest();
   static void decr_event_loop_interest();
 
