@@ -83,8 +83,26 @@ class Engine {
 
 public:
   explicit Engine(std::unique_ptr<EngineConfig> config);
+
+  /**
+   * Returns the `Engine` associated with the `JSContext` instance.
+   *
+   * Currently, StarlingMonkey uses exactly one `Engine` and one `JSContext`. Since that might
+   * change in the future, it's heavily recommended to not store either in static globals.
+   *
+   * @return The `Engine` associated with the `JSContext` instance
+   */
+  // TODO: change to static Engine& from_context(JSContext *cx);
   static Engine *get(JSContext *cx);
 
+  /**
+   * Returns the `JSContext` associated with the `Engine` instance.
+   *
+   * Currently, StarlingMonkey uses exactly one `Engine` and one `JSContext`. Since that might
+   * change in the future, it's heavily recommended to not store either in static globals.
+   *
+   * @return The JSContext associated with the `Engine` instance
+   */
   JSContext *cx();
   JS::HandleObject global();
   EngineState state();
