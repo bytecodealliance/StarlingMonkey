@@ -341,6 +341,12 @@ api::Engine::Engine() {
 
 JSContext *api::Engine::cx() { return CONTEXT; }
 
+api::Engine &api::Engine::from_context(JSContext *cx) {
+  // This could also be implemented by storing the engine on the cx using JS_SetContextPrivate.
+  // Since we're not supporting multiple contexts or engines, we can just return the global engine.
+  return *ENGINE;
+}
+
 HandleObject api::Engine::global() { return GLOBAL; }
 
 extern bool install_builtins(api::Engine *engine);

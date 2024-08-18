@@ -36,7 +36,27 @@ class Engine {
 
 public:
   Engine();
-  JSContext *cx();
+
+  /**
+   * Returns the `JSContext` associated with the `Engine` instance.
+   *
+   * Currently, StarlingMonkey uses exactly one `Engine` and one `JSContext`. Since that might
+   * change in the future, it's heavily recommended to not store either in static globals.
+   *
+   * @return The JSContext associated with the `Engine` instance
+   */
+ JSContext *cx();
+
+ /**
+  * Returns the `Engine` associated with the `JSContext` instance.
+  *
+  * Currently, StarlingMonkey uses exactly one `Engine` and one `JSContext`. Since that might
+  * change in the future, it's heavily recommended to not store either in static globals.
+  *
+  * @return The `Engine` associated with the `JSContext` instance
+  */
+  static Engine& from_context(JSContext *cx);
+
   JS::HandleObject global();
 
   /// Initialize the engine with the given filename

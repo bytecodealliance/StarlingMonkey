@@ -41,8 +41,6 @@ bool NativeStreamSource::stream_is_body(JSContext *cx, JS::HandleObject stream) 
 
 namespace builtins::web::fetch {
 
-static api::Engine *ENGINE;
-
 bool error_stream_controller_with_pending_exception(JSContext *cx, HandleObject controller) {
   RootedValue exn(cx);
   if (!JS_GetPendingException(cx, &exn))
@@ -466,7 +464,8 @@ bool finish_outgoing_body_streaming(JSContext* cx, HandleObject body_owner) {
             .toPrivate());
     SetReservedSlot(body_owner, static_cast<uint32_t>(Request::Slots::PendingResponseHandle),
                     PrivateValue(nullptr));
-    ENGINE->queue_async_task(new ResponseFutureTask(body_owner, pending_handle));
+    api::Engine::from_context(cx)
+      .queue_async_task(new ResponseFutureTask(body_owner, pending_handle));
   }
 
   return true;
@@ -476,9 +475,10 @@ bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::Ha
   MOZ_ASSERT(!body_used(source));
   MOZ_ASSERT(!body_used(self));
   MOZ_ASSERT(self != source);
+  auto engine = api::Engine::from_context(cx);
   host_api::HttpIncomingBody *source_body = incoming_body_handle(source);
   host_api::HttpOutgoingBody *dest_body = outgoing_body_handle(self);
-  auto res = dest_body->append(ENGINE, source_body, finish_outgoing_body_streaming, self);
+  auto res = dest_body->append(&engine, source_body, finish_outgoing_body_streaming, self);
   if (auto *err = res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
@@ -892,7 +892,7 @@ bool RequestOrResponse::body_source_pull_algorithm(JSContext *cx, CallArgs args,
     }
   }
 
-  ENGINE->queue_async_task(new BodyFutureTask(source));
+  api::Engine::from_context(cx).queue_async_task(new BodyFutureTask(source));
 
   args.rval().setUndefined();
   return true;
@@ -945,7 +945,7 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
     // Uint8Array?
     fprintf(stderr, "Error: read operation on body ReadableStream didn't respond with a "
                     "Uint8Array. Received value: ");
-    ENGINE->dump_value(val, stderr);
+    api::Engine::from_context(cx).dump_value(val, stderr);
     return false;
   }
 
@@ -985,7 +985,7 @@ bool reader_for_outgoing_body_catch_handler(JSContext *cx, JS::HandleObject body
   // stream errored during the streaming send. Not much we can do, but at least
   // close the stream, and warn.
   fprintf(stderr, "Warning: body ReadableStream closed during body streaming. Exception: ");
-  ENGINE->dump_value(args.get(0), stderr);
+  api::Engine::from_context(cx).dump_value(args.get(0), stderr);
 
   return finish_outgoing_body_streaming(cx, body_owner);
 }
@@ -1004,7 +1004,8 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
   if (is_incoming(body_owner)) {
     auto *source_body = incoming_body_handle(body_owner);
     auto *dest_body = destination->body().unwrap();
-    auto res = dest_body->append(ENGINE, source_body, finish_outgoing_body_streaming, nullptr);
+    auto engine = api::Engine::from_context(cx);
+    auto res = dest_body->append(&engine, source_body, finish_outgoing_body_streaming, nullptr);
     if (auto *err = res.to_err()) {
       HANDLE_ERROR(cx, *err);
       return false;
@@ -1233,7 +1234,7 @@ bool Request::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
   Value url_val = GetReservedSlot(self, static_cast<uint32_t>(Slots::URL));
   SetReservedSlot(new_request, static_cast<uint32_t>(Slots::URL), url_val);
   Value method_val = JS::StringValue(method(self));
-  ENGINE->dump_value(method_val, stderr);
+  api::Engine::from_context(cx).dump_value(method_val, stderr);
   SetReservedSlot(new_request, static_cast<uint32_t>(Slots::Method), method_val);
 
   // clone operation step 2.
@@ -2459,8 +2460,6 @@ JSObject * Response::create_incoming(JSContext *cx, host_api::HttpIncomingRespon
 namespace request_response {
 
 bool install(api::Engine *engine) {
-  ENGINE = engine;
-
   if (!Request::init_class(engine->cx(), engine->global()))
     return false;
   if (!Response::init_class(engine->cx(), engine->global()))
