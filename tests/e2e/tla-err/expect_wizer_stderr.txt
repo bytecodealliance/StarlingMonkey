@@ -1,1 +1,2 @@
-Exception while pre-initializing: (new Error("blah", "tla-err.js", 3))
+Exception while pre-initializing
+tla-err.js:3:10 Error: blah
