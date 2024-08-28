@@ -1,5 +1,5 @@
-#ifndef JS_COMPUTE_RUNTIME_SUBTLE_CRYPTO_H
-#define JS_COMPUTE_RUNTIME_SUBTLE_CRYPTO_H
+#ifndef BUILTINS_WEB_CRYPTO_SUBTLE_CRYPTO_H
+#define BUILTINS_WEB_CRYPTO_SUBTLE_CRYPTO_H
 
 #include "builtin.h"
 #include "crypto-algorithm.h"
