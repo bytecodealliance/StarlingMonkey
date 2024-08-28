@@ -53,4 +53,9 @@ export const handler = serveTest(async (t) => {
     await request.text();
     throws(() => request.clone());
   });
+
+  await t.test('google encoding issue', async () => {
+    const res = await fetch('https://www.google.com');
+    await res.text();
+  });
 });
