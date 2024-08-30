@@ -594,7 +594,7 @@ bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
   }
 
   if (!success) {
-    fprintf(stderr, "Warning: JS event loop drained, but expected operations did not complete\n");
+    fprintf(stderr, "Warning: JS event loop drained without completing the response.\n");
   }
 
   if (ENGINE->debug_logging_enabled() && ENGINE->has_pending_async_tasks()) {
