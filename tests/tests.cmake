@@ -30,6 +30,7 @@ function(test_integration TEST_NAME)
     set_tests_properties(integration-${TEST_NAME} PROPERTIES TIMEOUT 120)
 endfunction()
 
+test_e2e(eventloop-stall)
 test_e2e(headers)
 test_e2e(runtime-err)
 test_e2e(smoke)
