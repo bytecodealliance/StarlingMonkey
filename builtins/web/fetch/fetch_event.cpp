@@ -594,7 +594,7 @@ bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
   }
 
   if (!success) {
-    fprintf(stderr, "Internal error.");
+    fprintf(stderr, "Warning: JS event loop drained, but expected operations did not complete\n");
   }
 
   if (ENGINE->debug_logging_enabled() && ENGINE->has_pending_async_tasks()) {
