@@ -1,5 +1,5 @@
-#ifndef JS_COMPUTE_RUNTIME_JSON_WEB_KEY_H
-#define JS_COMPUTE_RUNTIME_JSON_WEB_KEY_H
+#ifndef BUILTINS_WEB_CRYPTO_JSON_WEB_KEY_H
+#define BUILTINS_WEB_CRYPTO_JSON_WEB_KEY_H
 #include "jsapi.h"
 #include <memory>
 #include <optional>
