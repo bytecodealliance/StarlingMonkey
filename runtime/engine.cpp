@@ -106,12 +106,12 @@ bool print_stack(JSContext *cx, FILE *fp) {
   return print_stack(cx, stackp, fp);
 }
 
-void dump_promise_rejection(JSContext *cx, HandleValue reason, HandleObject promise, FILE *fp) {
+void dump_error(JSContext *cx, HandleValue error, bool *has_stack, FILE *fp) {
   bool reported = false;
   RootedObject stack(cx);
 
-  if (reason.isObject()) {
-    RootedObject err(cx, &reason.toObject());
+  if (error.isObject()) {
+    RootedObject err(cx, &error.toObject());
     JSErrorReport *report = JS_ErrorFromException(cx, err);
     if (report) {
       fprintf(stderr, "%s\n", report->message().c_str());
@@ -124,8 +124,21 @@ void dump_promise_rejection(JSContext *cx, HandleValue reason, HandleObject prom
   // If the rejection reason isn't an `Error` object, we just dump the value
   // as-is.
   if (!reported) {
-    dump_value(cx, reason, stderr);
+    dump_value(cx, error, stderr);
   }
+
+  if (stack) {
+    *has_stack = true;
+    fprintf(stderr, "Stack:\n");
+    print_stack(cx, stack, stderr);
+  } else {
+    *has_stack = false;
+  }
+}
+
+void dump_promise_rejection(JSContext *cx, HandleValue reason, HandleObject promise, FILE *fp) {
+  bool has_stack;
+  dump_error(cx, reason, &has_stack, fp);
 
   // If the rejection reason isn't an `Error` object, we can't get an exception
   // stack from it. In that case, fall back to getting the stack from the
@@ -133,11 +146,8 @@ void dump_promise_rejection(JSContext *cx, HandleValue reason, HandleObject prom
   // for exceptions thrown in async functions, but for some reason the
   // resolution site stack seems to sometimes be wrong, so we only fall back to
   // it as a last resort.
-  if (!stack) {
-    stack = JS::GetPromiseResolutionSite(promise);
-  }
-
-  if (stack) {
+  if (!has_stack) {
+    RootedObject stack(cx, JS::GetPromiseResolutionSite(promise));
     fprintf(stderr, "Stack:\n");
     print_stack(cx, stack, stderr);
   }
@@ -294,17 +304,21 @@ static bool report_unhandled_promise_rejections(JSContext *cx) {
   return true;
 }
 
-static void DumpPendingException(JSContext *cx, const char *description) {
+static void DumpPendingException(JSContext *cx, const char *description, FILE *fp) {
   JS::ExceptionStack exception(cx);
-  if (!JS::GetPendingExceptionStack(cx, &exception)) {
-    fprintf(stderr,
+  if (!JS::StealPendingExceptionStack(cx, &exception)) {
+    fprintf(fp,
             "Error: exception pending after %s, but got another error "
             "when trying to retrieve it. Aborting.\n",
             description);
   } else {
-    fprintf(stderr, "Exception while %s: ", description);
-    dump_value(cx, exception.exception(), stderr);
-    print_stack(cx, exception.stack(), stderr);
+      fprintf(fp, "Exception while %s\n", description);
+    JS::ErrorReportBuilder report(cx);
+    if (!report.init(cx, exception, JS::ErrorReportBuilder::WithSideEffects)) {
+      fprintf(fp, "unable to build error report");
+    } else {
+      JS::PrintError(fp, report, false);
+    }
   }
 }
 
@@ -312,7 +326,7 @@ static void abort(JSContext *cx, const char *description) {
   // Note: we unconditionally print messages here, since they almost always
   // indicate serious bugs.
   if (JS_IsExceptionPending(cx)) {
-    DumpPendingException(cx, description);
+    DumpPendingException(cx, description, stderr);
   } else {
     fprintf(stderr,
             "Error while %s, but no exception is pending. "
@@ -374,6 +388,7 @@ bool api::Engine::initialize(const char *filename) {
   if (!eval_toplevel(filename, &result)) {
     if (JS_IsExceptionPending(cx())) {
       dump_pending_exception("pre-initializing");
+      fflush(stderr);
     }
     return false;
   }
@@ -493,8 +508,14 @@ void api::Engine::decr_event_loop_interest() {
 bool api::Engine::dump_value(JS::Value val, FILE *fp) { return ::dump_value(CONTEXT, val, fp); }
 bool api::Engine::print_stack(FILE *fp) { return ::print_stack(CONTEXT, fp); }
 
-void api::Engine::dump_pending_exception(const char *description) {
-  DumpPendingException(CONTEXT, description);
+void api::Engine::dump_pending_exception(const char *description, FILE *fp) {
+  DumpPendingException(CONTEXT, description, fp);
+}
+
+void api::Engine::dump_error(JS::HandleValue err, FILE *fp) {
+  bool has_stack;
+  ::dump_error(CONTEXT, err, &has_stack, fp);
+  fflush(fp);
 }
 
 void api::Engine::dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp) {

@@ -47,14 +47,14 @@ if [ -z "$test_component" ]; then
    fi
 
    if [ -f "$test_wizer_stdout_expectation" ]; then
-      cmp "$stdout_log" "$test_wizer_stdout_expectation"
+      cmp -b "$stdout_log" "$test_wizer_stdout_expectation"
    fi
 
    if [ -f "$test_wizer_stderr_expectation" ]; then
       mv "$stderr_log" "$stderr_log.orig"
       cat "$stderr_log.orig" | head -n $(cat "$test_wizer_stderr_expectation" | wc -l) > "$stderr_log"
       rm "$stderr_log.orig"
-      cmp "$stderr_log" "$test_wizer_stderr_expectation"
+      cmp -b "$stderr_log" "$test_wizer_stderr_expectation"
    fi
 
    if [ ! -f "$test_component" ] || [ ! -s "$test_component" ]; then
@@ -113,20 +113,27 @@ if [ -f "$test_serve_headers_expectation" ]; then
    mv "$headers_log" "$headers_log.orig"
    cat "$headers_log.orig" | head -n $(cat "$test_serve_headers_expectation" | wc -l) | sed 's/\r//g' > "$headers_log"
    rm "$headers_log.orig"
-   cmp "$headers_log" "$test_serve_headers_expectation"
+   cmp -b "$headers_log" "$test_serve_headers_expectation"
 fi
 
 if [ -f "$test_serve_body_expectation" ]; then
-   cmp "$body_log" "$test_serve_body_expectation"
+   cmp -b "$body_log" "$test_serve_body_expectation"
 fi
 
 if [ -f "$test_serve_stdout_expectation" ]; then
-   cmp "$stdout_log" "$test_serve_stdout_expectation"
+   cmp -b "$stdout_log" "$test_serve_stdout_expectation"
 fi
 
 if [ -f "$test_serve_stderr_expectation" ]; then
-   tail -n +2 "$stderr_log" > "$stderr_log"
-   cmp "$stderr_log" "$test_serve_stderr_expectation"
+   mv "$stderr_log" "$stderr_log.orig"
+   if [[ $(cat "$stderr_log.orig" | tail -n +2 | head -n1) == "stderr [0] :: Warning: Using a DEBUG build. Expect things to be SLOW." ]]; then
+      cat $stderr_log.orig | tail -n +3 > "$stderr_log"
+      rm $stderr_log.orig
+   else
+      cat $stderr_log.orig | tail -n +2 > "$stderr_log"
+      rm $stderr_log.orig
+   fi
+   cmp -b "$stderr_log" "$test_serve_stderr_expectation"
 fi
 
 rm "$body_log"

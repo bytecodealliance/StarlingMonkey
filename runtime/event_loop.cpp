@@ -80,8 +80,6 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
     if (tasks_size == 0) {
       exit_event_loop();
       MOZ_ASSERT(!interest_complete());
-      fprintf(stderr, "event loop error - both task and job queues are empty, but expected "
-                      "operations did not resolve");
       return false;
     }
 
