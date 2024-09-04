@@ -1,1 +1,2 @@
-Exception while pre-initializing: (new SyntaxError("expected expression, got end of script", "syntax-err.js", 2))
+Exception while pre-initializing
+syntax-err.js:2:1 SyntaxError: expected expression, got end of script

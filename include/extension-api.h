@@ -117,8 +117,9 @@ public:
 
   bool dump_value(JS::Value val, FILE *fp = stdout);
   bool print_stack(FILE *fp);
-  void dump_pending_exception(const char *description = "");
-  void dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp);
+  void dump_error(HandleValue error, FILE *fp = stderr);
+  void dump_pending_exception(const char *description = "", FILE *fp = stderr);
+  void dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp = stderr);
 };
 
 

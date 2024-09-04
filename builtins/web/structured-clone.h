@@ -1,5 +1,5 @@
-#ifndef JS_COMPUTE_RUNTIME_STRUCTURED_CLONE_H
-#define JS_COMPUTE_RUNTIME_STRUCTURED_CLONE_H
+#ifndef BUILTINS_WEB_STRUCTURED_CLONE_H
+#define BUILTINS_WEB_STRUCTURED_CLONE_H
 
 #include "builtin.h"
 #include "js/StructuredClone.h"

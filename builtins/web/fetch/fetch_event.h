@@ -1,5 +1,5 @@
-#ifndef BUILTINS_FETCH_EVENT_H
-#define BUILTINS_FETCH_EVENT_H
+#ifndef BUILTINS_WEB_FETCH_FETCH_EVENT_H
+#define BUILTINS_WEB_FETCH_FETCH_EVENT_H
 
 #include "builtin.h"
 #include "extension-api.h"

@@ -1,5 +1,5 @@
-#ifndef BUILTINS_HEADERS_H
-#define BUILTINS_HEADERS_H
+#ifndef BUILTINS_WEB_FETCH_HEADERS_H
+#define BUILTINS_WEB_FETCH_HEADERS_H
 
 #include "builtin.h"
 #include "host_api.h"

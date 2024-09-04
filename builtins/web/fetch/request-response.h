@@ -1,5 +1,5 @@
-#ifndef BUILTIN_REQUEST_RESPONSE
-#define BUILTIN_REQUEST_RESPONSE
+#ifndef BUILTINS_WEB_FETCH_REQUEST_RESPONSE
+#define BUILTINS_WEB_FETCH_REQUEST_RESPONSE
 
 #include "fetch-errors.h"
 #include "headers.h"
