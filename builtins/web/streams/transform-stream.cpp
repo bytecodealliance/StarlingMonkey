@@ -5,9 +5,9 @@
 #include "js/experimental/TypedData.h" // used in "js/Conversions.h"
 #pragma clang diagnostic pop
 
+#include "builtin.h"
 #include "js/Conversions.h"
 #include "js/Stream.h"
-#include "builtin.h"
 
 #include "native-stream-sink.h"
 #include "native-stream-source.h"
@@ -46,8 +46,12 @@ bool pipeTo(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (target && NativeStreamSource::stream_has_native_source(cx, self) &&
       JS::IsWritableStream(target) && TransformStream::is_ts_writable(cx, target)) {
     if (auto ts = TransformStream::ts_from_writable(cx, target)) {
-      auto streamHasTransformer =
-          JS::GetReservedSlot(ts, TransformStream::Slots::HasTransformer).toBoolean();
+      bool streamHasTransformer = false;
+      auto streamHasTransformerVal =
+          JS::GetReservedSlot(ts, TransformStream::Slots::HasTransformer);
+      if (streamHasTransformerVal.isBoolean()) {
+        streamHasTransformer = streamHasTransformerVal.toBoolean();
+      }
       // We only want to apply the optimisation on identity-streams
       if (!streamHasTransformer) {
         NativeStreamSource::set_stream_piped_to_ts_writable(cx, self, target);
@@ -115,7 +119,7 @@ bool pipeThrough(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   if (!args[0].isObject()) {
     return api::throw_error(cx, api::Errors::TypeError, "ReadableStream.pipeThrough",
-      "transformStream parameter", "be an object");
+                            "transformStream parameter", "be an object");
   }
 
   JS::RootedObject transform(cx, &args[0].toObject());
@@ -126,9 +130,9 @@ bool pipeThrough(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!JS_GetProperty(cx, transform, "readable", &val))
     return false;
   if (!val.isObject() || !JS::IsReadableStream(&val.toObject())) {
-    return api::throw_error(cx, api::Errors::TypeError, "ReadableStream.pipeThrough",
-    "transformStream parameter",
-    "be an object with a |readable| property that is an instance of ReadableStream");
+    return api::throw_error(
+        cx, api::Errors::TypeError, "ReadableStream.pipeThrough", "transformStream parameter",
+        "be an object with a |readable| property that is an instance of ReadableStream");
   }
 
   readable = &val.toObject();
@@ -136,9 +140,9 @@ bool pipeThrough(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!JS_GetProperty(cx, transform, "writable", &val))
     return false;
   if (!val.isObject() || !JS::IsWritableStream(&val.toObject())) {
-    return api::throw_error(cx, api::Errors::TypeError, "ReadableStream.pipeThrough",
-    "transformStream parameter",
-    "be an object with a |writable| property that is an instance of WritableStream");
+    return api::throw_error(
+        cx, api::Errors::TypeError, "ReadableStream.pipeThrough", "transformStream parameter",
+        "be an object with a |writable| property that is an instance of WritableStream");
   }
   writable = &val.toObject();
 
@@ -198,8 +202,8 @@ bool ExtractFunction(JSContext *cx, JS::HandleObject obj, const char *name,
   }
 
   if (!val.isObject() || !JS::IsCallable(&val.toObject())) {
-    return api::throw_error(cx, api::Errors::TypeError, "TransformStream constructor",
-      name, "be a function");
+    return api::throw_error(cx, api::Errors::TypeError, "TransformStream constructor", name,
+                            "be a function");
   }
 
   func.set(&val.toObject());
@@ -214,8 +218,8 @@ bool ExtractStrategy(JSContext *cx, JS::HandleValue strategy, double default_hwm
   }
 
   if (!strategy.isObject()) {
-    return api::throw_error(cx, api::Errors::TypeError, "TransformStream constructor",
-      "strategy", "be an object");
+    return api::throw_error(cx, api::Errors::TypeError, "TransformStream constructor", "strategy",
+                            "be an object");
   }
 
   JS::RootedObject strategy_obj(cx, &strategy.toObject());
@@ -233,7 +237,7 @@ bool ExtractStrategy(JSContext *cx, JS::HandleValue strategy, double default_hwm
     }
     if (std::isnan(*hwm) || *hwm < 0) {
       return api::throw_error(cx, api::Errors::TypeError, "TransformStream constructor",
-        "highWaterMark", "be a number >= 0");
+                              "highWaterMark", "be a number >= 0");
     }
   }
 
@@ -454,7 +458,8 @@ bool TransformStream::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     }
     if (found) {
       return api::throw_error(cx, api::Errors::TypeError, "TransformStream constructor",
-        "transformer.readableType", "not be used: it's reserved for future use");
+                              "transformer.readableType",
+                              "not be used: it's reserved for future use");
     }
 
     // 4.  If transformerDict["writableType"] [exists], throw a `[RangeError]`
@@ -464,7 +469,8 @@ bool TransformStream::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     }
     if (found) {
       return api::throw_error(cx, api::Errors::TypeError, "TransformStream constructor",
-        "transformer.writableType", "not be used: it's reserved for future use");
+                              "transformer.writableType",
+                              "not be used: it's reserved for future use");
     }
   }
 
