@@ -67,7 +67,7 @@ if (USE_WASM_OPT)
         add_custom_command(
                 TARGET starling.wasm
                 POST_BUILD
-                COMMAND ${WASM_OPT} --strip-debug -O3 -o starling.wasm starling.wasm
+                COMMAND ${WASM_OPT} --strip-debug -O3 -g -o starling.wasm starling.wasm
                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
     elseif (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
