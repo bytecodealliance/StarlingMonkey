@@ -51,11 +51,21 @@ static bool dump_mem_stats(JSContext *cx) {
 #define DEBUG_LOGGING false
 #endif
 
+#define TRACE(...)                                                                                 \
+  if (config_->verbose) {                                                                          \
+    std::cout << "trace(" << __func__ << ":" << __LINE__ << "): " << __VA_ARGS__ << std::endl;     \
+    fflush(stdout);                                                                                \
+  }
+
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
 using std::chrono::system_clock;
 
 using JS::Value;
+
+using api::Engine;
+using api::EngineState;
+using api::EngineConfig;
 
 __attribute__((weak))
 bool debug_logging_enabled() { return DEBUG_LOGGING; }
@@ -211,7 +221,8 @@ bool fix_math_random(JSContext *cx, HandleObject global) {
   return JS_DefineFunctions(cx, math, funs);
 }
 
-static api::Engine *ENGINE;
+static Engine *ENGINE;
+JS::PersistentRootedValue SCRIPT_VALUE;
 
 bool init_js() {
   JS_Init();
@@ -221,6 +232,7 @@ bool init_js() {
     return false;
   }
   CONTEXT = cx;
+  SCRIPT_VALUE.init(cx);
 
   if (!js::UseInternalJobQueues(cx) || !JS::InitSelfHostedCode(cx)) {
     return false;
@@ -344,20 +356,7 @@ static void abort(JSContext *cx, const char *description) {
   exit(1);
 }
 
-api::Engine::Engine() {
-  // total_compute = 0;
-  ENGINE = this;
-  bool result = init_js();
-  MOZ_RELEASE_ASSERT(result);
-  JS::EnterRealm(cx(), global());
-  core::EventLoop::init(cx());
-}
-
-JSContext *api::Engine::cx() { return CONTEXT; }
-
-HandleObject api::Engine::global() { return GLOBAL; }
-
-extern bool install_builtins(api::Engine *engine);
+extern bool install_builtins(Engine *engine);
 
 #ifdef DEBUG
 static bool trap(JSContext *cx, unsigned argc, JS::Value *vp) {
@@ -368,73 +367,186 @@ static bool trap(JSContext *cx, unsigned argc, JS::Value *vp) {
 }
 #endif
 
-bool api::Engine::initialize(const char *filename) {
-  if (!install_builtins(this)) {
-    return false;
+Engine::Engine(std::unique_ptr<EngineConfig> config) {
+  // total_compute = 0;
+  MOZ_ASSERT(!ENGINE);
+  ENGINE = this;
+  config_ = std::move(config);
+
+  TRACE("StarlingMonkey engine initializing");
+
+  if (!init_js()) {
+    abort("Initializing JS Engine");
   }
+
+  JS_SetContextPrivate(cx(), this);
+  JS::EnterRealm(cx(), global());
+  core::EventLoop::init(cx());
+
+  if (!install_builtins(this)) {
+    abort("installing builtins");
+  }
+
+  TRACE("Builtins installed");
 
 #ifdef DEBUG
   if (!JS_DefineFunction(cx(), global(), "trap", trap, 1, 0)) {
-    return false;
+    abort("installing trap function");
   }
 #endif
 
-  if (!filename || strlen(filename) == 0) {
-    return true;
+  TRACE("Module mode: " << config_->module_mode);
+  scriptLoader->enable_module_mode(config_->module_mode);
+
+  if (config_->pre_initialize) {
+    state_ = EngineState::ScriptPreInitializing;
+  } else {
+    state_ = EngineState::Initialized;
   }
 
-  RootedValue result(cx());
-
-  if (!eval_toplevel(filename, &result)) {
-    if (JS_IsExceptionPending(cx())) {
-      dump_pending_exception("pre-initializing");
-      fflush(stderr);
+  if (config_->content_script_path.has_value()) {
+    TRACE("Evaluating initial script from file " << config_->content_script_path.value());
+    RootedValue result(cx());
+    if (!eval_toplevel(config_->content_script_path.value().data(), &result)) {
+      abort("evaluating top-level script");
     }
-    return false;
   }
 
-  js::ResetMathRandomSeed(cx());
-
-  return true;
+  if (config_->content_script.has_value()) {
+    TRACE("Evaluating initial inline script");
+    JS::SourceText<mozilla::Utf8Unit> source;
+    std::string path = "<eval>";
+    std::string& script = config_->content_script.value();
+    RootedValue result(cx());
+    if (!source.init(cx(), script.c_str(), script.size(), JS::SourceOwnership::Borrowed)
+        || !eval_toplevel(source, path.data(), &result)) {
+      abort("evaluating top-level inline script");
+    }
+  return ;
+  }
 }
-void api::Engine::enable_module_mode(bool enable) {
-  scriptLoader->enable_module_mode(enable);
+
+JSContext *Engine::cx() { return CONTEXT; }
+
+Engine *Engine::get(JSContext *cx) {
+  return static_cast<Engine *>(JS_GetContextPrivate(cx));
 }
 
-JS::PersistentRootedValue SCRIPT_VALUE;
-HandleValue api::Engine::script_value() {
+HandleObject Engine::global() { return GLOBAL; }
+EngineState Engine::state() { return state_; }
+
+void Engine::finish_pre_initialization() {
+  DBG("state:%d\n", state_);
+  MOZ_ASSERT(state_ == EngineState::ScriptPreInitializing);
+  js::ResetMathRandomSeed(ENGINE->cx());
+  state_ = EngineState::Initialized;
+}
+
+EngineConfig *EngineConfig::apply_env(std::string_view envvar_name) {
+  if (const char *config = std::getenv(envvar_name.data())) {
+    return apply_args(config);
+  }
+
+  return this;
+}
+
+EngineConfig *EngineConfig::apply_args(std::string_view args_string) {
+  vector<std::string_view> args = { "starling.wasm" };
+  std::string current;
+  char last = '\0';
+  bool in_quotes = false;
+  size_t slice_start = 0;
+  for (size_t i = 0; i < args_string.size(); i++) {
+    char c = args_string[i];
+
+    if ((!in_quotes && isspace(c)) || (c == '"' && last != '\\')) {
+      if (slice_start < i) {
+        args.push_back(args_string.substr(slice_start, i - slice_start));
+      }
+      slice_start = i + 1;
+    }
+    if (c == '"' && last != '\\') {
+      in_quotes = !in_quotes;
+    }
+    last = c;
+  }
+
+  if (slice_start < args_string.size()) {
+    args.push_back(args_string.substr(slice_start));
+  }
+
+  return apply_args(args);
+}
+
+EngineConfig *EngineConfig::apply_args(std::vector<std::string_view> args) {
+  for (size_t i = 1; i < args.size(); i++) {
+    if (args[i] == "--debug") {
+      if (i + 1 < args.size()) {
+        this->debug_script_path = args[i + 1];
+        i++;
+      }
+    } else if (args[i] == "-e" || args[i] == "--eval") {
+      if (i + 1 < args.size()) {
+        this->content_script = args[i + 1];
+        this->content_script_path.reset();
+        TRACE("Adding eval code and resetting content script path");
+        i++;
+      }
+    } else if (args[i] == "-v" || args[i] == "--verbose") {
+      this->verbose = true;
+    } else if (args[i] == "--legacy-script") {
+      this->module_mode = false;
+      if (i + 1 < args.size()) {
+        this->content_script_path = args[i + 1];
+        i++;
+      }
+    } else if (args[i].starts_with("--")) {
+      std::cerr << "Unknown option: " << args[i] << std::endl;
+      exit(1);
+    } else {
+      this->content_script_path = args[i];
+    }
+  }
+
+  return this;
+}
+
+HandleValue Engine::script_value() {
   return SCRIPT_VALUE;
 }
 
-void api::Engine::abort(const char *reason) { ::abort(CONTEXT, reason); }
+void Engine::abort(const char *reason) {
+  state_ = EngineState::Aborted;
+  ::abort(CONTEXT, reason);
+}
 
-bool api::Engine::define_builtin_module(const char* id, HandleValue builtin) {
+bool Engine::define_builtin_module(const char* id, HandleValue builtin) {
   return scriptLoader->define_builtin_module(id, builtin);
 }
 
-static bool TOPLEVEL_EVALUATED = false;
+bool Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char *path,
+                           MutableHandleValue result) {
+  MOZ_ASSERT(state() > EngineState::EngineInitializing, "Engine must be done initializing");
+  MOZ_ASSERT(state() != EngineState::Aborted, "Engine state is aborted");
 
-bool api::Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char *path,
-                                MutableHandleValue result) {
-  JSContext *cx = CONTEXT;
-  RootedValue ns(cx);
-  RootedValue tla_promise(cx);
+  RootedValue ns(cx());
+  RootedValue tla_promise(cx());
   if (!scriptLoader->eval_top_level_script(path, source, &ns, &tla_promise)) {
     return false;
   }
 
-  SCRIPT_VALUE.init(cx, ns);
+  SCRIPT_VALUE = ns;
   this->run_event_loop();
 
   // TLA rejections during pre-initialization are treated as top-level exceptions.
   // TLA may remain unresolved, in which case it will continue tasks at runtime.
   // Rejections after pre-intialization remain unhandled rejections for now.
   if (tla_promise.isObject()) {
-    RootedObject promise_obj(cx, &tla_promise.toObject());
+    RootedObject promise_obj(cx(), &tla_promise.toObject());
     JS::PromiseState state = JS::GetPromiseState(promise_obj);
     if (state == JS::PromiseState::Rejected) {
-      RootedValue err(cx, JS::GetPromiseResult(promise_obj));
-      JS_SetPendingException(cx, err);
+      RootedValue err(cx(), JS::GetPromiseResult(promise_obj));
+      JS_SetPendingException(cx(), err);
       return false;
     }
   }
@@ -442,8 +554,8 @@ bool api::Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const
   // Report any promise rejections that weren't handled before snapshotting.
   // TODO: decide whether we should abort in this case, instead of just
   // reporting.
-  if (JS::SetSize(cx, unhandledRejectedPromises) > 0) {
-    report_unhandled_promise_rejections(cx);
+  if (JS::SetSize(cx(), unhandledRejectedPromises) > 0) {
+    report_unhandled_promise_rejections(cx());
   }
 
   // TODO(performance): check if it makes sense to increase the empty chunk
@@ -463,24 +575,21 @@ bool api::Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const
   // the shrinking GC causes them to be intermingled with other objects. I.e.,
   // writes become more fragmented due to the shrinking GC.
   // https://github.com/fastly/js-compute-runtime/issues/224
-  if (isWizening()) {
-    JS::PrepareForFullGC(cx);
-    JS::NonIncrementalGC(cx, JS::GCOptions::Normal, JS::GCReason::API);
+  if (state() == EngineState::ScriptPreInitializing) {
+    JS::PrepareForFullGC(cx());
+    JS::NonIncrementalGC(cx(), JS::GCOptions::Normal, JS::GCReason::API);
   }
 
   // Ignore the first GC, but then print all others, because ideally GCs
   // should be rare, and developers should know about them.
   // TODO: consider exposing a way to parameterize this, and/or specifying a
   // dedicated log target for telemetry messages like this.
-  JS_SetGCCallback(cx, gc_callback, nullptr);
-
-  TOPLEVEL_EVALUATED = true;
+  JS_SetGCCallback(cx(), gc_callback, nullptr);
 
   return true;
 }
-bool api::Engine::is_preinitializing() { return isWizening(); }
 
-bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
+bool Engine::eval_toplevel(const char *path, MutableHandleValue result) {
   JS::SourceText<mozilla::Utf8Unit> source;
   if (!scriptLoader->load_script(CONTEXT, path, source)) {
     return false;
@@ -489,44 +598,40 @@ bool api::Engine::eval_toplevel(const char *path, MutableHandleValue result) {
   return eval_toplevel(source, path, result);
 }
 
-bool api::Engine::toplevel_evaluated() {
-  return TOPLEVEL_EVALUATED;
-}
-
-bool api::Engine::run_event_loop() {
+bool Engine::run_event_loop() {
   return core::EventLoop::run_event_loop(this, 0);
 }
 
-void api::Engine::incr_event_loop_interest() {
+void Engine::incr_event_loop_interest() {
   return core::EventLoop::incr_event_loop_interest();
 }
 
-void api::Engine::decr_event_loop_interest() {
+void Engine::decr_event_loop_interest() {
   return core::EventLoop::decr_event_loop_interest();
 }
 
-bool api::Engine::dump_value(JS::Value val, FILE *fp) { return ::dump_value(CONTEXT, val, fp); }
-bool api::Engine::print_stack(FILE *fp) { return ::print_stack(CONTEXT, fp); }
+bool Engine::dump_value(JS::Value val, FILE *fp) { return ::dump_value(CONTEXT, val, fp); }
+bool Engine::print_stack(FILE *fp) { return ::print_stack(CONTEXT, fp); }
 
-void api::Engine::dump_pending_exception(const char *description, FILE *fp) {
+void Engine::dump_pending_exception(const char *description, FILE *fp) {
   DumpPendingException(CONTEXT, description, fp);
 }
 
-void api::Engine::dump_error(JS::HandleValue err, FILE *fp) {
+void Engine::dump_error(JS::HandleValue err, FILE *fp) {
   bool has_stack;
   ::dump_error(CONTEXT, err, &has_stack, fp);
   fflush(fp);
 }
 
-void api::Engine::dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp) {
+void Engine::dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp) {
   ::dump_promise_rejection(CONTEXT, reason, promise, fp);
 }
 
-bool api::Engine::debug_logging_enabled() { return ::debug_logging_enabled(); }
+bool Engine::debug_logging_enabled() { return ::debug_logging_enabled(); }
 
-bool api::Engine::has_pending_async_tasks() { return core::EventLoop::has_pending_async_tasks(); }
+bool Engine::has_pending_async_tasks() { return core::EventLoop::has_pending_async_tasks(); }
 
-void api::Engine::queue_async_task(AsyncTask *task) { core::EventLoop::queue_async_task(task); }
-bool api::Engine::cancel_async_task(AsyncTask *task) {
+void Engine::queue_async_task(AsyncTask *task) { core::EventLoop::queue_async_task(task); }
+bool Engine::cancel_async_task(AsyncTask *task) {
   return core::EventLoop::cancel_async_task(this, task);
 }

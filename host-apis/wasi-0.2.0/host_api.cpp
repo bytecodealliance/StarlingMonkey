@@ -322,6 +322,16 @@ void MonotonicClock::unsubscribe(const int32_t handle_id) {
   wasi_io_poll_pollable_drop_own(own_pollable_t{handle_id});
 }
 
+vector<std::string> environment_get_arguments() {
+  bindings_list_string_t raw_args = {};
+  wasi_cli_environment_get_arguments(&raw_args);
+  std::vector<std::string> args = {};
+  for (int i = 0; i < raw_args.len; i++) {
+    args.push_back(std::string(reinterpret_cast<char *>(raw_args.ptr[i].ptr), raw_args.ptr[i].len));
+  }
+  return args;
+}
+
 HttpHeaders::HttpHeaders(std::unique_ptr<HandleState> state)
     : HttpHeadersReadOnly(std::move(state)) {}
 
@@ -1189,8 +1199,18 @@ host_api::Result<host_api::Void> host_api::HttpOutgoingResponse::send() {
   return {};
 }
 
+extern "C" bool init_from_environment();
+
 void exports_wasi_http_incoming_handler(exports_wasi_http_incoming_request request_handle,
                                         exports_wasi_http_response_outparam response_out) {
+  // If StarlingMonkey hasn't been pre-initialized, no request handler will be installed yet.
+  // The embedding must provide an implementation of the `init_from_environment()` hook and ensure
+  // that it properly initializes the runtime and installs a request handler.
+  if (!REQUEST_HANDLER) {
+    init_from_environment();
+  }
+  MOZ_ASSERT(REQUEST_HANDLER);
+
   RESPONSE_OUT = response_out;
   auto state = new WASIHandle<host_api::HttpIncomingRequest>(request_handle);
   auto *request = new host_api::HttpIncomingRequest(std::unique_ptr<host_api::HandleState>(state));

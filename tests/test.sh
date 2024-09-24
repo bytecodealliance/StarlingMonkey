@@ -27,7 +27,7 @@ if [ -z "$test_component" ]; then
 
    # Run Wizer
    set +e
-   PREOPEN_DIR="$(dirname $(dirname "$test_dir"))" "$test_runtime/componentize.sh" $componentize_flags "$test_dir/$test_name.js" "$test_component" 1> "$stdout_log" 2> "$stderr_log"
+   PREOPEN_DIR="$(dirname $(dirname "$test_dir"))" "$test_runtime/componentize.sh" --verbose $componentize_flags "$test_dir/$test_name.js" "$test_component" 1> "$stdout_log" 2> "$stderr_log"
    wizer_result=$?
    set -e
 
@@ -40,7 +40,7 @@ if [ -z "$test_component" ]; then
       echo "Expected Wizer to fail, but it succeeded."
       exit 1
    elif [ ! -f "$test_wizer_fail_expectation" ] && [ ! $wizer_result -eq 0 ]; then
-      echo "Wizering failed."
+      echo "Wizening failed."
       >&2 cat "$stderr_log"
       >&2 cat "$stdout_log"
       exit 1

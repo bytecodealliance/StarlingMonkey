@@ -59,7 +59,7 @@ namespace api {
 
 bool hasWizeningFinished();
 bool isWizening();
-void markWizeningAsFinished();
+void finishWizening();
 
 #define DBG(...)                                                                                   \
   printf("%s#%d: ", __func__, __LINE__);                                                           \
@@ -158,12 +158,12 @@ void markWizeningAsFinished();
   }
 
 #define REQUEST_HANDLER_ONLY(name)                                                                 \
-  if (isWizening()) {                                                                              \
+  if (api::Engine::get(cx)->state() != api::EngineState::Initialized) {                            \
     return api::throw_error(cx, api::Errors::RequestHandlerOnly, name);                            \
   }
 
 #define INIT_ONLY(name)                                                                            \
-  if (hasWizeningFinished()) {                                                                     \
+  if (api::Engine::get(cx)->state() != api::EngineState::ScriptPreInitializing) {                  \
     return api::throw_error(cx, api::Errors::InitializationOnly, name);                            \
   }
 

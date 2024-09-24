@@ -484,7 +484,7 @@ bool ScriptLoader::eval_top_level_script(const char *path, JS::SourceText<mozill
   // optimizing them for compactness makes sense and doesn't fragment writes
   // later on.
   // https://github.com/fastly/js-compute-runtime/issues/222
-  if (ENGINE->is_preinitializing()) {
+  if (ENGINE->state() == api::EngineState::ScriptPreInitializing) {
     JS::PrepareForFullGC(cx);
     JS::NonIncrementalGC(cx, JS::GCOptions::Shrink, JS::GCReason::API);
   }
