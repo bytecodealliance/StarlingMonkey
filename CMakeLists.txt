@@ -74,7 +74,7 @@ if (USE_WASM_OPT)
         add_custom_command(
                 TARGET starling.wasm
                 POST_BUILD
-                COMMAND ${WASM_OPT} -O3 -o starling.wasm starling.wasm
+                COMMAND ${WASM_OPT} -O3 -g -o starling.wasm starling.wasm
                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
     endif()
