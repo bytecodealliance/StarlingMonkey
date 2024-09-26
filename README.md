@@ -3,11 +3,7 @@
 StarlingMonkey is a [SpiderMonkey](https://spidermonkey.dev/) based JS runtime optimized for use in [WebAssembly Components](https://component-model.bytecodealliance.org/).
 StarlingMonkey's core builtins target WASI 0.2.0 to support a Component Model based event loop and standards-compliant implementations of key web builtins, including the fetch API, WHATWG Streams, text encoding, and others. To support tailoring for specific use cases, it's designed to be highly modular, and can be readily extended with custom builtins and host APIs.
 
-StarlingMonkey is used as the engine in the following projects:
-
-* Fastly's [JS Compute](https://github.com/fastly/js-compute-runtime) runtime.
-* Fermyon's [Spin JS SDK](https://github.com/fermyon/spin-js-sdk).
-* As the JS engine for [ComponentizeJS](https://github.com/bytecodealliance/ComponentizeJS) for creating custom JS Wasm components.
+StarlingMonkey is used in production for Fastly's JS Compute platform, and Fermyon's Spin JS SDK. See the [ADOPTERS](ADOPTERS.md) file for more details.
 
 ## Building and Running
 
