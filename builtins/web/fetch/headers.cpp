@@ -1015,6 +1015,21 @@ bool Headers::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+void Headers::finalize(JS::GCContext *gcx, JSObject *self) {
+  HeadersList *list = static_cast<HeadersList *>(
+      JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersList)).toPrivate());
+  if (list != nullptr) {
+    list->clear();
+    free(list);
+  }
+  HeadersSortList *sort_list = static_cast<HeadersSortList *>(
+      JS::GetReservedSlot(self, static_cast<size_t>(Slots::HeadersSortList)).toPrivate());
+  if (sort_list != nullptr) {
+    sort_list->clear();
+    free(sort_list);
+  }
+}
+
 bool Headers::init_class(JSContext *cx, JS::HandleObject global) {
   // get the host forbidden headers for guard checks
   forbidden_request_headers = &host_api::HttpHeaders::get_forbidden_request_headers();
