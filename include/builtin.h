@@ -50,8 +50,8 @@ using JS::PersistentRooted;
 std::optional<std::span<uint8_t>> value_to_buffer(JSContext *cx, HandleValue val,
                                                   const char *val_desc);
 
-#define DEF_ERR(name, exception, format, count) \
-static constexpr JSErrorFormatString name = { #name, format, count, exception };
+#define DEF_ERR(name, exception, format, count)                                                    \
+  static constexpr JSErrorFormatString name = {#name, format, count, exception};
 
 namespace api {
 #include "errors.h"
@@ -123,39 +123,39 @@ void markWizeningAsFinished();
   BUILTIN_ITERATOR_METHOD(class_name, keys, ITER_TYPE_KEYS)                                        \
   BUILTIN_ITERATOR_METHOD(class_name, values, ITER_TYPE_VALUES)                                    \
                                                                                                    \
-bool class_name::forEach(JSContext *cx, unsigned argc, JS::Value *vp) {                            \
-  METHOD_HEADER(1)                                                                                 \
-  if (!args[0].isObject() || !JS::IsCallable(&args[0].toObject())) {                               \
-    return api::throw_error(cx, api::Errors::ForEachCallback, #class_name);                        \
-  }                                                                                                \
-  JS::RootedValueArray<3> newArgs(cx);                                                             \
-  newArgs[2].setObject(*self);                                                                     \
-  JS::RootedValue rval(cx);                                                                        \
-  JS::RootedObject iter(cx, class_name##Iterator::create(cx, self, ITER_TYPE_ENTRIES));            \
-  if (!iter)                                                                                       \
-    return false;                                                                                  \
-  JS::RootedValue iterable(cx, ObjectValue(*iter));                                                \
-  JS::ForOfIterator it(cx);                                                                        \
-  if (!it.init(iterable))                                                                          \
-    return false;                                                                                  \
-                                                                                                   \
-  JS::RootedValue entry_val(cx);                                                                   \
-  JS::RootedObject entry(cx);                                                                      \
-  while (true) {                                                                                   \
-    bool done;                                                                                     \
-    if (!it.next(&entry_val, &done))                                                               \
+  bool class_name::forEach(JSContext *cx, unsigned argc, JS::Value *vp) {                          \
+    METHOD_HEADER(1)                                                                               \
+    if (!args[0].isObject() || !JS::IsCallable(&args[0].toObject())) {                             \
+      return api::throw_error(cx, api::Errors::ForEachCallback, #class_name);                      \
+    }                                                                                              \
+    JS::RootedValueArray<3> newArgs(cx);                                                           \
+    newArgs[2].setObject(*self);                                                                   \
+    JS::RootedValue rval(cx);                                                                      \
+    JS::RootedObject iter(cx, class_name##Iterator::create(cx, self, ITER_TYPE_ENTRIES));          \
+    if (!iter)                                                                                     \
       return false;                                                                                \
-    if (done)                                                                                      \
-      break;                                                                                       \
-                                                                                                   \
-    entry = &entry_val.toObject();                                                                 \
-    JS_GetElement(cx, entry, 1, newArgs[0]);                                                       \
-    JS_GetElement(cx, entry, 0, newArgs[1]);                                                       \
-    if (!JS::Call(cx, args.thisv(), args[0], newArgs, &rval))                                      \
+    JS::RootedValue iterable(cx, ObjectValue(*iter));                                              \
+    JS::ForOfIterator it(cx);                                                                      \
+    if (!it.init(iterable))                                                                        \
       return false;                                                                                \
-  }                                                                                                \
-  return true;                                                                                     \
-}
+                                                                                                   \
+    JS::RootedValue entry_val(cx);                                                                 \
+    JS::RootedObject entry(cx);                                                                    \
+    while (true) {                                                                                 \
+      bool done;                                                                                   \
+      if (!it.next(&entry_val, &done))                                                             \
+        return false;                                                                              \
+      if (done)                                                                                    \
+        break;                                                                                     \
+                                                                                                   \
+      entry = &entry_val.toObject();                                                               \
+      JS_GetElement(cx, entry, 1, newArgs[0]);                                                     \
+      JS_GetElement(cx, entry, 0, newArgs[1]);                                                     \
+      if (!JS::Call(cx, args.thisv(), args[0], newArgs, &rval))                                    \
+        return false;                                                                              \
+    }                                                                                              \
+    return true;                                                                                   \
+  }
 
 #define REQUEST_HANDLER_ONLY(name)                                                                 \
   if (isWizening()) {                                                                              \
@@ -228,6 +228,24 @@ public:
 
     return proto_obj != nullptr;
   }
+
+  static void finalize(JS::GCContext *gcx, JSObject *obj) {}
+};
+
+template <typename Impl> class FinalizableBuiltinImpl : public BuiltinImpl<Impl> {
+  static constexpr JSClassOps class_ops{
+      nullptr,        // addProperty
+      nullptr,        // delProperty
+      nullptr,        // enumerate
+      nullptr,        // newEnumerate
+      nullptr,        // resolve
+      nullptr,        // mayResolve
+      Impl::finalize, // finalize
+      nullptr,        // call
+      nullptr,        // construct
+      nullptr,        // trace
+  };
+  static constexpr uint32_t class_flags = JSCLASS_BACKGROUND_FINALIZE;
 };
 
 template <typename Impl> PersistentRooted<JSObject *> BuiltinImpl<Impl>::proto_obj{};
