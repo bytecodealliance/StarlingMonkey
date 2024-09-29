@@ -34,9 +34,7 @@ namespace api {
 class AsyncTask;
 
 struct EngineConfig {
-  static constexpr const char* DEFAULT_SCRIPT_PATH = "./index.js";
   optional<std::string> content_script_path;
-  optional<std::string> debug_script_path;
   optional<std::string> content_script;
   bool module_mode = true;
 
@@ -49,14 +47,6 @@ struct EngineConfig {
   bool verbose = false;
 
   EngineConfig() = default;
-  EngineConfig* apply_env(std::string_view envvar_name = "STARLINGMONKEY_CONFIG");
-  EngineConfig* apply_args(std::string_view args_string);
-  EngineConfig* apply_args(std::vector<std::string_view> args);
-
-private:
-  // This enables using the TRACE macro in EngineConfig, supporting tracing of applying
-  // configuration.
-  EngineConfig* config_ = this;
 };
 
 enum class EngineState { Uninitialized, EngineInitializing, ScriptPreInitializing, Initialized, Aborted };

@@ -436,79 +436,9 @@ HandleObject Engine::global() { return GLOBAL; }
 EngineState Engine::state() { return state_; }
 
 void Engine::finish_pre_initialization() {
-  DBG("state:%d\n", state_);
   MOZ_ASSERT(state_ == EngineState::ScriptPreInitializing);
   js::ResetMathRandomSeed(ENGINE->cx());
   state_ = EngineState::Initialized;
-}
-
-EngineConfig *EngineConfig::apply_env(std::string_view envvar_name) {
-  if (const char *config = std::getenv(envvar_name.data())) {
-    return apply_args(config);
-  }
-
-  return this;
-}
-
-EngineConfig *EngineConfig::apply_args(std::string_view args_string) {
-  vector<std::string_view> args = { "starling.wasm" };
-  std::string current;
-  char last = '\0';
-  bool in_quotes = false;
-  size_t slice_start = 0;
-  for (size_t i = 0; i < args_string.size(); i++) {
-    char c = args_string[i];
-
-    if ((!in_quotes && isspace(c)) || (c == '"' && last != '\\')) {
-      if (slice_start < i) {
-        args.push_back(args_string.substr(slice_start, i - slice_start));
-      }
-      slice_start = i + 1;
-    }
-    if (c == '"' && last != '\\') {
-      in_quotes = !in_quotes;
-    }
-    last = c;
-  }
-
-  if (slice_start < args_string.size()) {
-    args.push_back(args_string.substr(slice_start));
-  }
-
-  return apply_args(args);
-}
-
-EngineConfig *EngineConfig::apply_args(std::vector<std::string_view> args) {
-  for (size_t i = 1; i < args.size(); i++) {
-    if (args[i] == "--debug") {
-      if (i + 1 < args.size()) {
-        this->debug_script_path = args[i + 1];
-        i++;
-      }
-    } else if (args[i] == "-e" || args[i] == "--eval") {
-      if (i + 1 < args.size()) {
-        this->content_script = args[i + 1];
-        this->content_script_path.reset();
-        TRACE("Adding eval code and resetting content script path");
-        i++;
-      }
-    } else if (args[i] == "-v" || args[i] == "--verbose") {
-      this->verbose = true;
-    } else if (args[i] == "--legacy-script") {
-      this->module_mode = false;
-      if (i + 1 < args.size()) {
-        this->content_script_path = args[i + 1];
-        i++;
-      }
-    } else if (args[i].starts_with("--")) {
-      std::cerr << "Unknown option: " << args[i] << std::endl;
-      exit(1);
-    } else {
-      this->content_script_path = args[i];
-    }
-  }
-
-  return this;
 }
 
 HandleValue Engine::script_value() {
