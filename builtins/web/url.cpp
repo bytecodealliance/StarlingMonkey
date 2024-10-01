@@ -581,7 +581,8 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, JS::HandleValue url_
 }
 
 void URL::finalize(JS::GCContext *gcx, JSObject *self) {
-  jsurl::JSUrl* url = static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(self, Slots::Url).toPrivate());
+  jsurl::JSUrl *url =
+      static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(self, Slots::Url).toPrivate());
   free(url);
 }
 

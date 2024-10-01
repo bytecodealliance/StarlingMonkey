@@ -8,7 +8,7 @@ namespace builtins {
 namespace web {
 namespace fetch {
 
-class Headers final : public BuiltinImpl<Headers> {
+class Headers final : public FinalizableBuiltinImpl<Headers> {
   static bool append(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool delete_(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool entries(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -126,6 +126,8 @@ public:
   static JSObject *create(JSContext *cx, HeadersGuard guard);
   static JSObject *create(JSContext *cx, HandleValue init_headers, HeadersGuard guard);
   static JSObject *create(JSContext *cx, host_api::HttpHeadersReadOnly *handle, HeadersGuard guard);
+
+  static void finalize(JS::GCContext *gcx, JSObject *obj);
 
   static bool init_entries(JSContext *cx, HandleObject self, HandleValue init_headers);
 
