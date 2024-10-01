@@ -34,7 +34,6 @@ JS_PS_END};
 namespace wpt_support {
 
 bool install(api::Engine* engine) {
-  engine->enable_module_mode(false);
   if (!JS_DefineProperties(engine->cx(), engine->global(), properties)) {
     return false;
   }

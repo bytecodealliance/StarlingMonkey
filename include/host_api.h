@@ -532,6 +532,8 @@ public:
   static void unsubscribe(PollableHandle handle_id);
 };
 
+vector<std::string> environment_get_arguments();
+
 } // namespace host_api
 
 #endif

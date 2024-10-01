@@ -1,2 +1,2 @@
-Exception while pre-initializing
+Exception while evaluating top-level script
 tla-err.js:3:10 Error: blah
