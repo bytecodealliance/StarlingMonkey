@@ -64,7 +64,7 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 };
 
-class URL : public BuiltinImpl<URL> {
+class URL : public FinalizableBuiltinImpl<URL> {
   static bool hash_set(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool host_set(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool hostname_set(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -131,6 +131,7 @@ public:
 
   static bool init_class(JSContext *cx, JS::HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
+  static void finalize(JS::GCContext *gcx, JSObject *obj);
 };
 
 bool install(api::Engine *engine);

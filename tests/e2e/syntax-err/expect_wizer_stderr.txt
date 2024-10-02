@@ -1,2 +1,2 @@
-Exception while pre-initializing
+Exception while evaluating top-level script
 syntax-err.js:2:1 SyntaxError: expected expression, got end of script

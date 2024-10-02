@@ -24,6 +24,8 @@ using JS::MutableHandleValue;
 using JS::PersistentRooted;
 using JS::PersistentRootedVector;
 
+using std::optional;
+
 typedef int32_t PollableHandle;
 constexpr PollableHandle INVALID_POLLABLE_HANDLE = -1;
 
@@ -31,16 +33,38 @@ namespace api {
 
 class AsyncTask;
 
-class Engine {
+struct EngineConfig {
+  optional<std::string> content_script_path;
+  optional<std::string> content_script;
+  bool module_mode = true;
 
+  /**
+   * Whether to evaluate the top-level script in pre-initialization mode or not.
+   *
+   * During pre-initialization, functionality that depends on WASIp2 is unavailable.
+   */
+  bool pre_initialize = false;
+  bool verbose = false;
+
+  EngineConfig() = default;
+};
+
+enum class EngineState { Uninitialized, EngineInitializing, ScriptPreInitializing, Initialized, Aborted };
+
+class Engine {
+  std::unique_ptr<EngineConfig> config_;
+  EngineState state_ = EngineState::Uninitialized;
 
 public:
-  Engine();
+  explicit Engine(std::unique_ptr<EngineConfig> config);
+  static Engine *get(JSContext *cx);
+
   JSContext *cx();
   HandleObject global();
+  EngineState state();
 
-  /// Initialize the engine with the given filename
-  bool initialize(const char * filename);
+  void finish_pre_initialization();
+
 
   /**
    * Define a new builtin module
@@ -64,13 +88,9 @@ public:
    * changing this default, and will impact all subsequent top-level
    * evaluations.
    */
-  void enable_module_mode(bool enable);
   bool eval_toplevel(const char *path, MutableHandleValue result);
   bool eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char *path,
                      MutableHandleValue result);
-
-  bool is_preinitializing();
-  bool toplevel_evaluated();
 
   /**
    * Run the async event loop as long as there's interest registered in keeping it running.

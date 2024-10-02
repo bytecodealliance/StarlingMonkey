@@ -3,12 +3,16 @@
 StarlingMonkey is a [SpiderMonkey](https://spidermonkey.dev/) based JS runtime optimized for use in [WebAssembly Components](https://component-model.bytecodealliance.org/).
 StarlingMonkey's core builtins target WASI 0.2.0 to support a Component Model based event loop and standards-compliant implementations of key web builtins, including the fetch API, WHATWG Streams, text encoding, and others. To support tailoring for specific use cases, it's designed to be highly modular, and can be readily extended with custom builtins and host APIs.
 
-## Requirements
+StarlingMonkey is used in production for Fastly's JS Compute platform, and Fermyon's Spin JS SDK. See the [ADOPTERS](ADOPTERS.md) file for more details.
+
+## Building and Running
+
+### Requirements
 
 The runtime's build is managed by [cmake](https://cmake.org/), which also takes care of downloading the build dependencies.
 To properly manage the Rust toolchain, the build script expects [rustup](https://rustup.rs/) to be installed in the system.
 
-## Building and Running
+### Usage
 
 With sufficiently new versions of `cmake` and `rustup` installed, the build process is as follows:
 
@@ -73,7 +77,7 @@ cd cmake-build-release
 ./componentize.sh ../tests/smoke.js
 ```
 
-## Web Platform Tests
+### Web Platform Tests
 
 To run the [Web Platform Tests](https://web-platform-tests.org/) suite, the WPT runner requires `Node.js` to be installed, and during build configuration the option `ENABLE_WPT:BOOL=ON` must be set.
 
@@ -98,7 +102,7 @@ Custom flags can also be passed to the test runner via `WPT_FLAGS="..."`, for ex
 WPT_FLAGS="--update-expectations" ctest -R wpt -v
 ```
 
-## Configuring available builtins
+### Configuring available builtins
 
 StarlingMonkey supports enabling/disabling bundled builtins using CMake options. You can get a full list of bundled builtins by running the following shell command:
 
@@ -108,7 +112,7 @@ cmake -P [PATH_TO_STARLING_MONKEY]/cmake/builtins.cmake
 
 Note that it's required to include builtins defining all exports defined by the used host API. Using the default WASI 0.2.0 host API, that means including the `fetch_event` builtin.
 
-## Using StarlingMonkey as a CMake sub-project
+### Using StarlingMonkey as a CMake sub-project
 
 StarlingMonkey can be used as a subproject in a larger CMake project.
 

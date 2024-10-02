@@ -40,7 +40,7 @@ if [ -z "$test_component" ]; then
       echo "Expected Wizer to fail, but it succeeded."
       exit 1
    elif [ ! -f "$test_wizer_fail_expectation" ] && [ ! $wizer_result -eq 0 ]; then
-      echo "Wizering failed."
+      echo "Wizening failed."
       >&2 cat "$stderr_log"
       >&2 cat "$stdout_log"
       exit 1
