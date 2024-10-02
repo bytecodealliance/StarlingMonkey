@@ -1,4 +1,25 @@
-# The StarlingMonkey JS Runtime
+<div align="center">
+  <h1><code>StarlingMonkey</code></h1>
+
+  <p>
+    <strong>A SpiderMonkey-based JS runtime on WebAssembly</strong>
+  </p>
+
+  <strong>A <a href="https://bytecodealliance.org/">Bytecode Alliance</a> project</strong>
+
+  <p>
+    <a href="https://github.com/bytecodealliance/StarlingMonkey/actions?query=workflow%3ACI"><img src="https://github.com/bytecodealliance/StarlingMonkey/workflows/CI/badge.svg" alt="build status" /></a>
+    <a href="https://bytecodealliance.zulipchat.com/#narrow/stream/459697-StarlingMonkey"><img src="https://img.shields.io/badge/zulip-join_chat-brightgreen.svg" alt="zulip chat" /></a>
+  </p>
+
+  <h3>
+    <a href="#building-and-running">Intro</a>
+    <span> | </span>
+    <a href="ADOPTERS.md">Adopters</a>
+    <span> | </span>
+    <a href="https://bytecodealliance.zulipchat.com/#narrow/stream/459697-StarlingMonkey">Chat</a>
+  </h3>
+</div>
 
 StarlingMonkey is a [SpiderMonkey](https://spidermonkey.dev/) based JS runtime optimized for use in [WebAssembly Components](https://component-model.bytecodealliance.org/).
 StarlingMonkey's core builtins target WASI 0.2.0 to support a Component Model based event loop and standards-compliant implementations of key web builtins, including the fetch API, WHATWG Streams, text encoding, and others. To support tailoring for specific use cases, it's designed to be highly modular, and can be readily extended with custom builtins and host APIs.
