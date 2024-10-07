@@ -2,7 +2,7 @@
 
 #set -euo pipefail
 
-wizer="${WIZER:-@WIZER_BIN@}"
+wizer="${WIZER:-@WIZER_DIR@/wizer}"
 wasm_tools="${WASM_TOOLS:-@WASM_TOOLS_BIN@}"
 weval="${WEVAL:-@WEVAL_BIN@}"
 aot=@AOT@
