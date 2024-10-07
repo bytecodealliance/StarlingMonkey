@@ -101,7 +101,15 @@ host_api::HostString normalize_and_validate_header_value(JSContext *cx, HandleVa
   }
   bool valid = normalize_header_value(value);
   if (!valid) {
-    api::throw_error(cx, FetchErrors::InvalidHeaderValue, fun_name, value.begin());
+    // need to coerce to utf8 to report the error value
+    JS::RootedString str(cx, JS::ToString(cx, value_val));
+    if (!str) {
+      return host_api::HostString{};
+    }
+    auto maybe_utf8 = core::encode(cx, str);
+    if (maybe_utf8) {
+      api::throw_error(cx, FetchErrors::InvalidHeaderValue, fun_name, maybe_utf8.begin());
+    }
     return host_api::HostString{};
   }
   return value;
