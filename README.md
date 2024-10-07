@@ -13,7 +13,7 @@
   </p>
 
   <h3>
-    <a href="#building-and-running">Intro</a>
+    <a href="#building-and-running">Building</a>
     <span> | </span>
     <a href="ADOPTERS.md">Adopters</a>
     <span> | </span>
