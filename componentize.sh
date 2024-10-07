@@ -2,8 +2,8 @@
 
 #set -euo pipefail
 
-wizer="${WIZER:-wizer}"
-wasm_tools="${WASM_TOOLS:-wasm-tools}"
+wizer="${WIZER:-@WIZER_DIR@/wizer}"
+wasm_tools="${WASM_TOOLS:-@WASM_TOOLS_BIN@}"
 weval="${WEVAL:-@WEVAL_BIN@}"
 aot=@AOT@
 preopen_dir="${PREOPEN_DIR:-}"
