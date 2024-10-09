@@ -21,6 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        build: [release, weval]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -37,46 +38,20 @@ jobs:
 
     - name: Build StarlingMonkey
       run: |
-        cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
-        cmake --build cmake-build-debug --parallel 4 --target all integration-test-server
+        cmake -S . -B cmake-build-${{ matrix.build }}\
+          -DCMAKE_BUILD_TYPE=${{ (matrix.build == 'release' || matrix.build == 'weval') && 'Release' || 'Debug' }}\
+          ${{matrix.build == 'weval' && '-DUSE_WASM_OPT=OFF -DWEVAL=ON' || ''}}
+        cmake --build cmake-build-${{ matrix.build }} --parallel 4 --target all integration-test-server
 
     - name: StarlingMonkey E2E & Integration Tests
       run: |
-        CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-debug -j4
-
-  test-weval:
-    name: Test Weval
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Install Rust 1.77.1
-      run: |
-        rustup toolchain install 1.77.1
-        rustup target add wasm32-wasi --toolchain 1.77.1
-
-    - uses: actions/setup-node@v2
-      with:
-        node-version: 'lts/*'
-
-    - name: Build StarlingMonkey
-      run: |
-        cmake -S . -B cmake-build-weval -DCMAKE_BUILD_TYPE=Release -DUSE_WASM_OPT=OFF -DWEVAL=ON
-        cmake --build cmake-build-weval --parallel 4 --target all integration-test-server
-
-    - name: StarlingMonkey E2E & Integration Tests
-      run: |
-        CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-weval -j4
+        CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-${{ matrix.build }} -j4
 
   wpt:
     name: Web Platform Tests
     strategy:
       matrix:
-        build: [release, debug]
+        build: [release, debug, weval]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -93,9 +68,17 @@ jobs:
         node-version: 'lts/*'
 
     - name: Build StarlingMonkey WPT
+      if: matrix.build != 'weval'
       run: |
         cmake -S . -B cmake-build-${{ matrix.build }} -DENABLE_WPT:BOOL=ON -DCMAKE_BUILD_TYPE=${{ matrix.build == 'release' && 'Release' || 'Debug' }}
         cmake --build cmake-build-${{ matrix.build }} --parallel 4 --target wpt-runtime
+
+    - name: Build StarlingMonkey WPT Weval
+      if: matrix.build == 'weval'
+      run: |
+        cmake -S . -B cmake-build-weval -DCMAKE_BUILD_TYPE=Release -DUSE_WASM_OPT=OFF -DWEVAL=ON -DENABLE_WPT:BOOL=ON
+        cmake --build cmake-build-weval --parallel 4 --target starling-ics.wevalcache
+        cmake --build cmake-build-weval --parallel 4 --target wpt-runtime
 
     - name: Prepare WPT hosts
       run: |
@@ -104,4 +87,4 @@ jobs:
     - name: StarlingMonkey WPT Test
       env:
         CTEST_OUTPUT_ON_FAILURE: 1
-      run: ctest -R wpt --test-dir cmake-build-${{ matrix.build }} --verbose
+      run: ctest -R wpt --test-dir cmake-build-${{ matrix.build }} --verbose --no-tests=error
