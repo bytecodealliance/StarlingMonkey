@@ -43,6 +43,9 @@ const JSFunctionSpec Performance::static_methods[] = {JS_FS_END};
 const JSPropertySpec Performance::static_properties[] = {JS_PS_END};
 
 bool Performance::create(JSContext *cx, JS::HandleObject global) {
+  if (!Performance::timeOrigin.has_value()) {
+    Performance::timeOrigin = std::chrono::steady_clock::now();
+  }
   JS::RootedObject performance(
       cx, JS_NewObjectWithGivenProto(cx, &Performance::class_, Performance::proto_obj));
   if (!performance) {
