@@ -93,15 +93,15 @@ if [[ -n "$IN_FILE" ]]; then
            --cache-ro "$(dirname "$0")/starling-ics.wevalcache" \
            $WEVAL_VERBOSE \
            -o "$OUT_FILE" \
-           -i "$(dirname "$0")/starling.wasm"
+           -i "$(dirname "$0")/starling-raw.wasm"
   else
       echo "$STARLING_ARGS" | WASMTIME_BACKTRACE_DETAILS=1 $wizer --allow-wasi --wasm-bulk-memory true \
            --inherit-stdio true --inherit-env true $preopen_dir -o "$OUT_FILE" \
-           -- "$(dirname "$0")/starling.wasm"
+           -- "$(dirname "$0")/starling-raw.wasm"
   fi
 else
   echo "Creating runtime-eval component $OUT_FILE"
-  cp "$(dirname "$0")/starling.wasm" "$OUT_FILE"
+  cp "$(dirname "$0")/starling-raw.wasm" "$OUT_FILE"
 fi
 
 $wasm_tools component new -v --adapt "wasi_snapshot_preview1=$(dirname "$0")/preview1-adapter.wasm" --output "$OUT_FILE" "$OUT_FILE"

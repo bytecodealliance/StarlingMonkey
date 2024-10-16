@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 3.27 FATAL_ERROR)
 
-add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/.." ${CMAKE_BINARY_DIR}/starling.wasm)
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/.." ${CMAKE_BINARY_DIR}/starling-raw.wasm)
 
 set(PATH_BACKUP CMAKE_MODULE_PATH)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
