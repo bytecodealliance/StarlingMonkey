@@ -58,12 +58,38 @@ cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
 
 3. Build the runtime
 
-The following command will build the `starling.wasm` runtime module in the `cmake-build-release` directory:
+Building the runtime is done in two phases: first, cmake is used to build a raw version as a WebAssembly core module. Then, that module is turned into a [WebAssembly Component](https://component-model.bytecodealliance.org/) using the `componentize.sh` script.
+
+The following command will build the `starling-raw.wasm` runtime module in the `cmake-build-release` directory:
 ```bash
 # Use cmake-build-debug for the debug build
 # Change the value for `--parallel` to match the number of CPU cores in your system
 cmake --build cmake-build-release --parallel 8
 ```
+
+Then, the `starling-raw.wasm` module can be turned into a component with the following command:
+
+```bash
+cd cmake-build-release
+./componentize.sh -o starling.wasm
+```
+
+The resulting runtime can be used to load and evaluate JS code dynamically:
+
+```bash
+wasmtime -S http starling.wasm -e "console.log('hello world')"
+# or, to load a file:
+wasmtime -S http --dir . starling.wasm index.js
+```
+
+Alternatively, a JS file can be provided during componentization:
+
+```bash
+cd cmake-build-release
+./componentize.sh index.js -o starling.wasm
+```
+
+This way, the JS file will be loaded during componentization, and the top-level code will be executed, and can e.g. register a handler for the `fetch` event to serve HTTP requests.
 
 4. Testing the build 
 
@@ -145,7 +171,7 @@ include("${PATH_TO_STARLING_MONKEY}/cmake/add_as_subproject.cmake")
 
 With that line added (and `${PATH_TO_STARLING_MONKEY}` replaced with the actual path to StarlingMonkey), the importing project will have all the build targets of StarlingMonkey available to it.
 
-Note that building the `starling.wasm` target itself will result in the linked `starling.wasm` file being created in the `starling.wasm` sub-directory of the importing project's build directory.
+Note that building the `starling-raw.wasm` target itself will result in the linked `starling-raw.wasm` file being created in the `starling-raw.wasm` sub-directory of the importing project's build directory.
 
 To make use of importing StarlingMonkey in this way, you'll probably want to add additional builtins, or provide your own implementation of the host interface.
 
