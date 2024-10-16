@@ -3,3 +3,8 @@ stderr [0] :: runtime error
 stderr [0] :: Stack:
 stderr [0] ::   @runtime-err.js:6:13
 stderr [0] ::   @runtime-err.js:7:7
+stderr [0] :: Caused by: 
+stderr [0] :: error cause
+stderr [0] :: Stack:
+stderr [0] ::   @runtime-err.js:6:49
+stderr [0] ::   @runtime-err.js:7:7
