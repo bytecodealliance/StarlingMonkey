@@ -566,22 +566,12 @@ Result<uint64_t> HttpOutgoingBody::capacity() {
   return Result<uint64_t>::ok(capacity);
 }
 
-Result<uint32_t> HttpOutgoingBody::write(const uint8_t *bytes, size_t len) {
-  auto res = capacity();
-  if (res.is_err()) {
-    // TODO: proper error handling for all 154 error codes.
-    return Result<uint32_t>::err(154);
-  }
-  auto capacity = res.unwrap();
-  auto bytes_to_write = std::min(len, static_cast<size_t>(capacity));
+void HttpOutgoingBody::write(const uint8_t *bytes, size_t len) {
+  MOZ_ASSERT(capacity().unwrap() >= len);
 
   auto *state = static_cast<OutgoingBodyHandle *>(this->handle_state_.get());
   Borrow<OutputStream> borrow(state->stream_handle_);
-  if (!write_to_outgoing_body(borrow, bytes, bytes_to_write)) {
-    return Result<uint32_t>::err(154);
-  }
-
-  return Result<uint32_t>::ok(bytes_to_write);
+  MOZ_RELEASE_ASSERT(write_to_outgoing_body(borrow, bytes, len));
 }
 
 Result<Void> HttpOutgoingBody::write_all(const uint8_t *bytes, size_t len) {
@@ -646,7 +636,8 @@ public:
                           HttpOutgoingBody *outgoing_body,
                           api::TaskCompletionCallback completion_callback,
                           HandleObject callback_receiver)
-      : incoming_body_(incoming_body), outgoing_body_(outgoing_body), cb_(completion_callback) {
+      : incoming_body_(incoming_body), outgoing_body_(outgoing_body), cb_(completion_callback),
+        cb_receiver_(callback_receiver), state_(State::BlockedOnBoth) {
     auto res = incoming_body_->subscribe();
     MOZ_ASSERT(!res.is_err());
     incoming_pollable_ = res.unwrap();
@@ -654,10 +645,6 @@ public:
     res = outgoing_body_->subscribe();
     MOZ_ASSERT(!res.is_err());
     outgoing_pollable_ = res.unwrap();
-
-    cb_receiver_ = callback_receiver;
-
-    set_state(engine->cx(), State::BlockedOnBoth);
   }
 
   [[nodiscard]] bool run(api::Engine *engine) override {
@@ -674,19 +661,17 @@ public:
       set_state(engine->cx(), State::BlockedOnOutgoing);
     }
 
-    uint64_t capacity = 0;
-    if (state_ == State::BlockedOnOutgoing) {
-      auto res = outgoing_body_->capacity();
-      if (res.is_err()) {
-        return false;
-      }
-      capacity = res.unwrap();
-      if (capacity > 0) {
-        set_state(engine->cx(), State::Ready);
-      } else {
-        engine->queue_async_task(this);
-        return true;
-      }
+    MOZ_ASSERT(state_ == State::BlockedOnOutgoing);
+    auto res = outgoing_body_->capacity();
+    if (res.is_err()) {
+      return false;
+    }
+    uint64_t capacity = res.unwrap();
+    if (capacity > 0) {
+      set_state(engine->cx(), State::Ready);
+    } else {
+      engine->queue_async_task(this);
+      return true;
     }
 
     MOZ_ASSERT(state_ == State::Ready);
@@ -705,17 +690,8 @@ public:
         return true;
       }
 
-      unsigned offset = 0;
-      while (bytes.len - offset > 0) {
-        // TODO: remove double checking of write-readiness
-        // TODO: make this async by storing the remaining chunk in the task and marking it as
-        // being blocked on write
-        auto write_res = outgoing_body_->write(bytes.ptr.get() + offset, bytes.len - offset);
-        if (write_res.is_err()) {
-          // TODO: proper error handling.
-          return false;
-        }
-        offset += write_res.unwrap();
+      if (bytes.len > 0) {
+        outgoing_body_->write(bytes.ptr.get(), bytes.len);
       }
 
       if (done) {

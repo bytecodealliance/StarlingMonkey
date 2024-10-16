@@ -284,10 +284,10 @@ public:
 
   /// Write a chunk to this handle.
   ///
-  /// Doesn't necessarily write the entire chunk, and doesn't take ownership of `bytes`.
-  ///
-  /// @return the number of bytes written.
-  Result<uint32_t> write(const uint8_t *bytes, size_t len);
+  /// Asserts that the receiver is ready to write the entire chunk, which the caller must ensure
+  /// by calling `receiver->capacity()` first and not attempting to write more than the returned
+  /// value.
+  void write(const uint8_t *bytes, size_t len);
 
   /// Writes the given number of bytes from the given buffer to the given handle.
   ///
