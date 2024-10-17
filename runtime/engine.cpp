@@ -67,6 +67,8 @@ using api::Engine;
 using api::EngineState;
 using api::EngineConfig;
 
+void dump_error(JSContext *cx, HandleValue error, bool *has_stack, FILE *fp);
+
 __attribute__((weak))
 bool debug_logging_enabled() { return DEBUG_LOGGING; }
 #define LOG(...)                                                                                   \
@@ -116,6 +118,29 @@ bool print_stack(JSContext *cx, FILE *fp) {
   return print_stack(cx, stackp, fp);
 }
 
+void print_cause(JSContext *cx, HandleValue error, FILE *fp) {
+  bool has_cause = false;
+
+  if (error.isObject()) {
+    RootedObject err(cx, &error.toObject());
+    if (!JS_HasProperty(cx, err, "cause", &has_cause)) {
+      return;
+    }
+
+    if (has_cause) {
+      JS::RootedValue cause_val(cx);
+      if (!JS_GetProperty(cx, err, "cause", &cause_val)) {
+        return;
+      }
+
+      fprintf(stderr, "Caused by: ");
+
+      bool has_stack;
+      dump_error(cx, cause_val, &has_stack, fp);
+    }
+  }
+}
+
 void dump_error(JSContext *cx, HandleValue error, bool *has_stack, FILE *fp) {
   bool reported = false;
   RootedObject stack(cx);
@@ -144,6 +169,8 @@ void dump_error(JSContext *cx, HandleValue error, bool *has_stack, FILE *fp) {
   } else {
     *has_stack = false;
   }
+
+  print_cause(cx, error, fp);
 }
 
 void dump_promise_rejection(JSContext *cx, HandleValue reason, HandleObject promise, FILE *fp) {
