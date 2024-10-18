@@ -48,7 +48,7 @@ if (ENABLE_WPT)
     include("tests/wpt-harness/wpt.cmake")
 endif()
 
-add_executable(starling.wasm
+add_executable(starling-raw.wasm
         runtime/js.cpp
         runtime/allocator.cpp
         runtime/encode.cpp
@@ -65,31 +65,31 @@ option(USE_WASM_OPT "use wasm-opt to optimize the StarlingMonkey binary" ON)
 if (USE_WASM_OPT)
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
         add_custom_command(
-                TARGET starling.wasm
+                TARGET starling-raw.wasm
                 POST_BUILD
-                COMMAND ${WASM_OPT} --strip-debug -O3 -o starling.wasm starling.wasm
+                COMMAND ${WASM_OPT} --strip-debug -O3 -o starling-raw.wasm starling-raw.wasm
                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
     elseif (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
         add_custom_command(
-                TARGET starling.wasm
+                TARGET starling-raw.wasm
                 POST_BUILD
-                COMMAND ${WASM_OPT} -O3 -g -o starling.wasm starling.wasm
+                COMMAND ${WASM_OPT} -O3 -g -o starling-raw.wasm starling-raw.wasm
                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
     endif()
 else()
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
         add_custom_command(
-            TARGET starling.wasm
+            TARGET starling-raw.wasm
             POST_BUILD
-            COMMAND ${WASM_OPT} --strip-debug -O0 -o starling.wasm starling.wasm
+            COMMAND ${WASM_OPT} --strip-debug -O0 -o starling-raw.wasm starling-raw.wasm
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
     endif()
 endif()
 
-target_link_libraries(starling.wasm PRIVATE host_api extension_api builtins spidermonkey rust-url)
+target_link_libraries(starling-raw.wasm PRIVATE host_api extension_api builtins spidermonkey rust-url)
 
 # build a compilation cache of ICs
 if(WEVAL)
@@ -100,8 +100,8 @@ if(WEVAL)
         ALL
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND rm -f starling-ics.wevalcache
-        COMMAND echo ./null.js | ${WEVAL_BIN} weval --dir . --show-stats --cache starling-ics.wevalcache -w -i starling.wasm -o /dev/null
-        DEPENDS starling.wasm
+        COMMAND echo ./null.js | ${WEVAL_BIN} weval --dir . --show-stats --cache starling-ics.wevalcache -w -i starling-raw.wasm -o /dev/null
+        DEPENDS starling-raw.wasm
         VERBATIM
     )
     set(WEVAL_CACHE_FILE "starling-ics.wevalcache")
@@ -110,7 +110,7 @@ else()
     set(AOT 0)
 endif()
 
-set(RUNTIME_FILE "starling.wasm")
+set(RUNTIME_FILE "starling-raw.wasm")
 set(ADAPTER_FILE "preview1-adapter.wasm")
 configure_file("componentize.sh" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh" @ONLY)
 configure_file(${ADAPTER} "${CMAKE_CURRENT_BINARY_DIR}/${ADAPTER_FILE}" COPYONLY)
@@ -123,19 +123,19 @@ function(componentize OUTPUT)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
     list(TRANSFORM ARG_SOURCES PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/)
     list(JOIN ARG_SOURCES " " SOURCES)
-    get_target_property(RUNTIME_DIR starling.wasm BINARY_DIR)
+    get_target_property(RUNTIME_DIR starling-raw.wasm BINARY_DIR)
 
     add_custom_command(
             OUTPUT ${OUTPUT}.wasm
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            COMMAND ${CMAKE_COMMAND} ${RUNTIME_DIR}/componentize.sh ${SOURCES} -o ${OUTPUT}.wasm
-            DEPENDS ${ARG_SOURCES} ${RUNTIME_DIR}/componentize.sh starling.wasm
+            COMMAND ${RUNTIME_DIR}/componentize.sh ${SOURCES} -o ${OUTPUT}.wasm
+            DEPENDS ${ARG_SOURCES} ${RUNTIME_DIR}/componentize.sh starling-raw.wasm
             VERBATIM
     )
     add_custom_target(${OUTPUT} DEPENDS ${OUTPUT}.wasm)
 endfunction()
 
 componentize(smoke-test SOURCES tests/cases/smoke/smoke.js)
-componentize(runtime-eval)
+componentize(starling)
 
 include("tests/tests.cmake")

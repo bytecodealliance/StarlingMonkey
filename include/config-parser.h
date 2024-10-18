@@ -37,7 +37,7 @@ public:
    * program name, so all the examples for the other `apply_args` overload apply here, too.
    */
   ConfigParser *apply_args(std::string_view args_string) {
-    std::vector<std::string_view> args = { "starling.wasm" };
+    std::vector<std::string_view> args = { "starling-raw.wasm" };
     char last = '\0';
     bool in_quotes = false;
     size_t slice_start = 0;
