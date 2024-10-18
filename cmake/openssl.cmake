@@ -4,6 +4,13 @@ set(OPENSSL_SOURCE_DIR ${CMAKE_BINARY_DIR}/deps-src/OpenSSL)
 set(OPENSSL_INSTALL_DIR ${CMAKE_BINARY_DIR}/deps/OpenSSL)
 set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_DIR}/include)
 include(ExternalProject)
+
+if (CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+    set(MAKE_COMMAND "$(MAKE)")
+else()
+    find_program(MAKE_COMMAND NAMES make gmake)
+endif()
+
 ExternalProject_Add(
         OpenSSL
         SOURCE_DIR ${OPENSSL_SOURCE_DIR}
@@ -30,10 +37,11 @@ ExternalProject_Add(
         --prefix=${OPENSSL_INSTALL_DIR}
         --cross-compile-prefix=${WASI_SDK_PREFIX}/bin/
         linux-x32
-        BUILD_COMMAND $(MAKE)
+        BUILD_COMMAND ${MAKE_COMMAND}
         TEST_COMMAND ""
-        INSTALL_COMMAND $(MAKE) install_sw
+        INSTALL_COMMAND ${MAKE_COMMAND} install_sw
         INSTALL_DIR ${OPENSSL_INSTALL_DIR}
+        BUILD_BYPRODUCTS ${OPENSSL_INSTALL_DIR}/libx32/libcrypto.a
 )
 
 # We cannot use find_library because ExternalProject_Add() is performed at build time.
