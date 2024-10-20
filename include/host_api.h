@@ -249,9 +249,17 @@ public:
 void block_on_pollable_handle(PollableHandle handle);
 
 class HttpIncomingBody final : public Pollable {
+  friend class HttpIncomingResponse;
+  friend class HttpIncomingRequest;
+  friend class HttpOutgoingBody;
+
+  std::optional<uint64_t> content_length_;
+
+  explicit HttpIncomingBody(std::unique_ptr<HandleState> handle,
+                            std::optional<uint64_t> content_length);
+
 public:
   HttpIncomingBody() = delete;
-  explicit HttpIncomingBody(std::unique_ptr<HandleState> handle);
 
   class ReadResult final {
   public:

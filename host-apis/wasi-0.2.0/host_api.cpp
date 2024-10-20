@@ -584,8 +584,10 @@ void block_on_pollable_handle(PollableHandle handle) {
   wasi_io_poll_method_pollable_block({handle});
 }
 
-HttpIncomingBody::HttpIncomingBody(std::unique_ptr<HandleState> state) : Pollable() {
+HttpIncomingBody::HttpIncomingBody(std::unique_ptr<HandleState> state,
+  std::optional<uint64_t> content_length) : Pollable() {
   handle_state_ = std::move(state);
+  content_length_ = content_length;
 }
 
 Resource::~Resource() {
@@ -701,6 +703,17 @@ Result<HttpHeadersReadOnly *> HttpIncomingResponse::headers() {
   return Result<HttpHeadersReadOnly *>::ok(headers_);
 }
 
+std::optional<uint64_t> get_content_length(HttpHeadersReadOnly* headers) {
+  auto length_header = std::move(headers->get("Content-Length").unwrap());
+  if (!length_header.has_value()) {
+    return std::nullopt;
+  }
+
+  MOZ_ASSERT(length_header.value().size() == 1);
+  auto length_val = std::move(length_header.value().at(0));
+  return std::atol(length_val.ptr.get());
+}
+
 Result<HttpIncomingBody *> HttpIncomingResponse::body() {
   if (!body_) {
     if (!valid()) {
@@ -711,7 +724,8 @@ Result<HttpIncomingBody *> HttpIncomingResponse::body() {
     if (!wasi_http_types_method_incoming_response_consume(borrow, &body)) {
       return Result<HttpIncomingBody *>::err(154);
     }
-    body_ = new HttpIncomingBody(std::unique_ptr<HandleState>(new IncomingBodyHandle(body)));
+    auto content_length = get_content_length(headers().unwrap());
+    body_ = new HttpIncomingBody(std::make_unique<IncomingBodyHandle>(body), content_length);
   }
   return Result<HttpIncomingBody *>::ok(body_);
 }
@@ -813,7 +827,8 @@ Result<HttpIncomingBody *> HttpIncomingRequest::body() {
     if (!wasi_http_types_method_incoming_request_consume(borrow, &body)) {
       return Result<HttpIncomingBody *>::err(154);
     }
-    body_ = new HttpIncomingBody(std::unique_ptr<HandleState>(new IncomingBodyHandle(body)));
+    auto content_length = get_content_length(headers().unwrap());
+    body_ = new HttpIncomingBody(std::make_unique<IncomingBodyHandle>(body), content_length);
   }
   return Result<HttpIncomingBody *>::ok(body_);
 }
