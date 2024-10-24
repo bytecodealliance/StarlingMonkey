@@ -85,8 +85,7 @@ bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
   JS::RootedObject request(
       cx, &JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::Request)).toObject());
 
-  MOZ_ASSERT(!Request::request_handle(request));
-
+  MOZ_ASSERT(!RequestOrResponse::maybe_handle(request));
   JS::SetReservedSlot(request, static_cast<uint32_t>(Request::Slots::Request),
                       JS::PrivateValue(req));
 
@@ -175,7 +174,7 @@ bool start_response(JSContext *cx, JS::HandleObject response_obj) {
   host_api::HttpOutgoingResponse* response =
     host_api::HttpOutgoingResponse::make(status, std::move(headers));
 
-  auto existing_handle = Response::response_handle(response_obj);
+  auto existing_handle = Response::maybe_response_handle(response_obj);
   if (existing_handle) {
     MOZ_ASSERT(existing_handle->is_incoming());
   } else {

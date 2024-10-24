@@ -32,7 +32,8 @@ public:
   static bool is_instance(JSObject *obj);
   static bool is_incoming(JSObject *obj);
   static host_api::HttpRequestResponseBase *handle(JSObject *obj);
-  static host_api::HttpHeadersReadOnly *headers_handle(JSObject *obj);
+  static host_api::HttpRequestResponseBase *maybe_handle(JSObject *obj);
+  static host_api::HttpHeadersReadOnly *maybe_headers_handle(JSObject *obj);
   static bool has_body(JSObject *obj);
   static host_api::HttpIncomingBody *incoming_body_handle(JSObject *obj);
   static host_api::HttpOutgoingBody *outgoing_body_handle(JSObject *obj);
@@ -142,9 +143,6 @@ public:
 
   static JSObject *response_promise(JSObject *obj);
   static JSString *method(JS::HandleObject obj);
-  static host_api::HttpRequest *request_handle(JSObject *obj);
-  static host_api::HttpOutgoingRequest *outgoing_handle(JSObject *obj);
-  static host_api::HttpIncomingRequest *incoming_handle(JSObject *obj);
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -209,7 +207,7 @@ public:
   static JSObject *init_slots(HandleObject response);
   static JSObject *create_incoming(JSContext *cx, host_api::HttpIncomingResponse *response);
 
-  static host_api::HttpResponse *response_handle(JSObject *obj);
+  static host_api::HttpResponse *maybe_response_handle(JSObject *obj);
   static uint16_t status(JSObject *obj);
   static JSString *status_message(JSObject *obj);
   static void set_status_message_from_code(JSContext *cx, JSObject *obj, uint16_t code);

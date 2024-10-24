@@ -156,10 +156,16 @@ struct ReadResult {
 
 } // namespace
 
-host_api::HttpRequestResponseBase *RequestOrResponse::handle(JSObject *obj) {
+host_api::HttpRequestResponseBase *RequestOrResponse::maybe_handle(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
   auto slot = JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::RequestOrResponse));
   return static_cast<host_api::HttpRequestResponseBase *>(slot.toPrivate());
+}
+
+host_api::HttpRequestResponseBase *RequestOrResponse::handle(JSObject *obj) {
+  auto handle = maybe_handle(obj);
+  MOZ_ASSERT(handle);
+  return handle;
 }
 
 bool RequestOrResponse::is_instance(JSObject *obj) {
@@ -167,13 +173,16 @@ bool RequestOrResponse::is_instance(JSObject *obj) {
 }
 
 bool RequestOrResponse::is_incoming(JSObject *obj) {
-  auto handle = RequestOrResponse::handle(obj);
+  auto handle = RequestOrResponse::maybe_handle(obj);
   return handle && handle->is_incoming();
 }
 
-host_api::HttpHeadersReadOnly *RequestOrResponse::headers_handle(JSObject *obj) {
-  MOZ_ASSERT(is_instance(obj));
-  auto res = handle(obj)->headers();
+host_api::HttpHeadersReadOnly *RequestOrResponse::maybe_headers_handle(JSObject *obj) {
+  auto handle = maybe_handle(obj);
+  if (!handle) {
+    return nullptr;
+  }
+  auto res = handle->headers();
   MOZ_ASSERT(!res.is_err(), "TODO: proper error handling");
   return res.unwrap();
 }
@@ -185,19 +194,21 @@ bool RequestOrResponse::has_body(JSObject *obj) {
 
 host_api::HttpIncomingBody *RequestOrResponse::incoming_body_handle(JSObject *obj) {
   MOZ_ASSERT(is_incoming(obj));
-  if (handle(obj)->is_request()) {
-    return reinterpret_cast<host_api::HttpIncomingRequest *>(handle(obj))->body().unwrap();
+  auto handle = RequestOrResponse::handle(obj);
+  if (handle->is_request()) {
+    return reinterpret_cast<host_api::HttpIncomingRequest *>(handle)->body().unwrap();
   } else {
-    return reinterpret_cast<host_api::HttpIncomingResponse *>(handle(obj))->body().unwrap();
+    return reinterpret_cast<host_api::HttpIncomingResponse *>(handle)->body().unwrap();
   }
 }
 
 host_api::HttpOutgoingBody *RequestOrResponse::outgoing_body_handle(JSObject *obj) {
   MOZ_ASSERT(!is_incoming(obj));
-  if (handle(obj)->is_request()) {
-    return reinterpret_cast<host_api::HttpOutgoingRequest *>(handle(obj))->body().unwrap();
+  auto handle = RequestOrResponse::handle(obj);
+  if (handle->is_request()) {
+    return reinterpret_cast<host_api::HttpOutgoingRequest *>(handle)->body().unwrap();
   } else {
-    return reinterpret_cast<host_api::HttpOutgoingResponse *>(handle(obj))->body().unwrap();
+    return reinterpret_cast<host_api::HttpOutgoingResponse *>(handle)->body().unwrap();
   }
 }
 
@@ -424,7 +435,7 @@ unique_ptr<host_api::HttpHeaders> RequestOrResponse::headers_handle_clone(JSCont
     return Headers::handle_clone(cx, headers);
   }
 
-  auto handle = RequestOrResponse::handle(self);
+  auto handle = RequestOrResponse::maybe_handle(self);
   if (!handle) {
     return std::make_unique<host_api::HttpHeaders>();
   }
@@ -501,7 +512,7 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
                                   : Request::is_instance(obj) ? Headers::HeadersGuard::Request
                                                               : Headers::HeadersGuard::Response;
     host_api::HttpHeadersReadOnly *handle;
-    if (is_incoming(obj) && (handle = headers_handle(obj))) {
+    if (is_incoming(obj) && (handle = maybe_headers_handle(obj))) {
       headers = Headers::create(cx, handle, guard);
     } else {
       headers = Headers::create(cx, guard);
@@ -1122,23 +1133,6 @@ bool RequestOrResponse::body_get(JSContext *cx, JS::CallArgs args, JS::HandleObj
   return true;
 }
 
-host_api::HttpRequest *Request::request_handle(JSObject *obj) {
-  auto base = RequestOrResponse::handle(obj);
-  return reinterpret_cast<host_api::HttpRequest *>(base);
-}
-
-host_api::HttpOutgoingRequest *Request::outgoing_handle(JSObject *obj) {
-  auto base = RequestOrResponse::handle(obj);
-  MOZ_ASSERT(base->is_outgoing());
-  return reinterpret_cast<host_api::HttpOutgoingRequest *>(base);
-}
-
-host_api::HttpIncomingRequest *Request::incoming_handle(JSObject *obj) {
-  auto base = RequestOrResponse::handle(obj);
-  MOZ_ASSERT(base->is_incoming());
-  return reinterpret_cast<host_api::HttpIncomingRequest *>(base);
-}
-
 JSObject *Request::response_promise(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
   return &JS::GetReservedSlot(obj, static_cast<uint32_t>(Request::Slots::ResponsePromise))
@@ -1218,7 +1212,7 @@ bool Request::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
       return false;
     }
     cloned_headers_val.set(ObjectValue(*cloned_headers));
-  } else if (RequestOrResponse::handle(self)) {
+  } else if (RequestOrResponse::maybe_handle(self)) {
     auto handle = RequestOrResponse::headers_handle_clone(cx, self);
     JSObject *cloned_headers =
         Headers::create(cx, handle.release(),
@@ -1754,9 +1748,10 @@ static_assert((int)Response::Slots::BodyUsed == (int)Request::Slots::BodyUsed);
 static_assert((int)Response::Slots::Headers == (int)Request::Slots::Headers);
 static_assert((int)Response::Slots::Response == (int)Request::Slots::Request);
 
-host_api::HttpResponse *Response::response_handle(JSObject *obj) {
-  MOZ_ASSERT(is_instance(obj));
-  return static_cast<host_api::HttpResponse *>(RequestOrResponse::handle(obj));
+host_api::HttpResponse *Response::maybe_response_handle(JSObject *obj) {
+  auto base = RequestOrResponse::maybe_handle(obj);
+  MOZ_ASSERT_IF(base, base->is_response());
+  return static_cast<host_api::HttpResponse *>(base);
 }
 
 uint16_t Response::status(JSObject *obj) {
