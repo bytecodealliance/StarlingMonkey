@@ -1,0 +1,17 @@
+{
+  "Blob.arrayBuffer()": {
+    "status": "FAIL"
+  },
+  "Blob.arrayBuffer() empty Blob data": {
+    "status": "FAIL"
+  },
+  "Blob.arrayBuffer() non-ascii input": {
+    "status": "FAIL"
+  },
+  "Blob.arrayBuffer() non-unicode input": {
+    "status": "FAIL"
+  },
+  "Blob.arrayBuffer() concurrent reads": {
+    "status": "FAIL"
+  }
+}
