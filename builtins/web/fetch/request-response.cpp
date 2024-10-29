@@ -963,13 +963,24 @@ bool RequestOrResponse::body_source_cancel_algorithm(JSContext *cx, JS::CallArgs
   return true;
 }
 
+bool write_all_finish_callback(JSContext *cx, HandleObject then_handler) {
+  // The reader is stored in the catch handler, which we need here as well.
+  // So we get that first, then the reader.
+  JS::RootedObject catch_handler(cx, &GetFunctionNativeReserved(then_handler, 1).toObject());
+  JS::RootedObject reader(cx, &GetFunctionNativeReserved(catch_handler, 1).toObject());
+
+  // Read the next chunk.
+  JS::RootedObject promise(cx, ReadableStreamDefaultReaderRead(cx, reader));
+  if (!promise) {
+    return false;
+  }
+
+  return AddPromiseReactions(cx, promise, then_handler, catch_handler);
+}
+
 bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_owner,
                                            JS::HandleValue extra, JS::CallArgs args) {
   JS::RootedObject then_handler(cx, &args.callee());
-  // The reader is stored in the catch handler, which we need here as well.
-  // So we get that first, then the reader.
-  JS::RootedObject catch_handler(cx, &extra.toObject());
-  JS::RootedObject reader(cx, &js::GetFunctionNativeReserved(catch_handler, 1).toObject());
 
   // We're guaranteed to work with a native ReadableStreamDefaultReader here,
   // which in turn is guaranteed to vend {done: bool, value: any} objects to
@@ -1010,25 +1021,17 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
   bool is_shared;
   RootedObject buffer(cx, JS_GetArrayBufferViewBuffer(cx, array, &is_shared));
   MOZ_ASSERT(!is_shared);
-  auto bytes = static_cast<uint8_t *>(StealArrayBufferContents(cx, buffer));
-  // TODO: change this to write in chunks, respecting backpressure.
+  auto ptr = static_cast<uint8_t *>(StealArrayBufferContents(cx, buffer));
+  host_api::HostBytes bytes(unique_ptr<uint8_t[]>(ptr), length);
   auto body = RequestOrResponse::outgoing_body_handle(body_owner);
-  auto res = body->write_all(bytes, length);
-  js_free(bytes);
-
-  // Needs to be outside the nogc block in case we need to create an exception.
+  auto res = body->write_all(ENGINE, std::move(bytes),
+    write_all_finish_callback, then_handler);
   if (auto *err = res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
   }
 
-  // Read the next chunk.
-  JS::RootedObject promise(cx, JS::ReadableStreamDefaultReaderRead(cx, reader));
-  if (!promise) {
-    return false;
-  }
-
-  return JS::AddPromiseReactions(cx, promise, then_handler, catch_handler);
+  return true;
 }
 
 bool reader_for_outgoing_body_catch_handler(JSContext *cx, JS::HandleObject body_owner,
