@@ -15,7 +15,7 @@ else()
 	CPMAddPackage(
 	  NAME wpt-suite
 	  GITHUB_REPOSITORY web-platform-tests/wpt
-	  GIT_TAG bd65bb46410dd6ea3319e3688a5248a0a7d06960
+	  GIT_TAG 52985a1b3ad85d6c05b015ae094b9544c5dfa86d
 	  DOWNLOAD_ONLY TRUE
 	)
 	set(WPT_ROOT ${CPM_PACKAGE_wpt-suite_SOURCE_DIR})

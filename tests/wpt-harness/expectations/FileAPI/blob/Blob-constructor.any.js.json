@@ -1,33 +1,33 @@
 {
   "Blob interface object": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "Blob constructor with no arguments": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob constructor with no arguments, without 'new'": {
     "status": "PASS"
   },
   "Blob constructor without brackets": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob constructor with undefined as first argument": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing non-objects, Dates and RegExps for blobParts should throw a TypeError.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "A plain object with @@iterator should be treated as a sequence for the blobParts argument.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "A plain object with custom @@iterator should be treated as a sequence for the blobParts argument.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "A plain object with @@iterator and a length property should be treated as a sequence for the blobParts argument.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "A String object should be treated as a sequence for the blobParts argument.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "A Uint8Array object should be treated as a sequence for the blobParts argument.": {
     "status": "FAIL"
@@ -45,43 +45,43 @@
     "status": "FAIL"
   },
   "Changes to the blobParts array should be reflected in the returned Blob (pop).": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Changes to the blobParts array should be reflected in the returned Blob (unshift).": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ToString should be called on elements of the blobParts array.": {
     "status": "FAIL"
   },
   "ArrayBuffer elements of the blobParts array should be supported.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing typed arrays as elements of the blobParts array should work.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing a Float16Array as element of the blobParts array should work.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing a Float64Array as element of the blobParts array should work.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing BigInt typed arrays as elements of the blobParts array should work.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing a FrozenArray as the blobParts array should work (FrozenArray<MessagePort>).": {
     "status": "FAIL"
   },
   "Array with two blobs": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Array with two buffers": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Array with two bufferviews": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Array with mixed types": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "options properties should be accessed in lexicographic order.": {
     "status": "FAIL"
@@ -90,16 +90,16 @@
     "status": "FAIL"
   },
   "Passing null (index 0) for options should use the defaults.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing null (index 0) for options should use the defaults (with newlines).": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing undefined (index 1) for options should use the defaults.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing undefined (index 1) for options should use the defaults (with newlines).": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing object \"[object Object]\" (index 2) for options should use the defaults.": {
     "status": "FAIL"
@@ -126,66 +126,66 @@
     "status": "FAIL"
   },
   "Passing 123 for options should throw": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing 123.4 for options should throw": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing true for options should throw": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing \"abc\" for options should throw": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"a\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"A\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"text/html\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"TEXT/HTML\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"text/plain;charset=utf-8\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"å\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"𐑾\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \" image/gif \"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"\\timage/gif\\t\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"image/gif;\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"İmage/gif\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"ımage/gif\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"image/gif\\0\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"unknown/unknown\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"text/plain\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob with type \"image/png\"": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }

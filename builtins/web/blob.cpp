@@ -2,11 +2,9 @@
 #include "builtin.h"
 #include "js/ArrayBuffer.h"
 #include "js/BigInt.h"
+#include "js/experimental/TypedData.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
-#include "js/experimental/TypedData.h"
-
-bool debug_logging_enabled() { return true; }
 
 namespace builtins {
 namespace web {
@@ -24,7 +22,7 @@ const JSFunctionSpec Blob::methods[] = {
     JS_FN("arrayBuffer", Blob::arrayBuffer, 0, JSPROP_ENUMERATE),
     JS_FN("bytes", Blob::bytes, 0, JSPROP_ENUMERATE),
     JS_FN("slice", Blob::slice, 0, JSPROP_ENUMERATE),
-    JS_FN("text", Blob::bytes, 0, JSPROP_ENUMERATE),
+    JS_FN("text", Blob::text, 0, JSPROP_ENUMERATE),
     JS_FS_END,
 };
 
@@ -34,6 +32,67 @@ const JSPropertySpec Blob::properties[] = {
     JS_STRING_SYM_PS(toStringTag, "Blob", JSPROP_READONLY),
     JS_PS_END,
 };
+
+
+// 1. If t contains any characters outside the range U+0020 to U+007E, then set t to the empty string.
+// 2. Convert every character in t to ASCII lowercase.
+template <typename T>
+bool validate_type(T* chars, size_t strlen) {
+  for (size_t i = 0; i < strlen; i++) {
+    T c = chars[i];
+    if (c < 0x20 || c > 0x7E) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+JSString* normalize_type(JSContext *cx, HandleValue value) {
+  if (!value.isString()) {
+    return nullptr;
+  }
+
+  JS::RootedString s(cx, value.toString());
+  auto str = JS::StringToLinearString(cx, s);
+  if (!str) {
+    return nullptr;
+  }
+
+  std::string normalized;
+  auto strlen = JS::GetLinearStringLength(str);
+
+  if (!strlen) {
+    return JS_GetEmptyString(cx);
+  }
+
+  if (JS::LinearStringHasLatin1Chars(str)) {
+    JS::AutoCheckCannotGC nogc(cx);
+    auto chars = JS::GetLatin1LinearStringChars(nogc, str);
+    if (!validate_type(chars, strlen)) {
+      return JS_GetEmptyString(cx);
+    }
+
+    normalized = std::string(reinterpret_cast<const char*>(chars), strlen);
+  } else {
+    JS::AutoCheckCannotGC nogc(cx);
+    auto chars = (JS::GetTwoByteLinearStringChars(nogc, str));
+    if (!validate_type(chars, strlen)) {
+      return JS_GetEmptyString(cx);
+    }
+
+    normalized.reserve(strlen);
+    for (size_t i = 0; i < strlen; ++i) {
+      normalized += static_cast<unsigned char>(chars[i]);
+    }
+  }
+
+  std::transform(normalized.begin(), normalized.end(), normalized.begin(),
+    [](unsigned char c){ return std::tolower(c); });
+
+
+  return JS_NewStringCopyN(cx, normalized.c_str(), normalized.length());
+}
 
 JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self) {
   auto blob = Blob::blob(self);
@@ -211,8 +270,7 @@ bool Blob::size_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   auto blob = Blob::blob(self);
-  auto size = JS::RootedBigInt(cx, JS::NumberToBigInt(cx, blob->size()));
-  args.rval().setBigInt(size);
+  args.rval().setNumber(blob->size());
   return true;
 }
 
@@ -244,130 +302,158 @@ JSString *Blob::type(JSObject *self) {
   return type;
 }
 
-bool Blob::init_blob_parts(JSContext *cx, HandleObject self, HandleValue iterable) {
-  JS::ForOfIterator it(cx);
-  if (!it.init(iterable)) {
-    return false;
-  }
-
+bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
   auto blob = Blob::blob(self);
+  auto type = val.type();
 
-  JS::Rooted<JS::Value> val(cx);
-  while (true) {
-    bool done;
-
-    if (!it.next(&val, &done)) {
+  switch (type) {
+  case JS::ValueType::String: {
+    auto s = val.toString();
+    if (!s) {
       return false;
     }
-    if (done) {
-      break;
+
+    auto str = JS::StringToLinearString(cx, s);
+    if (!str) {
+      return false;
     }
 
-    auto type = val.type();
+    JS::AutoCheckCannotGC nogc(cx);
+    auto strlen = JS::GetLinearStringLength(str);
 
-    switch (type) {
-    case JS::ValueType::String: {
-      auto s = JS::ToString(cx, val);
-      if (!s) {
-        return false;
+    if (JS::LinearStringHasLatin1Chars(str)) {
+      auto src = JS::GetLatin1LinearStringChars(nogc, str);
+      blob->insert(blob->end(), src, src + strlen);
+    } else {
+      auto twoBytesLen = strlen * sizeof(uint16_t);
+      auto src = reinterpret_cast<const uint8_t *>(JS::GetTwoByteLinearStringChars(nogc, str));
+
+      blob->insert(blob->end(), src, src + twoBytesLen);
+    }
+    break;
+  }
+  case JS::ValueType::Object: {
+    RootedObject obj(cx, &val.toObject());
+
+    if (Blob::is_instance(obj)) {
+      auto src = Blob::blob(obj);
+      blob->insert(blob->end(), src->begin(), src->end());
+    } else if (JS_IsArrayBufferViewObject(obj) || JS::IsArrayBufferObject(obj)) {
+      auto span = value_to_buffer(cx, val, "Blob Parts");
+      if (span.has_value()) {
+        blob->insert(blob->end(), span->begin(), span->end());
       }
-
-      auto str = JS::StringToLinearString(cx, s);
+    } else {
+      auto str = JS::ToString(cx, val);
       if (!str) {
         return false;
       }
 
-      JS::AutoCheckCannotGC nogc(cx);
-      auto strLen = JS::GetLinearStringLength(str);
-
-      if (JS::LinearStringHasLatin1Chars(str)) {
-        auto src = JS::GetLatin1LinearStringChars(nogc, str);
-        blob->insert(blob->end(), src, src + strLen);
-      } else {
-        auto twoBytesLen = strLen * sizeof(uint16_t);
-        auto src = reinterpret_cast<const uint8_t *>(JS::GetTwoByteLinearStringChars(nogc, str));
-
-        blob->insert(blob->end(), src, src + twoBytesLen);
-      }
-      break;
+      RootedValue str_val(cx, JS::StringValue(str));
+      append_value(cx, self, str_val);
     }
-    case JS::ValueType::Object: {
-      RootedObject obj(cx, &val.toObject());
-
-      if (Blob::is_instance(obj)) {
-        auto src = Blob::blob(obj);
-        blob->insert(blob->end(), src->begin(), src->end());
-      } else {
-        auto span = value_to_buffer(cx, val, "Blob Parts");
-        if (span.has_value()) {
-          blob->insert(blob->end(), span->begin(), span->end());
-        }
-      }
-      break;
-    }
-    default: {
-      return false;
-    }
-    }
+    break;
+  }
+  default: {
+    return false;
+  }
   }
 
   return true;
 }
 
-bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
-  if (initv.isNullOrUndefined()) {
-    return true;
+bool Blob::init_blob_parts(JSContext *cx, HandleObject self, HandleValue value) {
+  bool is_allowed_obj =
+      (value.isObject() && (JS_IsArrayBufferViewObject(&value.toObject()) ||
+                            JS::IsArrayBufferObject(&value.toObject())));
+
+  JS::ForOfIterator it(cx);
+  if (!it.init(value, JS::ForOfIterator::AllowNonIterable)) {
+    return false;
   }
 
+  if (value.isObject() && it.valueIsIterable()) {
+    // If the object is an array-like, iterate over its elements...
+    JS::Rooted<JS::Value> item(cx);
+    while (true) {
+      bool done;
+
+      if (!it.next(&item, &done)) {
+        return false;
+      }
+      if (done) {
+        break;
+      }
+
+      if (!append_value(cx, self, item)) {
+        return false;
+      }
+    }
+
+    return true;
+  } else if (is_allowed_obj) {
+    // otherwise, append the value directly.
+    return append_value(cx, self, value);
+  } else {
+    // non-objects are not allowed for the blobParts
+    return false;
+  }
+}
+
+bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
   JS::RootedValue init_val(cx, initv);
+
+  if (!init_val.isObject()) {
+    return false;
+  }
 
   // `options` is an object which may specify any of the properties:
   // - `type`: the MIME type of the data that will be stored into the blob,
   // - `endings`: how to interpret newline characters (\n) within the contents.
-  if (init_val.isObject()) {
-    JS::RootedObject opts(cx, init_val.toObjectOrNull());
-    bool has_type, has_endings;
+  JS::RootedObject opts(cx, init_val.toObjectOrNull());
+  bool has_type, has_endings;
 
-    if (!JS_HasProperty(cx, opts, "type", &has_type) ||
-        !JS_HasProperty(cx, opts, "endings", &has_endings)) {
+  if (!JS_HasProperty(cx, opts, "type", &has_type) ||
+      !JS_HasProperty(cx, opts, "endings", &has_endings)) {
+    return false;
+  }
+
+  if (!has_type && !has_endings) {
+    return false;
+  }
+
+  if (has_type) {
+    JS::RootedValue type(cx);
+    if (!JS_GetProperty(cx, opts, "type", &type)) {
       return false;
     }
 
-    if (!has_type && !has_endings) {
-      // TODO: throw error?
+    auto type_str = normalize_type(cx, type);
+    if (!type_str) {
+      return false;
+    }
+    SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), PrivateValue(type_str));
+  }
+
+  if (has_endings) {
+    JS::RootedValue endings_val(cx);
+    bool is_transparent, is_native;
+    if (!JS_GetProperty(cx, opts, "endings", &endings_val)) {
       return false;
     }
 
-    if (has_type) {
-      JS::RootedValue type(cx);
-      if (!JS_GetProperty(cx, opts, "type", &type)) {
-          return false;
-      }
-
-      SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), PrivateValue(type.toString()));
+    auto endings_str = endings_val.toString();
+    if (!JS_StringEqualsLiteral(cx, endings_str, "transparent", &is_transparent) ||
+        !JS_StringEqualsLiteral(cx, endings_str, "native", &is_native)) {
+      return false;
     }
 
-    if (has_endings) {
-      JS::RootedValue endings_val(cx);
-      bool is_transparent, is_native;
-      if (!JS_GetProperty(cx, opts, "endings", &endings_val)) {
-          return false;
-      }
-
-      auto endings_str = endings_val.toString();
-      if (!JS_StringEqualsLiteral(cx, endings_str, "transparent", &is_transparent) ||
-          !JS_StringEqualsLiteral(cx, endings_str, "native", &is_native)) {
-        return false;
-      }
-
-      if (!is_transparent && !is_native) {
-        // TODO: throw error?
-        return false;
-      }
-
-      auto endings = is_native ? Blob::Endings::Native : Blob::Endings::Transparent;
-      SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(endings));
+    if (!is_transparent && !is_native) {
+      return false;
     }
+
+    auto endings = is_native ? Blob::Endings::Native : Blob::Endings::Transparent;
+    SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(endings));
   }
 
   return true;
@@ -381,15 +467,16 @@ JSObject *Blob::create(JSContext *cx, std::unique_ptr<Blob::ByteBuffer> data, JS
 
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), PrivateValue(data.release()));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), PrivateValue(type));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(Blob::Endings::Transparent));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings),
+                  JS::Int32Value(Blob::Endings::Transparent));
   return self;
 }
 
 bool Blob::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("Blob", 0);
 
-  HandleValue blobParts = args.get(0);
-  HandleValue opts = args.get(1);
+  RootedValue blobParts(cx, args.get(0));
+  RootedValue opts(cx, args.get(1));
   RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));
 
   if (!self) {
@@ -401,12 +488,16 @@ bool Blob::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(Blob::Endings::Transparent));
 
   // walk the blob parts and write it to concatenated buffer
-  if (!init_blob_parts(cx, self, blobParts)) {
-    return false;
+  if (blobParts.isNull()) {
+    return api::throw_error(cx, api::Errors::TypeError, "Blob.constructor", "blobParts", "be an object");
   }
 
-  if (!init_options(cx, self, opts)) {
-    return false;
+  if (!blobParts.isUndefined() && !init_blob_parts(cx, self, blobParts)) {
+    return api::throw_error(cx, api::Errors::TypeError, "Blob.constructor", "blobParts", "be an object");
+  }
+
+  if (!opts.isNullOrUndefined() && !init_options(cx, self, opts)) {
+    return api::throw_error(cx, api::Errors::TypeError, "Blob.constructor", "options", "be an object");
   }
 
   args.rval().setObject(*self);
@@ -424,9 +515,7 @@ void Blob::finalize(JS::GCContext *gcx, JSObject *self) {
   }
 }
 
-bool install(api::Engine *engine) {
-  return Blob::init_class(engine->cx(), engine->global());
-}
+bool install(api::Engine *engine) { return Blob::init_class(engine->cx(), engine->global()); }
 
 } // namespace blob
 } // namespace web

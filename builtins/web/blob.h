@@ -36,6 +36,7 @@ public:
 
   static ByteBuffer *blob(JSObject *self);
   static JSString *type(JSObject *self);
+  static bool append_value(JSContext *cx, HandleObject self, HandleValue val);
   static bool init_blob_parts(JSContext *cx, HandleObject self, HandleValue iterable);
   static bool init_options(JSContext *cx, HandleObject self, HandleValue opts);
 

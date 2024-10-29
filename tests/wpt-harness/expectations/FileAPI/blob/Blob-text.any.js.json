@@ -1,21 +1,21 @@
 {
   "Blob.text()": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob.text() empty blob data": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob.text() multi-element array in constructor": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob.text() non-unicode": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob.text() different charset param in type option": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob.text() different charset param with non-ascii input": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob.text() invalid utf-8 input": {
     "status": "FAIL"
