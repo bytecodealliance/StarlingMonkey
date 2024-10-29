@@ -112,5 +112,8 @@
   },
   "ReadableStream teeing with byte source: respond() and close() while both branches are pulling": {
     "status": "FAIL"
+  },
+  "ReadableStream teeing with byte source: reading an array with a byte offset should clone correctly": {
+    "status": "FAIL"
   }
 }

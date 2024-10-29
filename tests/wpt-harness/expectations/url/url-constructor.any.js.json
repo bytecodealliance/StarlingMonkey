@@ -2486,6 +2486,45 @@
   "Parsing: <west://x:0> without base": {
     "status": "PASS"
   },
+  "Parsing: <android://x:0/a> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <drivefs://x:0/a> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <chromeos-steam://x:0/a> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <steam://x:0/a> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <materialized-view://x:0/a> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <android-app://x:0> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <chrome-distiller://x:0> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <chrome-extension://x:0> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <chrome-native://x:0> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <chrome-resource://x:0> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <chrome-search://x:0> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <fuchsia-dir://x:0> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <isolated-app://x:0> without base": {
+    "status": "PASS"
+  },
   "Parsing: <///test> against <http://example.org/>": {
     "status": "FAIL"
   },
