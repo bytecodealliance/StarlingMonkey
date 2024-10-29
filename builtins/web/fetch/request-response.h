@@ -67,7 +67,8 @@ public:
    */
   static JSObject *headers(JSContext *cx, JS::HandleObject obj);
 
-  static bool append_body(JSContext *cx, JS::HandleObject self, JS::HandleObject source);
+  static bool append_body(JSContext *cx, JS::HandleObject self, JS::HandleObject source,
+                          api::TaskCompletionCallback callback, HandleObject callback_receiver);
 
   using ParseBodyCB = bool(JSContext *cx, JS::HandleObject self, JS::UniqueChars buf, size_t len);
 

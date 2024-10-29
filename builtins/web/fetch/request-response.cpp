@@ -481,13 +481,13 @@ bool finish_outgoing_body_streaming(JSContext *cx, HandleObject body_owner) {
   return true;
 }
 
-bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::HandleObject source) {
+bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::HandleObject source,
+  api::TaskCompletionCallback callback, HandleObject callback_receiver) {
   MOZ_ASSERT(!body_used(source));
-  MOZ_ASSERT(!body_used(self));
   MOZ_ASSERT(self != source);
   host_api::HttpIncomingBody *source_body = incoming_body_handle(source);
   host_api::HttpOutgoingBody *dest_body = outgoing_body_handle(self);
-  auto res = dest_body->append(ENGINE, source_body, finish_outgoing_body_streaming, self);
+  auto res = dest_body->append(ENGINE, source_body, callback, callback_receiver);
   if (auto *err = res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
@@ -495,7 +495,9 @@ bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::Ha
 
   mozilla::DebugOnly<bool> success = mark_body_used(cx, source);
   MOZ_ASSERT(success);
-  if (body_stream(source) != body_stream(self)) {
+  // append_body can be called multiple times, but we only want to mark the body as used the first
+  // time it happens.
+  if (body_stream(source) != body_stream(self) && !body_used(self)) {
     success = mark_body_used(cx, self);
     MOZ_ASSERT(success);
   }
@@ -871,39 +873,82 @@ bool RequestOrResponse::bodyAll(JSContext *cx, JS::CallArgs args, JS::HandleObje
   return true;
 }
 
-bool RequestOrResponse::body_source_pull_algorithm(JSContext *cx, CallArgs args,
-                                                   HandleObject source, HandleObject body_owner,
-                                                   HandleObject controller) {
+/**
+ * Closes the ReadableStream representing a body after it's been appended to an outgoing body.
+ *
+ * The append operation is performed using the host API, not via the JS Streams API, so this
+ * explicit closing operation is needed to close the loop on the latter.
+ */
+bool close_appended_body(JSContext *cx, HandleObject body_owner) {
+  RootedObject body(cx, RequestOrResponse::body_stream(body_owner));
+  return ReadableStreamClose(cx, body);
+}
+
+bool do_body_source_pull(JSContext *cx, HandleObject source, HandleObject body_owner) {
   // If the stream has been piped to a TransformStream whose readable end was
   // then passed to a Request or Response as the body, we can just append the
   // entire source body to the destination using a single native hostcall, and
   // then close the source stream, instead of reading and writing it in
-  // individual chunks. Note that even in situations where multiple streams are
-  // piped to the same destination this is guaranteed to happen in the right
-  // order: ReadableStream#pipeTo locks the destination WritableStream until the
+  // individual chunks.
+  // Note that even in situations where multiple streams are piped to the same
+  // destination this is guaranteed to happen in the right order:
+  // ReadableStream#pipeTo locks the destination WritableStream until the
   // source ReadableStream is closed/canceled, so only one stream can ever be
   // piped in at the same time.
   RootedObject pipe_dest(cx, streams::NativeStreamSource::piped_to_transform_stream(source));
-  if (pipe_dest) {
-    if (streams::TransformStream::readable_used_as_body(pipe_dest)) {
-      RootedObject dest_owner(cx, streams::TransformStream::owner(pipe_dest));
-      MOZ_ASSERT(!JS_IsExceptionPending(cx));
-      if (!append_body(cx, dest_owner, body_owner)) {
-        return false;
-      }
-
-      MOZ_ASSERT(!JS_IsExceptionPending(cx));
-      RootedObject stream(cx, streams::NativeStreamSource::stream(source));
-      bool success = ReadableStreamClose(cx, stream);
-      MOZ_RELEASE_ASSERT(success);
-
-      args.rval().setUndefined();
-      MOZ_ASSERT(!JS_IsExceptionPending(cx));
-      return true;
+  if (pipe_dest && streams::TransformStream::readable_used_as_body(pipe_dest)) {
+    MOZ_ASSERT(!streams::TransformStream::backpressure(pipe_dest));
+    RootedObject dest_owner(cx, streams::TransformStream::owner(pipe_dest));
+    MOZ_ASSERT(!JS_IsExceptionPending(cx));
+    if (!RequestOrResponse::append_body(cx, dest_owner, body_owner, close_appended_body, body_owner)) {
+      return false;
     }
+
+    MOZ_ASSERT(!JS_IsExceptionPending(cx));
+    return true;
   }
 
   ENGINE->queue_async_task(new BodyFutureTask(source));
+  return true;
+}
+
+bool bp_change_then_handler(JSContext *cx, HandleObject source, HandleValue extra, CallArgs args) {
+  MOZ_ASSERT(extra.isObject());
+  RootedObject body_owner(cx, &extra.toObject());
+  MOZ_ASSERT(RequestOrResponse::is_instance(body_owner));
+
+  if (!do_body_source_pull(cx, source, body_owner)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+bool RequestOrResponse::body_source_pull_algorithm(JSContext *cx, CallArgs args,
+                                                   HandleObject source, HandleObject body_owner,
+                                                   HandleObject _controller) {
+  // If the stream has been piped to a TransformStream whose readable end has backpressure applied,
+  // we wait for the backpressure to be removed before actually reading from the body.
+  // That way, we can avoid reading any chunks from the body for now, and might be able to append
+  // it in full to an outgoing stream later.
+  RootedObject pipe_dest(cx, streams::NativeStreamSource::piped_to_transform_stream(source));
+  if (pipe_dest && streams::TransformStream::backpressure(pipe_dest)) {
+    RootedObject bp_change_promise(cx,
+                                   streams::TransformStream::backpressureChangePromise(pipe_dest));
+    JS::RootedObject then_handler(cx);
+    RootedValue extra(cx, ObjectValue(*body_owner));
+    then_handler = create_internal_method<bp_change_then_handler>(cx, source, extra);
+    if (!then_handler) {
+      return false;
+    }
+    return AddPromiseReactionsIgnoringUnhandledRejection(cx, bp_change_promise, then_handler,
+                                                         nullptr);
+  }
+
+  if (!do_body_source_pull(cx, source, body_owner)) {
+    return false;
+  }
 
   args.rval().setUndefined();
   return true;
@@ -1032,21 +1077,6 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
 
   if (body_unusable(cx, stream)) {
     return api::throw_error(cx, FetchErrors::BodyStreamUnusable);
-  }
-
-  // If the body stream is backed by an HTTP body handle, we can directly pipe
-  // that handle into the body we're about to send.
-  if (streams::NativeStreamSource::stream_is_body(cx, stream)) {
-    MOZ_ASSERT(!is_incoming(body_owner));
-    // First, directly append the source's body to the target's and lock the stream.
-    JS::RootedObject stream_source(cx, streams::NativeStreamSource::get_stream_source(cx, stream));
-    JS::RootedObject source_owner(cx, streams::NativeStreamSource::owner(stream_source));
-    if (!append_body(cx, body_owner, source_owner)) {
-      return false;
-    }
-
-    *requires_streaming = true;
-    return true;
   }
 
   JS::RootedObject reader(
@@ -1703,7 +1733,10 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
       // content can't have access to it. Instead of reifying it here to pass it
       // into a TransformStream, we just append the body on the host side and
       // mark it as used on the input Request.
-      RequestOrResponse::append_body(cx, request, input_request);
+      if (!RequestOrResponse::append_body(cx, request, input_request,
+                                          finish_outgoing_body_streaming,request)) {
+        return false;
+      }
     } else {
       inputBody = streams::TransformStream::create_rs_proxy(cx, inputBody);
       if (!inputBody) {

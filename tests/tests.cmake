@@ -38,6 +38,7 @@ test_e2e(syntax-err)
 test_e2e(tla-err)
 test_e2e(tla-runtime-resolve)
 test_e2e(tla)
+test_e2e(stream-forwarding)
 
 test_integration(btoa)
 test_integration(crypto)

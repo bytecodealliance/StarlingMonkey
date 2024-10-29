@@ -638,13 +638,8 @@ public:
                           HandleObject callback_receiver)
       : incoming_body_(incoming_body), outgoing_body_(outgoing_body), cb_(completion_callback),
         cb_receiver_(callback_receiver), state_(State::BlockedOnBoth) {
-    auto res = incoming_body_->subscribe();
-    MOZ_ASSERT(!res.is_err());
-    incoming_pollable_ = res.unwrap();
-
-    res = outgoing_body_->subscribe();
-    MOZ_ASSERT(!res.is_err());
-    outgoing_pollable_ = res.unwrap();
+    incoming_pollable_ = incoming_body_->subscribe().unwrap();
+    outgoing_pollable_ = outgoing_body_->subscribe().unwrap();
   }
 
   [[nodiscard]] bool run(api::Engine *engine) override {
