@@ -2,6 +2,7 @@
 #include "builtin.h"
 #include "js/ArrayBuffer.h"
 #include "js/BigInt.h"
+#include "js/Conversions.h"
 #include "js/experimental/TypedData.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
@@ -34,8 +35,6 @@ const JSPropertySpec Blob::properties[] = {
 };
 
 
-// 1. If t contains any characters outside the range U+0020 to U+007E, then set t to the empty string.
-// 2. Convert every character in t to ASCII lowercase.
 template <typename T>
 bool validate_type(T* chars, size_t strlen) {
   for (size_t i = 0; i < strlen; i++) {
@@ -48,9 +47,15 @@ bool validate_type(T* chars, size_t strlen) {
   return true;
 }
 
+// 1. If type contains any characters outside the range U+0020 to U+007E, then set t to the empty string.
+// 2. Convert every character in type to ASCII lowercase.
 JSString* normalize_type(JSContext *cx, HandleValue value) {
-  if (!value.isString()) {
-    return nullptr;
+  if (value.isNull()) {
+    return JS::ToString(cx, value);
+  }
+
+  if (value.isUndefined()) {
+    return JS_GetEmptyString(cx);
   }
 
   JS::RootedString s(cx, value.toString());
@@ -172,13 +177,6 @@ bool Blob::bytes(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool Blob::slice(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
 
-  JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
-  if (!promise) {
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
-
-  args.rval().setObject(*promise);
-
   auto src = Blob::blob(self);
   int64_t size = src->size();
   int64_t start = 0;
@@ -189,51 +187,38 @@ bool Blob::slice(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (args.hasDefined(0)) {
     HandleValue start_val = args.get(0);
     if (!JS::ToInt64(cx, start_val, &start)) {
-      return RejectPromiseWithPendingError(cx, promise);
+      return false;
     }
   }
 
   if (args.hasDefined(1)) {
     HandleValue end_val = args.get(1);
     if (!JS::ToInt64(cx, end_val, &end)) {
-      return RejectPromiseWithPendingError(cx, promise);
+      return false;
     }
   }
 
   if (args.hasDefined(2)) {
     HandleValue contentType_val = args.get(2);
-    if (!(contentType = JS::ToString(cx, contentType_val))) {
-      return RejectPromiseWithPendingError(cx, promise);
+    if (!(contentType = normalize_type(cx, contentType_val))) {
+      return false;
     }
   }
 
   // A negative value, is treated as an offset from the end of the Blob toward the beginning
-  if (start < 0) {
-    start = size + start;
-  }
+  start = (start < 0) ? std::max((size + start), 0LL) : std::min(start, size);
+  end = (end < 0) ? std::max((size + end), 0LL) : std::min(end, size);
 
-  if (end < 0) {
-    end = size + end;
-  }
+  auto dst = (end - start > 0)
+    ? std::make_unique<std::vector<uint8_t>>(src->begin() + start, src->begin() + end)
+    : std::make_unique<std::vector<uint8_t>>();
 
-  std::unique_ptr<std::vector<uint8_t>> dst;
-
-  // A value for start that is larger than the size of the source results in empty Blob
-  if (start >= 0 && start < end && end <= size) {
-    dst = std::make_unique<std::vector<uint8_t>>(src->begin() + start, src->begin() + end);
-  } else {
-    dst = std::make_unique<std::vector<uint8_t>>();
-  }
-
-  JS::RootedObject new_blob(cx, Blob::create(cx, std::move(dst), contentType));
+  JS::RootedObject new_blob(cx, create(cx, std::move(dst), contentType));
   if (!new_blob) {
-    return RejectPromiseWithPendingError(cx, promise);
+    return false;
   }
 
-  JS::RootedValue result(cx);
-  result.setObject(*new_blob);
-  JS::ResolvePromise(cx, promise, result);
-
+  args.rval().setObject(*new_blob);
   return true;
 }
 
@@ -304,10 +289,20 @@ JSString *Blob::type(JSObject *self) {
 
 bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
   auto blob = Blob::blob(self);
-  auto type = val.type();
 
-  switch (type) {
-  case JS::ValueType::String: {
+  if (val.isObject()) {
+    RootedObject obj(cx, &val.toObject());
+
+    if (Blob::is_instance(obj)) {
+      auto src = Blob::blob(obj);
+      blob->insert(blob->end(), src->begin(), src->end());
+    } else if (JS_IsArrayBufferViewObject(obj) || JS::IsArrayBufferObject(obj)) {
+      auto span = value_to_buffer(cx, val, "Blob Parts");
+      if (span.has_value()) {
+        blob->insert(blob->end(), span->begin(), span->end());
+      }
+    }
+  } else if (val.isString()) {
     auto s = val.toString();
     if (!s) {
       return false;
@@ -327,53 +322,36 @@ bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
     } else {
       auto twoBytesLen = strlen * sizeof(uint16_t);
       auto src = reinterpret_cast<const uint8_t *>(JS::GetTwoByteLinearStringChars(nogc, str));
-
       blob->insert(blob->end(), src, src + twoBytesLen);
     }
-    break;
-  }
-  case JS::ValueType::Object: {
-    RootedObject obj(cx, &val.toObject());
-
-    if (Blob::is_instance(obj)) {
-      auto src = Blob::blob(obj);
-      blob->insert(blob->end(), src->begin(), src->end());
-    } else if (JS_IsArrayBufferViewObject(obj) || JS::IsArrayBufferObject(obj)) {
-      auto span = value_to_buffer(cx, val, "Blob Parts");
-      if (span.has_value()) {
-        blob->insert(blob->end(), span->begin(), span->end());
-      }
-    } else {
-      auto str = JS::ToString(cx, val);
-      if (!str) {
-        return false;
-      }
-
-      RootedValue str_val(cx, JS::StringValue(str));
-      append_value(cx, self, str_val);
+  } else {
+    // convert to string by default
+    auto str = JS::ToString(cx, val);
+    if (!str) {
+      return false;
     }
-    break;
-  }
-  default: {
-    return false;
-  }
+
+    RootedValue str_val(cx, JS::StringValue(str));
+    return append_value(cx, self, str_val);
   }
 
   return true;
 }
 
 bool Blob::init_blob_parts(JSContext *cx, HandleObject self, HandleValue value) {
-  bool is_allowed_obj =
-      (value.isObject() && (JS_IsArrayBufferViewObject(&value.toObject()) ||
-                            JS::IsArrayBufferObject(&value.toObject())));
-
   JS::ForOfIterator it(cx);
   if (!it.init(value, JS::ForOfIterator::AllowNonIterable)) {
     return false;
   }
 
-  if (value.isObject() && it.valueIsIterable()) {
-    // If the object is an array-like, iterate over its elements...
+  bool is_typed_array = value.isObject() && JS_IsTypedArrayObject(&value.toObject());
+  bool is_iterable = value.isObject() && it.valueIsIterable();
+
+  if (is_typed_array) {
+    // append typed array value directly...
+    return append_value(cx, self, value);
+   } else if (is_iterable) {
+    // if the object is an iterable, walk over its elements...
     JS::Rooted<JS::Value> item(cx);
     while (true) {
       bool done;
@@ -391,9 +369,6 @@ bool Blob::init_blob_parts(JSContext *cx, HandleObject self, HandleValue value) 
     }
 
     return true;
-  } else if (is_allowed_obj) {
-    // otherwise, append the value directly.
-    return append_value(cx, self, value);
   } else {
     // non-objects are not allowed for the blobParts
     return false;
@@ -442,7 +417,7 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
       return false;
     }
 
-    auto endings_str = endings_val.toString();
+    auto endings_str = JS::ToString(cx, endings_val);
     if (!JS_StringEqualsLiteral(cx, endings_str, "transparent", &is_transparent) ||
         !JS_StringEqualsLiteral(cx, endings_str, "native", &is_native)) {
       return false;
@@ -467,8 +442,7 @@ JSObject *Blob::create(JSContext *cx, std::unique_ptr<Blob::ByteBuffer> data, JS
 
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), PrivateValue(data.release()));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), PrivateValue(type));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings),
-                  JS::Int32Value(Blob::Endings::Transparent));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(Blob::Endings::Transparent));
   return self;
 }
 

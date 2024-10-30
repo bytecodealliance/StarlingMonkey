@@ -1,5 +1,8 @@
 {
   "Check that the body of a new request can be overridden when created from an existing Request object": {
     "status": "PASS"
+  },
+  "Check that the body of a new request can be duplicated from an existing Request object": {
+    "status": "PASS"
   }
 }

@@ -45,10 +45,10 @@
     "status": "FAIL"
   },
   "Changes to the blobParts array should be reflected in the returned Blob (pop).": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "Changes to the blobParts array should be reflected in the returned Blob (unshift).": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "ToString should be called on elements of the blobParts array.": {
     "status": "FAIL"
