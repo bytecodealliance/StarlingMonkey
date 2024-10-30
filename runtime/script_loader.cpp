@@ -203,6 +203,7 @@ static JSObject* get_builtin_module(JSContext* cx, HandleValue id, HandleObject 
   }
 
   JS::CompileOptions opts(cx, *COMPILE_OPTS);
+  opts.setFile("<internal>");
   JS::SourceText<mozilla::Utf8Unit> source;
 
   std::string code = "const { ";
