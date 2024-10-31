@@ -102,28 +102,28 @@
     "status": "PASS"
   },
   "Passing object \"[object Object]\" (index 2) for options should use the defaults.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing object \"[object Object]\" (index 2) for options should use the defaults (with newlines).": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing object \"[object Object]\" (index 3) for options should use the defaults.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing object \"[object Object]\" (index 3) for options should use the defaults (with newlines).": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing object \"/regex/\" (index 4) for options should use the defaults.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing object \"/regex/\" (index 4) for options should use the defaults (with newlines).": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing function \"function() {}\" (index 5) for options should use the defaults.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing function \"function() {}\" (index 5) for options should use the defaults (with newlines).": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing 123 for options should throw": {
     "status": "PASS"

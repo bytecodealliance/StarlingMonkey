@@ -54,7 +54,7 @@ JSString* normalize_type(JSContext *cx, HandleValue value) {
     return JS::ToString(cx, value);
   }
 
-  if (value.isUndefined()) {
+  if (value.isUndefined() || !value.isString()) {
     return JS_GetEmptyString(cx);
   }
 
@@ -394,7 +394,8 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
   }
 
   if (!has_type && !has_endings) {
-    return false;
+    // Use defaults
+    return true;
   }
 
   if (has_type) {
@@ -424,7 +425,8 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
     }
 
     if (!is_transparent && !is_native) {
-      return false;
+    // Use defaults
+      return true;
     }
 
     auto endings = is_native ? Blob::Endings::Native : Blob::Endings::Transparent;
