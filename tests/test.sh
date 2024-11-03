@@ -8,6 +8,7 @@ test_serve_path="${4:-}"
 componentize_flags="${COMPONENTIZE_FLAGS:-}"
 
 wasmtime="${WASMTIME:-wasmtime}"
+wasmtime_flags="${WASMTIME_FLAGS:-}"
 
 # Load test expectation fails to check, only those defined apply
 test_serve_body_expectation="$test_dir/expect_serve_body.txt"
@@ -73,7 +74,7 @@ if [ -z "$test_component" ]; then
    fi
 fi
 
-$wasmtime serve -S common --addr 0.0.0.0:0 "$test_component" 1> "$stdout_log" 2> "$stderr_log" &
+$wasmtime serve $wasmtime_flags -S common --addr 0.0.0.0:0 "$test_component" 1> "$stdout_log" 2> "$stderr_log" &
 wasmtime_pid="$!"
 
 function cleanup {

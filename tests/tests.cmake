@@ -8,7 +8,7 @@ include("weval")
 function(test_e2e TEST_NAME)
     get_target_property(RUNTIME_DIR starling-raw.wasm BINARY_DIR)
     add_test(e2e-${TEST_NAME} ${BASH_PROGRAM} ${CMAKE_SOURCE_DIR}/tests/test.sh ${RUNTIME_DIR} ${CMAKE_SOURCE_DIR}/tests/e2e/${TEST_NAME})
-    set_property(TEST e2e-${TEST_NAME} PROPERTY ENVIRONMENT "WASMTIME=${WASMTIME};WIZER=${WIZER_DIR}/wizer;WASM_TOOLS=${WASM_TOOLS_DIR}/wasm-tools")
+    set_property(TEST e2e-${TEST_NAME} PROPERTY ENVIRONMENT "WASMTIME=${WASMTIME};WASMTIME_FLAGS=${WASMTIME_FLAGS};WIZER=${WIZER_DIR}/wizer;WASM_TOOLS=${WASM_TOOLS_DIR}/wasm-tools")
     set_tests_properties(e2e-${TEST_NAME} PROPERTIES TIMEOUT 120)
 endfunction()
 
@@ -26,7 +26,7 @@ function(test_integration TEST_NAME)
     )
 
     add_test(integration-${TEST_NAME} ${BASH_PROGRAM} ${CMAKE_SOURCE_DIR}/tests/test.sh ${RUNTIME_DIR} ${CMAKE_SOURCE_DIR}/tests/integration/${TEST_NAME} ${RUNTIME_DIR}/test-server.wasm ${TEST_NAME})
-    set_property(TEST integration-${TEST_NAME} PROPERTY ENVIRONMENT "WASMTIME=${WASMTIME};WIZER=${WIZER_DIR}/wizer;WASM_TOOLS=${WASM_TOOLS_DIR}/wasm-tools;")
+    set_property(TEST integration-${TEST_NAME} PROPERTY ENVIRONMENT "WASMTIME=${WASMTIME};WASMTIME_FLAGS=${WASMTIME_FLAGS};WIZER=${WIZER_DIR}/wizer;WASM_TOOLS=${WASM_TOOLS_DIR}/wasm-tools;")
     set_tests_properties(integration-${TEST_NAME} PROPERTIES TIMEOUT 120)
 endfunction()
 
