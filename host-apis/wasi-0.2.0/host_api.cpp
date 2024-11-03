@@ -593,27 +593,31 @@ public:
   }
 
   [[nodiscard]] bool run(api::Engine *engine) override {
-    auto res = outgoing_body_->capacity();
-    if (res.is_err()) {
-      return false;
-    }
-    uint64_t capacity = res.unwrap();
-    MOZ_ASSERT(capacity >= 0);
-    auto bytes_to_write = std::min(bytes_.len - offset_, static_cast<size_t>(capacity));
-    outgoing_body_->write(bytes_.ptr.get() + offset_, bytes_to_write);
-    offset_ += bytes_to_write;
-    if (offset_ < bytes_.len) {
-      engine->queue_async_task(this);
-    } else {
-      bytes_.ptr.reset();
-      RootedObject receiver(engine->cx(), cb_receiver_);
-      bool result = cb_(engine->cx(), receiver);
-      cb_ = nullptr;
-      cb_receiver_ = nullptr;
-      return result;
-    }
+    MOZ_ASSERT(offset_ < bytes_.len);
+    while (true) {
+      auto res = outgoing_body_->capacity();
+      if (res.is_err()) {
+        return false;
+      }
+      uint64_t capacity = res.unwrap();
+      if (capacity == 0) {
+        engine->queue_async_task(this);
+        return true;
+      }
 
-    return true;
+      auto bytes_to_write = std::min(bytes_.len - offset_, static_cast<size_t>(capacity));
+      outgoing_body_->write(bytes_.ptr.get() + offset_, bytes_to_write);
+      offset_ += bytes_to_write;
+      MOZ_ASSERT(offset_ <= bytes_.len);
+      if (offset_ == bytes_.len) {
+        bytes_.ptr.reset();
+        RootedObject receiver(engine->cx(), cb_receiver_);
+        bool result = cb_(engine->cx(), receiver);
+        cb_ = nullptr;
+        cb_receiver_ = nullptr;
+        return result;
+      }
+    }
   }
 
   [[nodiscard]] bool cancel(api::Engine *engine) override {
