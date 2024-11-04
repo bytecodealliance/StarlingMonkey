@@ -33,16 +33,16 @@
     "status": "FAIL"
   },
   "The length getter should be invoked and any exceptions should be propagated.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ToUint32 should be applied to the length and any exceptions should be propagated.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Getters and value conversions should happen in order until an exception is thrown.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ToString should be called on elements of the blobParts array and any exceptions should be propagated.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Changes to the blobParts array should be reflected in the returned Blob (pop).": {
     "status": "PASS"
@@ -87,7 +87,7 @@
     "status": "PASS"
   },
   "Arguments should be evaluated from left to right.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Passing null (index 0) for options should use the defaults.": {
     "status": "PASS"

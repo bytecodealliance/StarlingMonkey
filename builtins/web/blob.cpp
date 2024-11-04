@@ -364,7 +364,7 @@ bool Blob::init_blob_parts(JSContext *cx, HandleObject self, HandleValue value) 
     return true;
   } else {
     // non-objects are not allowed for the blobParts
-    return false;
+    return api::throw_error(cx, api::Errors::TypeError, "Blob.constructor", "blobParts", "be an object");
   }
 }
 
@@ -372,7 +372,7 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
   JS::RootedValue init_val(cx, initv);
 
   if (!init_val.isObject()) {
-    return false;
+    return api::throw_error(cx, api::Errors::TypeError, "Blob.constructor", "options", "be an object");
   }
 
   // `options` is an object which may specify any of the properties:
@@ -459,11 +459,11 @@ bool Blob::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   if (!blobParts.isUndefined() && !init_blob_parts(cx, self, blobParts)) {
-    return api::throw_error(cx, api::Errors::TypeError, "Blob.constructor", "blobParts", "be an object");
+    return false;
   }
 
   if (!opts.isNullOrUndefined() && !init_options(cx, self, opts)) {
-    return api::throw_error(cx, api::Errors::TypeError, "Blob.constructor", "options", "be an object");
+    return false;
   }
 
   args.rval().setObject(*self);
