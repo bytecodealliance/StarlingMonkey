@@ -1,5 +1,6 @@
 #include "blob.h"
 #include "builtin.h"
+#include "encode.h"
 #include "js/ArrayBuffer.h"
 #include "js/Conversions.h"
 #include "js/experimental/TypedData.h"
@@ -308,27 +309,15 @@ bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
       return true;
     }
   } else if (val.isString()) {
-    auto s = val.toString();
-    if (!s) {
+    auto chars = core::encode(cx, val);
+    if (!chars) {
       return false;
     }
 
-    auto str = JS::StringToLinearString(cx, s);
-    if (!str) {
-      return false;
-    }
-
-    JS::AutoCheckCannotGC nogc(cx);
-    auto strlen = JS::GetLinearStringLength(str);
-
-    if (JS::LinearStringHasLatin1Chars(str)) {
-      auto src = JS::GetLatin1LinearStringChars(nogc, str);
-      blob->insert(blob->end(), src, src + strlen);
-    } else {
-      auto twoBytesLen = strlen * sizeof(uint16_t);
-      auto src = reinterpret_cast<const uint8_t *>(JS::GetTwoByteLinearStringChars(nogc, str));
-      blob->insert(blob->end(), src, src + twoBytesLen);
-    }
+    // TODO: convert line endings: https://w3c.github.io/FileAPI/#convert-line-endings-to-native
+    auto src = chars.ptr.get();
+    auto len = chars.len;
+    blob->insert(blob->end(), src, src + len);
     return true;
   }
 
