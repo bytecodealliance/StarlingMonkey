@@ -1,7 +1,6 @@
 #include "blob.h"
 #include "builtin.h"
 #include "js/ArrayBuffer.h"
-#include "js/BigInt.h"
 #include "js/Conversions.h"
 #include "js/experimental/TypedData.h"
 #include "js/TypeDecls.h"
@@ -50,16 +49,20 @@ bool validate_type(T* chars, size_t strlen) {
 // 1. If type contains any characters outside the range U+0020 to U+007E, then set t to the empty string.
 // 2. Convert every character in type to ASCII lowercase.
 JSString* normalize_type(JSContext *cx, HandleValue value) {
-  if (value.isNull()) {
-    return JS::ToString(cx, value);
-  }
+  JS::RootedString value_str(cx);
 
-  if (value.isUndefined() || !value.isString()) {
+  if (value.isObject() || value.isString()) {
+    value_str = JS::ToString(cx, value);
+    if (!value_str) {
+      return nullptr;
+    }
+  } else if (value.isNull())  {
+    return JS::ToString(cx, value);
+  } else {
     return JS_GetEmptyString(cx);
   }
 
-  JS::RootedString s(cx, value.toString());
-  auto str = JS::StringToLinearString(cx, s);
+  auto str = JS::StringToLinearString(cx, value_str);
   if (!str) {
     return nullptr;
   }
@@ -386,29 +389,16 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
   // - `type`: the MIME type of the data that will be stored into the blob,
   // - `endings`: how to interpret newline characters (\n) within the contents.
   JS::RootedObject opts(cx, init_val.toObjectOrNull());
-  bool has_type, has_endings;
+  bool has_endings, has_type;
 
-  if (!JS_HasProperty(cx, opts, "type", &has_type) ||
-      !JS_HasProperty(cx, opts, "endings", &has_endings)) {
+  if (!JS_HasProperty(cx, opts, "endings", &has_endings) ||
+      !JS_HasProperty(cx, opts, "type", &has_type)) {
     return false;
   }
 
   if (!has_type && !has_endings) {
     // Use defaults
     return true;
-  }
-
-  if (has_type) {
-    JS::RootedValue type(cx);
-    if (!JS_GetProperty(cx, opts, "type", &type)) {
-      return false;
-    }
-
-    auto type_str = normalize_type(cx, type);
-    if (!type_str) {
-      return false;
-    }
-    SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), PrivateValue(type_str));
   }
 
   if (has_endings) {
@@ -424,13 +414,23 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
       return false;
     }
 
-    if (!is_transparent && !is_native) {
-    // Use defaults
-      return true;
+    if (is_transparent || is_native) {
+      auto endings = is_native ? Blob::Endings::Native : Blob::Endings::Transparent;
+      SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(endings));
+    }
+  }
+
+  if (has_type) {
+    JS::RootedValue type(cx);
+    if (!JS_GetProperty(cx, opts, "type", &type)) {
+      return false;
     }
 
-    auto endings = is_native ? Blob::Endings::Native : Blob::Endings::Transparent;
-    SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(endings));
+    auto type_str = normalize_type(cx, type);
+    if (!type_str) {
+      return false;
+    }
+    SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), PrivateValue(type_str));
   }
 
   return true;

@@ -84,7 +84,7 @@
     "status": "PASS"
   },
   "options properties should be accessed in lexicographic order.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Arguments should be evaluated from left to right.": {
     "status": "FAIL"
