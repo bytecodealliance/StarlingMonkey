@@ -45,13 +45,13 @@
     "status": "FAIL"
   },
   "Changes to the blobParts array should be reflected in the returned Blob (pop).": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Changes to the blobParts array should be reflected in the returned Blob (unshift).": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ToString should be called on elements of the blobParts array.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ArrayBuffer elements of the blobParts array should be supported.": {
     "status": "PASS"

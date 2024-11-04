@@ -299,11 +299,13 @@ bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
     if (Blob::is_instance(obj)) {
       auto src = Blob::blob(obj);
       blob->insert(blob->end(), src->begin(), src->end());
+      return true;
     } else if (JS_IsArrayBufferViewObject(obj) || JS::IsArrayBufferObject(obj)) {
       auto span = value_to_buffer(cx, val, "Blob Parts");
       if (span.has_value()) {
         blob->insert(blob->end(), span->begin(), span->end());
       }
+      return true;
     }
   } else if (val.isString()) {
     auto s = val.toString();
@@ -327,18 +329,17 @@ bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
       auto src = reinterpret_cast<const uint8_t *>(JS::GetTwoByteLinearStringChars(nogc, str));
       blob->insert(blob->end(), src, src + twoBytesLen);
     }
-  } else {
-    // convert to string by default
-    auto str = JS::ToString(cx, val);
-    if (!str) {
-      return false;
-    }
-
-    RootedValue str_val(cx, JS::StringValue(str));
-    return append_value(cx, self, str_val);
+    return true;
   }
 
-  return true;
+  // FALLBACK: if we ever get here convert, to string and call append again
+  auto str = JS::ToString(cx, val);
+  if (!str) {
+    return false;
+  }
+
+  RootedValue str_val(cx, JS::StringValue(str));
+  return append_value(cx, self, str_val);
 }
 
 bool Blob::init_blob_parts(JSContext *cx, HandleObject self, HandleValue value) {
