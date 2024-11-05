@@ -6,6 +6,7 @@
 #include "js/experimental/TypedData.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
+#include "rust-encoding.h"
 
 namespace builtins {
 namespace web {
@@ -34,9 +35,7 @@ const JSPropertySpec Blob::properties[] = {
     JS_PS_END,
 };
 
-
-template <typename T>
-bool validate_type(T* chars, size_t strlen) {
+template <typename T> bool validate_type(T *chars, size_t strlen) {
   for (size_t i = 0; i < strlen; i++) {
     T c = chars[i];
     if (c < 0x20 || c > 0x7E) {
@@ -49,7 +48,7 @@ bool validate_type(T* chars, size_t strlen) {
 
 // 1. If type contains any characters outside the range U+0020 to U+007E, then set t to the empty string.
 // 2. Convert every character in type to ASCII lowercase.
-JSString* normalize_type(JSContext *cx, HandleValue value) {
+JSString *normalize_type(JSContext *cx, HandleValue value) {
   JS::RootedString value_str(cx);
 
   if (value.isObject() || value.isString()) {
@@ -57,7 +56,7 @@ JSString* normalize_type(JSContext *cx, HandleValue value) {
     if (!value_str) {
       return nullptr;
     }
-  } else if (value.isNull())  {
+  } else if (value.isNull()) {
     return JS::ToString(cx, value);
   } else {
     return JS_GetEmptyString(cx);
@@ -82,7 +81,7 @@ JSString* normalize_type(JSContext *cx, HandleValue value) {
       return JS_GetEmptyString(cx);
     }
 
-    normalized = std::string(reinterpret_cast<const char*>(chars), strlen);
+    normalized = std::string(reinterpret_cast<const char *>(chars), strlen);
   } else {
     JS::AutoCheckCannotGC nogc(cx);
     auto chars = (JS::GetTwoByteLinearStringChars(nogc, str));
@@ -97,8 +96,7 @@ JSString* normalize_type(JSContext *cx, HandleValue value) {
   }
 
   std::transform(normalized.begin(), normalized.end(), normalized.begin(),
-    [](unsigned char c){ return std::tolower(c); });
-
+                 [](unsigned char c) { return std::tolower(c); });
 
   return JS_NewStringCopyN(cx, normalized.c_str(), normalized.length());
 }
@@ -214,8 +212,8 @@ bool Blob::slice(JSContext *cx, unsigned argc, JS::Value *vp) {
   end = (end < 0) ? std::max((size + end), 0LL) : std::min(end, size);
 
   auto dst = (end - start > 0)
-    ? std::make_unique<std::vector<uint8_t>>(src->begin() + start, src->begin() + end)
-    : std::make_unique<std::vector<uint8_t>>();
+                 ? std::make_unique<std::vector<uint8_t>>(src->begin() + start, src->begin() + end)
+                 : std::make_unique<std::vector<uint8_t>>();
 
   JS::RootedObject new_blob(cx, create(cx, std::move(dst), contentType));
   if (!new_blob) {
@@ -236,10 +234,30 @@ bool Blob::text(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   args.rval().setObject(*promise);
 
-  auto blob = Blob::blob(self);
-  auto chars = JS::UTF8Chars((char *)blob->data(), blob->size());
+  auto src = Blob::blob(self);
+  auto encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
+      reinterpret_cast<uint8_t *>(const_cast<char *>("UTF-8")), 5));
 
-  JS::RootedString str(cx, JS_NewStringCopyUTF8N(cx, chars));
+  auto decoder = jsencoding::encoding_new_decoder_with_bom_removal(encoding);
+  MOZ_ASSERT(decoder);
+
+  auto src_len = src->size();
+  auto dst_len = jsencoding::decoder_max_utf16_buffer_length(decoder, src_len);
+
+  JS::UniqueTwoByteChars dst(new char16_t[dst_len + 1]);
+  if (!dst) {
+    JS_ReportOutOfMemory(cx);
+    return false;
+  }
+
+  bool had_replacements;
+  auto dst_data =  reinterpret_cast<uint16_t *>(dst.get());
+  auto ret = jsencoding::decoder_decode_to_utf16(decoder, src->data(), &src_len, dst_data, &dst_len,
+                                                 true, &had_replacements);
+
+  MOZ_ASSERT(ret == 0);
+
+  JS::RootedString str(cx, JS_NewUCString(cx, std::move(dst), dst_len));
   if (!str) {
     return RejectPromiseWithPendingError(cx, promise);
   }
@@ -343,7 +361,7 @@ bool Blob::init_blob_parts(JSContext *cx, HandleObject self, HandleValue value) 
   if (is_typed_array) {
     // append typed array value directly...
     return append_value(cx, self, value);
-   } else if (is_iterable) {
+  } else if (is_iterable) {
     // if the object is an iterable, walk over its elements...
     JS::Rooted<JS::Value> item(cx);
     while (true) {

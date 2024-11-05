@@ -282,7 +282,7 @@
     "status": "PASS"
   },
   "Slicing test: slice (8,0).": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Slicing test (8,1).": {
     "status": "PASS"
@@ -300,7 +300,7 @@
     "status": "PASS"
   },
   "Slicing test: slice (8,3).": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Invalid contentType (\"ÿ\")": {
     "status": "PASS"

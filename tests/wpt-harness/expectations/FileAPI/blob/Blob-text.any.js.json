@@ -18,9 +18,9 @@
     "status": "PASS"
   },
   "Blob.text() invalid utf-8 input": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob.text() concurrent reads": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }
