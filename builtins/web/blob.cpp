@@ -252,10 +252,10 @@ bool Blob::text(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   bool had_replacements;
   auto dst_data =  reinterpret_cast<uint16_t *>(dst.get());
-  auto ret = jsencoding::decoder_decode_to_utf16(decoder, src->data(), &src_len, dst_data, &dst_len,
-                                                 true, &had_replacements);
 
-  MOZ_ASSERT(ret == 0);
+  jsencoding::decoder_decode_to_utf16(decoder, src->data(), &src_len, dst_data, &dst_len, true,
+                                      &had_replacements);
+
 
   JS::RootedString str(cx, JS_NewUCString(cx, std::move(dst), dst_len));
   if (!str) {
