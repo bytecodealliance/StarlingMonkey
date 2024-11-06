@@ -574,31 +574,73 @@ void HttpOutgoingBody::write(const uint8_t *bytes, size_t len) {
   MOZ_RELEASE_ASSERT(write_to_outgoing_body(borrow, bytes, len));
 }
 
-Result<Void> HttpOutgoingBody::write_all(const uint8_t *bytes, size_t len) {
+class BodyWriteAllTask final : public api::AsyncTask {
+  HttpOutgoingBody *outgoing_body_;
+  PollableHandle outgoing_pollable_;
+
+  api::TaskCompletionCallback cb_;
+  Heap<JSObject *> cb_receiver_;
+  HostBytes bytes_;
+  size_t offset_ = 0;
+
+public:
+  explicit BodyWriteAllTask(HttpOutgoingBody *outgoing_body, HostBytes bytes,
+                          api::TaskCompletionCallback completion_callback,
+                          HandleObject callback_receiver)
+      : outgoing_body_(outgoing_body), cb_(completion_callback),
+        cb_receiver_(callback_receiver), bytes_(std::move(bytes)) {
+    outgoing_pollable_ = outgoing_body_->subscribe().unwrap();
+  }
+
+  [[nodiscard]] bool run(api::Engine *engine) override {
+    MOZ_ASSERT(offset_ < bytes_.len);
+    while (true) {
+      auto res = outgoing_body_->capacity();
+      if (res.is_err()) {
+        return false;
+      }
+      uint64_t capacity = res.unwrap();
+      if (capacity == 0) {
+        engine->queue_async_task(this);
+        return true;
+      }
+
+      auto bytes_to_write = std::min(bytes_.len - offset_, static_cast<size_t>(capacity));
+      outgoing_body_->write(bytes_.ptr.get() + offset_, bytes_to_write);
+      offset_ += bytes_to_write;
+      MOZ_ASSERT(offset_ <= bytes_.len);
+      if (offset_ == bytes_.len) {
+        bytes_.ptr.reset();
+        RootedObject receiver(engine->cx(), cb_receiver_);
+        bool result = cb_(engine->cx(), receiver);
+        cb_ = nullptr;
+        cb_receiver_ = nullptr;
+        return result;
+      }
+    }
+  }
+
+  [[nodiscard]] bool cancel(api::Engine *engine) override {
+    MOZ_ASSERT_UNREACHABLE("BodyWriteAllTask's semantics don't allow for cancellation");
+    return true;
+  }
+
+  [[nodiscard]] int32_t id() override {
+    return outgoing_pollable_;
+  }
+
+  void trace(JSTracer *trc) override {
+    JS::TraceEdge(trc, &cb_receiver_, "BodyWriteAllTask completion callback receiver");
+  }
+};
+
+Result<Void> HttpOutgoingBody::write_all(api::Engine *engine, HostBytes bytes,
+  api::TaskCompletionCallback callback, HandleObject cb_receiver) {
   if (!valid()) {
     // TODO: proper error handling for all 154 error codes.
     return Result<Void>::err(154);
   }
-
-  auto *state = static_cast<OutgoingBodyHandle *>(handle_state_.get());
-  Borrow<OutputStream> borrow(state->stream_handle_);
-
-  while (len > 0) {
-    auto capacity_res = capacity();
-    if (capacity_res.is_err()) {
-      // TODO: proper error handling for all 154 error codes.
-      return Result<Void>::err(154);
-    }
-    auto capacity = capacity_res.unwrap();
-    auto bytes_to_write = std::min(len, static_cast<size_t>(capacity));
-    if (!write_to_outgoing_body(borrow, bytes, len)) {
-      return Result<Void>::err(154);
-    }
-
-    bytes += bytes_to_write;
-    len -= bytes_to_write;
-  }
-
+  engine->queue_async_task(new BodyWriteAllTask(this, std::move(bytes), callback, cb_receiver));
   return {};
 }
 
@@ -638,13 +680,8 @@ public:
                           HandleObject callback_receiver)
       : incoming_body_(incoming_body), outgoing_body_(outgoing_body), cb_(completion_callback),
         cb_receiver_(callback_receiver), state_(State::BlockedOnBoth) {
-    auto res = incoming_body_->subscribe();
-    MOZ_ASSERT(!res.is_err());
-    incoming_pollable_ = res.unwrap();
-
-    res = outgoing_body_->subscribe();
-    MOZ_ASSERT(!res.is_err());
-    outgoing_pollable_ = res.unwrap();
+    incoming_pollable_ = incoming_body_->subscribe().unwrap();
+    outgoing_pollable_ = outgoing_body_->subscribe().unwrap();
   }
 
   [[nodiscard]] bool run(api::Engine *engine) override {

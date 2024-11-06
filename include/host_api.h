@@ -294,7 +294,8 @@ public:
   /// The host doesn't necessarily write all bytes in any particular call to
   /// `write`, so to ensure all bytes are written, we call it in a loop.
   /// TODO: turn into an async task that writes chunks of the passed buffer until done.
-  Result<Void> write_all(const uint8_t *bytes, size_t len);
+  Result<Void> write_all(api::Engine *engine, HostBytes bytes, api::TaskCompletionCallback callback,
+                         HandleObject cb_receiver);
 
   /// Append an HttpIncomingBody to this one.
   Result<Void> append(api::Engine *engine, HttpIncomingBody *other,
