@@ -13,12 +13,11 @@ class Blob : public FinalizableBuiltinImpl<Blob> {
   static bool arrayBuffer(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool bytes(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool slice(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool stream(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool text(JSContext *cx, unsigned argc, JS::Value *vp);
 
   static bool size_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool type_get(JSContext *cx, unsigned argc, JS::Value *vp);
-
-  static JSObject *data_to_owned_array_buffer(JSContext *cx, HandleObject self);
 
 public:
   static constexpr const char *class_name = "Blob";
@@ -40,6 +39,12 @@ public:
   static bool init_blob_parts(JSContext *cx, HandleObject self, HandleValue iterable);
   static bool init_options(JSContext *cx, HandleObject self, HandleValue opts);
 
+  static bool stream_cancel(JSContext *cx, JS::CallArgs args, JS::HandleObject stream,
+                            JS::HandleObject owner, JS::HandleValue reason);
+  static bool stream_pull(JSContext *cx, JS::CallArgs args, JS::HandleObject source,
+                          JS::HandleObject body_owner, JS::HandleObject controller);
+
+  static JSObject *data_to_owned_array_buffer(JSContext *cx, HandleObject self);
   static JSObject *create(JSContext *cx, std::unique_ptr<ByteBuffer> data, JSString *type);
 
   static bool init_class(JSContext *cx, HandleObject global);

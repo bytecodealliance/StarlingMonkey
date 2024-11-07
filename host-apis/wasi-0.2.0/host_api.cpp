@@ -1,5 +1,6 @@
 #include "host_api.h"
 #include "bindings/bindings.h"
+#include "extension-api.h"
 
 #include <exports.h>
 #include <list>
@@ -244,9 +245,18 @@ public:
 size_t api::AsyncTask::select(std::vector<AsyncTask *> &tasks) {
   auto count = tasks.size();
   vector<WASIHandle<host_api::Pollable>::Borrowed> handles;
-  for (const auto task : tasks) {
-    handles.emplace_back(task->id());
+
+  for (size_t idx = 0; idx < count; ++idx) {
+    auto *task = tasks.at(idx);
+    auto id = task->id();
+
+    if (id == BLOCKING_TASK_HANDLE) {
+      return idx;
+    } else {
+      handles.emplace_back(id);
+    }
   }
+
   auto list = list_borrow_pollable_t{handles.data(), count};
   bindings_list_u32_t result{nullptr, 0};
   wasi_io_poll_poll(&list, &result);

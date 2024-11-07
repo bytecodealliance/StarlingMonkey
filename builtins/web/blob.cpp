@@ -1,16 +1,63 @@
 #include "blob.h"
 #include "builtin.h"
 #include "encode.h"
+#include "extension-api.h"
+#include "rust-encoding.h"
+#include "streams/native-stream-source.h"
+
 #include "js/ArrayBuffer.h"
 #include "js/Conversions.h"
 #include "js/experimental/TypedData.h"
+#include "js/Stream.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
-#include "rust-encoding.h"
 
 namespace builtins {
 namespace web {
 namespace blob {
+
+static api::Engine *ENGINE;
+
+
+class StreamTask final : public api::AsyncTask {
+    Heap<JSObject *> source_;
+
+public:
+  explicit StreamTask(const HandleObject source)  : source_(source) {
+    handle_ = BLOCKING_TASK_HANDLE;
+  }
+
+  [[nodiscard]] bool run(api::Engine *engine) override {
+    JSContext *cx = engine->cx();
+    RootedObject owner(cx, streams::NativeStreamSource::owner(source_));
+    RootedObject controller(cx, streams::NativeStreamSource::controller(source_));
+
+    auto buf = Blob::data_to_owned_array_buffer(cx, owner);
+    if (!buf) {
+      return false;
+    }
+
+    RootedValueArray<1> enqueue_args(cx);
+    enqueue_args[0].setObject(*buf);
+    RootedValue ret(cx);
+    if (!JS::Call(cx, controller, "enqueue", enqueue_args, &ret)) {
+      return false;
+    }
+
+    return cancel(engine);
+  }
+
+  [[nodiscard]] uint64_t deadline() override {
+    return host_api::MonotonicClock::now();
+  }
+
+  [[nodiscard]] bool cancel(api::Engine *engine) override {
+    handle_ = INVALID_POLLABLE_HANDLE;
+    return true;
+  }
+
+  void trace(JSTracer *trc) override { TraceEdge(trc, &source_, "source for future"); }
+};
 
 const JSFunctionSpec Blob::static_methods[] = {
     JS_FS_END,
@@ -25,6 +72,7 @@ const JSFunctionSpec Blob::methods[] = {
     JS_FN("bytes", Blob::bytes, 0, JSPROP_ENUMERATE),
     JS_FN("slice", Blob::slice, 0, JSPROP_ENUMERATE),
     JS_FN("text", Blob::text, 0, JSPROP_ENUMERATE),
+    JS_FN("stream", Blob::stream, 0, JSPROP_ENUMERATE),
     JS_FS_END,
 };
 
@@ -224,6 +272,26 @@ bool Blob::slice(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+bool Blob::stream(JSContext *cx, unsigned argc, JS::Value *vp) {
+  METHOD_HEADER(0)
+
+  auto native_stream = streams::NativeStreamSource::create(
+    cx, self, JS::UndefinedHandleValue, stream_pull, stream_cancel);
+
+  JS::RootedObject source(cx, native_stream);
+  if (!source) {
+    return false;
+  }
+
+  JS::RootedObject src_stream(cx, JS::NewReadableDefaultStreamObject(cx, source, nullptr, 0.0));
+  if (!src_stream) {
+    return false;
+  }
+
+  args.rval().setObject(*src_stream);
+  return true;
+}
+
 bool Blob::text(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
 
@@ -290,6 +358,21 @@ bool Blob::type_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   auto type = Blob::type(self);
   args.rval().setString(type);
+  return true;
+}
+
+bool Blob::stream_cancel(JSContext *cx, JS::CallArgs args, JS::HandleObject stream,
+                         JS::HandleObject owner, JS::HandleValue reason) {
+  args.rval().setUndefined();
+  return true;
+}
+
+bool Blob::stream_pull(JSContext *cx, JS::CallArgs args, JS::HandleObject source,
+                       JS::HandleObject body_owner, JS::HandleObject controller) {
+
+  ENGINE->queue_async_task(new StreamTask(source));
+
+  args.rval().setUndefined();
   return true;
 }
 
@@ -499,7 +582,10 @@ void Blob::finalize(JS::GCContext *gcx, JSObject *self) {
   }
 }
 
-bool install(api::Engine *engine) { return Blob::init_class(engine->cx(), engine->global()); }
+bool install(api::Engine *engine) {
+  ENGINE = engine;
+  return Blob::init_class(engine->cx(), engine->global());
+}
 
 } // namespace blob
 } // namespace web
