@@ -156,10 +156,16 @@ struct ReadResult {
 
 } // namespace
 
-host_api::HttpRequestResponseBase *RequestOrResponse::handle(JSObject *obj) {
+host_api::HttpRequestResponseBase *RequestOrResponse::maybe_handle(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
   auto slot = JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::RequestOrResponse));
   return static_cast<host_api::HttpRequestResponseBase *>(slot.toPrivate());
+}
+
+host_api::HttpRequestResponseBase *RequestOrResponse::handle(JSObject *obj) {
+  auto handle = maybe_handle(obj);
+  MOZ_ASSERT(handle);
+  return handle;
 }
 
 bool RequestOrResponse::is_instance(JSObject *obj) {
@@ -167,13 +173,16 @@ bool RequestOrResponse::is_instance(JSObject *obj) {
 }
 
 bool RequestOrResponse::is_incoming(JSObject *obj) {
-  auto handle = RequestOrResponse::handle(obj);
+  auto handle = RequestOrResponse::maybe_handle(obj);
   return handle && handle->is_incoming();
 }
 
-host_api::HttpHeadersReadOnly *RequestOrResponse::headers_handle(JSObject *obj) {
-  MOZ_ASSERT(is_instance(obj));
-  auto res = handle(obj)->headers();
+host_api::HttpHeadersReadOnly *RequestOrResponse::maybe_headers_handle(JSObject *obj) {
+  auto handle = maybe_handle(obj);
+  if (!handle) {
+    return nullptr;
+  }
+  auto res = handle->headers();
   MOZ_ASSERT(!res.is_err(), "TODO: proper error handling");
   return res.unwrap();
 }
@@ -185,19 +194,21 @@ bool RequestOrResponse::has_body(JSObject *obj) {
 
 host_api::HttpIncomingBody *RequestOrResponse::incoming_body_handle(JSObject *obj) {
   MOZ_ASSERT(is_incoming(obj));
-  if (handle(obj)->is_request()) {
-    return reinterpret_cast<host_api::HttpIncomingRequest *>(handle(obj))->body().unwrap();
+  auto handle = RequestOrResponse::handle(obj);
+  if (handle->is_request()) {
+    return reinterpret_cast<host_api::HttpIncomingRequest *>(handle)->body().unwrap();
   } else {
-    return reinterpret_cast<host_api::HttpIncomingResponse *>(handle(obj))->body().unwrap();
+    return reinterpret_cast<host_api::HttpIncomingResponse *>(handle)->body().unwrap();
   }
 }
 
 host_api::HttpOutgoingBody *RequestOrResponse::outgoing_body_handle(JSObject *obj) {
   MOZ_ASSERT(!is_incoming(obj));
-  if (handle(obj)->is_request()) {
-    return reinterpret_cast<host_api::HttpOutgoingRequest *>(handle(obj))->body().unwrap();
+  auto handle = RequestOrResponse::handle(obj);
+  if (handle->is_request()) {
+    return reinterpret_cast<host_api::HttpOutgoingRequest *>(handle)->body().unwrap();
   } else {
-    return reinterpret_cast<host_api::HttpOutgoingResponse *>(handle(obj))->body().unwrap();
+    return reinterpret_cast<host_api::HttpOutgoingResponse *>(handle)->body().unwrap();
   }
 }
 
@@ -424,7 +435,7 @@ unique_ptr<host_api::HttpHeaders> RequestOrResponse::headers_handle_clone(JSCont
     return Headers::handle_clone(cx, headers);
   }
 
-  auto handle = RequestOrResponse::handle(self);
+  auto handle = RequestOrResponse::maybe_handle(self);
   if (!handle) {
     return std::make_unique<host_api::HttpHeaders>();
   }
@@ -470,13 +481,13 @@ bool finish_outgoing_body_streaming(JSContext *cx, HandleObject body_owner) {
   return true;
 }
 
-bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::HandleObject source) {
+bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::HandleObject source,
+  api::TaskCompletionCallback callback, HandleObject callback_receiver) {
   MOZ_ASSERT(!body_used(source));
-  MOZ_ASSERT(!body_used(self));
   MOZ_ASSERT(self != source);
   host_api::HttpIncomingBody *source_body = incoming_body_handle(source);
   host_api::HttpOutgoingBody *dest_body = outgoing_body_handle(self);
-  auto res = dest_body->append(ENGINE, source_body, finish_outgoing_body_streaming, self);
+  auto res = dest_body->append(ENGINE, source_body, callback, callback_receiver);
   if (auto *err = res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
@@ -484,7 +495,9 @@ bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::Ha
 
   mozilla::DebugOnly<bool> success = mark_body_used(cx, source);
   MOZ_ASSERT(success);
-  if (body_stream(source) != body_stream(self)) {
+  // append_body can be called multiple times, but we only want to mark the body as used the first
+  // time it happens.
+  if (body_stream(source) != body_stream(self) && !body_used(self)) {
     success = mark_body_used(cx, self);
     MOZ_ASSERT(success);
   }
@@ -501,7 +514,7 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
                                   : Request::is_instance(obj) ? Headers::HeadersGuard::Request
                                                               : Headers::HeadersGuard::Response;
     host_api::HttpHeadersReadOnly *handle;
-    if (is_incoming(obj) && (handle = headers_handle(obj))) {
+    if (is_incoming(obj) && (handle = maybe_headers_handle(obj))) {
       headers = Headers::create(cx, handle, guard);
     } else {
       headers = Headers::create(cx, guard);
@@ -860,39 +873,82 @@ bool RequestOrResponse::bodyAll(JSContext *cx, JS::CallArgs args, JS::HandleObje
   return true;
 }
 
-bool RequestOrResponse::body_source_pull_algorithm(JSContext *cx, CallArgs args,
-                                                   HandleObject source, HandleObject body_owner,
-                                                   HandleObject controller) {
+/**
+ * Closes the ReadableStream representing a body after it's been appended to an outgoing body.
+ *
+ * The append operation is performed using the host API, not via the JS Streams API, so this
+ * explicit closing operation is needed to close the loop on the latter.
+ */
+bool close_appended_body(JSContext *cx, HandleObject body_owner) {
+  RootedObject body(cx, RequestOrResponse::body_stream(body_owner));
+  return ReadableStreamClose(cx, body);
+}
+
+bool do_body_source_pull(JSContext *cx, HandleObject source, HandleObject body_owner) {
   // If the stream has been piped to a TransformStream whose readable end was
   // then passed to a Request or Response as the body, we can just append the
   // entire source body to the destination using a single native hostcall, and
   // then close the source stream, instead of reading and writing it in
-  // individual chunks. Note that even in situations where multiple streams are
-  // piped to the same destination this is guaranteed to happen in the right
-  // order: ReadableStream#pipeTo locks the destination WritableStream until the
+  // individual chunks.
+  // Note that even in situations where multiple streams are piped to the same
+  // destination this is guaranteed to happen in the right order:
+  // ReadableStream#pipeTo locks the destination WritableStream until the
   // source ReadableStream is closed/canceled, so only one stream can ever be
   // piped in at the same time.
   RootedObject pipe_dest(cx, streams::NativeStreamSource::piped_to_transform_stream(source));
-  if (pipe_dest) {
-    if (streams::TransformStream::readable_used_as_body(pipe_dest)) {
-      RootedObject dest_owner(cx, streams::TransformStream::owner(pipe_dest));
-      MOZ_ASSERT(!JS_IsExceptionPending(cx));
-      if (!append_body(cx, dest_owner, body_owner)) {
-        return false;
-      }
-
-      MOZ_ASSERT(!JS_IsExceptionPending(cx));
-      RootedObject stream(cx, streams::NativeStreamSource::stream(source));
-      bool success = ReadableStreamClose(cx, stream);
-      MOZ_RELEASE_ASSERT(success);
-
-      args.rval().setUndefined();
-      MOZ_ASSERT(!JS_IsExceptionPending(cx));
-      return true;
+  if (pipe_dest && streams::TransformStream::readable_used_as_body(pipe_dest)) {
+    MOZ_ASSERT(!streams::TransformStream::backpressure(pipe_dest));
+    RootedObject dest_owner(cx, streams::TransformStream::owner(pipe_dest));
+    MOZ_ASSERT(!JS_IsExceptionPending(cx));
+    if (!RequestOrResponse::append_body(cx, dest_owner, body_owner, close_appended_body, body_owner)) {
+      return false;
     }
+
+    MOZ_ASSERT(!JS_IsExceptionPending(cx));
+    return true;
   }
 
   ENGINE->queue_async_task(new BodyFutureTask(source));
+  return true;
+}
+
+bool bp_change_then_handler(JSContext *cx, HandleObject source, HandleValue extra, CallArgs args) {
+  MOZ_ASSERT(extra.isObject());
+  RootedObject body_owner(cx, &extra.toObject());
+  MOZ_ASSERT(RequestOrResponse::is_instance(body_owner));
+
+  if (!do_body_source_pull(cx, source, body_owner)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+bool RequestOrResponse::body_source_pull_algorithm(JSContext *cx, CallArgs args,
+                                                   HandleObject source, HandleObject body_owner,
+                                                   HandleObject _controller) {
+  // If the stream has been piped to a TransformStream whose readable end has backpressure applied,
+  // we wait for the backpressure to be removed before actually reading from the body.
+  // That way, we can avoid reading any chunks from the body for now, and might be able to append
+  // it in full to an outgoing stream later.
+  RootedObject pipe_dest(cx, streams::NativeStreamSource::piped_to_transform_stream(source));
+  if (pipe_dest && streams::TransformStream::backpressure(pipe_dest)) {
+    RootedObject bp_change_promise(cx,
+                                   streams::TransformStream::backpressureChangePromise(pipe_dest));
+    JS::RootedObject then_handler(cx);
+    RootedValue extra(cx, ObjectValue(*body_owner));
+    then_handler = create_internal_method<bp_change_then_handler>(cx, source, extra);
+    if (!then_handler) {
+      return false;
+    }
+    return AddPromiseReactionsIgnoringUnhandledRejection(cx, bp_change_promise, then_handler,
+                                                         nullptr);
+  }
+
+  if (!do_body_source_pull(cx, source, body_owner)) {
+    return false;
+  }
 
   args.rval().setUndefined();
   return true;
@@ -907,13 +963,24 @@ bool RequestOrResponse::body_source_cancel_algorithm(JSContext *cx, JS::CallArgs
   return true;
 }
 
+bool write_all_finish_callback(JSContext *cx, HandleObject then_handler) {
+  // The reader is stored in the catch handler, which we need here as well.
+  // So we get that first, then the reader.
+  JS::RootedObject catch_handler(cx, &GetFunctionNativeReserved(then_handler, 1).toObject());
+  JS::RootedObject reader(cx, &GetFunctionNativeReserved(catch_handler, 1).toObject());
+
+  // Read the next chunk.
+  JS::RootedObject promise(cx, ReadableStreamDefaultReaderRead(cx, reader));
+  if (!promise) {
+    return false;
+  }
+
+  return AddPromiseReactions(cx, promise, then_handler, catch_handler);
+}
+
 bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_owner,
                                            JS::HandleValue extra, JS::CallArgs args) {
   JS::RootedObject then_handler(cx, &args.callee());
-  // The reader is stored in the catch handler, which we need here as well.
-  // So we get that first, then the reader.
-  JS::RootedObject catch_handler(cx, &extra.toObject());
-  JS::RootedObject reader(cx, &js::GetFunctionNativeReserved(catch_handler, 1).toObject());
 
   // We're guaranteed to work with a native ReadableStreamDefaultReader here,
   // which in turn is guaranteed to vend {done: bool, value: any} objects to
@@ -954,25 +1021,17 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
   bool is_shared;
   RootedObject buffer(cx, JS_GetArrayBufferViewBuffer(cx, array, &is_shared));
   MOZ_ASSERT(!is_shared);
-  auto bytes = static_cast<uint8_t *>(StealArrayBufferContents(cx, buffer));
-  // TODO: change this to write in chunks, respecting backpressure.
+  auto ptr = static_cast<uint8_t *>(StealArrayBufferContents(cx, buffer));
+  host_api::HostBytes bytes(unique_ptr<uint8_t[]>(ptr), length);
   auto body = RequestOrResponse::outgoing_body_handle(body_owner);
-  auto res = body->write_all(bytes, length);
-  js_free(bytes);
-
-  // Needs to be outside the nogc block in case we need to create an exception.
+  auto res = body->write_all(ENGINE, std::move(bytes),
+    write_all_finish_callback, then_handler);
   if (auto *err = res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
   }
 
-  // Read the next chunk.
-  JS::RootedObject promise(cx, JS::ReadableStreamDefaultReaderRead(cx, reader));
-  if (!promise) {
-    return false;
-  }
-
-  return JS::AddPromiseReactions(cx, promise, then_handler, catch_handler);
+  return true;
 }
 
 bool reader_for_outgoing_body_catch_handler(JSContext *cx, JS::HandleObject body_owner,
@@ -1021,21 +1080,6 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
 
   if (body_unusable(cx, stream)) {
     return api::throw_error(cx, FetchErrors::BodyStreamUnusable);
-  }
-
-  // If the body stream is backed by an HTTP body handle, we can directly pipe
-  // that handle into the body we're about to send.
-  if (streams::NativeStreamSource::stream_is_body(cx, stream)) {
-    MOZ_ASSERT(!is_incoming(body_owner));
-    // First, directly append the source's body to the target's and lock the stream.
-    JS::RootedObject stream_source(cx, streams::NativeStreamSource::get_stream_source(cx, stream));
-    JS::RootedObject source_owner(cx, streams::NativeStreamSource::owner(stream_source));
-    if (!append_body(cx, body_owner, source_owner)) {
-      return false;
-    }
-
-    *requires_streaming = true;
-    return true;
   }
 
   JS::RootedObject reader(
@@ -1122,23 +1166,6 @@ bool RequestOrResponse::body_get(JSContext *cx, JS::CallArgs args, JS::HandleObj
   return true;
 }
 
-host_api::HttpRequest *Request::request_handle(JSObject *obj) {
-  auto base = RequestOrResponse::handle(obj);
-  return reinterpret_cast<host_api::HttpRequest *>(base);
-}
-
-host_api::HttpOutgoingRequest *Request::outgoing_handle(JSObject *obj) {
-  auto base = RequestOrResponse::handle(obj);
-  MOZ_ASSERT(base->is_outgoing());
-  return reinterpret_cast<host_api::HttpOutgoingRequest *>(base);
-}
-
-host_api::HttpIncomingRequest *Request::incoming_handle(JSObject *obj) {
-  auto base = RequestOrResponse::handle(obj);
-  MOZ_ASSERT(base->is_incoming());
-  return reinterpret_cast<host_api::HttpIncomingRequest *>(base);
-}
-
 JSObject *Request::response_promise(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
   return &JS::GetReservedSlot(obj, static_cast<uint32_t>(Request::Slots::ResponsePromise))
@@ -1218,7 +1245,7 @@ bool Request::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
       return false;
     }
     cloned_headers_val.set(ObjectValue(*cloned_headers));
-  } else if (RequestOrResponse::handle(self)) {
+  } else if (RequestOrResponse::maybe_handle(self)) {
     auto handle = RequestOrResponse::headers_handle_clone(cx, self);
     JSObject *cloned_headers =
         Headers::create(cx, handle.release(),
@@ -1709,7 +1736,10 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
       // content can't have access to it. Instead of reifying it here to pass it
       // into a TransformStream, we just append the body on the host side and
       // mark it as used on the input Request.
-      RequestOrResponse::append_body(cx, request, input_request);
+      if (!RequestOrResponse::append_body(cx, request, input_request,
+                                          finish_outgoing_body_streaming,request)) {
+        return false;
+      }
     } else {
       inputBody = streams::TransformStream::create_rs_proxy(cx, inputBody);
       if (!inputBody) {
@@ -1754,9 +1784,10 @@ static_assert((int)Response::Slots::BodyUsed == (int)Request::Slots::BodyUsed);
 static_assert((int)Response::Slots::Headers == (int)Request::Slots::Headers);
 static_assert((int)Response::Slots::Response == (int)Request::Slots::Request);
 
-host_api::HttpResponse *Response::response_handle(JSObject *obj) {
-  MOZ_ASSERT(is_instance(obj));
-  return static_cast<host_api::HttpResponse *>(RequestOrResponse::handle(obj));
+host_api::HttpResponse *Response::maybe_response_handle(JSObject *obj) {
+  auto base = RequestOrResponse::maybe_handle(obj);
+  MOZ_ASSERT_IF(base, base->is_response());
+  return static_cast<host_api::HttpResponse *>(base);
 }
 
 uint16_t Response::status(JSObject *obj) {

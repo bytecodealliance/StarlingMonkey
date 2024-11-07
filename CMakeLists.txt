@@ -34,7 +34,7 @@ include("wasmtime")
 include("fmt")
 include("spidermonkey")
 include("openssl")
-include("host_api")
+include("${HOST_API}/host_api.cmake")
 include("build-crates")
 
 add_library(extension_api INTERFACE include/extension-api.h runtime/encode.h runtime/decode.h)
