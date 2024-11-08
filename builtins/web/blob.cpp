@@ -21,17 +21,24 @@ static api::Engine *ENGINE;
 
 class StreamTask final : public api::AsyncTask {
     Heap<JSObject *> source_;
+    bool done_;
 
 public:
-  explicit StreamTask(const HandleObject source)  : source_(source) {
-    handle_ = BLOCKING_TASK_HANDLE;
+  explicit StreamTask(const HandleObject source)  : source_(source), done_(false) {
+    handle_ = IMMEDIATE_TASK_HANDLE;
   }
 
   [[nodiscard]] bool run(api::Engine *engine) override {
     JSContext *cx = engine->cx();
     RootedObject owner(cx, streams::NativeStreamSource::owner(source_));
     RootedObject controller(cx, streams::NativeStreamSource::controller(source_));
+    RootedValue ret(cx);
 
+    if (done_) {
+      return JS::Call(cx, controller, "close", HandleValueArray::empty(), &ret);
+    }
+
+    // TODO: Read in chunks
     auto buf = Blob::data_to_owned_array_buffer(cx, owner);
     if (!buf) {
       return false;
@@ -39,11 +46,11 @@ public:
 
     RootedValueArray<1> enqueue_args(cx);
     enqueue_args[0].setObject(*buf);
-    RootedValue ret(cx);
     if (!JS::Call(cx, controller, "enqueue", enqueue_args, &ret)) {
       return false;
     }
 
+    done_ = true;
     return cancel(engine);
   }
 
@@ -71,8 +78,8 @@ const JSFunctionSpec Blob::methods[] = {
     JS_FN("arrayBuffer", Blob::arrayBuffer, 0, JSPROP_ENUMERATE),
     JS_FN("bytes", Blob::bytes, 0, JSPROP_ENUMERATE),
     JS_FN("slice", Blob::slice, 0, JSPROP_ENUMERATE),
-    JS_FN("text", Blob::text, 0, JSPROP_ENUMERATE),
     JS_FN("stream", Blob::stream, 0, JSPROP_ENUMERATE),
+    JS_FN("text", Blob::text, 0, JSPROP_ENUMERATE),
     JS_FS_END,
 };
 

@@ -10,7 +10,7 @@ size_t api::AsyncTask::select(std::vector<AsyncTask *> &tasks) {
     auto *task = tasks.at(idx);
     auto id = task->id();
 
-    if (id == BLOCKING_TASK_HANDLE) {
+    if (id == IMMEDIATE_TASK_HANDLE) {
       return idx;
     } else {
       handles.emplace_back(id);
