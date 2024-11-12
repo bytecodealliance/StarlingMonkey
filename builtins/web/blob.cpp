@@ -39,11 +39,7 @@ public:
 
     size_t total_size = Blob::blob_size(owner);
     if (bytes_read_ >= total_size) {
-      if (!JS::Call(cx, controller, "close", HandleValueArray::empty(), &ret)) {
-        return false;
-      }
-
-      return cancel(engine);
+      return JS::Call(cx, controller, "close", HandleValueArray::empty(), &ret);
     }
 
     size_t offset = bytes_read_;
