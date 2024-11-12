@@ -21,10 +21,13 @@ static api::Engine *ENGINE;
 
 class StreamTask final : public api::AsyncTask {
     Heap<JSObject *> source_;
-    bool done_;
+    size_t bytes_read_;
+
+    static constexpr size_t CHUNK_SIZE = 8192;
 
 public:
-  explicit StreamTask(const HandleObject source)  : source_(source), done_(false) {
+  explicit StreamTask(const HandleObject source, api::Engine *engine)  : source_(source), bytes_read_(0) {
+    engine->incr_event_loop_interest();
     handle_ = IMMEDIATE_TASK_HANDLE;
   }
 
@@ -34,24 +37,38 @@ public:
     RootedObject controller(cx, streams::NativeStreamSource::controller(source_));
     RootedValue ret(cx);
 
-    if (done_) {
-      return JS::Call(cx, controller, "close", HandleValueArray::empty(), &ret);
+    size_t total_size = Blob::blob_size(owner);
+    if (bytes_read_ >= total_size) {
+      if (!JS::Call(cx, controller, "close", HandleValueArray::empty(), &ret)) {
+        return false;
+      }
+
+      return cancel(engine);
     }
 
-    // TODO: Read in chunks
-    auto buf = Blob::data_to_owned_array_buffer(cx, owner);
-    if (!buf) {
+    size_t offset = bytes_read_;
+    size_t bytes_read = 0;
+
+    RootedObject buffer(cx, Blob::data_to_owned_array_buffer(cx, owner, offset, CHUNK_SIZE, &bytes_read));
+    if (!buffer) {
+      return false;
+    }
+
+    MOZ_ASSERT(GetArrayBufferByteLength(buffer) == bytes_read);
+
+    RootedObject chunk(cx, JS_NewUint8ArrayWithBuffer(cx, buffer, 0, bytes_read));
+    if (!chunk) {
       return false;
     }
 
     RootedValueArray<1> enqueue_args(cx);
-    enqueue_args[0].setObject(*buf);
+    enqueue_args[0].setObject(*chunk);
     if (!JS::Call(cx, controller, "enqueue", enqueue_args, &ret)) {
       return false;
     }
 
-    done_ = true;
-    return cancel(engine);
+    bytes_read_ += bytes_read;
+    return true;
   }
 
   [[nodiscard]] uint64_t deadline() override {
@@ -60,6 +77,8 @@ public:
 
   [[nodiscard]] bool cancel(api::Engine *engine) override {
     handle_ = INVALID_POLLABLE_HANDLE;
+    engine->incr_event_loop_interest();
+
     return true;
   }
 
@@ -78,7 +97,7 @@ const JSFunctionSpec Blob::methods[] = {
     JS_FN("arrayBuffer", Blob::arrayBuffer, 0, JSPROP_ENUMERATE),
     JS_FN("bytes", Blob::bytes, 0, JSPROP_ENUMERATE),
     JS_FN("slice", Blob::slice, 0, JSPROP_ENUMERATE),
-    JS_FN("stream", Blob::stream, 0, JSPROP_ENUMERATE),
+//    JS_FN("stream", Blob::stream, 0, JSPROP_ENUMERATE),
     JS_FN("text", Blob::text, 0, JSPROP_ENUMERATE),
     JS_FS_END,
 };
@@ -157,20 +176,33 @@ JSString *normalize_type(JSContext *cx, HandleValue value) {
 }
 
 JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self) {
+    size_t total_size = blob_size(self);
+    size_t bytes_read = 0;
+
+    return Blob::data_to_owned_array_buffer(cx, self, 0, total_size, &bytes_read);
+}
+
+JSObject* Blob::data_to_owned_array_buffer(JSContext* cx, HandleObject self, size_t offset, size_t size, size_t* bytes_read) {
   auto blob = Blob::blob(self);
-  auto buffer_size = blob->size();
+  auto blob_size = blob->size();
+  *bytes_read = 0;
+
+  MOZ_ASSERT(offset <= blob_size);
+
+  size_t available_bytes = blob_size - offset;
+  size_t read_size = std::min(size, available_bytes);
 
   mozilla::UniquePtr<uint8_t[], JS::FreePolicy> buf{
-      static_cast<uint8_t *>(JS_malloc(cx, buffer_size))};
+      static_cast<uint8_t*>(JS_malloc(cx, read_size))};
   if (!buf) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
 
-  memcpy(buf.get(), blob->data(), buffer_size);
+  memcpy(buf.get(), blob->data() + offset, read_size);
 
   auto array_buffer = JS::NewArrayBufferWithContents(
-      cx, buffer_size, buf.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory);
+      cx, read_size, buf.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory);
   if (!array_buffer) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
@@ -178,6 +210,8 @@ JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self) {
 
   // `array_buffer` now owns `buf`
   static_cast<void>(buf.release());
+  *bytes_read = read_size;
+
   return array_buffer;
 }
 
@@ -351,8 +385,8 @@ bool Blob::size_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     return api::throw_error(cx, api::Errors::WrongReceiver, "size get", "Blob");
   }
 
-  auto blob = Blob::blob(self);
-  args.rval().setNumber(blob->size());
+  auto size = Blob::blob_size(self);
+  args.rval().setNumber(size);
   return true;
 }
 
@@ -377,7 +411,7 @@ bool Blob::stream_cancel(JSContext *cx, JS::CallArgs args, JS::HandleObject stre
 bool Blob::stream_pull(JSContext *cx, JS::CallArgs args, JS::HandleObject source,
                        JS::HandleObject body_owner, JS::HandleObject controller) {
 
-  ENGINE->queue_async_task(new StreamTask(source));
+  ENGINE->queue_async_task(new StreamTask(source, ENGINE));
 
   args.rval().setUndefined();
   return true;
@@ -389,6 +423,14 @@ std::vector<uint8_t> *Blob::blob(JSObject *self) {
 
   MOZ_ASSERT(blob);
   return blob;
+}
+
+size_t Blob::blob_size(JSObject *self) {
+  auto blob = static_cast<std::vector<uint8_t> *>(
+      JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Data)).toPrivate());
+
+  MOZ_ASSERT(blob);
+  return blob->size();
 }
 
 JSString *Blob::type(JSObject *self) {

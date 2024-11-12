@@ -34,6 +34,7 @@ public:
   using ByteBuffer = std::vector<uint8_t>;
 
   static ByteBuffer *blob(JSObject *self);
+  static size_t blob_size(JSObject *self);
   static JSString *type(JSObject *self);
   static bool append_value(JSContext *cx, HandleObject self, HandleValue val);
   static bool init_blob_parts(JSContext *cx, HandleObject self, HandleValue iterable);
@@ -45,6 +46,7 @@ public:
                           JS::HandleObject body_owner, JS::HandleObject controller);
 
   static JSObject *data_to_owned_array_buffer(JSContext *cx, HandleObject self);
+  static JSObject *data_to_owned_array_buffer(JSContext* cx, HandleObject self, size_t offset, size_t size, size_t* bytes_read);
   static JSObject *create(JSContext *cx, std::unique_ptr<ByteBuffer> data, JSString *type);
 
   static bool init_class(JSContext *cx, HandleObject global);
