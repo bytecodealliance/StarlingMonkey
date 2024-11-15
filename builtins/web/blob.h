@@ -3,6 +3,7 @@
 
 #include "builtin.h"
 #include "extension-api.h"
+#include "js/AllocPolicy.h"
 #include "js/TypeDecls.h"
 
 namespace builtins {
@@ -17,20 +18,16 @@ public:
   explicit BlobReader(std::span<const uint8_t> data)
     : data_(data), position_(0) {}
 
-  void seek(size_t position) {
-    position_ = std::min(position, data_.size());
-  }
-
   std::size_t remaining() const {
     return data_.size() - position_;
   }
 
-  std::optional<std::span<const uint8_t>> read(std::size_t size) {
+  std::span<const uint8_t> read(std::size_t size) {
     size = std::min(size, remaining());
     auto result = data_.subspan(position_, size);
 
     position_ += size;
-    return result.empty() ? std::nullopt : std::optional<std::span<const uint8_t>>(result);
+    return result;
   }
 };
 
@@ -53,12 +50,13 @@ public:
   static const JSPropertySpec properties[];
 
   static constexpr unsigned ctor_length = 1;
-  enum Slots { Data, Type, Endings, Reader, Count };
+  enum Slots { Data, Type, Endings, Readers, Count };
   enum Endings { Transparent, Native };
 
   using ByteBuffer = std::vector<uint8_t>;
+  using ReadersMap = js::HashMap<JSObject*, BlobReader, js::PointerHasher<JSObject*>, js::MallocAllocPolicy>;
 
-  static BlobReader *reader(JSObject *self);
+  static ReadersMap *readers(JSObject *self);
   static ByteBuffer *blob(JSObject *self);
   static size_t blob_size(JSObject *self);
   static JSString *type(JSObject *self);
