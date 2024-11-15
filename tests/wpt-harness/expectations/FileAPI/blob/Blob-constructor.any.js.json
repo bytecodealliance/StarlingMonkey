@@ -1,6 +1,6 @@
 {
   "Blob interface object": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Blob constructor with no arguments": {
     "status": "PASS"

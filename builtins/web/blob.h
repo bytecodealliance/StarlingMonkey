@@ -49,7 +49,7 @@ public:
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
 
-  static constexpr unsigned ctor_length = 1;
+  static constexpr unsigned ctor_length = 0;
   enum Slots { Data, Type, Endings, Readers, Count };
   enum Endings { Transparent, Native };
 
