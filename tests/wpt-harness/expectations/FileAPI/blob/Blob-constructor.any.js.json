@@ -30,7 +30,7 @@
     "status": "PASS"
   },
   "A Uint8Array object should be treated as a sequence for the blobParts argument.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "The length getter should be invoked and any exceptions should be propagated.": {
     "status": "PASS"

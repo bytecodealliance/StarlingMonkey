@@ -511,13 +511,9 @@ bool Blob::init_blob_parts(JSContext *cx, HandleObject self, HandleValue value) 
     return false;
   }
 
-  bool is_typed_array = value.isObject() && JS_IsTypedArrayObject(&value.toObject());
   bool is_iterable = value.isObject() && it.valueIsIterable();
 
-  if (is_typed_array) {
-    // append typed array value directly...
-    return append_value(cx, self, value);
-  } else if (is_iterable) {
+  if (is_iterable) {
     // if the object is an iterable, walk over its elements...
     JS::Rooted<JS::Value> item(cx);
     while (true) {
