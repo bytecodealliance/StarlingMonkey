@@ -14,108 +14,11 @@
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 
-namespace builtins {
-namespace web {
-namespace blob {
+#include <regex>
+
+namespace {
 
 static api::Engine *ENGINE;
-
-JSObject* new_array_buffer_from_span(JSContext *cx, std::span<const uint8_t> span);
-
-class StreamTask final : public api::AsyncTask {
-    Heap<JSObject *> source_;
-
-    static constexpr size_t CHUNK_SIZE = 8192;
-
-public:
-  explicit StreamTask(const HandleObject source, api::Engine *engine)  : source_(source) {
-    engine->incr_event_loop_interest();
-    handle_ = IMMEDIATE_TASK_HANDLE;
-  }
-
-  [[nodiscard]] bool run(api::Engine *engine) override {
-    JSContext *cx = engine->cx();
-    RootedObject owner(cx, streams::NativeStreamSource::owner(source_));
-    RootedObject controller(cx, streams::NativeStreamSource::controller(source_));
-    RootedValue ret(cx);
-
-    auto readers = Blob::readers(owner);
-    auto rdr = readers->lookupForAdd(controller);
-
-    if (!rdr) {
-      auto blob = Blob::blob(owner);
-      auto span = std::span<uint8_t>(blob->data(), blob->size());
-      auto reader = BlobReader(span);
-
-      if (!readers->add(rdr, controller, reader)) {
-        return false;
-      };
-    }
-
-    auto chunk = rdr->value().read(CHUNK_SIZE);
-    auto chunk_size = chunk.size();
-
-    if (chunk.empty()) {
-      if (!JS::Call(cx, controller, "close", HandleValueArray::empty(), &ret)) {
-        return false;
-      }
-
-      readers->remove(controller);
-      return cancel(engine);
-    }
-
-    RootedObject array_buffer(cx, new_array_buffer_from_span(cx, chunk));
-    if (!array_buffer) {
-      return false;
-    }
-
-    RootedObject bytes_buffer(cx, JS_NewUint8ArrayWithBuffer(cx, array_buffer, 0, chunk_size));
-    if (!bytes_buffer) {
-      return false;
-    }
-
-    RootedValueArray<1> enqueue_args(cx);
-    enqueue_args[0].setObject(*bytes_buffer);
-    if (!JS::Call(cx, controller, "enqueue", enqueue_args, &ret)) {
-      return false;
-    }
-
-    return cancel(engine);
-  }
-
-  [[nodiscard]] bool cancel(api::Engine *engine) override {
-    handle_ = INVALID_POLLABLE_HANDLE;
-    engine->decr_event_loop_interest();
-    return true;
-  }
-
-  void trace(JSTracer *trc) override { TraceEdge(trc, &source_, "source for future"); }
-};
-
-const JSFunctionSpec Blob::static_methods[] = {
-    JS_FS_END,
-};
-
-const JSPropertySpec Blob::static_properties[] = {
-    JS_PS_END,
-};
-
-const JSFunctionSpec Blob::methods[] = {
-    JS_FN("arrayBuffer", Blob::arrayBuffer, 0, JSPROP_ENUMERATE),
-    JS_FN("bytes", Blob::bytes, 0, JSPROP_ENUMERATE),
-    JS_FN("slice", Blob::slice, 0, JSPROP_ENUMERATE),
-    JS_FN("stream", Blob::stream, 0, JSPROP_ENUMERATE),
-    JS_FN("text", Blob::text, 0, JSPROP_ENUMERATE),
-    JS_FS_END,
-};
-
-const JSPropertySpec Blob::properties[] = {
-    JS_PSG("size", size_get, JSPROP_ENUMERATE),
-    JS_PSG("type", type_get, JSPROP_ENUMERATE),
-    JS_STRING_SYM_PS(toStringTag, "Blob", JSPROP_READONLY),
-    JS_PS_END,
-};
-
 
 JSObject* new_array_buffer_from_span(JSContext *cx, std::span<const uint8_t> span) {
   auto buf = mozilla::MakeUnique<uint8_t[]>(span.size());
@@ -203,6 +106,120 @@ JSString *normalize_type(JSContext *cx, HandleValue value) {
 
   return JS_NewStringCopyN(cx, normalized.c_str(), normalized.length());
 }
+
+// https://w3c.github.io/FileAPI/#convert-line-endings-to-native
+std::string convert_line_endings_to_native(std::string_view s) {
+  std::string native_line_ending = "\n";
+#ifdef _WIN32
+  native_line_ending = "\r\n";
+#endif
+
+  std::string result;
+  std::regex re(R"(\r\n|\r|\n)");
+  std::regex_replace(std::back_inserter(result), s.begin(), s.end(), re, native_line_ending);
+
+  return result;
+}
+
+} // anonymous namespace
+
+namespace builtins {
+namespace web {
+namespace blob {
+
+const JSFunctionSpec Blob::static_methods[] = {
+    JS_FS_END,
+};
+
+const JSPropertySpec Blob::static_properties[] = {
+    JS_PS_END,
+};
+
+const JSFunctionSpec Blob::methods[] = {
+    JS_FN("arrayBuffer", Blob::arrayBuffer, 0, JSPROP_ENUMERATE),
+    JS_FN("bytes", Blob::bytes, 0, JSPROP_ENUMERATE),
+    JS_FN("slice", Blob::slice, 0, JSPROP_ENUMERATE),
+    JS_FN("stream", Blob::stream, 0, JSPROP_ENUMERATE),
+    JS_FN("text", Blob::text, 0, JSPROP_ENUMERATE),
+    JS_FS_END,
+};
+
+const JSPropertySpec Blob::properties[] = {
+    JS_PSG("size", size_get, JSPROP_ENUMERATE),
+    JS_PSG("type", type_get, JSPROP_ENUMERATE),
+    JS_STRING_SYM_PS(toStringTag, "Blob", JSPROP_READONLY),
+    JS_PS_END,
+};
+
+class StreamTask final : public api::AsyncTask {
+    Heap<JSObject *> source_;
+
+    static constexpr size_t CHUNK_SIZE = 8192;
+
+public:
+  explicit StreamTask(const HandleObject source, api::Engine *engine)  : source_(source) {
+    engine->incr_event_loop_interest();
+    handle_ = IMMEDIATE_TASK_HANDLE;
+  }
+
+  [[nodiscard]] bool run(api::Engine *engine) override {
+    JSContext *cx = engine->cx();
+    RootedObject owner(cx, streams::NativeStreamSource::owner(source_));
+    RootedObject controller(cx, streams::NativeStreamSource::controller(source_));
+    RootedValue ret(cx);
+
+    auto readers = Blob::readers(owner);
+    auto rdr = readers->lookupForAdd(controller);
+
+    if (!rdr) {
+      auto blob = Blob::blob(owner);
+      auto span = std::span<uint8_t>(blob->data(), blob->size());
+      auto reader = BlobReader(span);
+
+      if (!readers->add(rdr, controller, reader)) {
+        return false;
+      };
+    }
+
+    auto chunk = rdr->value().read(CHUNK_SIZE);
+    auto chunk_size = chunk.size();
+
+    if (chunk.empty()) {
+      if (!JS::Call(cx, controller, "close", HandleValueArray::empty(), &ret)) {
+        return false;
+      }
+
+      readers->remove(controller);
+      return cancel(engine);
+    }
+
+    RootedObject array_buffer(cx, new_array_buffer_from_span(cx, chunk));
+    if (!array_buffer) {
+      return false;
+    }
+
+    RootedObject bytes_buffer(cx, JS_NewUint8ArrayWithBuffer(cx, array_buffer, 0, chunk_size));
+    if (!bytes_buffer) {
+      return false;
+    }
+
+    RootedValueArray<1> enqueue_args(cx);
+    enqueue_args[0].setObject(*bytes_buffer);
+    if (!JS::Call(cx, controller, "enqueue", enqueue_args, &ret)) {
+      return false;
+    }
+
+    return cancel(engine);
+  }
+
+  [[nodiscard]] bool cancel(api::Engine *engine) override {
+    handle_ = INVALID_POLLABLE_HANDLE;
+    engine->decr_event_loop_interest();
+    return true;
+  }
+
+  void trace(JSTracer *trc) override { TraceEdge(trc, &source_, "source for future"); }
+};
 
 JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self) {
     size_t total_size = blob_size(self);
@@ -465,6 +482,11 @@ Blob::ReadersMap *Blob::readers(JSObject *self) {
   return readers;
 }
 
+Blob::LineEndings Blob::line_endings(JSObject *self) {
+  return static_cast<LineEndings>(
+      JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Endings)).toInt32());
+}
+
 bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
   auto blob = Blob::blob(self);
 
@@ -488,10 +510,17 @@ bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
       return false;
     }
 
-    // TODO: convert line endings: https://w3c.github.io/FileAPI/#convert-line-endings-to-native
-    auto src = chars.ptr.get();
-    auto len = chars.len;
-    blob->insert(blob->end(), src, src + len);
+    if (line_endings(self) == LineEndings::Native) {
+      auto converted = convert_line_endings_to_native(chars);
+      auto src = converted.data();
+      auto len = converted.length();
+      blob->insert(blob->end(), src, src + len);
+
+    } else {
+      auto src = chars.ptr.get();
+      auto len = chars.len;
+      blob->insert(blob->end(), src, src + len);
+    }
     return true;
   }
 
@@ -575,7 +604,7 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
     }
 
     if (is_transparent || is_native) {
-      auto endings = is_native ? Blob::Endings::Native : Blob::Endings::Transparent;
+      auto endings = is_native ? LineEndings::Native : LineEndings::Transparent;
       SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(endings));
     }
   }
@@ -604,7 +633,7 @@ JSObject *Blob::create(JSContext *cx, std::unique_ptr<Blob::ByteBuffer> data, JS
 
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), PrivateValue(data.release()));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), PrivateValue(type));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(Blob::Endings::Transparent));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Readers), PrivateValue(nullptr));
   return self;
 }
@@ -622,7 +651,7 @@ bool Blob::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), PrivateValue(new std::vector<uint8_t>()));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), PrivateValue(JS_GetEmptyString(cx)));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(Blob::Endings::Transparent));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Readers), PrivateValue(new ReadersMap));
 
   // walk the blob parts and write it to concatenated buffer

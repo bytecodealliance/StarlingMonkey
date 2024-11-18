@@ -51,7 +51,7 @@ public:
 
   static constexpr unsigned ctor_length = 0;
   enum Slots { Data, Type, Endings, Readers, Count };
-  enum Endings { Transparent, Native };
+  enum LineEndings { Transparent, Native };
 
   using ByteBuffer = std::vector<uint8_t>;
   using ReadersMap = js::HashMap<JSObject*, BlobReader, js::PointerHasher<JSObject*>, js::MallocAllocPolicy>;
@@ -60,6 +60,7 @@ public:
   static ByteBuffer *blob(JSObject *self);
   static size_t blob_size(JSObject *self);
   static JSString *type(JSObject *self);
+  static LineEndings line_endings(JSObject *self);
   static bool append_value(JSContext *cx, HandleObject self, HandleValue val);
   static bool init_blob_parts(JSContext *cx, HandleObject self, HandleValue iterable);
   static bool init_options(JSContext *cx, HandleObject self, HandleValue opts);
