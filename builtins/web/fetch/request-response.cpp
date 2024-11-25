@@ -1,5 +1,6 @@
 #include "request-response.h"
 
+#include "../blob.h"
 #include "../streams/native-stream-source.h"
 #include "../streams/transform-stream.h"
 #include "../url.h"
@@ -8,6 +9,7 @@
 #include "extension-api.h"
 #include "fetch_event.h"
 #include "host_api.h"
+#include "js/String.h"
 #include "picosha2.h"
 
 #include "js/Array.h"
@@ -539,6 +541,19 @@ bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::Uni
     }
     static_cast<void>(buf.release());
     result.setObject(*array_buffer);
+  } else if constexpr (result_type == RequestOrResponse::BodyReadResult::Blob) {
+    auto bytes = reinterpret_cast<uint8_t *>(buf.get());
+    auto data = std::make_unique<std::vector<uint8_t>>(bytes, bytes + len);
+
+    JS::RootedString contentType(cx, JS_GetEmptyString(cx));
+    JS::RootedObject blob(cx, blob::Blob::create(cx, std::move(data), contentType));
+
+    if (!blob) {
+      return RejectPromiseWithPendingError(cx, result_promise);
+    }
+
+    // We can drop `buf` as the data has been now copied over to blob
+    result.setObject(*blob);
   } else {
     JS::RootedString text(cx, JS_NewStringCopyUTF8N(cx, JS::UTF8Chars(buf.get(), len)));
     if (!text) {
@@ -1303,6 +1318,7 @@ const JSPropertySpec Request::static_properties[] = {
 const JSFunctionSpec Request::methods[] = {
     JS_FN("arrayBuffer", Request::bodyAll<RequestOrResponse::BodyReadResult::ArrayBuffer>, 0,
           JSPROP_ENUMERATE),
+    JS_FN("blob", Request::bodyAll<RequestOrResponse::BodyReadResult::Blob>, 0, JSPROP_ENUMERATE),
     JS_FN("json", Request::bodyAll<RequestOrResponse::BodyReadResult::JSON>, 0, JSPROP_ENUMERATE),
     JS_FN("text", Request::bodyAll<RequestOrResponse::BodyReadResult::Text>, 0, JSPROP_ENUMERATE),
     JS_FN("clone", Request::clone, 0, JSPROP_ENUMERATE),
@@ -2294,6 +2310,7 @@ const JSPropertySpec Response::static_properties[] = {
 const JSFunctionSpec Response::methods[] = {
     JS_FN("arrayBuffer", bodyAll<RequestOrResponse::BodyReadResult::ArrayBuffer>, 0,
           JSPROP_ENUMERATE),
+    JS_FN("blob", bodyAll<RequestOrResponse::BodyReadResult::Blob>, 0, JSPROP_ENUMERATE),
     JS_FN("json", bodyAll<RequestOrResponse::BodyReadResult::JSON>, 0, JSPROP_ENUMERATE),
     JS_FN("text", bodyAll<RequestOrResponse::BodyReadResult::Text>, 0, JSPROP_ENUMERATE),
     JS_FS_END,

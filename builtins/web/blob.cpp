@@ -2,16 +2,18 @@
 #include "builtin.h"
 #include "encode.h"
 #include "extension-api.h"
-#include "mozilla/UniquePtr.h"
 #include "rust-encoding.h"
 #include "streams/native-stream-source.h"
 
+#include "mozilla/UniquePtr.h"
 #include "js/ArrayBuffer.h"
 #include "js/Conversions.h"
 #include "js/experimental/TypedData.h"
+#include "js/HashTable.h"
 #include "js/Stream.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
+#include "js/Vector.h"
 
 namespace {
 
