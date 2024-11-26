@@ -2,29 +2,43 @@
 #include "bindings/bindings.h"
 #include "handles.h"
 
+static std::optional<wasi_clocks_monotonic_clock_own_pollable_t> immediately_ready;
+
+size_t poll_handles(vector<WASIHandle<host_api::Pollable>::Borrowed> handles) {
+  auto list = list_borrow_pollable_t{handles.data(), handles.size()};
+  bindings_list_u32_t result{nullptr, 0};
+  wasi_io_poll_poll(&list, &result);
+  MOZ_ASSERT(result.len > 0);
+  const auto ready_index = result.ptr[0];
+  free(result.ptr);
+  return ready_index;
+}
+
 size_t api::AsyncTask::select(std::vector<AsyncTask *> &tasks) {
   auto count = tasks.size();
-  vector<WASIHandle<host_api::Pollable>::Borrowed> handles;
+  std::vector<WASIHandle<host_api::Pollable>::Borrowed> handles;
 
   for (size_t idx = 0; idx < count; ++idx) {
     auto *task = tasks.at(idx);
     auto id = task->id();
 
     if (id == IMMEDIATE_TASK_HANDLE) {
+      if (handles.size() > 0) {
+        if (!immediately_ready) {
+          immediately_ready = wasi_clocks_monotonic_clock_subscribe_duration(0);
+        }
+        handles.emplace_back(immediately_ready.value().__handle);
+        size_t ready_index = poll_handles(std::move(handles));
+        if (ready_index <= idx) {
+          return ready_index;
+        }
+      }
       return idx;
-    } else {
-      handles.emplace_back(id);
     }
+    handles.emplace_back(id);
   }
 
-  auto list = list_borrow_pollable_t{handles.data(), count};
-  bindings_list_u32_t result{nullptr, 0};
-  wasi_io_poll_poll(&list, &result);
-  MOZ_ASSERT(result.len > 0);
-  const auto ready_index = result.ptr[0];
-  free(result.ptr);
-
-  return ready_index;
+  return poll_handles(std::move(handles));
 }
 
 namespace host_api {
