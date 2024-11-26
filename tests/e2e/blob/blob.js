@@ -37,14 +37,9 @@ addEventListener("fetch", (event) =>
           }
         }, 1);
 
-        readAll(blob)
-          .then(() => {
-            console.log("Finished processing blob.");
-          })
-          .catch((e) => {
-            console.error("Caught exception in readAll:", e);
-          });
+        await readAll(blob);
 
+        console.log("Finished processing blob.");
         return new Response(`Large Blob`);
       } catch (e) {
         console.error(e);
