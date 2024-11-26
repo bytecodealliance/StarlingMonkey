@@ -12,35 +12,43 @@ async function readAll(blob) {
     totalBytes += value.length;
   }
 
-  strictEqual(totalBytes, blob.size, 'size mismatch');
+  strictEqual(totalBytes, blob.size, "size mismatch");
 }
 
-addEventListener("fetch", event => event.respondWith((async () => {
-  try {
-    const len = 1 * 1024 * 1024; // 1 MB
-    let arr = new Uint8Array(len);
+addEventListener("fetch", (event) =>
+  event.respondWith(
+    (async () => {
+      try {
+        const len = 10 * 1024 * 1024; // 1 MB
+        let arr = new Uint8Array(len);
 
-    arr.fill(42)
-    const blob = new Blob([arr]);
+        arr.fill(42);
+        const blob = new Blob([arr]);
 
-    let counter = 0;
-    const max = 5;
+        let counter = 0;
+        const max = 5;
 
-    const intervalId = setInterval(() => {
-      counter++;
-      console.log(`Counter: ${counter}`);
+        const intervalId = setInterval(() => {
+          counter++;
+          console.log(`Counter: ${counter}`);
 
-      if (counter >= max) {
-        clearInterval(intervalId);
+          if (counter >= max) {
+            clearInterval(intervalId);
+          }
+        }, 1);
+
+        readAll(blob)
+          .then(() => {
+            console.log("Finished processing blob.");
+          })
+          .catch((e) => {
+            console.error("Caught exception in readAll:", e);
+          });
+
+        return new Response(`Large Blob`);
+      } catch (e) {
+        console.error(e);
       }
-    }, 1);
-
-    readAll(blob).then(() => {
-      console.log("Finished processing blob.");
-    });
-
-    return new Response(`Large Blob`);
-  } catch (e) {
-    console.error(e);
-  }
-})()));
+    })(),
+  ),
+);
