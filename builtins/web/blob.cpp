@@ -2,13 +2,13 @@
 #include "builtin.h"
 #include "encode.h"
 #include "extension-api.h"
-#include "js/HashTable.h"
 #include "mozilla/UniquePtr.h"
 #include "rust-encoding.h"
 #include "streams/native-stream-source.h"
 
 #include "js/ArrayBuffer.h"
 #include "js/Conversions.h"
+#include "js/HashTable.h"
 #include "js/experimental/TypedData.h"
 #include "js/Stream.h"
 #include "js/TypeDecls.h"
@@ -684,6 +684,13 @@ void Blob::finalize(JS::GCContext *gcx, JSObject *self) {
   auto readers = Blob::readers(self);
   if (readers) {
     free(readers);
+  }
+}
+
+void Blob::trace(JSTracer* trc, JSObject *self) {
+  auto readers = Blob::readers(self);
+  for (auto iter = readers->iter(); !iter.done(); iter.next()) {
+    TraceEdge(trc, &iter.get().mutableKey(), "stream map");
   }
 }
 

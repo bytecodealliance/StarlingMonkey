@@ -248,6 +248,22 @@ template <typename Impl> class FinalizableBuiltinImpl : public BuiltinImpl<Impl>
   static constexpr uint32_t class_flags = JSCLASS_BACKGROUND_FINALIZE;
 };
 
+template <typename Impl> class TraceableBuiltinImpl : public BuiltinImpl<Impl> {
+  static constexpr JSClassOps class_ops{
+      nullptr,        // addProperty
+      nullptr,        // delProperty
+      nullptr,        // enumerate
+      nullptr,        // newEnumerate
+      nullptr,        // resolve
+      nullptr,        // mayResolve
+      Impl::finalize, // finalize
+      nullptr,        // call
+      nullptr,        // construct
+      Impl::trace,    // trace
+  };
+  static constexpr uint32_t class_flags = JSCLASS_BACKGROUND_FINALIZE;
+};
+
 template <typename Impl> PersistentRooted<JSObject *> BuiltinImpl<Impl>::proto_obj{};
 
 template <typename Impl> class BuiltinNoConstructor : public BuiltinImpl<Impl> {

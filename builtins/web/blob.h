@@ -31,7 +31,7 @@ public:
   }
 };
 
-class Blob : public FinalizableBuiltinImpl<Blob> {
+class Blob : public TraceableBuiltinImpl<Blob> {
   static bool arrayBuffer(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool bytes(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool slice(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -54,7 +54,7 @@ public:
   enum LineEndings { Transparent, Native };
 
   using ByteBuffer = std::vector<uint8_t>;
-  using ReadersMap = js::HashMap<JSObject*, BlobReader, js::PointerHasher<JSObject*>, js::MallocAllocPolicy>;
+  using ReadersMap = js::HashMap<Heap<JSObject *>, BlobReader, js::PointerHasher<JSObject*>, js::MallocAllocPolicy>;
 
   static ReadersMap *readers(JSObject *self);
   static ByteBuffer *blob(JSObject *self);
@@ -76,7 +76,8 @@ public:
 
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
-  static void finalize(JS::GCContext *gcx, JSObject *obj);
+  static void finalize(JS::GCContext *gcx, JSObject *self);
+  static void trace(JSTracer* trc, JSObject *self);
 };
 
 bool install(api::Engine *engine);
