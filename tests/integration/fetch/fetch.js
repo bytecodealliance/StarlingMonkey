@@ -53,4 +53,48 @@ export const handler = serveTest(async (t) => {
     await request.text();
     throws(() => request.clone());
   });
+
+  t.test('response-clone-bad-calls', () => {
+    throws(() => new Response.prototype.clone(), TypeError);
+    throws(() => new Response.prototype.clone.call(undefined), TypeError);
+  });
+
+  await t.test('response-clone-valid', async () => {
+    {
+      const response = new Response('test body', {
+        headers: {
+          hello: 'world'
+        },
+        status: 200,
+        statusText: 'Success'
+      });
+      const newResponse = response.clone();
+      strictEqual(newResponse instanceof Response, true, 'newResponse instanceof Request');
+      strictEqual(response.bodyUsed, false, 'response.bodyUsed');
+      strictEqual(newResponse.bodyUsed, false, 'newResponse.bodyUsed');
+      deepStrictEqual([...newResponse.headers], [...response.headers], 'newResponse.headers');
+      strictEqual(newResponse.status, 200, 'newResponse.status');
+      strictEqual(newResponse.statusText, 'Success', 'newResponse.statusText');
+      strictEqual(newResponse.body instanceof ReadableStream, true, 'newResponse.body instanceof ReadableStream');
+    }
+
+    {
+      const response = new Response(null, {
+        status: 404,
+        statusText: "Not found",
+      });
+      const newResponse = response.clone();
+      strictEqual(newResponse.bodyUsed, false, 'newResponse.bodyUsed');
+      strictEqual(newResponse.body, null, 'newResponse.body');
+    }
+  });
+
+  await t.test('response-clone-invalid', async () => {
+    const response = new Response('test body', {
+      status: 200,
+      statusText: "Success"
+    });
+    await response.text();
+    throws(() => response.clone());
+  });
 });

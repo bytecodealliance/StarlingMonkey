@@ -180,6 +180,8 @@ class Response final : public BuiltinImpl<Response> {
   static bool redirect(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool json(JSContext *cx, unsigned argc, JS::Value *vp);
 
+  static bool clone(JSContext *cx, unsigned argc, JS::Value *vp);
+
 public:
   static constexpr const char *class_name = "Response";
 

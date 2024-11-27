@@ -2291,6 +2291,91 @@ bool Response::redirect(JSContext *cx, unsigned argc, Value *vp) {
 //   return true;
 // }
 
+/// https://fetch.spec.whatwg.org/#dom-response-clone
+bool Response::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
+  // If this is unusable, then throw a TypeError.
+  METHOD_HEADER(0);
+
+  // To clone a response response, run these steps:
+  // 1. If response is a filtered response, then return a new identical filtered response whose internal response is a clone of response’s internal response.
+  RootedObject new_response(cx, create(cx));
+  if (!new_response) {
+    return false;
+  }
+
+  init_slots(new_response);
+
+  // 2. Let newResponse be a copy of response, except for its body.
+  RootedValue cloned_headers_val(cx, JS::NullValue());
+  RootedObject headers(cx, RequestOrResponse::maybe_headers(self));
+  if (headers) {
+    RootedValue headers_val(cx, ObjectValue(*headers));
+    JSObject *cloned_headers = Headers::create(cx, headers_val, Headers::guard(headers));
+    if (!cloned_headers) {
+      return false;
+    }
+    cloned_headers_val.set(ObjectValue(*cloned_headers));
+  } else if (RequestOrResponse::maybe_handle(self)) {
+    auto handle = RequestOrResponse::headers_handle_clone(cx, self);
+    JSObject *cloned_headers =
+        Headers::create(cx, handle.release(),
+                        RequestOrResponse::is_incoming(self) ? Headers::HeadersGuard::Immutable
+                                                             : Headers::HeadersGuard::Response);
+    if (!cloned_headers) {
+      return false;
+    }
+    cloned_headers_val.set(ObjectValue(*cloned_headers));
+  }
+
+  SetReservedSlot(new_response, static_cast<uint32_t>(Slots::Headers), cloned_headers_val);
+
+  Value status_val = GetReservedSlot(self, static_cast<uint32_t>(Slots::Status));
+  Value status_message_val = GetReservedSlot(self, static_cast<uint32_t>(Slots::StatusMessage));
+
+  // ENGINE->dump_value(status_val, stderr);
+  // ENGINE->dump_value(status_message_val, stderr);
+
+  SetReservedSlot(new_response, static_cast<uint32_t>(Slots::Status), status_val);
+  SetReservedSlot(new_response, static_cast<uint32_t>(Slots::StatusMessage), status_message_val);
+
+    // 3. If response’s body is non-null, then set newResponse’s body to the result of cloning response’s body.
+  RootedObject new_body(cx);
+  auto has_body = RequestOrResponse::has_body(self);
+  if (!has_body) {
+    args.rval().setObject(*new_response);
+    return true;
+  }
+
+  // Here we get the current response's body stream and call ReadableStream.prototype.tee to
+  // get two streams for the same content.
+  // One of these is then used to replace the current response's body, the other is used as
+  // the body of the clone.
+  JS::RootedObject body_stream(cx, RequestOrResponse::body_stream(self));
+  if (!body_stream) {
+    body_stream = RequestOrResponse::create_body_stream(cx, self);
+    if (!body_stream) {
+      return false;
+    }
+  }
+
+  if (RequestOrResponse::body_unusable(cx, body_stream)) {
+    return api::throw_error(cx, FetchErrors::BodyStreamUnusable);
+  }
+
+  RootedObject self_body(cx);
+  if (!ReadableStreamTee(cx, body_stream, &self_body, &new_body)) {
+    return false;
+  }
+
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyStream), ObjectValue(*self_body));
+  SetReservedSlot(new_response, static_cast<uint32_t>(Slots::BodyStream), ObjectValue(*new_body));
+  SetReservedSlot(new_response, static_cast<uint32_t>(Slots::HasBody), JS::BooleanValue(true));
+
+  // 4. Return newResponse.
+  args.rval().setObject(*new_response);
+  return true;
+}
+
 const JSFunctionSpec Response::static_methods[] = {
     JS_FN("redirect", redirect, 1, JSPROP_ENUMERATE),
     // JS_FN("json", json, 1, JSPROP_ENUMERATE),
@@ -2306,6 +2391,7 @@ const JSFunctionSpec Response::methods[] = {
           JSPROP_ENUMERATE),
     JS_FN("json", bodyAll<RequestOrResponse::BodyReadResult::JSON>, 0, JSPROP_ENUMERATE),
     JS_FN("text", bodyAll<RequestOrResponse::BodyReadResult::Text>, 0, JSPROP_ENUMERATE),
+    JS_FN("clone", clone, 0, JSPROP_ENUMERATE),
     JS_FS_END,
 };
 
