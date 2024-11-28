@@ -28,18 +28,21 @@ addEventListener("fetch", (event) =>
         let counter = 0;
         const max = 5;
 
-        const intervalId = setInterval(() => {
-          counter++;
+        const intervalPromise = new Promise((resolve) => {
+          const intervalId = setInterval(() => {
+            counter++;
+            if (counter >= max) {
+              clearInterval(intervalId);
+              resolve();
+            }
+          }, 1);
+        });
 
-          if (counter >= max) {
-            clearInterval(intervalId);
-          }
-        }, 1);
-
-        await readAll(blob);
+        await Promise.all([readAll(blob), intervalPromise]);
 
         console.log(`Counter: ${counter}`);
         console.log("Finished processing blob.");
+
         return new Response(`Large Blob`);
       } catch (e) {
         console.error(e);
