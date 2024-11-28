@@ -4,6 +4,7 @@
 #include "builtin.h"
 #include "extension-api.h"
 #include "js/AllocPolicy.h"
+#include "js/GCHashTable.h"
 #include "js/TypeDecls.h"
 
 namespace builtins {
@@ -29,6 +30,8 @@ public:
     position_ += size;
     return result;
   }
+
+  void trace(JSTracer* trc) {}
 };
 
 class Blob : public TraceableBuiltinImpl<Blob> {
@@ -54,7 +57,8 @@ public:
   enum LineEndings { Transparent, Native };
 
   using ByteBuffer = std::vector<uint8_t>;
-  using ReadersMap = js::HashMap<Heap<JSObject *>, BlobReader, js::PointerHasher<JSObject*>, js::MallocAllocPolicy>;
+  using HeapObj = Heap<JSObject *>;
+  using ReadersMap = JS::GCHashMap<HeapObj, BlobReader, js::StableCellHasher<HeapObj>, js::SystemAllocPolicy>;
 
   static ReadersMap *readers(JSObject *self);
   static ByteBuffer *blob(JSObject *self);

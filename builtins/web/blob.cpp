@@ -8,7 +8,6 @@
 
 #include "js/ArrayBuffer.h"
 #include "js/Conversions.h"
-#include "js/HashTable.h"
 #include "js/experimental/TypedData.h"
 #include "js/Stream.h"
 #include "js/TypeDecls.h"
@@ -169,16 +168,10 @@ public:
     RootedValue ret(cx);
 
     auto readers = Blob::readers(owner);
-    auto rdr = readers->lookupForAdd(controller);
+    auto rdr = readers->lookup(source_);
 
     if (!rdr) {
-      auto blob = Blob::blob(owner);
-      auto span = std::span<uint8_t>(blob->data(), blob->size());
-      auto reader = BlobReader(span);
-
-      if (!readers->add(rdr, controller, reader)) {
-        return false;
-      };
+      return false;
     }
 
     auto chunk = rdr->value().read(CHUNK_SIZE);
@@ -189,7 +182,7 @@ public:
         return false;
       }
 
-      readers->remove(controller);
+      readers->remove(source_);
       return cancel(engine);
     }
 
@@ -354,6 +347,14 @@ bool Blob::stream(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   JS::RootedObject source(cx, native_stream);
   if (!source) {
+    return false;
+  }
+
+  auto readers = Blob::readers(self);
+  auto blob = Blob::blob(self);
+  auto span = std::span<uint8_t>(blob->data(), blob->size());
+
+  if (!readers->put(source, BlobReader(span))) {
     return false;
   }
 
@@ -634,7 +635,7 @@ JSObject *Blob::create(JSContext *cx, std::unique_ptr<Blob::ByteBuffer> data, JS
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), PrivateValue(data.release()));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), PrivateValue(type));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Readers), PrivateValue(nullptr));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Readers), PrivateValue(new ReadersMap));
   return self;
 }
 
@@ -689,9 +690,7 @@ void Blob::finalize(JS::GCContext *gcx, JSObject *self) {
 
 void Blob::trace(JSTracer* trc, JSObject *self) {
   auto readers = Blob::readers(self);
-  for (auto iter = readers->iter(); !iter.done(); iter.next()) {
-    TraceEdge(trc, &iter.get().mutableKey(), "stream map");
-  }
+  readers->trace(trc);
 }
 
 bool install(api::Engine *engine) {

@@ -19,7 +19,7 @@ addEventListener("fetch", (event) =>
   event.respondWith(
     (async () => {
       try {
-        const len = 10 * 1024 * 1024; // 1 MB
+        const len = 10 * 1024 * 1024; // 10 MB
         let arr = new Uint8Array(len);
 
         arr.fill(42);
