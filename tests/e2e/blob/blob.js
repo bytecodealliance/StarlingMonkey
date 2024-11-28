@@ -30,7 +30,6 @@ addEventListener("fetch", (event) =>
 
         const intervalId = setInterval(() => {
           counter++;
-          console.log(`Counter: ${counter}`);
 
           if (counter >= max) {
             clearInterval(intervalId);
@@ -39,6 +38,7 @@ addEventListener("fetch", (event) =>
 
         await readAll(blob);
 
+        console.log(`Counter: ${counter}`);
         console.log("Finished processing blob.");
         return new Response(`Large Blob`);
       } catch (e) {

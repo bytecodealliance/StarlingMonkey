@@ -1,6 +1,2 @@
-stdout [0] :: Log: Counter: 1
-stdout [0] :: Log: Counter: 2
-stdout [0] :: Log: Counter: 3
-stdout [0] :: Log: Counter: 4
 stdout [0] :: Log: Counter: 5
 stdout [0] :: Log: Finished processing blob.
