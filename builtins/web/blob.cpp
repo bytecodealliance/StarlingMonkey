@@ -13,8 +13,6 @@
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 
-#include <regex>
-
 namespace {
 
 static api::Engine *ENGINE;
@@ -108,16 +106,41 @@ JSString *normalize_type(JSContext *cx, HandleValue value) {
 
 // https://w3c.github.io/FileAPI/#convert-line-endings-to-native
 std::string convert_line_endings_to_native(std::string_view s) {
-  std::string native_line_ending = "\n";
+    std::string native_line_ending = "\n";
 #ifdef _WIN32
-  native_line_ending = "\r\n";
+    native_line_ending = "\r\n";
 #endif
 
-  std::string result;
-  std::regex re(R"(\r\n|\r|\n)");
-  std::regex_replace(std::back_inserter(result), s.begin(), s.end(), re, native_line_ending);
+    std::string result;
+    result.reserve(s.size());
 
-  return result;
+    size_t i = 0;
+    while (i < s.size()) {
+      switch (s[i]) {
+        case '\r': {
+          if (i + 1 < s.size() && s[i + 1] == '\n') {
+            result.append(native_line_ending);
+            i += 2;
+          } else {
+            result.append(native_line_ending);
+            i += 1;
+          }
+          break;
+        }
+        case '\n': {
+          result.append(native_line_ending);
+          i += 1;
+          break;
+        }
+        default: {
+          result.push_back(s[i]);
+          i += 1;
+          break;
+        }
+      }
+    }
+
+    return result;
 }
 
 } // anonymous namespace
@@ -211,7 +234,7 @@ public:
     return true;
   }
 
-  void trace(JSTracer *trc) override { TraceEdge(trc, &source_, "source for future"); }
+  void trace(JSTracer *trc) override { TraceEdge(trc, &source_, "Source for Blob StreamTask"); }
 };
 
 JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self) {
@@ -246,7 +269,7 @@ bool Blob::arrayBuffer(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
   if (!promise) {
-    return ReturnPromiseRejectedWithPendingError(cx, args);
+    return false;
   }
 
   args.rval().setObject(*promise);
@@ -268,7 +291,7 @@ bool Blob::bytes(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
   if (!promise) {
-    return ReturnPromiseRejectedWithPendingError(cx, args);
+    return false;
   }
 
   args.rval().setObject(*promise);
@@ -322,7 +345,7 @@ bool Blob::slice(JSContext *cx, unsigned argc, JS::Value *vp) {
     }
   }
 
-  // A negative value, is treated as an offset from the end of the Blob toward the beginning
+  // A negative value is treated as an offset from the end of the Blob toward the beginning.
   start = (start < 0) ? std::max((size + start), 0LL) : std::min(start, size);
   end = (end < 0) ? std::max((size + end), 0LL) : std::min(end, size);
 
@@ -372,7 +395,7 @@ bool Blob::text(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
   if (!promise) {
-    return ReturnPromiseRejectedWithPendingError(cx, args);
+    return false;
   }
 
   args.rval().setObject(*promise);
@@ -451,7 +474,7 @@ bool Blob::stream_pull(JSContext *cx, JS::CallArgs args, JS::HandleObject source
   return true;
 }
 
-std::vector<uint8_t> *Blob::blob(JSObject *self) {
+std::vector<uint8_t> *Blob::blob(HandleObject self) {
   auto blob = static_cast<std::vector<uint8_t> *>(
       JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Data)).toPrivate());
 
@@ -459,7 +482,7 @@ std::vector<uint8_t> *Blob::blob(JSObject *self) {
   return blob;
 }
 
-size_t Blob::blob_size(JSObject *self) {
+size_t Blob::blob_size(HandleObject self) {
   auto blob = static_cast<std::vector<uint8_t> *>(
       JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Data)).toPrivate());
 
@@ -467,15 +490,11 @@ size_t Blob::blob_size(JSObject *self) {
   return blob->size();
 }
 
-JSString *Blob::type(JSObject *self) {
-  auto type = static_cast<JSString *>(
-      JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Type)).toPrivate());
-
-  MOZ_ASSERT(type);
-  return type;
+JSString *Blob::type(HandleObject self) {
+  return JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Type)).toString();
 }
 
-Blob::ReadersMap *Blob::readers(JSObject *self) {
+Blob::ReadersMap *Blob::readers(HandleObject self) {
   auto readers = static_cast<ReadersMap *>(
       JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Readers)).toPrivate());
 
@@ -483,7 +502,7 @@ Blob::ReadersMap *Blob::readers(JSObject *self) {
   return readers;
 }
 
-Blob::LineEndings Blob::line_endings(JSObject *self) {
+Blob::LineEndings Blob::line_endings(HandleObject self) {
   return static_cast<LineEndings>(
       JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Endings)).toInt32());
 }
@@ -620,22 +639,22 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
     if (!type_str) {
       return false;
     }
-    SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), PrivateValue(type_str));
+    SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS::StringValue(type_str));
   }
 
   return true;
 }
 
-JSObject *Blob::create(JSContext *cx, std::unique_ptr<Blob::ByteBuffer> data, JSString *type) {
+JSObject *Blob::create(JSContext *cx, std::unique_ptr<Blob::ByteBuffer> data, HandleString type) {
   JSObject *self = JS_NewObjectWithGivenProto(cx, &class_, proto_obj);
   if (!self) {
     return nullptr;
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), PrivateValue(data.release()));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), PrivateValue(type));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(data.release()));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS::StringValue(type));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Readers), PrivateValue(new ReadersMap));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Readers), JS::PrivateValue(new ReadersMap));
   return self;
 }
 
@@ -650,12 +669,12 @@ bool Blob::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), PrivateValue(new std::vector<uint8_t>()));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), PrivateValue(JS_GetEmptyString(cx)));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(new std::vector<uint8_t>()));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS_GetEmptyStringValue(cx));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Readers), PrivateValue(new ReadersMap));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Readers), JS::PrivateValue(new ReadersMap));
 
-  // walk the blob parts and write it to concatenated buffer
+  // Walk the blob parts and append them to the blob's buffer.
   if (blobParts.isNull()) {
     return api::throw_error(cx, api::Errors::TypeError, "Blob.constructor", "blobParts", "be an object");
   }
@@ -677,19 +696,24 @@ bool Blob::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 void Blob::finalize(JS::GCContext *gcx, JSObject *self) {
-  auto blob = Blob::blob(self);
+  auto blob = static_cast<std::vector<uint8_t> *>(
+      JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Data)).toPrivate());
+
   if (blob) {
     free(blob);
   }
 
-  auto readers = Blob::readers(self);
+  auto readers = static_cast<ReadersMap *>(
+      JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Readers)).toPrivate());
   if (readers) {
     free(readers);
   }
 }
 
 void Blob::trace(JSTracer* trc, JSObject *self) {
-  auto readers = Blob::readers(self);
+  auto readers = static_cast<ReadersMap *>(
+      JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Readers)).toPrivate());
+
   readers->trace(trc);
 }
 

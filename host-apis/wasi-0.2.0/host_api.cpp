@@ -28,8 +28,9 @@ size_t api::AsyncTask::select(std::vector<AsyncTask *> &tasks) {
           immediately_ready = wasi_clocks_monotonic_clock_subscribe_duration(0);
         }
         handles.emplace_back(immediately_ready.value().__handle);
+        size_t len = handles.size();
         size_t ready_index = poll_handles(std::move(handles));
-        if (ready_index <= idx) {
+        if (ready_index <= len - 1) {
           return ready_index;
         }
       }

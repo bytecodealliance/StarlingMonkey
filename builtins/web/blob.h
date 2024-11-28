@@ -60,11 +60,11 @@ public:
   using HeapObj = Heap<JSObject *>;
   using ReadersMap = JS::GCHashMap<HeapObj, BlobReader, js::StableCellHasher<HeapObj>, js::SystemAllocPolicy>;
 
-  static ReadersMap *readers(JSObject *self);
-  static ByteBuffer *blob(JSObject *self);
-  static size_t blob_size(JSObject *self);
-  static JSString *type(JSObject *self);
-  static LineEndings line_endings(JSObject *self);
+  static ReadersMap *readers(HandleObject self);
+  static ByteBuffer *blob(HandleObject self);
+  static size_t blob_size(HandleObject self);
+  static JSString *type(HandleObject self);
+  static LineEndings line_endings(HandleObject self);
   static bool append_value(JSContext *cx, HandleObject self, HandleValue val);
   static bool init_blob_parts(JSContext *cx, HandleObject self, HandleValue iterable);
   static bool init_options(JSContext *cx, HandleObject self, HandleValue opts);
@@ -76,7 +76,7 @@ public:
 
   static JSObject *data_to_owned_array_buffer(JSContext *cx, HandleObject self);
   static JSObject *data_to_owned_array_buffer(JSContext* cx, HandleObject self, size_t offset, size_t size, size_t* bytes_read);
-  static JSObject *create(JSContext *cx, std::unique_ptr<ByteBuffer> data, JSString *type);
+  static JSObject *create(JSContext *cx, std::unique_ptr<ByteBuffer> data, HandleString type);
 
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
