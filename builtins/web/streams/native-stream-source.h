@@ -12,7 +12,7 @@ public:
   static constexpr const char *class_name = "NativeStreamSource";
   enum Slots {
     Owner,          // Request or Response object, or TransformStream.
-    Controller,     // The ReadableStreamDefaultController.
+    Stream,         // The ReadableStreamDefaultObject.
     InternalReader, // Only used to lock the stream if it's consumed internally.
     StartPromise,   // Used as the return value of `start`, can be undefined.
                     // Needed to properly implement TransformStream.
@@ -35,10 +35,10 @@ public:
                                              JS::HandleValue reason);
   static JSObject *owner(JSObject *self);
   static JSObject *stream(JSObject *self);
+  static JSObject *default_stream(JSObject *self);
   static JS::Value startPromise(JSObject *self);
   static PullAlgorithmImplementation *pullAlgorithm(JSObject *self);
   static CancelAlgorithmImplementation *cancelAlgorithm(JSObject *self);
-  static JSObject *controller(JSObject *self);
   static JSObject *get_controller_source(JSContext *cx, JS::HandleObject controller);
   static JSObject *get_stream_source(JSContext *cx, JS::HandleObject stream);
   static bool stream_has_native_source(JSContext *cx, JS::HandleObject stream);
@@ -51,7 +51,8 @@ public:
   static bool pull(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool cancel(JSContext *cx, unsigned argc, JS::Value *vp);
   static JSObject *create(JSContext *cx, JS::HandleObject owner, JS::HandleValue startPromise,
-                          PullAlgorithmImplementation *pull, CancelAlgorithmImplementation *cancel);
+                          PullAlgorithmImplementation *pull, CancelAlgorithmImplementation *cancel,
+                          JS::HandleFunction size = nullptr, double highWaterMark = 0.0);
 };
 } // namespace streams
 } // namespace web

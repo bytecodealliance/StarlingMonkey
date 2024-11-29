@@ -287,7 +287,8 @@ JSObject *TransformStream::readable(JSObject *self) {
   if (!JS::GetReservedSlot(self, TransformStream::Slots::Readable).isObject()) {
     return nullptr;
   }
-  return &JS::GetReservedSlot(self, TransformStream::Slots::Readable).toObject();
+  return NativeStreamSource::default_stream(
+      &JS::GetReservedSlot(self, TransformStream::Slots::Readable).toObject());
 }
 
 bool TransformStream::is_ts_readable(JSContext *cx, JS::HandleObject readable) {
@@ -864,13 +865,9 @@ bool TransformStream::Initialize(JSContext *cx, JS::HandleObject stream,
   // Step 8.  Set stream.[readable] to ! [CreateReadableStream](startAlgorithm,
   // pullAlgorithm, cancelAlgorithm, readableHighWaterMark,
   // readableSizeAlgorithm).
-  JS::RootedObject source(
-      cx, NativeStreamSource::create(cx, stream, startPromiseVal, pullAlgorithm, cancelAlgorithm));
-  if (!source)
-    return false;
-
-  JS::RootedObject readable(cx, JS::NewReadableDefaultStreamObject(
-                                    cx, source, readableSizeAlgorithm, readableHighWaterMark));
+  JS::RootedObject readable(
+      cx, NativeStreamSource::create(cx, stream, startPromiseVal, pullAlgorithm, cancelAlgorithm,
+                                     readableSizeAlgorithm, readableHighWaterMark));
   if (!readable)
     return false;
 

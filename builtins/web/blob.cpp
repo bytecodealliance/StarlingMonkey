@@ -187,7 +187,7 @@ public:
   [[nodiscard]] bool run(api::Engine *engine) override {
     JSContext *cx = engine->cx();
     RootedObject owner(cx, streams::NativeStreamSource::owner(source_));
-    RootedObject controller(cx, streams::NativeStreamSource::controller(source_));
+    RootedObject stream(cx, streams::NativeStreamSource::default_stream(source_));
     RootedValue ret(cx);
 
     auto readers = Blob::readers(owner);
@@ -201,7 +201,7 @@ public:
     auto chunk_size = chunk.size();
 
     if (chunk.empty()) {
-      if (!JS::Call(cx, controller, "close", HandleValueArray::empty(), &ret)) {
+      if (!JS::ReadableStreamClose(cx, stream)) {
         return false;
       }
 
@@ -219,9 +219,9 @@ public:
       return false;
     }
 
-    RootedValueArray<1> enqueue_args(cx);
-    enqueue_args[0].setObject(*bytes_buffer);
-    if (!JS::Call(cx, controller, "enqueue", enqueue_args, &ret)) {
+    RootedValue enqueue_val(cx);
+    enqueue_val.setObject(*bytes_buffer);
+    if (!JS::ReadableStreamEnqueue(cx, stream, enqueue_val)) {
       return false;
     }
 
@@ -381,12 +381,12 @@ bool Blob::stream(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  JS::RootedObject src_stream(cx, JS::NewReadableDefaultStreamObject(cx, source, nullptr, 0.0));
-  if (!src_stream) {
+  JS::RootedObject default_stream(cx, streams::NativeStreamSource::default_stream(native_stream));
+  if (!default_stream) {
     return false;
   }
 
-  args.rval().setObject(*src_stream);
+  args.rval().setObject(*default_stream);
   return true;
 }
 
