@@ -191,6 +191,7 @@ public:
     HasBody = static_cast<int>(RequestOrResponse::Slots::HasBody),
     BodyUsed = static_cast<int>(RequestOrResponse::Slots::BodyUsed),
     Headers = static_cast<int>(RequestOrResponse::Slots::Headers),
+    URL = static_cast<int>(RequestOrResponse::Slots::URL),
     Status = static_cast<int>(RequestOrResponse::Slots::Count),
     StatusMessage,
     Redirected,
