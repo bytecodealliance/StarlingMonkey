@@ -1236,28 +1236,12 @@ bool Request::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
   init_slots(new_request);
 
-  RootedValue cloned_headers_val(cx, JS::NullValue());
-  RootedObject headers(cx, RequestOrResponse::maybe_headers(self));
-  if (headers) {
-    RootedValue headers_val(cx, ObjectValue(*headers));
-    JSObject *cloned_headers = Headers::create(cx, headers_val, Headers::guard(headers));
-    if (!cloned_headers) {
-      return false;
-    }
-    cloned_headers_val.set(ObjectValue(*cloned_headers));
-  } else if (RequestOrResponse::maybe_handle(self)) {
-    auto handle = RequestOrResponse::headers_handle_clone(cx, self);
-    JSObject *cloned_headers =
-        Headers::create(cx, handle.release(),
-                        RequestOrResponse::is_incoming(self) ? Headers::HeadersGuard::Immutable
-                                                             : Headers::HeadersGuard::Request);
-    if (!cloned_headers) {
-      return false;
-    }
-    cloned_headers_val.set(ObjectValue(*cloned_headers));
+  RootedObject cloned_headers(cx, RequestOrResponse::headers(cx, self));
+  if (!cloned_headers) {
+    return false;
   }
 
-  SetReservedSlot(new_request, static_cast<uint32_t>(Slots::Headers), cloned_headers_val);
+  SetReservedSlot(new_request, static_cast<uint32_t>(Slots::Headers), ObjectValue(*cloned_headers));
   Value url_val = GetReservedSlot(self, static_cast<uint32_t>(Slots::URL));
   SetReservedSlot(new_request, static_cast<uint32_t>(Slots::URL), url_val);
   Value method_val = JS::StringValue(method(self));
@@ -2306,39 +2290,23 @@ bool Response::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
   init_slots(new_response);
 
   // 2. Let newResponse be a copy of response, except for its body.
-  RootedValue cloned_headers_val(cx, JS::NullValue());
-  RootedObject headers(cx, RequestOrResponse::maybe_headers(self));
-  if (headers) {
-    RootedValue headers_val(cx, ObjectValue(*headers));
-    JSObject *cloned_headers = Headers::create(cx, headers_val, Headers::guard(headers));
-    if (!cloned_headers) {
-      return false;
-    }
-    cloned_headers_val.set(ObjectValue(*cloned_headers));
-  } else if (RequestOrResponse::maybe_handle(self)) {
-    auto handle = RequestOrResponse::headers_handle_clone(cx, self);
-    JSObject *cloned_headers =
-        Headers::create(cx, handle.release(),
-                        RequestOrResponse::is_incoming(self) ? Headers::HeadersGuard::Immutable
-                                                             : Headers::HeadersGuard::Response);
-    if (!cloned_headers) {
-      return false;
-    }
-    cloned_headers_val.set(ObjectValue(*cloned_headers));
+
+  RootedObject cloned_headers(cx, RequestOrResponse::headers(cx, self));
+  if (!cloned_headers) {
+    return false;
   }
 
-  SetReservedSlot(new_response, static_cast<uint32_t>(Slots::Headers), cloned_headers_val);
+  SetReservedSlot(new_response, static_cast<uint32_t>(Slots::Headers), ObjectValue(*cloned_headers));
 
   Value status_val = GetReservedSlot(self, static_cast<uint32_t>(Slots::Status));
   Value status_message_val = GetReservedSlot(self, static_cast<uint32_t>(Slots::StatusMessage));
-
-  // ENGINE->dump_value(status_val, stderr);
-  // ENGINE->dump_value(status_message_val, stderr);
+  Value url_val = GetReservedSlot(self, static_cast<uint32_t>(Slots::URL));
 
   SetReservedSlot(new_response, static_cast<uint32_t>(Slots::Status), status_val);
   SetReservedSlot(new_response, static_cast<uint32_t>(Slots::StatusMessage), status_message_val);
+  SetReservedSlot(new_response, static_cast<uint32_t>(Slots::URL), url_val);
 
-    // 3. If response’s body is non-null, then set newResponse’s body to the result of cloning response’s body.
+  // 3. If response’s body is non-null, then set newResponse’s body to the result of cloning response’s body.
   RootedObject new_body(cx);
   auto has_body = RequestOrResponse::has_body(self);
   if (!has_body) {
