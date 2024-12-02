@@ -871,7 +871,7 @@ bool TransformStream::Initialize(JSContext *cx, JS::HandleObject stream,
     return false;
 
   JS::RootedObject readable(cx);
-  readable = NativeStreamSource::default_stream(source);
+  readable = NativeStreamSource::stream(source);
   if (!readable)
     return false;
 

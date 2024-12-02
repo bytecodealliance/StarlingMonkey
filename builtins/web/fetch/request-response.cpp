@@ -27,11 +27,6 @@
 
 namespace builtins::web::streams {
 
-JSObject *NativeStreamSource::stream(JSObject *self) {
-  MOZ_ASSERT(web::fetch::RequestOrResponse::body_stream(owner(self)) == default_stream(self));
-  return web::fetch::RequestOrResponse::body_stream(owner(self));
-}
-
 bool NativeStreamSource::stream_is_body(JSContext *cx, JS::HandleObject stream) {
   JSObject *stream_source = get_stream_source(cx, stream);
   return NativeStreamSource::is_instance(stream_source) &&
@@ -74,7 +69,7 @@ public:
     // MOZ_ASSERT(ready());
     JSContext *cx = engine->cx();
     RootedObject owner(cx, streams::NativeStreamSource::owner(body_source_));
-    RootedObject stream(cx, streams::NativeStreamSource::default_stream(body_source_));
+    RootedObject stream(cx, streams::NativeStreamSource::stream(body_source_));
     auto body = RequestOrResponse::incoming_body_handle(owner);
 
     auto read_res = body->read(HANDLE_READ_CHUNK_SIZE);
@@ -1120,17 +1115,13 @@ JSObject *RequestOrResponse::create_body_stream(JSContext *cx, JS::HandleObject 
   MOZ_ASSERT(!body_stream(owner));
   MOZ_ASSERT(has_body(owner));
 
-  // Create a readable stream with a highwater mark of 0.0 to prevent an eager
-  // pull. With the default HWM of 1.0, the streams implementation causes a
-  // pull, which means we enqueue a read from the host handle, which we quite
-  // often have no interest in at all.
   JS::RootedObject source(cx, streams::NativeStreamSource::create(
                                   cx, owner, JS::UndefinedHandleValue, body_source_pull_algorithm,
                                   body_source_cancel_algorithm));
   if (!source)
     return nullptr;
 
-  JS::RootedObject body_stream(cx, streams::NativeStreamSource::default_stream(source));
+  JS::RootedObject body_stream(cx, streams::NativeStreamSource::stream(source));
   if (!body_stream) {
     return nullptr;
   }

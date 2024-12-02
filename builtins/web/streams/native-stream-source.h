@@ -35,7 +35,6 @@ public:
                                              JS::HandleValue reason);
   static JSObject *owner(JSObject *self);
   static JSObject *stream(JSObject *self);
-  static JSObject *default_stream(JSObject *self);
   static JS::Value startPromise(JSObject *self);
   static PullAlgorithmImplementation *pullAlgorithm(JSObject *self);
   static CancelAlgorithmImplementation *cancelAlgorithm(JSObject *self);
@@ -50,6 +49,14 @@ public:
   static bool start(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool pull(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool cancel(JSContext *cx, unsigned argc, JS::Value *vp);
+
+  // Create an instance of `NativStreamSource`
+  //
+  // `NativeStreamSource` internally creates a `ReadableDefaultStreamObject` instance. To prevent an
+  // eager pull, we choose to overwrite the default `highWaterMark` value, setting it to 0.0. With
+  // the default `highWaterMark` of 1.0, the stream implementation automatically triggers a pull,
+  // which means we enqueue a read from the host handle even though we often have no interest in it
+  // at all.
   static JSObject *create(JSContext *cx, JS::HandleObject owner, JS::HandleValue startPromise,
                           PullAlgorithmImplementation *pull, CancelAlgorithmImplementation *cancel,
                           JS::HandleFunction size = nullptr, double highWaterMark = 0.0);

@@ -187,7 +187,7 @@ public:
   [[nodiscard]] bool run(api::Engine *engine) override {
     JSContext *cx = engine->cx();
     RootedObject owner(cx, streams::NativeStreamSource::owner(source_));
-    RootedObject stream(cx, streams::NativeStreamSource::default_stream(source_));
+    RootedObject stream(cx, streams::NativeStreamSource::stream(source_));
     RootedValue ret(cx);
 
     auto readers = Blob::readers(owner);
@@ -382,12 +382,12 @@ bool Blob::stream(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  JS::RootedObject default_stream(cx, streams::NativeStreamSource::default_stream(native_stream));
-  if (!default_stream) {
+  JS::RootedObject stream(cx, streams::NativeStreamSource::stream(native_stream));
+  if (!stream) {
     return false;
   }
 
-  args.rval().setObject(*default_stream);
+  args.rval().setObject(*stream);
   return true;
 }
 
