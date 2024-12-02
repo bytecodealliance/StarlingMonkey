@@ -2290,13 +2290,20 @@ bool Response::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
   init_slots(new_response);
 
   // 2. Let newResponse be a copy of response, except for its body.
+  RootedValue cloned_headers_val(cx, JS::NullValue());
+  auto handle = RequestOrResponse::headers_handle_clone(cx, self);
 
-  RootedObject cloned_headers(cx, RequestOrResponse::headers(cx, self));
+  auto headers_guard = RequestOrResponse::is_incoming(self) ? Headers::HeadersGuard::Immutable
+                                                            : Headers::HeadersGuard::Response;
+  JSObject *cloned_headers = Headers::create(cx, handle.release(), headers_guard);
+
   if (!cloned_headers) {
     return false;
   }
 
-  SetReservedSlot(new_response, static_cast<uint32_t>(Slots::Headers), ObjectValue(*cloned_headers));
+  cloned_headers_val.set(ObjectValue(*cloned_headers));
+
+  SetReservedSlot(new_response, static_cast<uint32_t>(Slots::Headers), cloned_headers_val);
 
   Value status_val = GetReservedSlot(self, static_cast<uint32_t>(Slots::Status));
   Value status_message_val = GetReservedSlot(self, static_cast<uint32_t>(Slots::StatusMessage));
