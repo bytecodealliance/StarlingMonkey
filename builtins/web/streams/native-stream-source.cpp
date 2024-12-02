@@ -168,17 +168,18 @@ JSObject *NativeStreamSource::create(JSContext *cx, JS::HandleObject owner, JS::
     return nullptr;
   }
 
+  JS::SetReservedSlot(source, Slots::Owner, JS::ObjectValue(*owner));
+  JS::SetReservedSlot(source, Slots::StartPromise, startPromise);
+  JS::SetReservedSlot(source, Slots::PullAlgorithm, JS::PrivateValue((void *)pull));
+  JS::SetReservedSlot(source, Slots::CancelAlgorithm, JS::PrivateValue((void *)cancel));
+  JS::SetReservedSlot(source, Slots::PipedToTransformStream, JS::NullValue());
+
   JS::RootedObject default_stream(cx, JS::NewReadableDefaultStreamObject(cx, source, size, highWaterMark));
   if (!default_stream) {
     return nullptr;
   }
 
-  JS::SetReservedSlot(source, Slots::Owner, JS::ObjectValue(*owner));
   JS::SetReservedSlot(source, Slots::Stream, JS::ObjectValue(*default_stream));
-  JS::SetReservedSlot(source, Slots::StartPromise, startPromise);
-  JS::SetReservedSlot(source, Slots::PullAlgorithm, JS::PrivateValue((void *)pull));
-  JS::SetReservedSlot(source, Slots::CancelAlgorithm, JS::PrivateValue((void *)cancel));
-  JS::SetReservedSlot(source, Slots::PipedToTransformStream, JS::NullValue());
   return source;
 }
 } // namespace streams

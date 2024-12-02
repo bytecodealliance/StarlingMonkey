@@ -284,11 +284,7 @@ void TransformStream::set_owner(JSObject *self, JSObject *owner) {
 
 JSObject *TransformStream::readable(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  if (!JS::GetReservedSlot(self, TransformStream::Slots::Readable).isObject()) {
-    return nullptr;
-  }
-  return NativeStreamSource::default_stream(
-      &JS::GetReservedSlot(self, TransformStream::Slots::Readable).toObject());
+  return JS::GetReservedSlot(self, TransformStream::Slots::Readable).toObjectOrNull();
 }
 
 bool TransformStream::is_ts_readable(JSContext *cx, JS::HandleObject readable) {
@@ -865,9 +861,14 @@ bool TransformStream::Initialize(JSContext *cx, JS::HandleObject stream,
   // Step 8.  Set stream.[readable] to ! [CreateReadableStream](startAlgorithm,
   // pullAlgorithm, cancelAlgorithm, readableHighWaterMark,
   // readableSizeAlgorithm).
-  JS::RootedObject readable(
+  JS::RootedObject source(
       cx, NativeStreamSource::create(cx, stream, startPromiseVal, pullAlgorithm, cancelAlgorithm,
                                      readableSizeAlgorithm, readableHighWaterMark));
+  if (!source)
+    return false;
+
+  JS::RootedObject readable(cx);
+  readable = NativeStreamSource::default_stream(source);
   if (!readable)
     return false;
 
