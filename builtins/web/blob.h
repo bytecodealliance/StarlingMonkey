@@ -60,11 +60,11 @@ public:
   using HeapObj = Heap<JSObject *>;
   using ReadersMap = JS::GCHashMap<HeapObj, BlobReader, js::StableCellHasher<HeapObj>, js::SystemAllocPolicy>;
 
-  static ReadersMap *readers(HandleObject self);
-  static ByteBuffer *blob(HandleObject self);
-  static size_t blob_size(HandleObject self);
-  static JSString *type(HandleObject self);
-  static LineEndings line_endings(HandleObject self);
+  static ReadersMap *readers(JSObject * self);
+  static ByteBuffer *blob(JSObject * self);
+  static size_t blob_size(JSObject * self);
+  static JSString *type(JSObject * self);
+  static LineEndings line_endings(JSObject * self);
   static bool append_value(JSContext *cx, HandleObject self, HandleValue val);
   static bool init_blob_parts(JSContext *cx, HandleObject self, HandleValue iterable);
   static bool init_options(JSContext *cx, HandleObject self, HandleValue opts);

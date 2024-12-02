@@ -474,7 +474,8 @@ bool Blob::stream_pull(JSContext *cx, JS::CallArgs args, JS::HandleObject source
   return true;
 }
 
-std::vector<uint8_t> *Blob::blob(HandleObject self) {
+std::vector<uint8_t> *Blob::blob(JSObject *self) {
+  MOZ_ASSERT(is_instance(self));
   auto blob = static_cast<std::vector<uint8_t> *>(
       JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Data)).toPrivate());
 
@@ -482,7 +483,8 @@ std::vector<uint8_t> *Blob::blob(HandleObject self) {
   return blob;
 }
 
-size_t Blob::blob_size(HandleObject self) {
+size_t Blob::blob_size(JSObject *self) {
+  MOZ_ASSERT(is_instance(self));
   auto blob = static_cast<std::vector<uint8_t> *>(
       JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Data)).toPrivate());
 
@@ -490,11 +492,13 @@ size_t Blob::blob_size(HandleObject self) {
   return blob->size();
 }
 
-JSString *Blob::type(HandleObject self) {
+JSString *Blob::type(JSObject *self) {
+  MOZ_ASSERT(is_instance(self));
   return JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Type)).toString();
 }
 
-Blob::ReadersMap *Blob::readers(HandleObject self) {
+Blob::ReadersMap *Blob::readers(JSObject *self) {
+  MOZ_ASSERT(is_instance(self));
   auto readers = static_cast<ReadersMap *>(
       JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Readers)).toPrivate());
 
@@ -502,7 +506,8 @@ Blob::ReadersMap *Blob::readers(HandleObject self) {
   return readers;
 }
 
-Blob::LineEndings Blob::line_endings(HandleObject self) {
+Blob::LineEndings Blob::line_endings(JSObject *self) {
+  MOZ_ASSERT(is_instance(self));
   return static_cast<LineEndings>(
       JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Endings)).toInt32());
 }
@@ -696,24 +701,21 @@ bool Blob::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 void Blob::finalize(JS::GCContext *gcx, JSObject *self) {
-  auto blob = static_cast<std::vector<uint8_t> *>(
-      JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Data)).toPrivate());
-
+  MOZ_ASSERT(is_instance(self));
+  auto blob = Blob::blob(self);
   if (blob) {
     free(blob);
   }
 
-  auto readers = static_cast<ReadersMap *>(
-      JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Readers)).toPrivate());
+  auto readers = Blob::readers(self);
   if (readers) {
     free(readers);
   }
 }
 
 void Blob::trace(JSTracer* trc, JSObject *self) {
-  auto readers = static_cast<ReadersMap *>(
-      JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Readers)).toPrivate());
-
+  MOZ_ASSERT(is_instance(self));
+  auto readers = Blob::readers(self);
   readers->trace(trc);
 }
 
