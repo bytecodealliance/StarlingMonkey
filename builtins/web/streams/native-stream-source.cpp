@@ -42,10 +42,7 @@ NativeStreamSource::cancelAlgorithm(JSObject *self) {
 
 JSObject *NativeStreamSource::default_stream(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  if (!JS::GetReservedSlot(self, TransformStream::Slots::Readable).isObject()) {
-    return nullptr;
-  }
-  return &JS::GetReservedSlot(self, TransformStream::Slots::Readable).toObject();
+  return JS::GetReservedSlot(self, NativeStreamSource::Slots::Stream).toObjectOrNull();
 }
 
 /**

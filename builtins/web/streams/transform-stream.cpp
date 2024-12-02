@@ -284,7 +284,10 @@ void TransformStream::set_owner(JSObject *self, JSObject *owner) {
 
 JSObject *TransformStream::readable(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, TransformStream::Slots::Readable).toObjectOrNull();
+  if (!JS::GetReservedSlot(self, TransformStream::Slots::Readable).isObject()) {
+    return nullptr;
+  }
+  return &JS::GetReservedSlot(self, TransformStream::Slots::Readable).toObject();
 }
 
 bool TransformStream::is_ts_readable(JSContext *cx, JS::HandleObject readable) {
