@@ -168,6 +168,7 @@ JSObject *NativeStreamSource::create(JSContext *cx, JS::HandleObject owner, JS::
     return nullptr;
   }
 
+  // Initialize source slots before creating `default_stream`
   JS::SetReservedSlot(source, Slots::Owner, JS::ObjectValue(*owner));
   JS::SetReservedSlot(source, Slots::StartPromise, startPromise);
   JS::SetReservedSlot(source, Slots::PullAlgorithm, JS::PrivateValue((void *)pull));
