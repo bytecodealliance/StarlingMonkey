@@ -28,6 +28,7 @@
 namespace builtins::web::streams {
 
 JSObject *NativeStreamSource::stream(JSObject *self) {
+  MOZ_ASSERT(web::fetch::RequestOrResponse::body_stream(owner(self)) == default_stream(self));
   return web::fetch::RequestOrResponse::body_stream(owner(self));
 }
 
