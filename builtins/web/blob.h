@@ -16,12 +16,9 @@ class BlobReader {
   std::size_t position_;
 
 public:
-  explicit BlobReader(std::span<const uint8_t> data)
-    : data_(data), position_(0) {}
+  explicit BlobReader(std::span<const uint8_t> data) : data_(data), position_(0) {}
 
-  std::size_t remaining() const {
-    return data_.size() - position_;
-  }
+  std::size_t remaining() const { return data_.size() - position_; }
 
   std::span<const uint8_t> read(std::size_t size) {
     size = std::min(size, remaining());
@@ -31,7 +28,7 @@ public:
     return result;
   }
 
-  void trace(JSTracer* trc) {}
+  void trace(JSTracer *trc) {}
 };
 
 class Blob : public TraceableBuiltinImpl<Blob> {
@@ -58,13 +55,14 @@ public:
 
   using ByteBuffer = std::vector<uint8_t>;
   using HeapObj = Heap<JSObject *>;
-  using ReadersMap = JS::GCHashMap<HeapObj, BlobReader, js::StableCellHasher<HeapObj>, js::SystemAllocPolicy>;
+  using ReadersMap =
+      JS::GCHashMap<HeapObj, BlobReader, js::StableCellHasher<HeapObj>, js::SystemAllocPolicy>;
 
-  static ReadersMap *readers(JSObject * self);
-  static ByteBuffer *blob(JSObject * self);
-  static size_t blob_size(JSObject * self);
-  static JSString *type(JSObject * self);
-  static LineEndings line_endings(JSObject * self);
+  static ReadersMap *readers(JSObject *self);
+  static ByteBuffer *blob(JSObject *self);
+  static size_t blob_size(JSObject *self);
+  static JSString *type(JSObject *self);
+  static LineEndings line_endings(JSObject *self);
   static bool append_value(JSContext *cx, HandleObject self, HandleValue val);
   static bool init_blob_parts(JSContext *cx, HandleObject self, HandleValue iterable);
   static bool init_options(JSContext *cx, HandleObject self, HandleValue opts);
@@ -75,13 +73,14 @@ public:
                           JS::HandleObject body_owner, JS::HandleObject controller);
 
   static JSObject *data_to_owned_array_buffer(JSContext *cx, HandleObject self);
-  static JSObject *data_to_owned_array_buffer(JSContext* cx, HandleObject self, size_t offset, size_t size, size_t* bytes_read);
+  static JSObject *data_to_owned_array_buffer(JSContext *cx, HandleObject self, size_t offset,
+                                              size_t size, size_t *bytes_read);
   static JSObject *create(JSContext *cx, std::unique_ptr<ByteBuffer> data, HandleString type);
 
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
   static void finalize(JS::GCContext *gcx, JSObject *self);
-  static void trace(JSTracer* trc, JSObject *self);
+  static void trace(JSTracer *trc, JSObject *self);
 };
 
 bool install(api::Engine *engine);

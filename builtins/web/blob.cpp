@@ -17,7 +17,7 @@ namespace {
 
 static api::Engine *ENGINE;
 
-JSObject* new_array_buffer_from_span(JSContext *cx, std::span<const uint8_t> span) {
+JSObject *new_array_buffer_from_span(JSContext *cx, std::span<const uint8_t> span) {
   auto buf = mozilla::MakeUnique<uint8_t[]>(span.size());
   if (!buf) {
     JS_ReportOutOfMemory(cx);
@@ -106,41 +106,41 @@ JSString *normalize_type(JSContext *cx, HandleValue value) {
 
 // https://w3c.github.io/FileAPI/#convert-line-endings-to-native
 std::string convert_line_endings_to_native(std::string_view s) {
-    std::string native_line_ending = "\n";
+  std::string native_line_ending = "\n";
 #ifdef _WIN32
-    native_line_ending = "\r\n";
+  native_line_ending = "\r\n";
 #endif
 
-    std::string result;
-    result.reserve(s.size());
+  std::string result;
+  result.reserve(s.size());
 
-    size_t i = 0;
-    while (i < s.size()) {
-      switch (s[i]) {
-        case '\r': {
-          if (i + 1 < s.size() && s[i + 1] == '\n') {
-            result.append(native_line_ending);
-            i += 2;
-          } else {
-            result.append(native_line_ending);
-            i += 1;
-          }
-          break;
-        }
-        case '\n': {
-          result.append(native_line_ending);
-          i += 1;
-          break;
-        }
-        default: {
-          result.push_back(s[i]);
-          i += 1;
-          break;
-        }
+  size_t i = 0;
+  while (i < s.size()) {
+    switch (s[i]) {
+    case '\r': {
+      if (i + 1 < s.size() && s[i + 1] == '\n') {
+        result.append(native_line_ending);
+        i += 2;
+      } else {
+        result.append(native_line_ending);
+        i += 1;
       }
+      break;
     }
+    case '\n': {
+      result.append(native_line_ending);
+      i += 1;
+      break;
+    }
+    default: {
+      result.push_back(s[i]);
+      i += 1;
+      break;
+    }
+    }
+  }
 
-    return result;
+  return result;
 }
 
 } // anonymous namespace
@@ -174,12 +174,12 @@ const JSPropertySpec Blob::properties[] = {
 };
 
 class StreamTask final : public api::AsyncTask {
-    Heap<JSObject *> source_;
+  Heap<JSObject *> source_;
 
-    static constexpr size_t CHUNK_SIZE = 8192;
+  static constexpr size_t CHUNK_SIZE = 8192;
 
 public:
-  explicit StreamTask(const HandleObject source, api::Engine *engine)  : source_(source) {
+  explicit StreamTask(const HandleObject source, api::Engine *engine) : source_(source) {
     engine->incr_event_loop_interest();
     handle_ = IMMEDIATE_TASK_HANDLE;
   }
@@ -238,13 +238,14 @@ public:
 };
 
 JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self) {
-    size_t total_size = blob_size(self);
-    size_t bytes_read = 0;
+  size_t total_size = blob_size(self);
+  size_t bytes_read = 0;
 
-    return Blob::data_to_owned_array_buffer(cx, self, 0, total_size, &bytes_read);
+  return Blob::data_to_owned_array_buffer(cx, self, 0, total_size, &bytes_read);
 }
 
-JSObject* Blob::data_to_owned_array_buffer(JSContext* cx, HandleObject self, size_t offset, size_t size, size_t* bytes_read) {
+JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self, size_t offset,
+                                           size_t size, size_t *bytes_read) {
   auto blob = Blob::blob(self);
   auto blob_size = blob->size();
   *bytes_read = 0;
@@ -365,8 +366,8 @@ bool Blob::slice(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool Blob::stream(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
 
-  auto native_stream = streams::NativeStreamSource::create(
-    cx, self, JS::UndefinedHandleValue, stream_pull, stream_cancel);
+  auto native_stream = streams::NativeStreamSource::create(cx, self, JS::UndefinedHandleValue,
+                                                           stream_pull, stream_cancel);
 
   JS::RootedObject source(cx, native_stream);
   if (!source) {
@@ -417,11 +418,10 @@ bool Blob::text(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   bool had_replacements;
-  auto dst_data =  reinterpret_cast<uint16_t *>(dst.get());
+  auto dst_data = reinterpret_cast<uint16_t *>(dst.get());
 
   jsencoding::decoder_decode_to_utf16(decoder, src->data(), &src_len, dst_data, &dst_len, true,
                                       &had_replacements);
-
 
   JS::RootedString str(cx, JS_NewUCString(cx, std::move(dst), dst_len));
   if (!str) {
@@ -713,7 +713,7 @@ void Blob::finalize(JS::GCContext *gcx, JSObject *self) {
   }
 }
 
-void Blob::trace(JSTracer* trc, JSObject *self) {
+void Blob::trace(JSTracer *trc, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   auto readers = Blob::readers(self);
   readers->trace(trc);
