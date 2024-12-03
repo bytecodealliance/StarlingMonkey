@@ -2,6 +2,7 @@
 #include "builtin.h"
 #include "encode.h"
 #include "extension-api.h"
+#include "js/UniquePtr.h"
 #include "rust-encoding.h"
 #include "streams/native-stream-source.h"
 
@@ -13,7 +14,6 @@
 #include "js/Stream.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
-#include "js/Vector.h"
 
 namespace {
 
@@ -151,6 +151,8 @@ namespace builtins {
 namespace web {
 namespace blob {
 
+using js::Vector;
+
 const JSFunctionSpec Blob::static_methods[] = {
     JS_FS_END,
 };
@@ -249,7 +251,7 @@ JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self) {
 JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self, size_t offset,
                                            size_t size, size_t *bytes_read) {
   auto blob = Blob::blob(self);
-  auto blob_size = blob->size();
+  auto blob_size = blob->length();
   *bytes_read = 0;
 
   MOZ_ASSERT(offset <= blob_size);
@@ -257,7 +259,7 @@ JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self, siz
   size_t available_bytes = blob_size - offset;
   size_t read_size = std::min(size, available_bytes);
 
-  auto span = std::span<uint8_t>(blob->data() + offset, read_size);
+  auto span = std::span<uint8_t>(blob->begin() + offset, read_size);
   auto array_buffer = new_array_buffer_from_span(cx, span);
   if (!array_buffer) {
     return nullptr;
@@ -321,7 +323,7 @@ bool Blob::slice(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
 
   auto src = Blob::blob(self);
-  int64_t size = src->size();
+  int64_t size = src->length();
   int64_t start = 0;
   int64_t end = size;
 
@@ -352,11 +354,14 @@ bool Blob::slice(JSContext *cx, unsigned argc, JS::Value *vp) {
   start = (start < 0) ? std::max((size + start), 0LL) : std::min(start, size);
   end = (end < 0) ? std::max((size + end), 0LL) : std::min(end, size);
 
-  auto dst = (end - start > 0)
-                 ? std::make_unique<std::vector<uint8_t>>(src->begin() + start, src->begin() + end)
-                 : std::make_unique<std::vector<uint8_t>>();
+  auto slice_len = std::max(end - start, 0LL);
+  auto dst = (slice_len > 0) ? UniqueChars(js_pod_malloc<char>(slice_len)) : nullptr;
 
-  JS::RootedObject new_blob(cx, create(cx, std::move(dst), contentType));
+  if (dst) {
+    std::copy(src->begin() + start, src->begin() + end, dst.get());
+  }
+
+  JS::RootedObject new_blob(cx, create(cx, std::move(dst), slice_len, contentType));
   if (!new_blob) {
     return false;
   }
@@ -378,7 +383,7 @@ bool Blob::stream(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   auto readers = Blob::readers(self);
   auto blob = Blob::blob(self);
-  auto span = std::span<uint8_t>(blob->data(), blob->size());
+  auto span = std::span<uint8_t>(blob->begin(), blob->length());
 
   if (!readers->put(source, BlobReader(span))) {
     return false;
@@ -410,7 +415,7 @@ bool Blob::text(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto decoder = jsencoding::encoding_new_decoder_with_bom_removal(encoding);
   MOZ_ASSERT(decoder);
 
-  auto src_len = src->size();
+  auto src_len = src->length();
   auto dst_len = jsencoding::decoder_max_utf16_buffer_length(decoder, src_len);
 
   JS::UniqueTwoByteChars dst(new char16_t[dst_len + 1]);
@@ -422,7 +427,7 @@ bool Blob::text(JSContext *cx, unsigned argc, JS::Value *vp) {
   bool had_replacements;
   auto dst_data = reinterpret_cast<uint16_t *>(dst.get());
 
-  jsencoding::decoder_decode_to_utf16(decoder, src->data(), &src_len, dst_data, &dst_len, true,
+  jsencoding::decoder_decode_to_utf16(decoder, src->begin(), &src_len, dst_data, &dst_len, true,
                                       &had_replacements);
 
   JS::RootedString str(cx, JS_NewUCString(cx, std::move(dst), dst_len));
@@ -476,9 +481,9 @@ bool Blob::stream_pull(JSContext *cx, JS::CallArgs args, JS::HandleObject source
   return true;
 }
 
-std::vector<uint8_t> *Blob::blob(JSObject *self) {
+Blob::ByteBuffer *Blob::blob(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  auto blob = static_cast<std::vector<uint8_t> *>(
+  auto blob = static_cast<ByteBuffer *>(
       JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Data)).toPrivate());
 
   MOZ_ASSERT(blob);
@@ -486,7 +491,7 @@ std::vector<uint8_t> *Blob::blob(JSObject *self) {
 }
 
 size_t Blob::blob_size(JSObject *self) {
-  return blob(self)->size();
+  return blob(self)->length();
 }
 
 JSString *Blob::type(JSObject *self) {
@@ -517,14 +522,16 @@ bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
 
     if (Blob::is_instance(obj)) {
       auto src = Blob::blob(obj);
-      blob->insert(blob->end(), src->begin(), src->end());
-      return true;
+      return blob->append(src->begin(), src->end());
     } else if (JS_IsArrayBufferViewObject(obj) || JS::IsArrayBufferObject(obj)) {
       auto span = value_to_buffer(cx, val, "Blob Parts");
       if (span.has_value()) {
-        blob->insert(blob->end(), span->begin(), span->end());
+        auto src = span->data();
+        auto len = span->size();
+        return blob->append(src, src + len);
+      } else {
+        return true;
       }
-      return true;
     }
   } else if (val.isString()) {
     auto chars = core::encode(cx, val);
@@ -536,14 +543,13 @@ bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
       auto converted = convert_line_endings_to_native(chars);
       auto src = converted.data();
       auto len = converted.length();
-      blob->insert(blob->end(), src, src + len);
+      return blob->append(src, src + len);
 
     } else {
       auto src = chars.ptr.get();
       auto len = chars.len;
-      blob->insert(blob->end(), src, src + len);
+      return blob->append(src, src + len);
     }
-    return true;
   }
 
   // FALLBACK: if we ever get here convert, to string and call append again
@@ -647,13 +653,19 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
   return true;
 }
 
-JSObject *Blob::create(JSContext *cx, std::unique_ptr<Blob::ByteBuffer> data, HandleString type) {
+JSObject *Blob::create(JSContext *cx, UniqueChars data, size_t data_len, HandleString type) {
   JSObject *self = JS_NewObjectWithGivenProto(cx, &class_, proto_obj);
   if (!self) {
     return nullptr;
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(data.release()));
+  auto blob = new ByteBuffer;
+  if (data != nullptr) {
+    // Take the ownership of given data.
+    blob->replaceRawBuffer(reinterpret_cast<uint8_t *>(data.release()), data_len);
+  }
+
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(blob));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS::StringValue(type));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Readers), JS::PrivateValue(new ReadersMap));
@@ -671,9 +683,9 @@ bool Blob::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(new std::vector<uint8_t>()));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS_GetEmptyStringValue(cx));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(new ByteBuffer));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Readers), JS::PrivateValue(new ReadersMap));
 
   // Walk the blob parts and append them to the blob's buffer.

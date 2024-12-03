@@ -542,11 +542,8 @@ bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::Uni
     static_cast<void>(buf.release());
     result.setObject(*array_buffer);
   } else if constexpr (result_type == RequestOrResponse::BodyReadResult::Blob) {
-    auto bytes = reinterpret_cast<uint8_t *>(buf.get());
-    auto data = std::make_unique<std::vector<uint8_t>>(bytes, bytes + len);
-
     JS::RootedString contentType(cx, JS_GetEmptyString(cx));
-    JS::RootedObject blob(cx, blob::Blob::create(cx, std::move(data), contentType));
+    JS::RootedObject blob(cx, blob::Blob::create(cx, std::move(buf), len, contentType));
 
     if (!blob) {
       return RejectPromiseWithPendingError(cx, result_promise);
