@@ -37,6 +37,7 @@ clean:
     cmake --build {{ builddir }} --target clean
 
 # Remove build directory
+[confirm]
 clean-all:
     rm -rf {{ builddir }}
 
