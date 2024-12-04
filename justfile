@@ -36,10 +36,14 @@ build target="" flags="":
 clean:
     cmake --build {{ builddir }} --target clean
 
-# Remove build directory
-[confirm]
-clean-all:
+[private]
+[confirm('proceed?')]
+do_clean:
     rm -rf {{ builddir }}
+
+# Remove build directory
+clean-all: && do_clean
+    @echo "This will remove {{builddir}}"
 
 # Componentize js script
 componentize script="" outfile="starling.wasm": build
