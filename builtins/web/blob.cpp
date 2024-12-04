@@ -672,6 +672,35 @@ JSObject *Blob::create(JSContext *cx, UniqueChars data, size_t data_len, HandleS
   return self;
 }
 
+JSObject *Blob::create(JSContext *cx, HandleValue blobParts, HandleValue opts) {
+  RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
+
+  if (!self) {
+    return nullptr;
+  }
+
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS_GetEmptyStringValue(cx));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(new ByteBuffer));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Readers), JS::PrivateValue(new ReadersMap));
+
+  if (blobParts.isNull()) {
+    api::throw_error(cx, api::Errors::TypeError, "Blob.constructor", "blobParts", "be an object");
+    return nullptr;
+  }
+
+  // Walk the blob parts and append them to the blob's buffer.
+  if (!blobParts.isUndefined() && !init_blob_parts(cx, self, blobParts)) {
+    return nullptr;
+  }
+
+  if (!opts.isNullOrUndefined() && !init_options(cx, self, opts)) {
+    return nullptr;
+  }
+
+  return self;
+}
+
 bool Blob::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("Blob", 0);
 

@@ -76,6 +76,7 @@ public:
   static JSObject *data_to_owned_array_buffer(JSContext *cx, HandleObject self, size_t offset,
                                               size_t size, size_t *bytes_read);
   static JSObject *create(JSContext *cx, UniqueChars data, size_t data_len, HandleString type);
+  static JSObject *create(JSContext *cx, HandleValue blobParts, HandleValue opts);
 
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
