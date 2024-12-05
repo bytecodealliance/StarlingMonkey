@@ -484,12 +484,7 @@ std::vector<uint8_t> *Blob::blob(JSObject *self) {
 }
 
 size_t Blob::blob_size(JSObject *self) {
-  MOZ_ASSERT(is_instance(self));
-  auto blob = static_cast<std::vector<uint8_t> *>(
-      JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Data)).toPrivate());
-
-  MOZ_ASSERT(blob);
-  return blob->size();
+  return blob(self)->size();
 }
 
 JSString *Blob::type(JSObject *self) {
