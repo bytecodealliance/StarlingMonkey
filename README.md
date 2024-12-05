@@ -124,6 +124,61 @@ cd cmake-build-release
 ./componentize.sh ../tests/smoke.js
 ```
 
+6. Run project-specific commands using `just`
+
+The justfile provides a streamlined interface for executing common project-specific tasks. To install just, you can use the command:
+
+``` shell
+cargo install just
+```
+
+Alternatively, refer to the official [installation instructions](https://github.com/casey/just?tab=readme-ov-file#installation) for your specific system.
+
+Once installed, navigate to the project directory and run `just` commands as needed. For instance, the following commands will configure a default `cmake-build-debug` directory and build the project.
+
+``` shell
+just build
+```
+
+To build and run integration tests run:
+
+``` shell
+just test
+```
+
+To build and run Web Platform Tests run:
+
+``` shell
+just wpt-test                                   # run all tests
+just wpt-test console/console-log-symbol.any.js # run specific test
+```
+
+The default build directory (`cmake-build-debug`) and build flavor (`debug`) can be overridden via command-line arguments. For example, the following command configures CMake to use `mybuilddir` as the build directory and sets the build type to `release`:
+
+``` shell
+just builddir=mybuilddir flavour=release build
+```
+
+You can also start a Web Platform Tests (WPT) server with:
+
+``` shell
+just wpt-server
+```
+
+After starting the server, individual tests can be run by sending a request with the test name to the server instance. For example:
+
+``` shell
+curl http://127.0.0.1:7676/console/console-log-symbol.any.js
+
+```
+
+To view a complete list of available recipes, run:
+
+``` shell
+just --list
+
+```
+
 ### Web Platform Tests
 
 To run the [Web Platform Tests](https://web-platform-tests.org/) suite, the WPT runner requires `Node.js` to be installed, and during build configuration the option `ENABLE_WPT:BOOL=ON` must be set.
