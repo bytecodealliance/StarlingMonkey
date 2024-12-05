@@ -2,7 +2,7 @@ ncpus := num_cpus()
 justdir := justfile_directory()
 flavour := 'debug'
 builddir := justdir / 'cmake-build-' + flavour
-force := 'false'
+reconfigure := 'false'
 
 alias b := build
 alias t := integration-test
@@ -23,7 +23,7 @@ build target="" flags="":
     echo 'Setting build directory to {{ builddir }}, build type {{ flavour }}'
 
     # Only run configure step if build directory doesn't exist yet
-    if ! {{ path_exists(builddir) }} || {{ force }} = 'true'; then
+    if ! {{ path_exists(builddir) }} || {{ reconfigure }} = 'true'; then
         cmake -S . -B {{ builddir }} {{ flags }} -DCMAKE_BUILD_TYPE={{ capitalize(flavour) }}
     else
         echo 'build directory already exists, skipping cmake configure'
