@@ -549,7 +549,6 @@ bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::Uni
       return RejectPromiseWithPendingError(cx, result_promise);
     }
 
-    // We can drop `buf` as the data has been now copied over to blob
     result.setObject(*blob);
   } else {
     JS::RootedString text(cx, JS_NewStringCopyUTF8N(cx, JS::UTF8Chars(buf.get(), len)));
