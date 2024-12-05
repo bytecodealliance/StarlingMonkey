@@ -1,0 +1,17 @@
+{
+  "Blob.bytes()": {
+    "status": "PASS"
+  },
+  "Blob.bytes() empty Blob data": {
+    "status": "PASS"
+  },
+  "Blob.bytes() non-ascii input": {
+    "status": "PASS"
+  },
+  "Blob.bytes() non-unicode input": {
+    "status": "PASS"
+  },
+  "Blob.bytes() concurrent reads": {
+    "status": "PASS"
+  }
+}

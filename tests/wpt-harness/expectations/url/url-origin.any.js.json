@@ -1094,6 +1094,45 @@
   "Origin parsing: <west://x:0> without base": {
     "status": "PASS"
   },
+  "Origin parsing: <android://x:0/a> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <drivefs://x:0/a> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <chromeos-steam://x:0/a> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <steam://x:0/a> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <materialized-view://x:0/a> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <android-app://x:0> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <chrome-distiller://x:0> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <chrome-extension://x:0> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <chrome-native://x:0> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <chrome-resource://x:0> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <chrome-search://x:0> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <fuchsia-dir://x:0> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <isolated-app://x:0> without base": {
+    "status": "PASS"
+  },
   "Origin parsing: <http://example.com/U+d800𐟾U+dfff﷐﷏﷯ﷰ￾￿?U+d800𐟾U+dfff﷐﷏﷯ﷰ￾￿> without base": {
     "status": "PASS"
   }

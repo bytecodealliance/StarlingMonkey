@@ -17,6 +17,10 @@ async function handleRequest(event) {
   globalThis.location = baseURL;
   try {
     let response = await fetch(input);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${input}: ${response.status} ${response.statusText}`);
+    }
+
     let testSource = await response.text();
     testSource += "\n//# sourceURL=" + url.pathname;
 

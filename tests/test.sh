@@ -21,6 +21,14 @@ headers_log="$test_dir/headers.log"
 stdout_log="$test_dir/stdout.log"
 stderr_log="$test_dir/stderr.log"
 
+print_diff_content_on_fail() {
+    echo "==== Content of $1: ===="
+    cat "$1"
+    echo "==== Content of $2: ===="
+    cat "$2"
+    return 1
+}
+
 # Optionally create the test component if not explicitly provided
 if [ -z "$test_component" ]; then
    test_component="$test_dir/$test_name.wasm"
@@ -117,11 +125,11 @@ if [ -f "$test_serve_headers_expectation" ]; then
 fi
 
 if [ -f "$test_serve_body_expectation" ]; then
-   cmp -b "$body_log" "$test_serve_body_expectation"
+   cmp -b "$body_log" "$test_serve_body_expectation" || print_diff_content_on_fail "$body_log" "$test_serve_body_expectation"
 fi
 
 if [ -f "$test_serve_stdout_expectation" ]; then
-   cmp -b "$stdout_log" "$test_serve_stdout_expectation"
+   cmp -b "$stdout_log" "$test_serve_stdout_expectation" || print_diff_content_on_fail "$stdout_log" "$test_serve_stdout_expectation"
 fi
 
 if [ -f "$test_serve_stderr_expectation" ]; then
@@ -133,7 +141,7 @@ if [ -f "$test_serve_stderr_expectation" ]; then
       cat $stderr_log.orig | tail -n +2 > "$stderr_log"
       rm $stderr_log.orig
    fi
-   cmp -b "$stderr_log" "$test_serve_stderr_expectation"
+   cmp -b "$stderr_log" "$test_serve_stderr_expectation" || print_diff_content_on_fail "$stderr_log" "$test_serve_stderr_expectation"
 fi
 
 rm "$body_log"

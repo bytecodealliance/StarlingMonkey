@@ -1,0 +1,26 @@
+{
+  "Blob.text()": {
+    "status": "PASS"
+  },
+  "Blob.text() empty blob data": {
+    "status": "PASS"
+  },
+  "Blob.text() multi-element array in constructor": {
+    "status": "PASS"
+  },
+  "Blob.text() non-unicode": {
+    "status": "PASS"
+  },
+  "Blob.text() different charset param in type option": {
+    "status": "PASS"
+  },
+  "Blob.text() different charset param with non-ascii input": {
+    "status": "PASS"
+  },
+  "Blob.text() invalid utf-8 input": {
+    "status": "PASS"
+  },
+  "Blob.text() concurrent reads": {
+    "status": "PASS"
+  }
+}

@@ -28,6 +28,7 @@ using std::optional;
 
 typedef int32_t PollableHandle;
 constexpr PollableHandle INVALID_POLLABLE_HANDLE = -1;
+constexpr PollableHandle IMMEDIATE_TASK_HANDLE = -2;
 
 namespace api {
 

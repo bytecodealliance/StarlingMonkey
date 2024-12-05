@@ -27,10 +27,6 @@
 
 namespace builtins::web::streams {
 
-JSObject *NativeStreamSource::stream(JSObject *self) {
-  return web::fetch::RequestOrResponse::body_stream(owner(self));
-}
-
 bool NativeStreamSource::stream_is_body(JSContext *cx, JS::HandleObject stream) {
   JSObject *stream_source = get_stream_source(cx, stream);
   return NativeStreamSource::is_instance(stream_source) &&
@@ -43,16 +39,15 @@ namespace builtins::web::fetch {
 
 static api::Engine *ENGINE;
 
-bool error_stream_controller_with_pending_exception(JSContext *cx, HandleObject controller) {
+bool error_stream_controller_with_pending_exception(JSContext *cx, HandleObject stream) {
   RootedValue exn(cx);
   if (!JS_GetPendingException(cx, &exn))
     return false;
   JS_ClearPendingException(cx);
 
-  RootedValueArray<1> args(cx);
-  args[0].set(exn);
-  RootedValue r(cx);
-  return JS::Call(cx, controller, "error", args, &r);
+  RootedValue args(cx);
+  args.set(exn);
+  return JS::ReadableStreamError(cx, stream, args);
 }
 
 constexpr size_t HANDLE_READ_CHUNK_SIZE = 8192;
@@ -74,19 +69,18 @@ public:
     // MOZ_ASSERT(ready());
     JSContext *cx = engine->cx();
     RootedObject owner(cx, streams::NativeStreamSource::owner(body_source_));
-    RootedObject controller(cx, streams::NativeStreamSource::controller(body_source_));
+    RootedObject stream(cx, streams::NativeStreamSource::stream(body_source_));
     auto body = RequestOrResponse::incoming_body_handle(owner);
 
     auto read_res = body->read(HANDLE_READ_CHUNK_SIZE);
     if (auto *err = read_res.to_err()) {
       HANDLE_ERROR(cx, *err);
-      return error_stream_controller_with_pending_exception(cx, controller);
+      return error_stream_controller_with_pending_exception(cx, stream);
     }
 
     auto &chunk = read_res.unwrap();
     if (chunk.done) {
-      RootedValue r(cx);
-      return Call(cx, controller, "close", HandleValueArray::empty(), &r);
+      return JS::ReadableStreamClose(cx, stream);
     }
 
     // We don't release control of chunk's data until after we've checked that
@@ -97,7 +91,7 @@ public:
         cx, JS::NewArrayBufferWithContents(cx, bytes.len, bytes.ptr.get(),
                                            JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
     if (!buffer) {
-      return error_stream_controller_with_pending_exception(cx, controller);
+      return error_stream_controller_with_pending_exception(cx, stream);
     }
 
     // At this point `buffer` has taken full ownership of the chunk's data.
@@ -108,11 +102,10 @@ public:
       return false;
     }
 
-    RootedValueArray<1> enqueue_args(cx);
-    enqueue_args[0].setObject(*byte_array);
-    RootedValue r(cx);
-    if (!JS::Call(cx, controller, "enqueue", enqueue_args, &r)) {
-      return error_stream_controller_with_pending_exception(cx, controller);
+    RootedValue enqueue_val(cx);
+    enqueue_val.setObject(*byte_array);
+    if (!JS::ReadableStreamEnqueue(cx, stream, enqueue_val)) {
+      return error_stream_controller_with_pending_exception(cx, stream);
     }
 
     return cancel(engine);
@@ -1121,17 +1114,14 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
 JSObject *RequestOrResponse::create_body_stream(JSContext *cx, JS::HandleObject owner) {
   MOZ_ASSERT(!body_stream(owner));
   MOZ_ASSERT(has_body(owner));
+
   JS::RootedObject source(cx, streams::NativeStreamSource::create(
                                   cx, owner, JS::UndefinedHandleValue, body_source_pull_algorithm,
                                   body_source_cancel_algorithm));
   if (!source)
     return nullptr;
 
-  // Create a readable stream with a highwater mark of 0.0 to prevent an eager
-  // pull. With the default HWM of 1.0, the streams implementation causes a
-  // pull, which means we enqueue a read from the host handle, which we quite
-  // often have no interest in at all.
-  JS::RootedObject body_stream(cx, JS::NewReadableDefaultStreamObject(cx, source, nullptr, 0.0));
+  JS::RootedObject body_stream(cx, streams::NativeStreamSource::stream(source));
   if (!body_stream) {
     return nullptr;
   }

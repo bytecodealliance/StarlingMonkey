@@ -865,12 +865,13 @@ bool TransformStream::Initialize(JSContext *cx, JS::HandleObject stream,
   // pullAlgorithm, cancelAlgorithm, readableHighWaterMark,
   // readableSizeAlgorithm).
   JS::RootedObject source(
-      cx, NativeStreamSource::create(cx, stream, startPromiseVal, pullAlgorithm, cancelAlgorithm));
+      cx, NativeStreamSource::create(cx, stream, startPromiseVal, pullAlgorithm, cancelAlgorithm,
+                                     readableSizeAlgorithm, readableHighWaterMark));
   if (!source)
     return false;
 
-  JS::RootedObject readable(cx, JS::NewReadableDefaultStreamObject(
-                                    cx, source, readableSizeAlgorithm, readableHighWaterMark));
+  JS::RootedObject readable(cx);
+  readable = NativeStreamSource::stream(source);
   if (!readable)
     return false;
 

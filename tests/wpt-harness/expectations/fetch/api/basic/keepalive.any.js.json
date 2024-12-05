@@ -16,5 +16,8 @@
   },
   "[keepalive] simple POST request on 'pagehide' [no payload]; setting up": {
     "status": "FAIL"
+  },
+  "simple keepalive test for web workers;": {
+    "status": "FAIL"
   }
 }
