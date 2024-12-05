@@ -194,12 +194,11 @@ just --list
 > - Running `just build` creates a build directory for the default target,
 > - Running `just wpt-build` afterward may fail because the WPT target hasn’t been configured in the existing build directory.
 >
-> To resolve this, you can force cmake to reconfigure the build directory by adding the reconfigure=true parameter. For example:
+> To resolve this, you can force cmake to reconfigure the build directory by adding the `reconfigure=true` parameter. For example:
 >
 > ``` shell
 > just reconfigure=true wpt-build
 > ```
-> This will ensure that the build directory is correctly configured for the new target.
 
 #### Customizing build
 The default build mode is debug, which automatically configures the build directory to `cmake-build-debug`. You can switch to a different build mode, such as release, by specifying the mode parameter. For example:
