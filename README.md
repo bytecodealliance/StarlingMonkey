@@ -124,61 +124,6 @@ cd cmake-build-release
 ./componentize.sh ../tests/smoke.js
 ```
 
-6. Run project-specific commands using `just`
-
-The justfile provides a streamlined interface for executing common project-specific tasks. To install just, you can use the command:
-
-``` shell
-cargo install just
-```
-
-Alternatively, refer to the official [installation instructions](https://github.com/casey/just?tab=readme-ov-file#installation) for your specific system.
-
-Once installed, navigate to the project directory and run `just` commands as needed. For instance, the following commands will configure a default `cmake-build-debug` directory and build the project.
-
-``` shell
-just build
-```
-
-To build and run integration tests run:
-
-``` shell
-just test
-```
-
-To build and run Web Platform Tests run:
-
-``` shell
-just wpt-test                                   # run all tests
-just wpt-test console/console-log-symbol.any.js # run specific test
-```
-
-The default build directory (`cmake-build-debug`) and build flavor (`debug`) can be overridden via command-line arguments. For example, the following command configures CMake to use `mybuilddir` as the build directory and sets the build type to `release`:
-
-``` shell
-just builddir=mybuilddir flavour=release build
-```
-
-You can also start a Web Platform Tests (WPT) server with:
-
-``` shell
-just wpt-server
-```
-
-After starting the server, individual tests can be run by sending a request with the test name to the server instance. For example:
-
-``` shell
-curl http://127.0.0.1:7676/console/console-log-symbol.any.js
-
-```
-
-To view a complete list of available recipes, run:
-
-``` shell
-just --list
-
-```
-
 ### Web Platform Tests
 
 To run the [Web Platform Tests](https://web-platform-tests.org/) suite, the WPT runner requires `Node.js` to be installed, and during build configuration the option `ENABLE_WPT:BOOL=ON` must be set.
@@ -213,6 +158,79 @@ cmake -P [PATH_TO_STARLING_MONKEY]/cmake/builtins.cmake
 ```
 
 Note that it's required to include builtins defining all exports defined by the used host API. Using the default WASI 0.2.0 host API, that means including the `fetch_event` builtin.
+
+### Running project-specific commands using `just`
+
+The justfile provides a streamlined interface for executing common project-specific tasks. To install just, you can use the command `cargo install just` or `cargo binstall just`. Alternatively, refer to the official [installation instructions](https://github.com/casey/just?tab=readme-ov-file#installation) for your specific system.
+
+Once installed, navigate to the project directory and run `just` commands as needed. For instance, the following commands will configure a default `cmake-build-debug` directory and build the project.
+
+``` shell
+just build
+```
+
+To build and run integration tests run:
+
+``` shell
+just test
+```
+
+To build and run Web Platform Tests run:
+
+``` shell
+just wpt-test # run all tests
+just wpt-test console/console-log-symbol.any.js # run specific test
+```
+
+To view a complete list of available recipes, run:
+
+``` shell
+just --list
+
+```
+
+> [!NOTE]
+> By default, the CMake configuration step is skipped if the build directory already exists. However, this can sometimes cause issues if the existing build directory was configured for a different target. For instance:
+> - Running `just build` creates a build directory for the default target,
+> - Running `just wpt-build` afterward may fail because the WPT target hasn’t been configured in the existing build directory.
+>
+> To resolve this, you can force cmake to reconfigure the build directory by adding the reconfigure=true parameter. For example:
+>
+> ``` shell
+> just reconfigure=true wpt-build
+> ```
+> This will ensure that the build directory is correctly configured for the new target.
+
+#### Customizing build
+The default build mode is debug, which automatically configures the build directory to `cmake-build-debug`. You can switch to a different build mode, such as release, by specifying the mode parameter. For example:
+
+``` shell
+just mode=release build
+```
+
+This command will set the build mode to release, and the build directory will automatically change to `cmake-build-release`.
+
+If you want to override the default build directory, you can use the `builddir` parameter. 
+
+``` shell
+just builddir=mybuilddir mode=release build
+```
+
+This command configures CMake to use `mybuilddir` as the build directory and sets the build mode to `release`.
+
+#### Starting the WPT Server
+You can also start a Web Platform Tests (WPT) server with:
+
+``` shell
+just wpt-server
+```
+
+After starting the server, individual tests can be run by sending a request with the test name to the server instance. For example:
+
+``` shell
+curl http://127.0.0.1:7676/console/console-log-symbol.any.js
+
+```
 
 ### Using StarlingMonkey as a CMake sub-project
 

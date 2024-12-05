@@ -1,30 +1,30 @@
 ncpus := num_cpus()
 justdir := justfile_directory()
-flavour := 'debug'
-builddir := justdir / 'cmake-build-' + flavour
+mode := 'debug'
+builddir := justdir / 'cmake-build-' + mode
 reconfigure := 'false'
 
 alias b := build
-alias t := integration-test
+alias t := test
 alias w := wpt-test
 alias c := componentize
 alias fmt := format
 
 # List all recipes
 default:
-    @echo 'Default flavour {{ flavour }}'
+    @echo 'Default mode {{ mode }}'
     @echo 'Default build directory {{ builddir }}'
     @just --list
 
 # Build specified target or all otherwise
-build target="" flags="":
+build target="all" flags="":
     #!/usr/bin/env bash
     set -euo pipefail
-    echo 'Setting build directory to {{ builddir }}, build type {{ flavour }}'
+    echo 'Setting build directory to {{ builddir }}, build type {{ mode }}'
 
     # Only run configure step if build directory doesn't exist yet
     if ! {{ path_exists(builddir) }} || {{ reconfigure }} = 'true'; then
-        cmake -S . -B {{ builddir }} {{ flags }} -DCMAKE_BUILD_TYPE={{ capitalize(flavour) }}
+        cmake -S . -B {{ builddir }} {{ flags }} -DCMAKE_BUILD_TYPE={{ capitalize(mode) }}
     else
         echo 'build directory already exists, skipping cmake configure'
     fi
@@ -54,7 +54,7 @@ format *ARGS:
     {{ justdir }}/scripts/clang-format.sh {{ ARGS }}
 
 # Run integration test
-integration-test: (build "integration-test-server")
+test: (build "integration-test-server")
     ctest --test-dir {{ builddir }} -j {{ ncpus }} --output-on-failure
 
 # Build web platform test suite
