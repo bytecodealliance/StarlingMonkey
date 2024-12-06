@@ -1,0 +1,29 @@
+{
+  "Request's body: initial state": {
+    "status": "PASS"
+  },
+  "Request without body cannot be disturbed": {
+    "status": "PASS"
+  },
+  "Check cloning a disturbed request": {
+    "status": "FAIL"
+  },
+  "Check creating a new request from a disturbed request": {
+    "status": "PASS"
+  },
+  "Check creating a new request with a new body from a disturbed request": {
+    "status": "PASS"
+  },
+  "Input request used for creating new request became disturbed": {
+    "status": "FAIL"
+  },
+  "Input request used for creating new request became disturbed even if body is not used": {
+    "status": "FAIL"
+  },
+  "Check consuming a disturbed request": {
+    "status": "PASS"
+  },
+  "Request construction failure should not set \"bodyUsed\"": {
+    "status": "FAIL"
+  }
+}

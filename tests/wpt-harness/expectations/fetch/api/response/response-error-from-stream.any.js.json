@@ -9,7 +9,7 @@
     "status": "PASS"
   },
   "ReadableStream start() Error propagates to Response.blob() Promise": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ReadableStream start() Error propagates to Response.bytes() Promise": {
     "status": "FAIL"
@@ -27,7 +27,7 @@
     "status": "PASS"
   },
   "ReadableStream pull() Error propagates to Response.blob() Promise": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ReadableStream pull() Error propagates to Response.bytes() Promise": {
     "status": "FAIL"

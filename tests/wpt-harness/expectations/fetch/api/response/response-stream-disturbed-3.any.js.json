@@ -1,6 +1,6 @@
 {
   "Getting blob after reading the Response body (body source: fetch)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Getting text after reading the Response body (body source: fetch)": {
     "status": "PASS"
@@ -12,7 +12,7 @@
     "status": "PASS"
   },
   "Getting blob after reading the Response body (body source: stream)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Getting text after reading the Response body (body source: stream)": {
     "status": "PASS"
@@ -24,7 +24,7 @@
     "status": "PASS"
   },
   "Getting blob after reading the Response body (body source: string)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Getting text after reading the Response body (body source: string)": {
     "status": "PASS"

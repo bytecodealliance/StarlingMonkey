@@ -3,13 +3,13 @@
     "status": "PASS"
   },
   "Default Content-Type for Request with Blob body (no type set)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Default Content-Type for Request with Blob body (empty type)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Default Content-Type for Request with Blob body (set type)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Default Content-Type for Request with buffer source body": {
     "status": "PASS"
