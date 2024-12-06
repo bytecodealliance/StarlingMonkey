@@ -74,6 +74,7 @@ public:
 
   enum class BodyReadResult {
     ArrayBuffer,
+    Blob,
     JSON,
     Text,
   };

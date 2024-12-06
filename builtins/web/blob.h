@@ -6,6 +6,7 @@
 #include "js/AllocPolicy.h"
 #include "js/GCHashTable.h"
 #include "js/TypeDecls.h"
+#include "js/Vector.h"
 
 namespace builtins {
 namespace web {
@@ -53,10 +54,9 @@ public:
   enum Slots { Data, Type, Endings, Readers, Count };
   enum LineEndings { Transparent, Native };
 
-  using ByteBuffer = std::vector<uint8_t>;
   using HeapObj = Heap<JSObject *>;
-  using ReadersMap =
-      JS::GCHashMap<HeapObj, BlobReader, js::StableCellHasher<HeapObj>, js::SystemAllocPolicy>;
+  using ByteBuffer = js::Vector<uint8_t, 0, js::SystemAllocPolicy>;
+  using ReadersMap = JS::GCHashMap<HeapObj, BlobReader, js::StableCellHasher<HeapObj>, js::SystemAllocPolicy>;
 
   static ReadersMap *readers(JSObject *self);
   static ByteBuffer *blob(JSObject *self);
@@ -75,7 +75,7 @@ public:
   static JSObject *data_to_owned_array_buffer(JSContext *cx, HandleObject self);
   static JSObject *data_to_owned_array_buffer(JSContext *cx, HandleObject self, size_t offset,
                                               size_t size, size_t *bytes_read);
-  static JSObject *create(JSContext *cx, std::unique_ptr<ByteBuffer> data, HandleString type);
+  static JSObject *create(JSContext *cx, UniqueChars data, size_t data_len, HandleString type);
 
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);

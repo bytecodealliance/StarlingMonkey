@@ -3,7 +3,7 @@
     "status": "PASS"
   },
   "Consume request's body as blob": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume request's body as arrayBuffer": {
     "status": "PASS"
@@ -21,13 +21,13 @@
     "status": "FAIL"
   },
   "Consume empty blob request body as arrayBuffer": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume empty text request body as arrayBuffer": {
     "status": "PASS"
   },
   "Consume empty blob request body as text": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume empty text request body as text": {
     "status": "PASS"

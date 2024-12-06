@@ -3,7 +3,7 @@
     "status": "PASS"
   },
   "Consume String request's body as blob": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume String request's body as arrayBuffer": {
     "status": "PASS"
@@ -18,7 +18,7 @@
     "status": "PASS"
   },
   "Consume ArrayBuffer request's body as blob": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume ArrayBuffer request's body as arrayBuffer": {
     "status": "PASS"
@@ -33,7 +33,7 @@
     "status": "PASS"
   },
   "Consume Uint8Array request's body as blob": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume Uint8Array request's body as arrayBuffer": {
     "status": "PASS"
@@ -48,7 +48,7 @@
     "status": "PASS"
   },
   "Consume Int8Array request's body as blob": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume Int8Array request's body as arrayBuffer": {
     "status": "PASS"
@@ -63,7 +63,7 @@
     "status": "PASS"
   },
   "Consume Float32Array request's body as blob": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume Float32Array request's body as arrayBuffer": {
     "status": "PASS"
@@ -78,7 +78,7 @@
     "status": "PASS"
   },
   "Consume DataView request's body as blob": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume DataView request's body as arrayBuffer": {
     "status": "PASS"
@@ -93,22 +93,22 @@
     "status": "FAIL"
   },
   "Consume blob response's body as blob": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume blob response's body as text": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume blob response's body as json": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume blob response's body as arrayBuffer": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume blob response's body as bytes": {
     "status": "FAIL"
   },
   "Consume blob response's body as blob (empty blob as input)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume JSON from text: '\"null\"'": {
     "status": "PASS"
