@@ -185,6 +185,7 @@ bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     RootedObject other_blob(cx, File::blob(&other.toObject()));
     RootedValue blob_copy(cx);
 
+    // Calling slice with no arguments copies the entire blob's content.
     if (!Blob::slice(cx, other_blob, CallArgs(), &blob_copy)) {
       return false;
     }
