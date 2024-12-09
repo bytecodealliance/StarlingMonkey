@@ -58,6 +58,12 @@ public:
   using ByteBuffer = js::Vector<uint8_t, 0, js::SystemAllocPolicy>;
   using ReadersMap = JS::GCHashMap<HeapObj, BlobReader, js::StableCellHasher<HeapObj>, js::SystemAllocPolicy>;
 
+  static bool arrayBuffer(JSContext *cx, HandleObject self, MutableHandleValue result);
+  static bool bytes(JSContext *cx, HandleObject self, MutableHandleValue result);
+  static bool stream(JSContext *cx, HandleObject self, MutableHandleValue result);
+  static bool text(JSContext *cx, HandleObject self, MutableHandleValue result);
+  static bool slice(JSContext *cx, HandleObject self, const CallArgs &args, MutableHandleValue result);
+
   static ReadersMap *readers(JSObject *self);
   static ByteBuffer *blob(JSObject *self);
   static size_t blob_size(JSObject *self);

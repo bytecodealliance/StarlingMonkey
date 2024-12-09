@@ -1,5 +1,6 @@
 #include "file.h"
 #include "blob.h"
+#include "js/CallArgs.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"
 
@@ -60,18 +61,23 @@ const JSPropertySpec File::properties[] = {
     JS_PS_END,
 };
 
-#define DEFINE_BLOB_DELEGATE(name)                                             \
-bool File::name(JSContext *cx, unsigned argc, JS::Value *vp) {                 \
-    METHOD_HEADER(0)                                                           \
-    RootedObject blob(cx, File::blob(self));                                   \
-    return JS::Call(cx, blob, #name, JS::HandleValueArray(args), args.rval()); \
+#define DEFINE_BLOB_DELEGATE(name)                             \
+bool File::name(JSContext *cx, unsigned argc, JS::Value *vp) { \
+  METHOD_HEADER(0)                                             \
+  RootedObject blob(cx, File::blob(self));                     \
+  return Blob::name(cx, blob, args.rval());                    \
 }
 
 DEFINE_BLOB_DELEGATE(arrayBuffer)
 DEFINE_BLOB_DELEGATE(bytes)
-DEFINE_BLOB_DELEGATE(slice)
 DEFINE_BLOB_DELEGATE(stream)
 DEFINE_BLOB_DELEGATE(text)
+
+bool File::slice(JSContext *cx, unsigned argc, JS::Value *vp) {
+    METHOD_HEADER(0)
+    RootedObject blob(cx, File::blob(self));
+    return Blob::slice(cx, blob, args, args.rval());
+}
 
 bool File::size_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
@@ -179,7 +185,7 @@ bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     RootedObject other_blob(cx, File::blob(&other.toObject()));
     RootedValue blob_copy(cx);
 
-    if (!Call(cx, other_blob, "slice", HandleValueArray::empty(), &blob_copy)) {
+    if (!Blob::slice(cx, other_blob, CallArgs(), &blob_copy)) {
       return false;
     }
 
