@@ -31,5 +31,4 @@ globalThis.crypto.subtle.generateKey = function () {return Promise.reject(new Er
 globalThis.FormData = class FormData{};
 globalThis.SharedArrayBuffer = class SharedArrayBuffer{};
 globalThis.MessageChannel = class MessageChannel{};
-globalThis.File = class File{};
 ;
