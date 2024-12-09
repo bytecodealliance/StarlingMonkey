@@ -184,7 +184,6 @@ class StreamTask final : public api::AsyncTask {
 
 public:
   explicit StreamTask(const HandleObject source, api::Engine *engine) : source_(source) {
-    engine->incr_event_loop_interest();
     handle_ = IMMEDIATE_TASK_HANDLE;
   }
 
@@ -234,7 +233,6 @@ public:
 
   [[nodiscard]] bool cancel(api::Engine *engine) override {
     handle_ = INVALID_POLLABLE_HANDLE;
-    engine->decr_event_loop_interest();
     return true;
   }
 
