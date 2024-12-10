@@ -312,6 +312,8 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     MOZ_ASSERT(stream.isObject());
     JS_SetReservedSlot(self, static_cast<uint32_t>(RequestOrResponse::Slots::BodyStream), stream);
 
+    content_length = mozilla::Some(Blob::blob_size(body_obj));
+
     JS::RootedString type_str(cx, Blob::type(body_obj));
     if (JS::GetStringLength(type_str) > 0) {
       host_type_str = core::encode(cx, type_str);
@@ -419,14 +421,14 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
 
     if (content_length.isSome()) {
       auto length_str = std::to_string(content_length.value());
-      if (!Headers::set_valid_if_undefined(cx, headers, "content-length", length_str)) {
+      if (!Headers::set_valid_if_undefined(cx, headers, "Content-Length", length_str)) {
         return false;
       }
     }
 
     // Step 36.3 of Request constructor / 8.4 of Response constructor.
     if (content_type &&
-        !Headers::set_valid_if_undefined(cx, headers, "content-type", content_type)) {
+        !Headers::set_valid_if_undefined(cx, headers, "Content-Type", content_type)) {
       return false;
     }
   }
@@ -1816,6 +1818,11 @@ uint16_t Response::status(JSObject *obj) {
   return (uint16_t)JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::Status)).toInt32();
 }
 
+void Response::set_status(JSObject *obj, uint16_t status) {
+  MOZ_ASSERT(is_instance(obj));
+  SetReservedSlot(obj, static_cast<uint32_t>(Slots::Status), JS::Int32Value(status));
+}
+
 JSString *Response::status_message(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
   return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::StatusMessage)).toString();
@@ -2044,14 +2051,32 @@ bool Response::url_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 }
 
 namespace {
+JSString *type_basic_atom;
+JSString *type_cors_atom;
 JSString *type_default_atom;
 JSString *type_error_atom;
+JSString *type_opaque_atom;
+JSString *type_opaque_redirect_atom;
 } // namespace
 
 bool Response::type_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
 
-  args.rval().setString(status(self) == 0 ? type_error_atom : type_default_atom);
+  auto ty = static_cast<Type>(
+      JS::GetReservedSlot(self, static_cast<size_t>(Slots::Type)).toInt32());
+
+  JSString *type_str = nullptr;
+
+  switch(ty) {
+  case Type::Basic: type_str = type_basic_atom; break;
+  case Type::Cors: type_str = type_cors_atom; break;
+  case Type::Default: type_str = type_default_atom; break;
+  case Type::Error: type_str = type_error_atom; break;
+  case Type::Opaque: type_str = type_opaque_atom; break;
+  case Type::OpaqueRedirect: type_str = type_opaque_redirect_atom; break;
+  }
+
+  args.rval().setString(status(self) == 0 ? type_error_atom : type_str);
   return true;
 }
 
@@ -2345,15 +2370,8 @@ const JSPropertySpec Response::properties[] = {
     JS_PS_END,
 };
 
-/**
- * The `Response` constructor https://fetch.spec.whatwg.org/#dom-response
- */
-bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
-  CTOR_HEADER("Response", 0);
-
-  JS::RootedValue body_val(cx, args.get(0));
-  JS::RootedValue init_val(cx, args.get(1));
-
+bool Response::initialize(JSContext *cx, JS::HandleObject response, JS::HandleValue body_val,
+                          JS::HandleValue init_val) {
   JS::RootedValue status_val(cx);
   uint16_t status = 200;
 
@@ -2403,10 +2421,6 @@ bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  JS::RootedObject response(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  if (!response) {
-    return false;
-  }
   init_slots(response);
 
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Headers), JS::ObjectValue(*headers));
@@ -2459,6 +2473,19 @@ bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     }
   }
 
+  return true;
+}
+/**
+ * The `Response` constructor https://fetch.spec.whatwg.org/#dom-response
+ */
+bool Response::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
+  CTOR_HEADER("Response", 0);
+
+  JS::RootedObject response(cx, JS_NewObjectForConstructor(cx, &class_, args));
+  if (!response || !initialize(cx, response, args.get(0), args.get(1))) {
+    return false;
+  }
+
   args.rval().setObject(*response);
   return true;
 }
@@ -2470,8 +2497,12 @@ bool Response::init_class(JSContext *cx, JS::HandleObject global) {
 
   // Initialize a pinned (i.e., never-moved, living forever) atom for the
   // response type values.
-  return (type_default_atom = JS_AtomizeAndPinString(cx, "default")) &&
-         (type_error_atom = JS_AtomizeAndPinString(cx, "error"));
+  return (type_basic_atom = JS_AtomizeAndPinString(cx, "basic")) &&
+         (type_cors_atom = JS_AtomizeAndPinString(cx, "cors")) &&
+         (type_default_atom = JS_AtomizeAndPinString(cx, "default")) &&
+         (type_error_atom = JS_AtomizeAndPinString(cx, "error")) &&
+         (type_opaque_atom = JS_AtomizeAndPinString(cx, "opaque")) &&
+         (type_opaque_redirect_atom = JS_AtomizeAndPinString(cx, "opaqueredirect"));
 }
 
 JSObject *Response::create(JSContext *cx) {
@@ -2492,6 +2523,7 @@ JSObject *Response::init_slots(HandleObject response) {
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::HasBody), JS::FalseValue());
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::BodyUsed), JS::FalseValue());
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Redirected), JS::FalseValue());
+  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Type), JS::Int32Value(Type::Default));
 
   return response;
 }
@@ -2503,6 +2535,7 @@ JSObject *Response::create_incoming(JSContext *cx, host_api::HttpIncomingRespons
   }
 
   JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::Response), PrivateValue(response));
+  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS::Int32Value(Type::Default));
 
   auto res = response->status();
   MOZ_ASSERT(!res.is_err(), "TODO: proper error handling");

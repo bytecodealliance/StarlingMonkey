@@ -1160,7 +1160,7 @@ std::tuple<host_api::HostString, host_api::HostString> *
 Headers::get_index(JSContext *cx, JS::HandleObject self, size_t index) {
   MOZ_ASSERT(is_instance(self));
   std::vector<size_t> *headers_sort_list = Headers::headers_sort_list(self);
-  HeadersList *headers_list = Headers::headers_list(self);
+  HeadersList *headers_list = Headers::get_list(cx, self);
 
   ensure_updated_sort_list(headers_list, headers_sort_list);
   MOZ_RELEASE_ASSERT(index < headers_sort_list->size());
@@ -1170,7 +1170,7 @@ Headers::get_index(JSContext *cx, JS::HandleObject self, size_t index) {
 
 std::optional<size_t> Headers::lookup(JSContext *cx, HandleObject self, string_view key) {
   MOZ_ASSERT(is_instance(self));
-  const HeadersList *headers_list = Headers::headers_list(self);
+  const HeadersList *headers_list = Headers::get_list(cx, self);
   std::vector<size_t> *headers_sort_list = Headers::headers_sort_list(self);
 
   ensure_updated_sort_list(headers_list, headers_sort_list);

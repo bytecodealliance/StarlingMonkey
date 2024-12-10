@@ -73,7 +73,9 @@ add_builtin(
     SRC
         builtins/web/fetch/fetch-api.cpp
         builtins/web/fetch/headers.cpp
-        builtins/web/fetch/request-response.cpp)
+        builtins/web/fetch/request-response.cpp
+    DEPENDENCIES
+        fmt)
 
 add_builtin(
     builtins::web::fetch::fetch_event
@@ -92,6 +94,7 @@ add_builtin(
         builtins/web/crypto/crypto-key-rsa-components.cpp
         builtins/web/crypto/json-web-key.cpp
         builtins/web/crypto/subtle-crypto.cpp
+        builtins/web/crypto/uuid.cpp
     DEPENDENCIES
         OpenSSL::Crypto
         fmt
