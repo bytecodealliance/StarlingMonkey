@@ -38,7 +38,7 @@ include("${HOST_API}/host_api.cmake")
 include("build-crates")
 
 add_library(extension_api INTERFACE include/extension-api.h runtime/encode.h runtime/decode.h)
-target_link_libraries(extension_api INTERFACE rust-url spidermonkey)
+target_link_libraries(extension_api INTERFACE rust-url rust-uuid spidermonkey)
 target_include_directories(extension_api INTERFACE include deps/include runtime)
 
 include("builtins")

@@ -88,6 +88,9 @@ class URL : public FinalizableBuiltinImpl<URL> {
   static bool origin_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool searchParams_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
+  static bool createObjectURL(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool revokeObjectURL(JSContext *cx, unsigned argc, JS::Value *vp);
+
   static bool toString(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool toJSON(JSContext *cx, unsigned argc, JS::Value *vp);
 

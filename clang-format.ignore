@@ -1,4 +1,5 @@
 deps/include/wizer.h
 crates/rust-url/rust-url.h
+crates/rust-url/rust-uuid.h
 crates/rust-encoding/rust-encoding.h
 bindings.h
