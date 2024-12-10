@@ -58,6 +58,12 @@ public:
   using ByteBuffer = js::Vector<uint8_t, 0, js::SystemAllocPolicy>;
   using ReadersMap = JS::GCHashMap<HeapObj, BlobReader, js::StableCellHasher<HeapObj>, js::SystemAllocPolicy>;
 
+  static bool arrayBuffer(JSContext *cx, HandleObject self, MutableHandleValue rval);
+  static bool bytes(JSContext *cx, HandleObject self, MutableHandleValue rval);
+  static bool stream(JSContext *cx, HandleObject self, MutableHandleValue rval);
+  static bool text(JSContext *cx, HandleObject self, MutableHandleValue rval);
+  static bool slice(JSContext *cx, HandleObject self, const CallArgs &args, MutableHandleValue rval);
+
   static ReadersMap *readers(JSObject *self);
   static ByteBuffer *blob(JSObject *self);
   static size_t blob_size(JSObject *self);
@@ -75,7 +81,9 @@ public:
   static JSObject *data_to_owned_array_buffer(JSContext *cx, HandleObject self);
   static JSObject *data_to_owned_array_buffer(JSContext *cx, HandleObject self, size_t offset,
                                               size_t size, size_t *bytes_read);
+
   static JSObject *create(JSContext *cx, UniqueChars data, size_t data_len, HandleString type);
+  static JSObject *create(JSContext *cx, HandleValue blobParts, HandleValue opts);
 
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);

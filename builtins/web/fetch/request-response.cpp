@@ -305,7 +305,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
 
   if (Blob::is_instance(body_obj)) {
     RootedValue stream(cx);
-    if (!Call(cx, body_obj, "stream", HandleValueArray::empty(), &stream)) {
+    if (!Blob::stream(cx, body_obj, &stream)) {
       return false;
     }
 
