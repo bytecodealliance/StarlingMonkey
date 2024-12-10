@@ -9,7 +9,7 @@
     "status": "PASS"
   },
   "Fetch with POST with Blob body": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Fetch with POST with ArrayBuffer body": {
     "status": "PASS"
@@ -33,7 +33,7 @@
     "status": "PASS"
   },
   "Fetch with POST with Blob body with mime type": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Fetch with POST with ReadableStream containing String": {
     "status": "PASS"

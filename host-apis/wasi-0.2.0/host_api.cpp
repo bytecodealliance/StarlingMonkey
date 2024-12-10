@@ -272,6 +272,7 @@ Result<Void> HttpHeaders::append(string_view name, string_view value) {
       return Result<Void>::err(154);
     case WASI_HTTP_TYPES_HEADER_ERROR_IMMUTABLE:
       MOZ_ASSERT_UNREACHABLE("Headers should not be immutable");
+      [[fallthrough]];
     default:
       MOZ_ASSERT_UNREACHABLE("Unknown header error type");
     }
