@@ -1,0 +1,56 @@
+{
+  "Fetching [GET] URL.createObjectURL(blob) is OK": {
+    "status": "FAIL"
+  },
+  "Fetching [GET] blob:http://www.web-platform.test:8000/ is KO": {
+    "status": "FAIL"
+  },
+  "Fetching [POST] URL.createObjectURL(blob) is KO": {
+    "status": "FAIL"
+  },
+  "Fetching [OPTIONS] URL.createObjectURL(blob) is KO": {
+    "status": "FAIL"
+  },
+  "Fetching [HEAD] URL.createObjectURL(blob) is KO": {
+    "status": "FAIL"
+  },
+  "Fetching [PUT] URL.createObjectURL(blob) is KO": {
+    "status": "FAIL"
+  },
+  "Fetching [DELETE] URL.createObjectURL(blob) is KO": {
+    "status": "FAIL"
+  },
+  "Fetching [INVALID] URL.createObjectURL(blob) is KO": {
+    "status": "FAIL"
+  },
+  "Fetching [GET] blob:not-backed-by-a-blob/ is KO": {
+    "status": "FAIL"
+  },
+  "Fetching URL.createObjectURL(empty_blob) is OK": {
+    "status": "FAIL"
+  },
+  "Fetching URL.createObjectURL(empty_type_blob) is OK": {
+    "status": "FAIL"
+  },
+  "Fetching URL.createObjectURL(empty_data_blob) is OK": {
+    "status": "FAIL"
+  },
+  "Fetching URL.createObjectURL(invalid_type_blob) is OK": {
+    "status": "FAIL"
+  },
+  "Blob content is not sniffed for a content type [image/png]": {
+    "status": "FAIL"
+  },
+  "Blob content is not sniffed for a content type [text/xml]": {
+    "status": "FAIL"
+  },
+  "Set content type to the empty string for slice with invalid content type": {
+    "status": "FAIL"
+  },
+  "Set content type to the empty string for slice with no content type ": {
+    "status": "FAIL"
+  },
+  "Blob.slice should not sniff the content for a content type": {
+    "status": "FAIL"
+  }
+}

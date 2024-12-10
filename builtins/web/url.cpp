@@ -1,13 +1,22 @@
-#include "js/Array.h"
-
+#include "blob.h"
 #include "encode.h"
+#include "file.h"
 #include "rust-url.h"
+#include "rust-uuid.h"
 #include "sequence.hpp"
 #include "url.h"
+
+#include "js/Array.h"
+#include "js/AllocPolicy.h"
+#include "js/GCHashTable.h"
+#include "js/TypeDecls.h"
 
 namespace builtins {
 namespace web {
 namespace url {
+
+using blob::Blob;
+using file::File;
 
 bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
@@ -439,6 +448,8 @@ ACCESSOR(username)
 #undef ACCESSOR
 
 const JSFunctionSpec URL::static_methods[] = {
+    JS_FN("createObjectURL", createObjectURL, 1, JSPROP_ENUMERATE),
+    JS_FN("revokeObjectURL", revokeObjectURL, 1, JSPROP_ENUMERATE),
     JS_FS_END,
 };
 
@@ -467,6 +478,91 @@ const JSPropertySpec URL::properties[] = {
     JS_PSGS("username", URL::username_get, URL::username_set, JSPROP_ENUMERATE),
     JS_PS_END,
 };
+
+struct UrlKey {
+  std::string key_;
+
+  UrlKey() {}
+  UrlKey(std::string key) : key_(std::move(key)) {}
+
+  void trace(JSTracer *trc) {}
+};
+
+struct UrlKeyHasher {
+  using Lookup = const std::string&;
+
+  static mozilla::HashNumber hash(Lookup lookup) {
+    return mozilla::HashString(lookup.data());
+  }
+
+  static bool match(const UrlKey& key, Lookup lookup) {
+    return key.key_ == lookup;
+  }
+};
+
+static PersistentRooted<JS::GCHashMap<UrlKey, Heap<JSObject *>, UrlKeyHasher, js::SystemAllocPolicy>> URL_STORE;
+
+bool URL::createObjectURL(JSContext *cx, unsigned argc, JS::Value *vp) {
+  CallArgs args = JS::CallArgsFromVp(argc, vp);
+  if (!args.requireAtLeast(cx, "createObjectURL", 1)) {
+    return false;
+  }
+
+  HandleValue obj_val = args.get(0);
+  if (!obj_val.isObject()) {
+    return false;
+  }
+
+  RootedObject obj(cx, &obj_val.toObject());
+  if (!obj) {
+    return false;
+  }
+
+  if (!Blob::is_instance(obj) && !File::is_instance(obj)) {
+    return false;
+  }
+
+  std::string result = Blob::is_instance(obj) ? "blob:" : "file:";
+  auto uuid = jsuuid::make_uuid();
+
+  // TODO: How do we get the settings object?
+  // 3. Let settings be the current settings object
+  // 4. Let origin be settings’s origin.
+  // 5. Let serialized be the ASCII serialization of origin.
+  // 6. If serialized is "null", set it to an implementation-defined value.
+  // 7. Append serialized to result.
+
+  result.append("null");
+  result.append("/");
+  result.append(uuid.get());
+
+  RootedString url(cx, JS_NewStringCopyZ(cx, result.c_str()));
+  if (!url) {
+    return false;
+  }
+
+  if (!URL_STORE.get().put(result, obj)) {
+    return false;
+  }
+
+  args.rval().setString(url);
+  return true;
+}
+
+bool URL::revokeObjectURL(JSContext *cx, unsigned argc, JS::Value *vp) {
+  CallArgs args = JS::CallArgsFromVp(argc, vp);
+  if (!args.requireAtLeast(cx, "createObjectURL", 1)) {
+    return false;
+  }
+
+  auto chars = core::encode(cx, args.get(0));
+  if (!chars.ptr) {
+    return false;
+  }
+
+  URL_STORE.get().remove(chars.ptr.get());
+  return true;
+}
 
 const jsurl::JSUrl *URL::url(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
@@ -611,6 +707,7 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, JS::HandleValue url_
 }
 
 bool URL::init_class(JSContext *cx, JS::HandleObject global) {
+  // URL_STORE.init(cx);
   return URL::init_class_impl(cx, global);
 }
 
