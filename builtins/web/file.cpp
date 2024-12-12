@@ -100,14 +100,6 @@ bool File::lastModified_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
-JSObject *File::blob(JSObject *self) {
-  MOZ_ASSERT(is_instance(self));
-  auto blob = &JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Data)).toObject();
-
-  MOZ_ASSERT(blob);
-  return blob;
-}
-
 bool File::is_instance(const JSObject *obj) {
   return obj != nullptr
     && (JS::GetClass(obj) == &class_ || JS::GetClass(obj) == &Blob::class_);
