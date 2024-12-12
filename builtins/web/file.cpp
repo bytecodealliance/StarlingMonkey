@@ -37,24 +37,24 @@ bool init_last_modified(JSContext *cx, HandleValue initv, MutableHandleValue rva
 
   // If `lastModified` is not provided, set d to the current date and time.
   auto now = std::chrono::system_clock::now();
-  auto ms_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+  auto ms_since_epoch =
+      std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 
   rval.setInt32(ms_since_epoch);
   return true;
 }
 
-}  // namespace
+} // namespace
 
 namespace builtins {
 namespace web {
 namespace file {
 
-
 using blob::Blob;
 
 enum ParentSlots {
-    Name = Blob::Slots::Reserved1,
-    LastModified = Blob::Slots::Reserved2,
+  Name = Blob::Slots::Reserved1,
+  LastModified = Blob::Slots::Reserved2,
 };
 
 const JSFunctionSpec File::static_methods[] = {
@@ -95,19 +95,17 @@ bool File::lastModified_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     return api::throw_error(cx, api::Errors::WrongReceiver, "lastModified get", "File");
   }
 
-  auto lastModified = JS::GetReservedSlot(self, static_cast<size_t>(ParentSlots::LastModified)).toInt32();
+  auto lastModified =
+      JS::GetReservedSlot(self, static_cast<size_t>(ParentSlots::LastModified)).toInt32();
   args.rval().setNumber(lastModified);
   return true;
 }
 
 bool File::is_instance(const JSObject *obj) {
-  return obj != nullptr
-    && (JS::GetClass(obj) == &class_ || JS::GetClass(obj) == &Blob::class_);
+  return obj != nullptr && (JS::GetClass(obj) == &class_ || JS::GetClass(obj) == &Blob::class_);
 }
 
-bool File::is_instance(const Value val) {
-  return val.isObject() && is_instance(&val.toObject());
-}
+bool File::is_instance(const Value val) { return val.isObject() && is_instance(&val.toObject()); }
 
 bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("File", 2);
@@ -133,7 +131,6 @@ bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   blob_args[0].set(fileBits);
   blob_args[1].set(opts);
 
-
   // 1. Let bytes be the result of processing blob parts given fileBits and options.
   //
   // We call the Blob constructor on `self` object to initialize it as a Blob.
@@ -152,8 +149,8 @@ bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // 3. Process `FilePropertyBag` dictionary argument by running the following substeps:
   //  1. and 2 - the steps for processing a `type` member are ensured by Blob implementation.
-  //  3. If the `lastModified` member is provided, let d be set to the lastModified dictionary member.
-  //  If it is not provided, set d to the current date and time represented as the number of
+  //  3. If the `lastModified` member is provided, let d be set to the lastModified dictionary
+  //  member. If it is not provided, set d to the current date and time represented as the number of
   //  milliseconds since the Unix Epoch.
   RootedValue lastModified(cx);
   if (!init_last_modified(cx, opts, &lastModified)) {
@@ -180,9 +177,7 @@ bool File::init_class(JSContext *cx, JS::HandleObject global) {
   return init_class_impl(cx, global, Blob::proto_obj);
 }
 
-bool install(api::Engine *engine) {
-    return File::init_class(engine->cx(), engine->global());
-}
+bool install(api::Engine *engine) { return File::init_class(engine->cx(), engine->global()); }
 
 } // namespace file
 } // namespace web

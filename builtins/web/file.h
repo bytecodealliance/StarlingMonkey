@@ -6,7 +6,7 @@
 namespace builtins {
 namespace web {
 namespace file {
-class File: public BuiltinImpl<File> {
+class File : public BuiltinImpl<File> {
   static bool name_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool lastModified_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
