@@ -153,6 +153,18 @@ namespace blob {
 
 using js::Vector;
 
+#define DEFINE_BLOB_METHOD(name)                               \
+bool Blob::name(JSContext *cx, unsigned argc, JS::Value *vp) { \
+  METHOD_HEADER(0)                                             \
+  return name(cx, self, args.rval());                          \
+}
+
+#define DEFINE_BLOB_METHOD_W_ARGS(name)                        \
+bool Blob::name(JSContext *cx, unsigned argc, JS::Value *vp) { \
+  METHOD_HEADER(0)                                             \
+  return name(cx, self, args, args.rval());                    \
+}
+
 const JSFunctionSpec Blob::static_methods[] = {
     JS_FS_END,
 };
@@ -267,15 +279,19 @@ JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self, siz
   return array_buffer;
 }
 
-bool Blob::arrayBuffer(JSContext *cx, unsigned argc, JS::Value *vp) {
-  METHOD_HEADER(0)
+DEFINE_BLOB_METHOD(arrayBuffer)
+DEFINE_BLOB_METHOD(bytes)
+DEFINE_BLOB_METHOD(stream)
+DEFINE_BLOB_METHOD(text)
+DEFINE_BLOB_METHOD_W_ARGS(slice)
 
+bool Blob::arrayBuffer(JSContext *cx, HandleObject self, MutableHandleValue rval) {
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
   if (!promise) {
     return false;
   }
 
-  args.rval().setObject(*promise);
+  rval.setObject(*promise);
 
   auto buffer = data_to_owned_array_buffer(cx, self);
   if (!buffer) {
@@ -289,15 +305,13 @@ bool Blob::arrayBuffer(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
-bool Blob::bytes(JSContext *cx, unsigned argc, JS::Value *vp) {
-  METHOD_HEADER(0)
-
+bool Blob::bytes(JSContext *cx, HandleObject self, MutableHandleValue rval) {
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
   if (!promise) {
     return false;
   }
 
-  args.rval().setObject(*promise);
+  rval.setObject(*promise);
 
   JS::RootedObject buffer(cx, data_to_owned_array_buffer(cx, self));
   if (!buffer) {
@@ -317,9 +331,7 @@ bool Blob::bytes(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
-bool Blob::slice(JSContext *cx, unsigned argc, JS::Value *vp) {
-  METHOD_HEADER(0)
-
+bool Blob::slice(JSContext *cx, HandleObject self, const CallArgs &args, MutableHandleValue rval) {
   auto src = Blob::blob(self);
   int64_t size = src->length();
   int64_t start = 0;
@@ -364,13 +376,11 @@ bool Blob::slice(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  args.rval().setObject(*new_blob);
+  rval.setObject(*new_blob);
   return true;
 }
 
-bool Blob::stream(JSContext *cx, unsigned argc, JS::Value *vp) {
-  METHOD_HEADER(0)
-
+bool Blob::stream(JSContext *cx, HandleObject self, MutableHandleValue rval) {
   auto native_stream = streams::NativeStreamSource::create(cx, self, JS::UndefinedHandleValue,
                                                            stream_pull, stream_cancel);
 
@@ -392,19 +402,17 @@ bool Blob::stream(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  args.rval().setObject(*stream);
+  rval.setObject(*stream);
   return true;
 }
 
-bool Blob::text(JSContext *cx, unsigned argc, JS::Value *vp) {
-  METHOD_HEADER(0)
-
+bool Blob::text(JSContext *cx, HandleObject self, MutableHandleValue rval) {
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
   if (!promise) {
     return false;
   }
 
-  args.rval().setObject(*promise);
+  rval.setObject(*promise);
 
   auto src = Blob::blob(self);
   auto encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
