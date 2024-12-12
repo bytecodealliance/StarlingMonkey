@@ -51,7 +51,7 @@ public:
   static const JSPropertySpec properties[];
 
   static constexpr unsigned ctor_length = 0;
-  enum Slots { Data, Type, Endings, Readers, Count };
+  enum Slots { Data, Type, Endings, Readers, Reserved2, Reserved1, Count };
   enum LineEndings { Transparent, Native };
 
   using HeapObj = Heap<JSObject *>;
