@@ -617,7 +617,7 @@ wasi_http_types_method_t http_method_to_host(string_view method_str) {
     return wasi_http_types_method_t{WASI_HTTP_TYPES_METHOD_GET};
   }
 
-  auto method = method_str.begin();
+  const char *method = method_str.data();
   for (uint8_t i = 0; i < WASI_HTTP_TYPES_METHOD_OTHER; i++) {
     auto name = http_method_names[i];
     if (strcasecmp(method, name) == 0) {
