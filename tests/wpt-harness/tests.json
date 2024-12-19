@@ -172,6 +172,7 @@
   "FileAPI/blob/Blob-slice-overflow.any.js",
   "FileAPI/blob/Blob-stream.any.js",
   "FileAPI/blob/Blob-text.any.js",
+  "FileAPI/file/File-constructor.any.js",
   "hr-time/basic.any.js",
   "hr-time/idlharness.any.js",
   "hr-time/monotonic-clock.any.js",

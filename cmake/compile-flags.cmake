@@ -17,7 +17,7 @@ list(APPEND CMAKE_EXE_LINKER_FLAGS
 list(JOIN CMAKE_EXE_LINKER_FLAGS " " CMAKE_EXE_LINKER_FLAGS)
 
 list(APPEND CMAKE_CXX_FLAGS
-        -std=gnu++20 -Wall -Werror -Qunused-arguments
+        -std=gnu++20 -Wall -Werror -Qunused-arguments -Wimplicit-fallthrough
         -fno-sized-deallocation -fno-aligned-new -mthread-model single
         -fPIC -fno-rtti -fno-exceptions -fno-math-errno -pipe
         -fno-omit-frame-pointer -funwind-tables -m32
