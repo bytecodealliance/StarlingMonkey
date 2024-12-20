@@ -1,4 +1,4 @@
-set(SM_REV b02d76023a15a3fa8c8f54bff5dac91099669003)
+set(SM_REV b30ec577023a5c62a779f7b9a9a1f14bd3b38cdd)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(SM_BUILD_TYPE debug)
@@ -24,7 +24,7 @@ if (DEFINED ENV{SPIDERMONKEY_BINARIES})
     set(SM_SOURCE_DIR $ENV{SPIDERMONKEY_BINARIES})
 else()
     CPMAddPackage(NAME spidermonkey-${SM_BUILD_TYPE}
-            URL https://github.com/bytecodealliance/spidermonkey-wasi-embedding/releases/download/rev_${SM_REV}/spidermonkey-wasm-static-lib_${SM_BUILD_TYPE}.tar.gz
+            URL https://github.com/andreiltd/spidermonkey-wasi-embedding/releases/download/rev_${SM_REV}/spidermonkey-wasm-static-lib_${SM_BUILD_TYPE}.tar.gz
             DOWNLOAD_ONLY YES
     )
 
