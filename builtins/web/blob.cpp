@@ -677,6 +677,8 @@ JSObject *Blob::create(JSContext *cx, UniqueChars data, size_t data_len, HandleS
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS::StringValue(type));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Readers), JS::PrivateValue(new ReadersMap));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Reserved1), JS::NullValue());
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Reserved2), JS::NullValue());
   return self;
 }
 
@@ -695,6 +697,8 @@ bool Blob::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(new ByteBuffer));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Readers), JS::PrivateValue(new ReadersMap));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Reserved1), JS::NullValue());
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Reserved2), JS::NullValue());
 
   // Walk the blob parts and append them to the blob's buffer.
   if (blobParts.isNull()) {

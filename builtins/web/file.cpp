@@ -102,26 +102,26 @@ bool File::lastModified_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 }
 
 bool File::is_instance(const JSObject *obj) {
-  return obj != nullptr && (JS::GetClass(obj) == &class_ || JS::GetClass(obj) == &Blob::class_);
+  return obj != nullptr
+    && JS::GetClass(obj) == &Blob::class_
+    && !JS::GetReservedSlot(
+      (JSObject *)obj,
+      static_cast<size_t>(ParentSlots::Name)).isNullOrUndefined();
 }
 
-bool File::is_instance(const Value val) { return val.isObject() && is_instance(&val.toObject()); }
+bool File::is_instance(const Value val) {
+  return val.isObject() && is_instance(&val.toObject());
+}
 
-bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
-  CTOR_HEADER("File", 2);
-
-  RootedValue fileBits(cx, args.get(0));
-  RootedValue fileName(cx, args.get(1));
-  RootedValue opts(cx, args.get(2));
-
+JSObject *File::create(JSContext *cx, HandleValue fileBits, HandleValue fileName, HandleValue opts) {
   RootedObject blob_ctor(cx, JS_GetConstructor(cx, Blob::proto_obj));
   if (!blob_ctor) {
-    return false;
+    return nullptr;
   }
 
   RootedObject this_ctor(cx, JS_GetConstructor(cx, File::proto_obj));
   if (!this_ctor) {
-    return false;
+    return nullptr;
   }
 
   MOZ_ASSERT(JS::IsConstructor(blob_ctor));
@@ -138,13 +138,13 @@ bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   RootedValue blob_ctor_val(cx, JS::ObjectValue(*blob_ctor));
   RootedObject self(cx);
   if (!JS::Construct(cx, blob_ctor_val, this_ctor, blob_args, &self)) {
-    return false;
+    return nullptr;
   }
 
   // 2. Let n be the fileName argument to the constructor.
   RootedString name(cx, JS::ToString(cx, fileName));
   if (!name) {
-    return false;
+    return nullptr;
   }
 
   // 3. Process `FilePropertyBag` dictionary argument by running the following substeps:
@@ -154,7 +154,7 @@ bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   //  milliseconds since the Unix Epoch.
   RootedValue lastModified(cx);
   if (!init_last_modified(cx, opts, &lastModified)) {
-    return false;
+    return nullptr;
   }
 
   // Return a new File object F such that:
@@ -168,6 +168,21 @@ bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   //  and the `lastModified` properties.
   SetReservedSlot(self, static_cast<uint32_t>(ParentSlots::Name), JS::StringValue(name));
   SetReservedSlot(self, static_cast<uint32_t>(ParentSlots::LastModified), lastModified);
+
+  return self;
+}
+
+bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
+  CTOR_HEADER("File", 2);
+
+  RootedValue fileBits(cx, args.get(0));
+  RootedValue fileName(cx, args.get(1));
+  RootedValue opts(cx, args.get(2));
+
+  RootedObject self(cx, create(cx, fileBits, fileName, opts));
+  if (!self) {
+    return false;
+  }
 
   args.rval().setObject(*self);
   return true;

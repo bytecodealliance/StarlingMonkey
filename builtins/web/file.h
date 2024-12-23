@@ -24,6 +24,7 @@ public:
   static bool is_instance(const JSObject *obj);
   static bool is_instance(const Value val);
 
+  static JSObject *create(JSContext *cx, HandleValue fileBits, HandleValue fileName, HandleValue opts);
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
 };
