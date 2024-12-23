@@ -1,0 +1,11 @@
+{
+  "Iteration skips elements removed while iterating": {
+    "status": "FAIL"
+  },
+  "Removing elements already iterated over causes an element to be skipped during iteration": {
+    "status": "FAIL"
+  },
+  "Appending a value pair during iteration causes it to be reached during iteration": {
+    "status": "FAIL"
+  }
+}

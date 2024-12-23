@@ -1,0 +1,26 @@
+{
+  "Initialize Request with headers values": {
+    "status": "PASS"
+  },
+  "Initialize Request's body with \"undefined\", undefined": {
+    "status": "PASS"
+  },
+  "Initialize Request's body with \"null\", null": {
+    "status": "PASS"
+  },
+  "Initialize Request's body with \"[object Blob]\", application/octet-binary": {
+    "status": "PASS"
+  },
+  "Initialize Request's body with \"[object Object]\", multipart/form-data": {
+    "status": "FAIL"
+  },
+  "Initialize Request's body with \"This is a USVString\", text/plain;charset=UTF-8": {
+    "status": "PASS"
+  },
+  "Initialize Request's body with \"hi!\", text/plain;charset=UTF-8": {
+    "status": "PASS"
+  },
+  "Initialize Request's body with \"name=value\", application/x-www-form-urlencoded;charset=UTF-8": {
+    "status": "PASS"
+  }
+}

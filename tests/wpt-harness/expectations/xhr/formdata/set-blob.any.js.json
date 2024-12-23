@@ -1,0 +1,17 @@
+{
+  "blob without type": {
+    "status": "FAIL"
+  },
+  "blob with type": {
+    "status": "FAIL"
+  },
+  "blob with custom name": {
+    "status": "FAIL"
+  },
+  "file without lastModified or custom name": {
+    "status": "FAIL"
+  },
+  "file with lastModified and custom name": {
+    "status": "FAIL"
+  }
+}
