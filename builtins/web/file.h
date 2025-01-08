@@ -1,6 +1,7 @@
 #ifndef BUILTINS_WEB_FILE_H
 #define BUILTINS_WEB_FILE_H
 
+#include "blob.h"
 #include "builtin.h"
 
 namespace builtins {
@@ -11,7 +12,8 @@ class File : public BuiltinImpl<File> {
   static bool lastModified_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
 public:
-  enum Slots { Count };
+  static constexpr int ParentSlots = blob::Blob::Slots::Count;
+  enum Slots { Name = ParentSlots, LastModified, Count };
 
   static constexpr const char *class_name = "File";
   static constexpr unsigned ctor_length = 2;
@@ -21,10 +23,7 @@ public:
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
 
-  static bool is_instance(const JSObject *obj);
-  static bool is_instance(const Value val);
-
-  static JSObject *create(JSContext *cx, HandleValue fileBits, HandleValue fileName, HandleValue opts);
+  static bool init(JSContext *cx, HandleObject self, HandleValue fileBits, HandleValue fileName, HandleValue opts);
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
 };

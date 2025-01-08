@@ -51,7 +51,7 @@ public:
   static const JSPropertySpec properties[];
 
   static constexpr unsigned ctor_length = 0;
-  enum Slots { Data, Type, Endings, Readers, Reserved1, Reserved2, Count };
+  enum Slots { Data, Type, Endings, Readers, Count };
   enum LineEndings { Transparent, Native };
 
   using HeapObj = Heap<JSObject *>;
@@ -69,9 +69,13 @@ public:
   static size_t blob_size(JSObject *self);
   static JSString *type(JSObject *self);
   static LineEndings line_endings(JSObject *self);
+
+  static bool is_instance(const JSObject *obj);
+  static bool is_instance(const Value val);
   static bool append_value(JSContext *cx, HandleObject self, HandleValue val);
   static bool init_blob_parts(JSContext *cx, HandleObject self, HandleValue iterable);
   static bool init_options(JSContext *cx, HandleObject self, HandleValue opts);
+  static bool init(JSContext *cx, HandleObject self, HandleValue blobParts, HandleValue opts);
 
   static bool stream_cancel(JSContext *cx, JS::CallArgs args, JS::HandleObject stream,
                             JS::HandleObject owner, JS::HandleValue reason);

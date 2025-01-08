@@ -533,6 +533,14 @@ public:
   static void unsubscribe(PollableHandle handle_id);
 };
 
+class WallClock final {
+public:
+  WallClock() = delete;
+
+  static uint64_t now();
+  static uint64_t resolution();
+};
+
 vector<std::string> environment_get_arguments();
 
 } // namespace host_api

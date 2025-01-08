@@ -107,6 +107,22 @@ void MonotonicClock::unsubscribe(const int32_t handle_id) {
   wasi_io_poll_pollable_drop_own(own_pollable_t{handle_id});
 }
 
+uint64_t WallClock::now() {
+  wasi_clocks_wall_clock_datetime_t time_now;
+  wasi_clocks_wall_clock_now(&time_now);
+
+  uint64_t total_nanoseconds = time_now.seconds * 1000000000ULL + time_now.nanoseconds;
+  return total_nanoseconds;
+}
+
+uint64_t WallClock::resolution() {
+  wasi_clocks_wall_clock_datetime_t resolution;
+  wasi_clocks_wall_clock_resolution(&resolution);
+
+  uint64_t total_nanoseconds = resolution.seconds * 1000000000ULL + resolution.nanoseconds;
+  return total_nanoseconds;
+}
+
 vector<std::string> environment_get_arguments() {
   bindings_list_string_t raw_args = {};
   wasi_cli_environment_get_arguments(&raw_args);

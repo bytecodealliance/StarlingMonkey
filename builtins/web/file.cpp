@@ -1,6 +1,7 @@
 #include "file.h"
 #include "blob.h"
 
+#include "host_api.h"
 #include "js/CallAndConstruct.h"
 #include "js/CallArgs.h"
 #include "js/TypeDecls.h"
@@ -35,10 +36,10 @@ bool init_last_modified(JSContext *cx, HandleValue initv, MutableHandleValue rva
     }
   }
 
-  // If `lastModified` is not provided, set d to the current date and time.
-  auto now = std::chrono::system_clock::now();
-  auto ms_since_epoch =
-      std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+  // If the last modification date and time are not known, the attribute must return the
+  // current date and time representing the number of milliseconds since the Unix Epoch;
+  auto ns_since_epoch = host_api::WallClock::now();
+  auto ms_since_epoch = ns_since_epoch / 1000000ULL;
 
   rval.setInt32(ms_since_epoch);
   return true;
@@ -51,11 +52,6 @@ namespace web {
 namespace file {
 
 using blob::Blob;
-
-enum ParentSlots {
-  Name = Blob::Slots::Reserved1,
-  LastModified = Blob::Slots::Reserved2,
-};
 
 const JSFunctionSpec File::static_methods[] = {
     JS_FS_END,
@@ -83,7 +79,7 @@ bool File::name_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     return api::throw_error(cx, api::Errors::WrongReceiver, "name get", "File");
   }
 
-  auto name = JS::GetReservedSlot(self, static_cast<size_t>(ParentSlots::Name)).toString();
+  auto name = JS::GetReservedSlot(self, static_cast<size_t>(Slots::Name)).toString();
   args.rval().setString(name);
   return true;
 }
@@ -96,55 +92,21 @@ bool File::lastModified_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   auto lastModified =
-      JS::GetReservedSlot(self, static_cast<size_t>(ParentSlots::LastModified)).toInt32();
+      JS::GetReservedSlot(self, static_cast<size_t>(Slots::LastModified)).toInt32();
   args.rval().setNumber(lastModified);
   return true;
 }
 
-bool File::is_instance(const JSObject *obj) {
-  return obj != nullptr
-    && JS::GetClass(obj) == &Blob::class_
-    && !JS::GetReservedSlot(
-      (JSObject *)obj,
-      static_cast<size_t>(ParentSlots::Name)).isNullOrUndefined();
-}
-
-bool File::is_instance(const Value val) {
-  return val.isObject() && is_instance(&val.toObject());
-}
-
-JSObject *File::create(JSContext *cx, HandleValue fileBits, HandleValue fileName, HandleValue opts) {
-  RootedObject blob_ctor(cx, JS_GetConstructor(cx, Blob::proto_obj));
-  if (!blob_ctor) {
-    return nullptr;
-  }
-
-  RootedObject this_ctor(cx, JS_GetConstructor(cx, File::proto_obj));
-  if (!this_ctor) {
-    return nullptr;
-  }
-
-  MOZ_ASSERT(JS::IsConstructor(blob_ctor));
-  MOZ_ASSERT(JS::IsConstructor(this_ctor));
-
-  JS::RootedValueArray<2> blob_args(cx);
-  blob_args[0].set(fileBits);
-  blob_args[1].set(opts);
-
+bool File::init(JSContext *cx, HandleObject self, HandleValue fileBits, HandleValue fileName, HandleValue opts) {
   // 1. Let bytes be the result of processing blob parts given fileBits and options.
-  //
-  // We call the Blob constructor on `self` object to initialize it as a Blob.
-  // We pass `fileBits` and `options` to Blob constructor.
-  RootedValue blob_ctor_val(cx, JS::ObjectValue(*blob_ctor));
-  RootedObject self(cx);
-  if (!JS::Construct(cx, blob_ctor_val, this_ctor, blob_args, &self)) {
-    return nullptr;
+  if (!Blob::init(cx, self, fileBits, opts)) {
+    return false;
   }
 
   // 2. Let n be the fileName argument to the constructor.
   RootedString name(cx, JS::ToString(cx, fileName));
   if (!name) {
-    return nullptr;
+    return false;
   }
 
   // 3. Process `FilePropertyBag` dictionary argument by running the following substeps:
@@ -154,7 +116,7 @@ JSObject *File::create(JSContext *cx, HandleValue fileBits, HandleValue fileName
   //  milliseconds since the Unix Epoch.
   RootedValue lastModified(cx);
   if (!init_last_modified(cx, opts, &lastModified)) {
-    return nullptr;
+    return false;
   }
 
   // Return a new File object F such that:
@@ -166,10 +128,10 @@ JSObject *File::create(JSContext *cx, HandleValue fileBits, HandleValue fileName
   //
   //  Steps 2, 3 and 5 are handled by Blob. We extend the Blob by adding a `name`
   //  and the `lastModified` properties.
-  SetReservedSlot(self, static_cast<uint32_t>(ParentSlots::Name), JS::StringValue(name));
-  SetReservedSlot(self, static_cast<uint32_t>(ParentSlots::LastModified), lastModified);
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Name), JS::StringValue(name));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::LastModified), lastModified);
 
-  return self;
+  return true;
 }
 
 bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
@@ -179,8 +141,12 @@ bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   RootedValue fileName(cx, args.get(1));
   RootedValue opts(cx, args.get(2));
 
-  RootedObject self(cx, create(cx, fileBits, fileName, opts));
+  RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));
   if (!self) {
+    return false;
+  }
+
+  if (!init(cx, self, fileBits, fileName, opts)) {
     return false;
   }
 
