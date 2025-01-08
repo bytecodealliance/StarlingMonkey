@@ -2,11 +2,9 @@
 #include "blob.h"
 
 #include "host_api.h"
+#include "jsfriendapi.h"
 #include "js/CallAndConstruct.h"
-#include "js/CallArgs.h"
 #include "js/TypeDecls.h"
-
-#include "mozilla/Assertions.h"
 
 namespace {
 
@@ -28,7 +26,25 @@ bool init_last_modified(JSContext *cx, HandleValue initv, MutableHandleValue rva
           return false;
         }
 
-        if (ts.isNumber()) {
+        if (ts.isObject()) {
+          RootedObject date(cx, &ts.toObject());
+          bool is_valid = false;
+
+          if (!js::DateIsValid(cx, date, &is_valid)) {
+            return false;
+          }
+
+          if (is_valid) {
+            double ms_since_epoch;
+            if (!js::DateGetMsecSinceEpoch(cx, date, &ms_since_epoch)) {
+              return false;
+            }
+
+            rval.setNumber(ms_since_epoch);
+            return true;
+
+          }
+        } else if (ts.isNumber()) {
           rval.set(ts);
           return true;
         }
@@ -41,7 +57,7 @@ bool init_last_modified(JSContext *cx, HandleValue initv, MutableHandleValue rva
   auto ns_since_epoch = host_api::WallClock::now();
   auto ms_since_epoch = ns_since_epoch / 1000000ULL;
 
-  rval.setInt32(ms_since_epoch);
+  rval.setNumber(ms_since_epoch);
   return true;
 }
 
@@ -92,7 +108,7 @@ bool File::lastModified_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   auto lastModified =
-      JS::GetReservedSlot(self, static_cast<size_t>(Slots::LastModified)).toInt32();
+      JS::GetReservedSlot(self, static_cast<size_t>(Slots::LastModified)).toNumber();
   args.rval().setNumber(lastModified);
   return true;
 }
