@@ -1025,6 +1025,7 @@ bool Headers::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
                   JS::Int32Value(static_cast<int32_t>(HeadersGuard::None)));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::HeadersList), PrivateValue(nullptr));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::HeadersSortList), PrivateValue(nullptr));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Gen), JS::Int32Value(0));
 
   // walk the headers list writing in the ordered normalized case headers (distinct from the wire)
   if (!init_entries(cx, self, headersInit)) {
