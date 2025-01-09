@@ -14,6 +14,26 @@ struct FormDataEntry {
   void trace(JSTracer *trc) { TraceEdge(trc, &value, "FormDataEntry value"); }
 };
 
+
+class FormDataIterator : public BuiltinNoConstructor<FormDataIterator> {
+public:
+  static constexpr const char *class_name = "FormDataIterator";
+
+  enum Slots { Form, Type, Index, Count };
+
+  static bool next(JSContext *cx, unsigned argc, JS::Value *vp);
+
+  static const JSFunctionSpec static_methods[];
+  static const JSPropertySpec static_properties[];
+  static const JSFunctionSpec methods[];
+  static const JSPropertySpec properties[];
+
+  static const unsigned ctor_length = 0;
+
+  static JSObject *create(JSContext *cx, JS::HandleObject params, uint8_t type);
+  static bool init_class(JSContext *cx, JS::HandleObject global);
+};
+
 class FormData : public TraceableBuiltinImpl<FormData> {
   static bool append(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool remove(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -21,12 +41,18 @@ class FormData : public TraceableBuiltinImpl<FormData> {
   static bool getAll(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool has(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool set(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool forEach(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool entries(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool keys(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool values(JSContext *cx, unsigned argc, JS::Value *vp);
 
   static bool append(JSContext *cx, HandleObject self, std::string_view key, HandleValue val,
                      HandleValue filename);
 
   using EntryList = JS::GCVector<FormDataEntry, 0, js::SystemAllocPolicy>;
   static EntryList *entry_list(JSObject *self);
+
+  friend class FormDataIterator;
 
 public:
   static constexpr const char *class_name = "FormData";

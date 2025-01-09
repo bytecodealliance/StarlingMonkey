@@ -46,6 +46,113 @@ using host_api::HostString;
 using blob::Blob;
 using file::File;
 
+bool FormDataIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
+  METHOD_HEADER(0)
+  JS::RootedObject form_obj(cx, &JS::GetReservedSlot(self, Slots::Form).toObject());
+
+  const auto entries = FormData::entry_list(form_obj);
+  size_t index = JS::GetReservedSlot(self, Slots::Index).toInt32();
+  uint8_t type = JS::GetReservedSlot(self, Slots::Type).toInt32();
+
+  JS::RootedObject result(cx, JS_NewPlainObject(cx));
+  if (!result)
+    return false;
+
+  if (index == entries->length()) {
+    JS_DefineProperty(cx, result, "done", JS::TrueHandleValue, JSPROP_ENUMERATE);
+    JS_DefineProperty(cx, result, "value", JS::UndefinedHandleValue, JSPROP_ENUMERATE);
+
+    args.rval().setObject(*result);
+    return true;
+  }
+
+  JS_DefineProperty(cx, result, "done", JS::FalseHandleValue, JSPROP_ENUMERATE);
+  auto entry = entries->begin()[index];
+
+  JS::RootedString key_str(cx, JS_NewStringCopyZ(cx, entry.name.c_str()));
+  if (!key_str) {
+    return false;
+  }
+
+  JS::RootedValue key_val(cx, JS::StringValue(key_str));
+  JS::RootedValue val_val(cx, entry.value);
+  JS::RootedValue result_val(cx);
+
+  switch (type) {
+  case ITER_TYPE_ENTRIES: {
+    JS::RootedObject pair(cx, JS::NewArrayObject(cx, 2));
+    if (!pair)
+      return false;
+    JS_DefineElement(cx, pair, 0, key_val, JSPROP_ENUMERATE);
+    JS_DefineElement(cx, pair, 1, val_val, JSPROP_ENUMERATE);
+    result_val = JS::ObjectValue(*pair);
+    break;
+  }
+  case ITER_TYPE_KEYS: {
+    result_val = key_val;
+    break;
+  }
+  case ITER_TYPE_VALUES: {
+    result_val = val_val;
+    break;
+  }
+  default:
+    MOZ_RELEASE_ASSERT(false, "Invalid iter type");
+  }
+
+  JS_DefineProperty(cx, result, "value", result_val, JSPROP_ENUMERATE);
+
+  JS::SetReservedSlot(self, Slots::Index, JS::Int32Value(index + 1));
+  args.rval().setObject(*result);
+  return true;
+}
+
+const JSFunctionSpec FormDataIterator::static_methods[] = {
+    JS_FS_END,
+};
+
+const JSPropertySpec FormDataIterator::static_properties[] = {
+    JS_PS_END,
+};
+
+const JSFunctionSpec FormDataIterator::methods[] = {
+    JS_FN("next", FormDataIterator::next, 0, JSPROP_ENUMERATE),
+    JS_FS_END,
+};
+
+const JSPropertySpec FormDataIterator::properties[] = {
+    JS_PS_END,
+};
+
+bool FormDataIterator::init_class(JSContext *cx, JS::HandleObject global) {
+  JS::RootedObject iterator_proto(cx, JS::GetRealmIteratorPrototype(cx));
+  if (!iterator_proto)
+    return false;
+
+  if (!init_class_impl(cx, global, iterator_proto))
+    return false;
+
+  // Delete both the `FormDataIterator` global property and the
+  // `constructor` property on `FormDataIterator.prototype`. The latter
+  // because Iterators don't have their own constructor on the prototype.
+  return JS_DeleteProperty(cx, global, class_.name) &&
+         JS_DeleteProperty(cx, proto_obj, "constructor");
+}
+
+JSObject *FormDataIterator::create(JSContext *cx, JS::HandleObject form, uint8_t type) {
+  MOZ_RELEASE_ASSERT(type <= ITER_TYPE_VALUES);
+
+  JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
+  if (!self)
+    return nullptr;
+
+  JS::SetReservedSlot(self, Slots::Form, JS::ObjectValue(*form));
+  JS::SetReservedSlot(self, Slots::Type, JS::Int32Value(type));
+  JS::SetReservedSlot(self, Slots::Index, JS::Int32Value(0));
+
+  return self;
+}
+
 const JSFunctionSpec FormData::static_methods[] = {
     JS_FS_END,
 };
@@ -61,12 +168,19 @@ const JSFunctionSpec FormData::methods[] = {
     JS_FN("getAll", FormData::getAll, 0, JSPROP_ENUMERATE),
     JS_FN("has", FormData::has, 0, JSPROP_ENUMERATE),
     JS_FN("set", FormData::set, 0, JSPROP_ENUMERATE),
+    JS_FN("forEach", FormData::forEach, 0, JSPROP_ENUMERATE),
+    JS_FN("entries", FormData::entries, 0, JSPROP_ENUMERATE),
+    JS_FN("keys", FormData::keys, 0, JSPROP_ENUMERATE),
+    JS_FN("values", FormData::values, 0, JSPROP_ENUMERATE),
     JS_FS_END,
 };
 
 const JSPropertySpec FormData::properties[] = {
     JS_PS_END,
 };
+
+// Define entries, keys and values methods
+BUILTIN_ITERATOR_METHODS(FormData)
 
 FormData::EntryList* FormData::entry_list(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
@@ -328,7 +442,14 @@ bool FormData::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 bool install(api::Engine *engine) {
-  return FormData::init_class(engine->cx(), engine->global());
+  if (!FormData::init_class(engine->cx(), engine->global())) {
+    return false;
+  }
+  if (!FormDataIterator::init_class(engine->cx(), engine->global())) {
+    return false;
+  }
+
+  return true;
 }
 
 } // namespace form_data

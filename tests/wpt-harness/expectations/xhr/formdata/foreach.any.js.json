@@ -1,14 +1,14 @@
 {
   "Iterator should return duplicate keys and non-deleted values": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Entries iterator should return duplicate keys and non-deleted values": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Keys iterator should return duplicates": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Values iterator should return non-deleted values": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }
