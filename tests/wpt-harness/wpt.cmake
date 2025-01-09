@@ -23,13 +23,13 @@ endif()
 
 add_builtin(wpt_support
     SRC "${CMAKE_CURRENT_LIST_DIR}/wpt_builtins.cpp"
-    INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/builtins/web/")
+    INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src/builtins/web/")
 
 add_custom_command(
         OUTPUT wpt-runtime.wasm
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND ${CMAKE_COMMAND} -E env PATH=${WASM_TOOLS_DIR}:${WIZER_DIR}:$ENV{PATH} env "COMPONENTIZE_FLAGS=${COMPONENTIZE_FLAGS}" WPT_ROOT=${WPT_ROOT} ${CMAKE_CURRENT_SOURCE_DIR}/tests/wpt-harness/build-wpt-runtime.sh
-        DEPENDS starling-raw.wasm componentize.sh tests/wpt-harness/build-wpt-runtime.sh tests/wpt-harness/pre-harness.js tests/wpt-harness/post-harness.js
+        DEPENDS starling-raw.wasm scripts/componentize.sh tests/wpt-harness/build-wpt-runtime.sh tests/wpt-harness/pre-harness.js tests/wpt-harness/post-harness.js
         VERBATIM
 )
 

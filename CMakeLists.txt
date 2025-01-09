@@ -6,15 +6,15 @@ if (DEFINED ENV{HOST_API})
     if (EXISTS ${HOST_API})
         cmake_path(ABSOLUTE_PATH HOST_API)
     else ()
-        set(HOST_API ${CMAKE_CURRENT_SOURCE_DIR}/host-apis/$ENV{HOST_API})
+        set(HOST_API ${CMAKE_CURRENT_SOURCE_DIR}/src/host-apis/$ENV{HOST_API})
     endif()
     if (NOT EXISTS ${HOST_API})
         message(FATAL_ERROR "Host API `$ENV{HOST_API}` not found. The HOST_API environment \
-            variable must be the name of a host API implementation provided in the `host-apis` \
+            variable must be the name of a host API implementation provided in the `src/host-apis` \
             folder of StarlingMonkey, or be an absolute path pointing to custom host API implementation.")
     endif()
 else()
-    set(HOST_API ${CMAKE_CURRENT_SOURCE_DIR}/host-apis/wasi-0.2.0)
+    set(HOST_API ${CMAKE_CURRENT_SOURCE_DIR}/src/host-apis/wasi-0.2.0)
 endif()
 message(STATUS "Using host API: ${HOST_API}")
 
@@ -37,9 +37,9 @@ include("openssl")
 include("${HOST_API}/host_api.cmake")
 include("build-crates")
 
-add_library(extension_api INTERFACE include/extension-api.h runtime/encode.h runtime/decode.h)
+add_library(extension_api INTERFACE src/include/extension-api.h src/runtime/encode.h src/runtime/decode.h)
 target_link_libraries(extension_api INTERFACE rust-url spidermonkey)
-target_include_directories(extension_api INTERFACE include deps/include runtime)
+target_include_directories(extension_api INTERFACE src/include deps/include src/runtime)
 
 include("builtins")
 
@@ -49,14 +49,14 @@ if (ENABLE_WPT)
 endif()
 
 add_executable(starling-raw.wasm
-        runtime/js.cpp
-        runtime/allocator.cpp
-        runtime/encode.cpp
-        runtime/decode.cpp
-        runtime/engine.cpp
-        runtime/event_loop.cpp
-        runtime/builtin.cpp
-        runtime/script_loader.cpp
+        src/runtime/js.cpp
+        src/runtime/allocator.cpp
+        src/runtime/encode.cpp
+        src/runtime/decode.cpp
+        src/runtime/engine.cpp
+        src/runtime/event_loop.cpp
+        src/runtime/builtin.cpp
+        src/runtime/script_loader.cpp
 )
 
 option(USE_WASM_OPT "use wasm-opt to optimize the StarlingMonkey binary" ON)
@@ -112,10 +112,13 @@ endif()
 
 set(RUNTIME_FILE "starling-raw.wasm")
 set(ADAPTER_FILE "preview1-adapter.wasm")
-configure_file("componentize.sh" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh" @ONLY)
+
+configure_file("scripts/componentize.sh" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh" @ONLY)
+
 if(EXISTS ${ADAPTER})
     configure_file(${ADAPTER} "${CMAKE_CURRENT_BINARY_DIR}/${ADAPTER_FILE}" COPYONLY)
 endif()
+
 configure_file(spin.toml spin.toml COPYONLY)
 
 function(componentize OUTPUT)

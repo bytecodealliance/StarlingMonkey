@@ -58,7 +58,7 @@ cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
 
 3. Build the runtime
 
-Building the runtime is done in two phases: first, cmake is used to build a raw version as a WebAssembly core module. Then, that module is turned into a [WebAssembly Component](https://component-model.bytecodealliance.org/) using the `componentize.sh` script.
+Building the runtime is done in two phases: first, cmake is used to build a raw version as a WebAssembly core module. Then, that module is turned into a [WebAssembly Component](https://component-model.bytecodealliance.org/) using `scripts/componentize.sh`.
 
 The following command will build the `starling-raw.wasm` runtime module in the `cmake-build-release` directory:
 ```bash
@@ -71,7 +71,7 @@ Then, the `starling-raw.wasm` module can be turned into a component with the fol
 
 ```bash
 cd cmake-build-release
-./componentize.sh -o starling.wasm
+./scripts/componentize.sh -o starling.wasm
 ```
 
 The resulting runtime can be used to load and evaluate JS code dynamically:
@@ -86,7 +86,7 @@ Alternatively, a JS file can be provided during componentization:
 
 ```bash
 cd cmake-build-release
-./componentize.sh index.js -o starling.wasm
+./scripts/componentize.sh index.js -o starling.wasm
 ```
 
 This way, the JS file will be loaded during componentization, and the top-level code will be executed, and can e.g. register a handler for the `fetch` event to serve HTTP requests.
@@ -115,13 +115,13 @@ Then visit http://0.0.0.0:8080/timers, or any test name and filter of the form `
 
 5. Using the runtime with other JS applications
 
-The build directory contains a shell script `componentize.sh` that can be used to create components from JS applications. `componentize.sh` takes a single argument, the path to the JS application, and creates a component with a name of the form `[input-file-name].wasm` in the current working directory.
+The build directory contains a shell script `scripts/componentize.sh` that can be used to create components from JS applications. `componentize.sh` takes a single argument, the path to the JS application, and creates a component with a name of the form `[input-file-name].wasm` in the current working directory.
 
 For example, the following command is equivalent to the `cmake` invocation from step 5, and will create the component `cmake-build-release/smoke.wasm`:
 
 ```bash
 cd cmake-build-release
-./componentize.sh ../tests/smoke.js
+./scripts/componentize.sh ../tests/smoke.js
 ```
 
 ### Web Platform Tests
