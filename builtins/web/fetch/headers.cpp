@@ -524,7 +524,7 @@ bool prepare_for_entries_modification(JSContext *cx, JS::HandleObject self) {
   }
   // bump the generation integer
   uint32_t gen = JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Gen)).toInt32();
-  if (gen != UINT32_MAX) {
+  if (gen != INT32_MAX) {
     JS::SetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Gen), JS::Int32Value(gen + 1));
   }
   return true;
