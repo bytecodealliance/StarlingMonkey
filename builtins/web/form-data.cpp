@@ -78,42 +78,46 @@ FormData::EntryList* FormData::entry_list(JSObject *self) {
   return entries;
 }
 
-bool FormData::append(JSContext* cx, HandleObject self, std::string_view key, HandleValue value) {
-  auto entries = entry_list(self);
-
-  RootedString str(cx, JS::ToString(cx, value));
-  if (!str) {
-    return false;
-  }
-
-  RootedValue str_val(cx, StringValue(str));
-  auto entry = entry_from_kv_pair(key, str_val);
-
-  entries->append(entry);
-  return true;
-}
-
+// https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-form-data-set
 bool FormData::append(JSContext* cx, HandleObject self, std::string_view key, HandleValue value, HandleValue filename) {
-  if (!value.isObject()) {
-    return false;
-  }
+  bool is_file = value.isObject() && File::is_instance(&value.toObject());
+  bool is_blob = value.isObject() && Blob::is_instance(&value.toObject());
 
   auto entries = entry_list(self);
-  RootedObject obj(cx, &value.toObject());
 
-  if (File::is_instance(obj)) {
+  if (is_file) {
     auto entry = entry_from_kv_pair(key, value);
     entries->append(entry);
-  } else if (Blob::is_instance(obj)) {
+  } else if (is_blob) {
+    // If value is not a File object, then set value to a new File object,
+    // representing the same bytes, whose name attribute value is "blob".
+    RootedObject blob(cx, &value.toObject());
     HandleValueArray arr = HandleValueArray(value);
+
     RootedObject file_bits(cx, NewArrayObject(cx, arr));
     if (!file_bits) {
       return false;
     }
 
     RootedValue file_bits_val(cx, JS::ObjectValue(*file_bits));
-    RootedValue opts_val(cx, JS::NullValue());
+    RootedValue opts_val(cx);
     RootedValue filename_val(cx);
+
+    // Check if type is defined in the current blob, if that't the case
+    // prepare options object that contains its type.
+    RootedString type(cx, Blob::type(blob));
+    if (JS_GetStringLength(type)) {
+      RootedObject opts(cx, JS_NewPlainObject(cx));
+      if (!opts) {
+        return false;
+      }
+
+      RootedValue type_val(cx, JS::StringValue(type));
+      if (!JS_DefineProperty(cx, opts, "type", type_val, JSPROP_ENUMERATE)) {
+        return false;
+      }
+      opts_val = JS::ObjectValue(*opts);
+    }
 
     if (filename.isNullOrUndefined()) {
       RootedString default_name(cx, JS_NewStringCopyZ(cx, "blob"));
@@ -135,6 +139,17 @@ bool FormData::append(JSContext* cx, HandleObject self, std::string_view key, Ha
     RootedValue file_val(cx, JS::ObjectValue(*file));
     auto entry = entry_from_kv_pair(key, file_val);
     entries->append(entry);
+  } else {
+    // If value is a string, then set value to the result of
+    // converting value into a scalar value string.
+    RootedString str(cx, JS::ToString(cx, value));
+    if (!str) {
+      return false;
+    }
+
+    RootedValue str_val(cx, StringValue(str));
+    auto entry = entry_from_kv_pair(key, str_val);
+    entries->append(entry);
   }
 
   return true;
@@ -152,14 +167,7 @@ bool FormData::append(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  switch(args.length()) {
-  case 2:
-    return append(cx, self, name_to_add, value);
-  default:
-  case 3:
-    return append(cx, self, name_to_add, value, filename);
-    return false;
-  }
+  return append(cx, self, name_to_add, value, filename);
 }
 
 bool FormData::remove(JSContext *cx, unsigned argc, JS::Value *vp) {
@@ -274,13 +282,7 @@ bool FormData::set(JSContext *cx, unsigned argc, JS::Value *vp) {
     it->value = value;
     return true;
   } else {
-    switch(args.length()) {
-    case 2:
-      return append(cx, self, name_to_find, value);
-    default:
-    case 3:
-      return append(cx, self, name_to_find, value, filename);
-    }
+    return append(cx, self, name_to_find, value, filename);
   }
 }
 

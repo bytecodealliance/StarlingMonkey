@@ -22,7 +22,6 @@ class FormData : public TraceableBuiltinImpl<FormData> {
   static bool has(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool set(JSContext *cx, unsigned argc, JS::Value *vp);
 
-  static bool append(JSContext *cx, HandleObject self, std::string_view key, HandleValue val);
   static bool append(JSContext *cx, HandleObject self, std::string_view key, HandleValue val,
                      HandleValue filename);
 
