@@ -438,7 +438,18 @@ void FormData::trace(JSTracer *trc, JSObject *self) {
 }
 
 bool FormData::init_class(JSContext *cx, JS::HandleObject global) {
-  return init_class_impl(cx, global);
+  if (!init_class_impl(cx, global)) {
+    return false;
+  }
+
+  JS::RootedValue entries(cx);
+  if (!JS_GetProperty(cx, proto_obj, "entries", &entries)) {
+    return false;
+  }
+
+  JS::SymbolCode code = JS::SymbolCode::iterator;
+  JS::RootedId iteratorId(cx, JS::GetWellKnownSymbolKey(cx, code));
+  return JS_DefinePropertyById(cx, proto_obj, iteratorId, entries, 0);
 }
 
 bool install(api::Engine *engine) {
