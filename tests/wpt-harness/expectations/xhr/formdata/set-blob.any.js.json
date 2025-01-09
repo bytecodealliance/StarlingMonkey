@@ -6,7 +6,7 @@
     "status": "FAIL"
   },
   "blob with custom name": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "file without lastModified or custom name": {
     "status": "FAIL"
