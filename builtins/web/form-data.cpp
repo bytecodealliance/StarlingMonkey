@@ -293,8 +293,8 @@ bool FormData::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   // As we do not support DOM we throw if the first parameter is not undefined.
   //
   // See https://min-common-api.proposal.wintercg.org/#issue-92f53c35
-  if (!args.get(0).isNullOrUndefined()) {
-    return api::throw_error(cx, api::Errors::TypeError, "FormData.constructor", "form", "be null or undefined");
+  if (!args.get(0).isUndefined()) {
+    return api::throw_error(cx, api::Errors::TypeError, "FormData.constructor", "form", "be undefined");
   }
 
   RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));

@@ -1,5 +1,5 @@
 {
   "Constructors should throw a type error": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }
