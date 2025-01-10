@@ -18,6 +18,7 @@ add_builtin(builtins/web/queue-microtask.cpp)
 add_builtin(builtins/web/structured-clone.cpp)
 add_builtin(builtins/web/base64.cpp)
 add_builtin(builtins/web/blob.cpp)
+add_builtin(builtins/web/file.cpp)
 add_builtin(
     builtins::web::dom_exception
     SRC
