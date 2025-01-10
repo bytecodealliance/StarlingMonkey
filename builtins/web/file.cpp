@@ -1,63 +1,25 @@
 #include "file.h"
 #include "blob.h"
 
-#include "host_api.h"
-#include "jsfriendapi.h"
-#include "js/CallAndConstruct.h"
-#include "js/TypeDecls.h"
-
 namespace {
 
-bool init_last_modified(JSContext *cx, HandleValue initv, MutableHandleValue rval) {
-  JS::RootedValue init_val(cx, initv);
+bool read_last_modified(JSContext *cx, HandleValue initv, int64_t *last_modified) {
+  if (initv.isObject()) {
+    JS::RootedObject opts(cx, &initv.toObject());
+    JS::RootedValue val(cx);
 
-  if (!init_val.isNullOrUndefined()) {
-    JS::RootedObject opts(cx, init_val.toObjectOrNull());
+    if (!JS_GetProperty(cx, opts, "lastModified", &val)) {
+      return false;
+    }
 
-    if (opts) {
-      bool has_last_modified = false;
-      if (!JS_HasProperty(cx, opts, "lastModified", &has_last_modified)) {
-        return false;
-      }
-
-      if (has_last_modified) {
-        JS::RootedValue ts(cx);
-        if (!JS_GetProperty(cx, opts, "lastModified", &ts)) {
-          return false;
-        }
-
-        if (ts.isObject()) {
-          RootedObject date(cx, &ts.toObject());
-          bool is_valid = false;
-
-          if (!js::DateIsValid(cx, date, &is_valid)) {
-            return false;
-          }
-
-          if (is_valid) {
-            double ms_since_epoch;
-            if (!js::DateGetMsecSinceEpoch(cx, date, &ms_since_epoch)) {
-              return false;
-            }
-
-            rval.setNumber(ms_since_epoch);
-            return true;
-
-          }
-        } else if (ts.isNumber()) {
-          rval.set(ts);
-          return true;
-        }
-      }
+    if (!val.isUndefined()) {
+      return ToInt64(cx, val, last_modified);
     }
   }
 
   // If the last modification date and time are not known, the attribute must return the
   // current date and time representing the number of milliseconds since the Unix Epoch;
-  auto ns_since_epoch = host_api::WallClock::now();
-  auto ms_since_epoch = ns_since_epoch / 1000000ULL;
-
-  rval.setNumber(ms_since_epoch);
+  *last_modified = JS_Now() / 1000LL; // JS_Now() gives microseconds, convert it to ms.
   return true;
 }
 
@@ -113,7 +75,9 @@ bool File::lastModified_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
-bool File::init(JSContext *cx, HandleObject self, HandleValue fileBits, HandleValue fileName, HandleValue opts) {
+// https://w3c.github.io/FileAPI/#file-constructor
+bool File::init(JSContext *cx, HandleObject self, HandleValue fileBits, HandleValue fileName,
+                HandleValue opts) {
   // 1. Let bytes be the result of processing blob parts given fileBits and options.
   if (!Blob::init(cx, self, fileBits, opts)) {
     return false;
@@ -130,8 +94,8 @@ bool File::init(JSContext *cx, HandleObject self, HandleValue fileBits, HandleVa
   //  3. If the `lastModified` member is provided, let d be set to the lastModified dictionary
   //  member. If it is not provided, set d to the current date and time represented as the number of
   //  milliseconds since the Unix Epoch.
-  RootedValue lastModified(cx);
-  if (!init_last_modified(cx, opts, &lastModified)) {
+  int64_t lastModified;
+  if (!read_last_modified(cx, opts, &lastModified)) {
     return false;
   }
 
@@ -145,7 +109,7 @@ bool File::init(JSContext *cx, HandleObject self, HandleValue fileBits, HandleVa
   //  Steps 2, 3 and 5 are handled by Blob. We extend the Blob by adding a `name`
   //  and the `lastModified` properties.
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Name), JS::StringValue(name));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::LastModified), lastModified);
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::LastModified), JS::NumberValue(lastModified));
 
   return true;
 }
