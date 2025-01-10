@@ -10,7 +10,7 @@
 #include <variant>
 #include <vector>
 
-#include "../crates/rust-url/rust-url.h"
+#include "../../crates/rust-url/rust-url.h"
 #include "extension-api.h"
 #include "js/TypeDecls.h"
 

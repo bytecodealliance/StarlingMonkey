@@ -58,9 +58,16 @@ cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
 
 3. Build the runtime
 
-Building the runtime is done in two phases: first, cmake is used to build a raw version as a WebAssembly core module. Then, that module is turned into a [WebAssembly Component](https://component-model.bytecodealliance.org/) using the `componentize.sh` script.
+Building the runtime is done in two phases:
+
+1. `cmake` is used to build a raw version as a WebAssembly core module (`starling-raw.wasm`).
+2. `starling-raw.wasm` is turned into a [WebAssembly Component](https://component-model.bytecodealliance.org/) using [`scripts/componentize.sh.in`](./scripts/componentize.sh.in).
+
+> [!NOTE]
+> `scripts/componentize.sh.in` is used as a template and written to the build directory by `cmake` during the build
 
 The following command will build the `starling-raw.wasm` runtime module in the `cmake-build-release` directory:
+
 ```bash
 # Use cmake-build-debug for the debug build
 # Change the value for `--parallel` to match the number of CPU cores in your system
@@ -91,7 +98,7 @@ cd cmake-build-release
 
 This way, the JS file will be loaded during componentization, and the top-level code will be executed, and can e.g. register a handler for the `fetch` event to serve HTTP requests.
 
-4. Testing the build 
+4. Testing the build
 
 After completing the build (a debug build in this case), the integration test runner can be built:
 
@@ -209,7 +216,7 @@ just mode=release build
 
 This command will set the build mode to release, and the build directory will automatically change to `cmake-build-release`.
 
-If you want to override the default build directory, you can use the `builddir` parameter. 
+If you want to override the default build directory, you can use the `builddir` parameter.
 
 ``` shell
 just builddir=mybuilddir mode=release build
@@ -276,9 +283,9 @@ If your builtin requires multiple `.cpp` files, you can pass all of them to `add
 
 ### Providing a custom host API implementation
 
-The [host-apis](host-apis) directory can contain implementations of the host API for different 
-versions of WASI—or in theory any other host interface. Those can be selected by setting the 
-`HOST_API` environment variable to the 
+The [host-apis](host-apis) directory can contain implementations of the host API for different
+versions of WASI—or in theory any other host interface. Those can be selected by setting the
+`HOST_API` environment variable to the
 name of one of the directories. Currently, only an implementation in terms of [wasi-0.2.0]
 (host-apis/wasi-0.2.0) is provided, and used by default.
 
