@@ -113,7 +113,7 @@ endif()
 set(RUNTIME_FILE "starling-raw.wasm")
 set(ADAPTER_FILE "preview1-adapter.wasm")
 
-configure_file("scripts/componentize.sh" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh" @ONLY)
+configure_file("scripts/componentize.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh" @ONLY)
 
 if(EXISTS ${ADAPTER})
     configure_file(${ADAPTER} "${CMAKE_CURRENT_BINARY_DIR}/${ADAPTER_FILE}" COPYONLY)

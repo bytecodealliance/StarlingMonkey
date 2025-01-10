@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-
 #set -euo pipefail
+#
+# NOTE: this file is used as a template by cmake, and should not be invoked manually.
+# See README.md for more details
+#
 
 wizer="${WIZER:-@WIZER_DIR@/wizer}"
 wasm_tools="${WASM_TOOLS:-@WASM_TOOLS_BIN@}"
