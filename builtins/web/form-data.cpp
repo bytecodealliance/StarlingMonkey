@@ -69,14 +69,18 @@ bool FormDataIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS_DefineProperty(cx, result, "done", JS::FalseHandleValue, JSPROP_ENUMERATE);
   auto entry = entries->begin()[index];
 
-  JS::RootedString key_str(cx, JS_NewStringCopyZ(cx, entry.name.c_str()));
-  if (!key_str) {
-    return false;
-  }
-
-  JS::RootedValue key_val(cx, JS::StringValue(key_str));
-  JS::RootedValue val_val(cx, entry.value);
   JS::RootedValue result_val(cx);
+  JS::RootedValue key_val(cx);
+  JS::RootedValue val_val(cx, entry.value);
+
+  if (type != ITER_TYPE_VALUES) {
+    JS::RootedString key_str(cx, JS_NewStringCopyZ(cx, entry.name.c_str()));
+    if (!key_str) {
+      return false;
+    }
+
+    key_val = JS::StringValue(key_str);
+  }
 
   switch (type) {
   case ITER_TYPE_ENTRIES: {
