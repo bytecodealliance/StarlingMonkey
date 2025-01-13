@@ -12,6 +12,6 @@
     "status": "PASS"
   },
   "file with lastModified and custom name": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }
