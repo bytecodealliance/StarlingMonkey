@@ -13,29 +13,6 @@ namespace {
 using builtins::web::form_data::FormData;
 using builtins::web::form_data::FormDataEntry;
 
-FormDataEntry entry_from_kv_pair(std::string_view name, HandleValue value) {
-    FormDataEntry entry;
-    entry.name = name;
-    entry.value = value;
-
-    return entry;
-}
-
-bool name_from_args(JSContext* cx, const JS::CallArgs& args, host_api::HostString& out) {
-  JS::RootedValue val(cx, args[0]);
-  if (!val.isString()) {
-    return false;
-  }
-
-  auto encoded = core::encode(cx, val);
-  if (!encoded) {
-    return false;
-  }
-
-  out = std::move(encoded);
-  return true;
-}
-
 } // namespace
 
 namespace builtins {
@@ -74,7 +51,7 @@ bool FormDataIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedValue val_val(cx, entry.value);
 
   if (type != ITER_TYPE_VALUES) {
-    JS::RootedString key_str(cx, JS_NewStringCopyZ(cx, entry.name.c_str()));
+    JS::RootedString key_str(cx, JS_NewStringCopyN(cx, entry.name.c_str(), entry.name.size()));
     if (!key_str) {
       return false;
     }
@@ -198,15 +175,12 @@ FormData::EntryList* FormData::entry_list(JSObject *self) {
 
 // https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-form-data-set
 bool FormData::append(JSContext* cx, HandleObject self, std::string_view key, HandleValue value, HandleValue filename) {
-  bool is_file = value.isObject() && File::is_instance(&value.toObject());
-  bool is_blob = value.isObject() && Blob::is_instance(&value.toObject());
-
   auto entries = entry_list(self);
 
-  if (is_file) {
-    auto entry = entry_from_kv_pair(key, value);
+  if (File::is_instance(value)) {
+    auto entry = FormDataEntry(key, value);
     entries->append(entry);
-  } else if (is_blob) {
+  } else if (Blob::is_instance(value)) {
     // If value is not a File object, then set value to a new File object,
     // representing the same bytes, whose name attribute value is "blob".
     RootedObject blob(cx, &value.toObject());
@@ -255,7 +229,7 @@ bool FormData::append(JSContext* cx, HandleObject self, std::string_view key, Ha
     }
 
     RootedValue file_val(cx, JS::ObjectValue(*file));
-    auto entry = entry_from_kv_pair(key, file_val);
+    auto entry = FormDataEntry(key, file_val);
     entries->append(entry);
   } else {
     // If value is a string, then set value to the result of
@@ -266,7 +240,7 @@ bool FormData::append(JSContext* cx, HandleObject self, std::string_view key, Ha
     }
 
     RootedValue str_val(cx, StringValue(str));
-    auto entry = entry_from_kv_pair(key, str_val);
+    auto entry = FormDataEntry(key, str_val);
     entries->append(entry);
   }
 
@@ -280,8 +254,8 @@ bool FormData::append(JSContext *cx, unsigned argc, JS::Value *vp) {
   RootedValue value(cx, args.get(1));
   RootedValue filename(cx, args.get(2));
 
-  HostString name_to_add;
-  if (!name_from_args(cx, args, name_to_add)) {
+  HostString name_to_add = core::encode(cx, args[0]);
+  if (!name_to_add) {
     return false;
   }
 
@@ -291,9 +265,8 @@ bool FormData::append(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool FormData::remove(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
-  RootedValue name(cx, args.get(0));
-  HostString name_to_remove;
-  if (!name_from_args(cx, args, name_to_remove)) {
+  HostString name_to_remove = core::encode(cx, args[0]);
+  if (!name_to_remove) {
     return false;
   }
 
@@ -307,9 +280,8 @@ bool FormData::remove(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool FormData::get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
-  RootedValue name(cx, args.get(0));
-  HostString name_to_get;
-  if (!name_from_args(cx, args, name_to_get)) {
+  HostString name_to_get = core::encode(cx, args[0]);
+  if (!name_to_get) {
     return false;
   }
 
@@ -330,8 +302,8 @@ bool FormData::get(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool FormData::getAll(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
-  HostString name_to_get;
-  if (!name_from_args(cx, args, name_to_get)) {
+  HostString name_to_get = core::encode(cx, args[0]);
+  if (!name_to_get) {
     return false;
   }
 
@@ -359,13 +331,7 @@ bool FormData::getAll(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool FormData::has(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
-  RootedValue name(cx, args.get(0));
-
-  if (!name.isString()) {
-    return false;
-  }
-
-  auto name_to_find = core::encode(cx, name);
+  HostString name_to_find = core::encode(cx, args[0]);
   if (!name_to_find) {
     return false;
   }
@@ -382,12 +348,11 @@ bool FormData::has(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool FormData::set(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
-  RootedValue name(cx, args.get(0));
   RootedValue value(cx, args.get(1));
   RootedValue filename(cx, args.get(2));
 
-  HostString name_to_find;
-  if (!name_from_args(cx, args, name_to_find)) {
+  HostString name_to_find = core::encode(cx, args[0]);
+  if (!name_to_find) {
     return false;
   }
 

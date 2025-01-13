@@ -8,10 +8,12 @@ namespace web {
 namespace form_data {
 
 struct FormDataEntry {
-  std::string name;
-  JS::Heap<JS::Value> value;
+  FormDataEntry(std::string_view name, HandleValue value) : name(name), value(value) {}
 
   void trace(JSTracer *trc) { TraceEdge(trc, &value, "FormDataEntry value"); }
+
+  std::string name;
+  JS::Heap<JS::Value> value;
 };
 
 
@@ -66,6 +68,7 @@ public:
 
   enum Slots { Entries, Count };
 
+  static bool to_blob(JSContext *cx, HandleObject global, MutableHandleValue rval);
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
   static void finalize(JS::GCContext *gcx, JSObject *self);
