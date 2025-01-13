@@ -72,6 +72,7 @@ add_builtin(
     builtins::web::fetch
     SRC
         builtins/web/fetch/fetch-api.cpp
+        builtins/web/fetch/fetch-utils.cpp
         builtins/web/fetch/headers.cpp
         builtins/web/fetch/request-response.cpp
     DEPENDENCIES
