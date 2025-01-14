@@ -68,7 +68,6 @@ public:
 
   enum Slots { Entries, Count };
 
-  static bool to_blob(JSContext *cx, HandleObject global, MutableHandleValue rval);
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
   static void finalize(JS::GCContext *gcx, JSObject *self);
