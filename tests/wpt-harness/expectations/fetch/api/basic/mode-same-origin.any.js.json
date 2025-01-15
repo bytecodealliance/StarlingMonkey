@@ -1,9 +1,9 @@
 {
   "Fetch ../resources/top.txt with same-origin mode": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Fetch http://web-platform.test:8000/fetch/api/resources/top.txt with same-origin mode": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Fetch https://web-platform.test:8443/fetch/api/resources/top.txt with same-origin mode": {
     "status": "PASS"
