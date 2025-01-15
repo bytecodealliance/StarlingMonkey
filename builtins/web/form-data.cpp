@@ -192,8 +192,8 @@ JSObject *create_opts(JSContext *cx, HandleObject blob) {
 
   // Read lastModified and add it to opts.
   if (File::is_instance(blob)) {
-    auto lastModified_val =
-        JS::GetReservedSlot(blob, static_cast<size_t>(File::Slots::LastModified)).toNumber();
+    RootedValue lastModified_val(
+        cx, JS::GetReservedSlot(blob, static_cast<size_t>(File::Slots::LastModified)));
 
     if (!JS_DefineProperty(cx, opts, "lastModified", lastModified_val, JSPROP_ENUMERATE)) {
       return nullptr;
