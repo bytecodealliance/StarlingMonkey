@@ -47,6 +47,26 @@ std::optional<FetchScheme> scheme_from_url(const std::string_view &url) {
   }
 }
 
+// https://fetch.spec.whatwg.org/#concept-network-error
+bool network_error(JSContext *cx, HandleObject response_promise, MutableHandleValue rval) {
+  // A network error is a response whose type is "error", status is 0, status message is the empty
+  // byte sequence, header list is « », body is null, and body info is a new response body info.
+  RootedObject response_obj(cx, Response::create(cx));
+  if (!response_obj) {
+    return false;
+  }
+
+  Response::set_type(response_obj, Response::Type::Error);
+  Response::set_status(response_obj, 0);
+  Response::set_status_message_from_code(cx, response_obj, 0);
+
+  JS::RootedValue result(cx);
+  result.setObject(*response_obj);
+  JS::ResolvePromise(cx, response_promise, result);
+
+  return api::throw_error(cx, FetchErrors::FetchNetworkError);
+}
+
 bool fetch_https(JSContext *cx, HandleObject request_obj, HostString method, HostString url,
                  MutableHandleValue rval) {
   unique_ptr<host_api::HttpHeaders> headers =
@@ -115,7 +135,7 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HostString method, Host
 
   // 2. If request's method is not `GET` or blobURLEntry is null, then return a network error.
   if (std::memcmp(method.ptr.get(), "GET", method.len) != 0) {
-    return api::throw_error(cx, FetchErrors::FetchNetworkError);
+    return network_error(cx, response_promise, rval);
   }
 
   // 3. Let requestEnvironment be the result of determining the environment given request.
@@ -131,7 +151,7 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HostString method, Host
 
   // 8. If blob is not a Blob object, then return a network error.
   if (!blob || !Blob::is_instance(blob)) {
-    return api::throw_error(cx, FetchErrors::FetchNetworkError);
+    return network_error(cx, response_promise, rval);
   }
 
   // 9. Let response be a new response.
@@ -183,7 +203,7 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HostString method, Host
     // 5 and 6 see extract_range function
     auto maybe_range = extract_range(range_query, full_len);
     if (!maybe_range.has_value()) {
-      return api::throw_error(cx, FetchErrors::FetchNetworkError);
+      return network_error(cx, response_promise, rval);
     }
 
     const auto [start_range, end_range] = maybe_range.value();
@@ -209,14 +229,14 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HostString method, Host
       return false;
     }
 
-    //   12. Let contentRange be the result of invoking build a content range given rangeStart,
-    //   rangeEnd, and fullLength.
-    //   13. Set response's status to 206.
-    //   14. Set response's status message to `Partial Content`.
+    // 12. Let contentRange be the result of invoking build a content range given rangeStart,
+    // rangeEnd, and fullLength.
+    // 13. Set response's status to 206.
+    // 14. Set response's status message to `Partial Content`.
     Response::set_status(response_obj, 206);
     Response::set_status_message_from_code(cx, response_obj, 206);
-    //   15. Set response's header list to  (`Content-Length`, serializedSlicedLength),
-    //   (`Content-Type`, type), (`Content-Range`, contentRange).
+    // 15. Set response's header list to  (`Content-Length`, serializedSlicedLength),
+    // (`Content-Type`, type), (`Content-Range`, contentRange).
 
     JS::RootedObject resp_headers(cx, RequestOrResponse::headers(cx, response_obj));
     if (!resp_headers) {
@@ -253,8 +273,7 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HostString method, Host
   }
 
   // Blob response type is "basic"
-  JS::SetReservedSlot(response_obj, static_cast<uint32_t>(Response::Slots::Type),
-                      JS::Int32Value(Response::Type::Basic));
+  Response::set_type(response_obj, Response::Type::Basic);
 
   // 15. Return response.
   JS::RootedValue result(cx);

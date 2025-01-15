@@ -198,6 +198,7 @@ public:
   };
 
   enum Type { Basic, Cors, Default, Error, Opaque, OpaqueRedirect };
+  using Type = enum Type;
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -217,8 +218,10 @@ public:
   static JSObject *create_incoming(JSContext *cx, host_api::HttpIncomingResponse *response);
 
   static host_api::HttpResponse *maybe_response_handle(JSObject *obj);
+  static Type type(JSObject *obj);
   static uint16_t status(JSObject *obj);
   static JSString *status_message(JSObject *obj);
+  static void set_type(JSObject *obj, Type type);
   static void set_status(JSObject *obj, uint16_t status);
   static void set_status_message_from_code(JSContext *cx, JSObject *obj, uint16_t code);
 };

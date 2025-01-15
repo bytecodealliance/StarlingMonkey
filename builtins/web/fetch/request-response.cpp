@@ -1813,6 +1813,16 @@ host_api::HttpResponse *Response::maybe_response_handle(JSObject *obj) {
   return static_cast<host_api::HttpResponse *>(base);
 }
 
+Response::Type Response::type(JSObject *obj) {
+  MOZ_ASSERT(is_instance(obj));
+  return (Type)JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::Type)).toInt32();
+}
+
+void Response::set_type(JSObject *obj, Response::Type type) {
+  MOZ_ASSERT(is_instance(obj));
+  JS::SetReservedSlot(obj, static_cast<uint32_t>(Slots::Type), JS::Int32Value(type));
+}
+
 uint16_t Response::status(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
   return (uint16_t)JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::Status)).toInt32();
