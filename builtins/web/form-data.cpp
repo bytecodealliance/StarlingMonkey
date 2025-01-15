@@ -214,6 +214,7 @@ bool FormData::append(JSContext *cx, HandleObject self, std::string_view name, H
   // and optionally a scalar value string filename:
   //
   // 1. Set name to the result of converting name into a scalar value string.
+  //  (`name` here is already encoded using `core::encode() function`)
   // 2. If value is a string, then set value to the result of converting value
   //  into a scalar value string.
   if (!Blob::is_instance(value)) {
