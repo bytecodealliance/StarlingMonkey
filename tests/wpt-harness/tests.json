@@ -285,5 +285,15 @@
   "webidl/ecmascript-binding/es-exceptions/DOMException-constants.any.js",
   "webidl/ecmascript-binding/es-exceptions/DOMException-constructor-and-prototype.any.js",
   "webidl/ecmascript-binding/es-exceptions/DOMException-constructor-behavior.any.js",
-  "webidl/ecmascript-binding/es-exceptions/DOMException-custom-bindings.any.js"
+  "webidl/ecmascript-binding/es-exceptions/DOMException-custom-bindings.any.js",
+  "xhr/formdata/constructor.any.js",
+  "xhr/formdata/append.any.js",
+  "xhr/formdata/constructor.any.js",
+  "xhr/formdata/delete.any.js",
+  "xhr/formdata/foreach.any.js",
+  "xhr/formdata/get.any.js",
+  "xhr/formdata/has.any.js",
+  "xhr/formdata/iteration.any.js",
+  "xhr/formdata/set.any.js",
+  "xhr/formdata/set-blob.any.js"
 ]

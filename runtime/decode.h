@@ -3,8 +3,8 @@
 
 namespace core {
 
-JSString* decode(JSContext *cx, string_view str);
-JSString* decode_byte_string(JSContext* cx, string_view str);
+JSString* decode(JSContext *cx, std::string_view str);
+JSString* decode_byte_string(JSContext* cx, std::string_view str);
 
 } // namespace core
 
