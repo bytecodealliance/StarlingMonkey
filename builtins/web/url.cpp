@@ -562,7 +562,7 @@ bool URL::createObjectURL(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto uuid = maybe_uuid.value();
   result.append(uuid);
 
-  RootedString url(cx, JS_NewStringCopyN(cx, result.c_str(), result.size()));
+  RootedString url(cx, JS_NewStringCopyN(cx, result.data(), result.size()));
   if (!url) {
     return false;
   }
