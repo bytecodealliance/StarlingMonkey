@@ -7,6 +7,7 @@
 
 #include "js/TypeDecls.h"
 #include "js/Value.h"
+#include "mozilla/Assertions.h"
 
 namespace {
 
@@ -213,59 +214,66 @@ bool FormData::append(JSContext *cx, HandleObject self, std::string_view name, H
   // and optionally a scalar value string filename:
   //
   // 1. Set name to the result of converting name into a scalar value string.
-  // 2. If value is a string, then set value to the result of converting value into a scalar value
-  // string.
-  if (value.isString() || value.isNullOrUndefined()) {
+  // 2. If value is a string, then set value to the result of converting value
+  //  into a scalar value string.
+  if (!Blob::is_instance(value)) {
     RootedString str(cx, core::to_scalar_value_string(cx, value));
     if (!str) return false;
     RootedValue str_val(cx, StringValue(str));
+
     auto entry = FormDataEntry(name, str_val);
     entries->append(entry);
-  } else if (File::is_instance(value) && filename.isNullOrUndefined()) {
+    return true;
+  }
+
+  if (File::is_instance(value) && filename.isUndefined()) {
     auto entry = FormDataEntry(name, value);
     entries->append(entry);
-  } else if (Blob::is_instance(value)) {
-    // 3. Otherwise:
-    RootedObject blob(cx, &value.toObject());
-    RootedValue filename_val(cx);
-
-    // 1. If value is not a File object, then set value to a new File object,
-    //  representing the same bytes, whose name attribute value is "blob".
-    if (filename.isNullOrUndefined()) {
-      RootedString default_name(cx, JS_NewStringCopyZ(cx, "blob"));
-      if (!default_name) {
-        return false;
-      }
-
-      filename_val = JS::StringValue(default_name);
-    } else {
-      // 2. If filename is given, then set value to a new File object, representing
-      //  the same bytes, whose name attribute is filename.
-      filename_val = filename;
-    }
-
-    HandleValueArray arr = HandleValueArray(value);
-    RootedObject file_bits(cx, NewArrayObject(cx, arr));
-    if (!file_bits) {
-      return false;
-    }
-
-    RootedObject opts(cx, create_opts(cx, blob));
-    if (!opts) {
-      return false;
-    }
-
-    RootedValue file_bits_val(cx, JS::ObjectValue(*file_bits));
-    RootedValue opts_val(cx, JS::ObjectValue(*opts));
-    RootedObject file(cx, File::create(cx, file_bits_val, filename_val, opts_val));
-    if (!file) {
-      return false;
-    }
-
-    RootedValue file_val(cx, JS::ObjectValue(*file));
-    auto entry = FormDataEntry(name, file_val);
-    entries->append(entry);
+    return true;
   }
+
+  MOZ_ASSERT(Blob::is_instance(value));
+
+  // 3. Otherwise:
+  //   1. If value is not a File object, then set value to a new File object,
+  //    representing the same bytes, whose name attribute value is "blob".
+  //   2. If filename is given, then set value to a new File object, representing
+  //    the same bytes, whose name attribute is filename.
+  RootedObject blob(cx, &value.toObject());
+  RootedValue filename_val(cx);
+
+  if (filename.isUndefined()) {
+    RootedString default_name(cx, JS_NewStringCopyZ(cx, "blob"));
+    if (!default_name) {
+      return false;
+    }
+
+    filename_val = JS::StringValue(default_name);
+  } else {
+    filename_val = filename;
+  }
+
+  HandleValueArray arr = HandleValueArray(value);
+  RootedObject file_bits(cx, NewArrayObject(cx, arr));
+  if (!file_bits) {
+    return false;
+  }
+
+  RootedObject opts(cx, create_opts(cx, blob));
+  if (!opts) {
+    return false;
+  }
+
+  RootedValue file_bits_val(cx, JS::ObjectValue(*file_bits));
+  RootedValue opts_val(cx, JS::ObjectValue(*opts));
+  RootedObject file(cx, File::create(cx, file_bits_val, filename_val, opts_val));
+  if (!file) {
+    return false;
+  }
+
+  RootedValue file_val(cx, JS::ObjectValue(*file));
+  auto entry = FormDataEntry(name, file_val);
+  entries->append(entry);
 
   return true;
 }
