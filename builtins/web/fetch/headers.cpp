@@ -967,6 +967,14 @@ bool Headers::delete_(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool Headers::append_valid_header(JSContext *cx, JS::HandleObject self,
                                   host_api::HostString valid_key, JS::HandleValue value,
                                   const char *fun_name) {
+  bool is_valid;
+  if (!validate_guard(cx, self, valid_key, "Headers constructor", &is_valid)) {
+    return false;
+  }
+  if (!is_valid) {
+    return true;
+  }
+
   auto value_chars = normalize_and_validate_header_value(cx, value, fun_name);
   if (!value_chars.ptr)
     return false;
