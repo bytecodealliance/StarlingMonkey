@@ -2045,13 +2045,25 @@ bool Response::url_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 namespace {
 JSString *type_default_atom;
+JSString *type_basic_atom;
 JSString *type_error_atom;
 } // namespace
 
 bool Response::type_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
 
-  args.rval().setString(status(self) == 0 ? type_error_atom : type_default_atom);
+  // Per the fetch spec, `type` is one of "basic", "cors", "default", "error", or "opaque".
+  // Of those, "error" is always returned if `status` is 0.
+  // Otherwise, "basic" is returned for incoming responses, and "default" for outgoing responses.
+  // Note that we don't implement the parts of the spec that'd allow "cors" or "opaque" to be
+  // returned.
+  JSString* type = type_default_atom;
+  if (status(self) == 0) {
+    type = type_error_atom;
+  } else if (RequestOrResponse::is_incoming(self)) {
+    type = type_basic_atom;
+  }
+  args.rval().setString(type);
   return true;
 }
 
@@ -2471,6 +2483,7 @@ bool Response::init_class(JSContext *cx, JS::HandleObject global) {
   // Initialize a pinned (i.e., never-moved, living forever) atom for the
   // response type values.
   return (type_default_atom = JS_AtomizeAndPinString(cx, "default")) &&
+         (type_basic_atom = JS_AtomizeAndPinString(cx, "basic")) &&
          (type_error_atom = JS_AtomizeAndPinString(cx, "error"));
 }
 
