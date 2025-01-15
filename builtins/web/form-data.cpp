@@ -51,7 +51,7 @@ bool FormDataIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedValue val_val(cx, entry.value);
 
   if (type != ITER_TYPE_VALUES) {
-    JS::RootedString key_str(cx, JS_NewStringCopyN(cx, entry.name.c_str(), entry.name.size()));
+    JS::RootedString key_str(cx, JS_NewStringCopyN(cx, entry.name.data(), entry.name.size()));
     if (!key_str) {
       return false;
     }
@@ -173,34 +173,33 @@ FormData::EntryList *FormData::entry_list(JSObject *self) {
   return entries;
 }
 
-bool init_opts(JSContext *cx, HandleObject blob, MutableHandleValue rval) {
+JSObject *create_opts(JSContext *cx, HandleObject blob) {
   // Check if type is defined in the current blob, if that't the case
   // prepare options object that contains its type.
   RootedObject opts(cx, JS_NewPlainObject(cx));
   if (!opts) {
-    return false;
+    return nullptr;
   }
 
   RootedString type(cx, Blob::type(blob));
   if (JS_GetStringLength(type)) {
     RootedValue type_val(cx, JS::StringValue(type));
     if (!JS_DefineProperty(cx, opts, "type", type_val, JSPROP_ENUMERATE)) {
-      return false;
+      return nullptr;
     }
   }
 
-  // Read lastModified and add it to opts/
+  // Read lastModified and add it to opts.
   if (File::is_instance(blob)) {
     auto lastModified_val =
         JS::GetReservedSlot(blob, static_cast<size_t>(File::Slots::LastModified)).toNumber();
 
     if (!JS_DefineProperty(cx, opts, "lastModified", lastModified_val, JSPROP_ENUMERATE)) {
-      return false;
+      return nullptr;
     }
   }
 
-  rval.setObject(*opts);
-  return true;
+  return opts;
 }
 
 // https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-form-data-set
@@ -217,16 +216,8 @@ bool FormData::append(JSContext *cx, HandleObject self, std::string_view name, H
   // 2. If value is a string, then set value to the result of converting value into a scalar value
   // string.
   if (value.isString() || value.isNullOrUndefined()) {
-    auto encoded_str = core::encode(cx, value);
-    if (!encoded_str) {
-      return false;
-    }
-
-    RootedString str(cx, core::decode(cx, encoded_str));
-    if (!str) {
-      return false;
-    }
-
+    RootedString str(cx, core::to_scalar_value_string(cx, value));
+    if (!str) return false;
     RootedValue str_val(cx, StringValue(str));
     auto entry = FormDataEntry(name, str_val);
     entries->append(entry);
@@ -246,8 +237,7 @@ bool FormData::append(JSContext *cx, HandleObject self, std::string_view name, H
         return false;
       }
 
-      RootedValue default_name_val(cx, JS::StringValue(default_name));
-      filename_val = default_name_val;
+      filename_val = JS::StringValue(default_name);
     } else {
       // 2. If filename is given, then set value to a new File object, representing
       //  the same bytes, whose name attribute is filename.
@@ -259,13 +249,14 @@ bool FormData::append(JSContext *cx, HandleObject self, std::string_view name, H
     if (!file_bits) {
       return false;
     }
-    RootedValue file_bits_val(cx, JS::ObjectValue(*file_bits));
 
-    RootedValue opts_val(cx);
-    if (!init_opts(cx, blob, &opts_val)) {
+    RootedObject opts(cx, create_opts(cx, blob));
+    if (!opts) {
       return false;
     }
 
+    RootedValue file_bits_val(cx, JS::ObjectValue(*file_bits));
+    RootedValue opts_val(cx, JS::ObjectValue(*opts));
     RootedObject file(cx, File::create(cx, file_bits_val, filename_val, opts_val));
     if (!file) {
       return false;
@@ -282,28 +273,27 @@ bool FormData::append(JSContext *cx, HandleObject self, std::string_view name, H
 bool FormData::append(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(2)
 
-  RootedValue name(cx, args.get(0));
   RootedValue value(cx, args.get(1));
   RootedValue filename(cx, args.get(2));
 
-  HostString name_to_add = core::encode(cx, args[0]);
-  if (!name_to_add) {
+  HostString name = core::encode(cx, args[0]);
+  if (!name) {
     return false;
   }
 
-  return append(cx, self, name_to_add, value, filename);
+  return append(cx, self, name, value, filename);
 }
 
 bool FormData::remove(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
-  HostString name_to_remove = core::encode(cx, args[0]);
-  if (!name_to_remove) {
+  HostString name = core::encode(cx, args[0]);
+  if (!name) {
     return false;
   }
 
   entry_list(self)->eraseIf(
-      [&](const FormDataEntry &entry) { return entry.name == std::string_view(name_to_remove); });
+      [&](const FormDataEntry &entry) { return entry.name == std::string_view(name); });
 
   return true;
 }
@@ -311,14 +301,14 @@ bool FormData::remove(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool FormData::get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
-  HostString name_to_get = core::encode(cx, args[0]);
-  if (!name_to_get) {
+  HostString name = core::encode(cx, args[0]);
+  if (!name) {
     return false;
   }
 
   auto entries = entry_list(self);
   auto it = std::find_if(entries->begin(), entries->end(), [&](const FormDataEntry &entry) {
-    return entry.name == std::string_view(name_to_get);
+    return entry.name == std::string_view(name);
   });
 
   if (it != entries->end()) {
@@ -333,8 +323,8 @@ bool FormData::get(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool FormData::getAll(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
-  HostString name_to_get = core::encode(cx, args[0]);
-  if (!name_to_get) {
+  HostString name = core::encode(cx, args[0]);
+  if (!name) {
     return false;
   }
 
@@ -347,7 +337,7 @@ bool FormData::getAll(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   uint32_t index = 0;
   for (auto &entry : *entries) {
-    if (entry.name == std::string_view(name_to_get)) {
+    if (entry.name == std::string_view(name)) {
       JS::RootedValue val(cx, entry.value);
       if (!JS_DefineElement(cx, array, index++, val, JSPROP_ENUMERATE)) {
         return false;
@@ -362,14 +352,14 @@ bool FormData::getAll(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool FormData::has(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
-  HostString name_to_find = core::encode(cx, args[0]);
-  if (!name_to_find) {
+  HostString name = core::encode(cx, args[0]);
+  if (!name) {
     return false;
   }
 
   auto entries = entry_list(self);
   auto it = std::find_if(entries->begin(), entries->end(), [&](const FormDataEntry &entry) {
-    return entry.name == std::string_view(name_to_find);
+    return entry.name == std::string_view(name);
   });
 
   args.rval().setBoolean(it != entries->end());
@@ -382,21 +372,21 @@ bool FormData::set(JSContext *cx, unsigned argc, JS::Value *vp) {
   RootedValue value(cx, args.get(1));
   RootedValue filename(cx, args.get(2));
 
-  HostString name_to_find = core::encode(cx, args[0]);
-  if (!name_to_find) {
+  HostString name = core::encode(cx, args[0]);
+  if (!name) {
     return false;
   }
 
   auto entries = entry_list(self);
   auto it = std::find_if(entries->begin(), entries->end(), [&](const FormDataEntry &entry) {
-    return entry.name == std::string_view(name_to_find);
+    return entry.name == std::string_view(name);
   });
 
   if (it != entries->end()) {
     it->value = value;
     return true;
   } else {
-    return append(cx, self, name_to_find, value, filename);
+    return append(cx, self, name, value, filename);
   }
 }
 
