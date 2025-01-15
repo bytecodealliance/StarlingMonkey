@@ -219,9 +219,11 @@ bool FormData::append(JSContext *cx, HandleObject self, std::string_view name, H
   //  into a scalar value string.
   if (!Blob::is_instance(value)) {
     RootedString str(cx, core::to_scalar_value_string(cx, value));
-    if (!str) return false;
-    RootedValue str_val(cx, StringValue(str));
+    if (!str) {
+      return false;
+    }
 
+    RootedValue str_val(cx, StringValue(str));
     auto entry = FormDataEntry(name, str_val);
     entries->append(entry);
     return true;
