@@ -76,6 +76,7 @@ public:
     HeadersSortList,
     Mode,
     Guard,
+    Gen,
     Count,
   };
 
@@ -135,6 +136,12 @@ public:
   /// Depending on the `Mode` the instance is in, this can be a cache or the canonical store for
   /// the headers.
   static HeadersList *get_list(JSContext *cx, HandleObject self);
+
+  /**
+   * Get the generation integer associated with header mutations.
+   * Useful for quickly determining if a headers object may have changed since last seen.
+   */
+  static uint32_t get_generation(JSObject *self);
 
   /**
    * Returns a cloned handle representing the contents of this Headers object.
