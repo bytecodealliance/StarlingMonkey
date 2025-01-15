@@ -247,6 +247,15 @@ bool TextDecoder::init_class(JSContext *cx, JS::HandleObject global) {
   return init_class_impl(cx, global);
 }
 
+void TextDecoder::finalize(JS::GCContext *gcx, JSObject *self) {
+  auto decoder = reinterpret_cast<jsencoding::Decoder *>(
+      JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Decoder)).toPrivate());
+
+  if (decoder) {
+    jsencoding::decoder_free(decoder);
+  }
+}
+
 } // namespace text_codec
 } // namespace web
 } // namespace builtins

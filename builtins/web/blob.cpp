@@ -419,11 +419,14 @@ bool Blob::text(JSContext *cx, HandleObject self, MutableHandleValue rval) {
   auto encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
       reinterpret_cast<uint8_t *>(const_cast<char *>("UTF-8")), 5));
 
-  auto decoder = jsencoding::encoding_new_decoder_with_bom_removal(encoding);
+  auto deleter = [&](jsencoding::Decoder *dec) { jsencoding::decoder_free(dec); };
+  std::unique_ptr<jsencoding::Decoder, decltype(deleter)> decoder(
+      jsencoding::encoding_new_decoder_with_bom_removal(encoding), deleter);
+
   MOZ_ASSERT(decoder);
 
   auto src_len = src->length();
-  auto dst_len = jsencoding::decoder_max_utf16_buffer_length(decoder, src_len);
+  auto dst_len = jsencoding::decoder_max_utf16_buffer_length(decoder.get(), src_len);
 
   JS::UniqueTwoByteChars dst(new char16_t[dst_len + 1]);
   if (!dst) {
@@ -434,8 +437,8 @@ bool Blob::text(JSContext *cx, HandleObject self, MutableHandleValue rval) {
   bool had_replacements;
   auto dst_data = reinterpret_cast<uint16_t *>(dst.get());
 
-  jsencoding::decoder_decode_to_utf16(decoder, src->begin(), &src_len, dst_data, &dst_len, true,
-                                      &had_replacements);
+  jsencoding::decoder_decode_to_utf16(decoder.get(), src->begin(), &src_len, dst_data, &dst_len,
+                                      true, &had_replacements);
 
   JS::RootedString str(cx, JS_NewUCString(cx, std::move(dst), dst_len));
   if (!str) {
