@@ -1,13 +1,25 @@
-#include "js/Array.h"
-
+#include "blob.h"
 #include "encode.h"
+#include "file.h"
 #include "rust-url.h"
 #include "sequence.hpp"
 #include "url.h"
+#include "worker-location.h"
+
+#include "crypto/uuid.h"
+
+#include "js/Array.h"
+#include "js/AllocPolicy.h"
+#include "js/GCHashTable.h"
+#include "js/TypeDecls.h"
 
 namespace builtins {
 namespace web {
 namespace url {
+
+using blob::Blob;
+using file::File;
+using worker_location::WorkerLocation;
 
 bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
@@ -439,6 +451,8 @@ ACCESSOR(username)
 #undef ACCESSOR
 
 const JSFunctionSpec URL::static_methods[] = {
+    JS_FN("createObjectURL", createObjectURL, 1, JSPROP_ENUMERATE),
+    JS_FN("revokeObjectURL", revokeObjectURL, 1, JSPROP_ENUMERATE),
     JS_FS_END,
 };
 
@@ -467,6 +481,137 @@ const JSPropertySpec URL::properties[] = {
     JS_PSGS("username", URL::username_get, URL::username_set, JSPROP_ENUMERATE),
     JS_PS_END,
 };
+
+struct UrlKey {
+  std::string key_;
+
+  UrlKey() {}
+  UrlKey(std::string key) : key_(std::move(key)) {}
+
+  void trace(JSTracer *trc) {}
+};
+
+struct UrlKeyHasher {
+  using Lookup = const std::string&;
+
+  static mozilla::HashNumber hash(Lookup lookup) {
+    return mozilla::HashString(lookup.data());
+  }
+
+  static bool match(const UrlKey& key, Lookup lookup) {
+    return key.key_ == lookup;
+  }
+};
+
+static PersistentRooted<JS::GCHashMap<UrlKey, Heap<JSObject *>, UrlKeyHasher, js::SystemAllocPolicy>> URL_STORE;
+
+bool URL::createObjectURL(JSContext *cx, unsigned argc, JS::Value *vp) {
+  CallArgs args = JS::CallArgsFromVp(argc, vp);
+  if (!args.requireAtLeast(cx, "createObjectURL", 1)) {
+    return false;
+  }
+
+  HandleValue obj_val = args.get(0);
+  if (!obj_val.isObject()) {
+    return false;
+  }
+
+  RootedObject obj(cx, &obj_val.toObject());
+  if (!obj) {
+    return false;
+  }
+
+  if (!Blob::is_instance(obj) && !File::is_instance(obj)) {
+    return false;
+  }
+
+  // To generate a new blob URL, run the following steps:
+  // 1. Let result be the empty string.
+  // 2. Append the string "blob:" to result.
+  std::string result("blob:");
+
+  // 3. Let settings be the current settings object
+  // 4. Let origin be settings’s origin.
+  // 5. Let serialized be the ASCII serialization of origin.
+  // 6. If serialized is "null", set it to an implementation-defined value.
+  RootedObject worker_location(cx, WorkerLocation::url.get());
+  if (worker_location) {
+    RootedValue origin(cx);
+    if (!JS_GetProperty(cx, worker_location, "origin", &origin)) {
+      return false;
+    }
+
+    auto origin_str = RootedString(cx, JS::ToString(cx, origin));
+    if (!origin_str) {
+      return false;
+    }
+
+    auto chars = core::encode(cx, origin_str);
+    result.append(chars.ptr.get());
+  }
+
+  // 7. Append U+0024 SOLIDUS (/) to result.
+  result.append("/");
+
+  // 8. Generate a UUID [RFC4122] as a string and append it to result.
+  auto maybe_uuid = crypto::random_uuid_v4(cx);
+  if (!maybe_uuid.has_value()) {
+    return false;
+  }
+
+  auto uuid = maybe_uuid.value();
+  result.append(uuid);
+
+  RootedString url(cx, JS_NewStringCopyN(cx, result.data(), result.size()));
+  if (!url) {
+    return false;
+  }
+
+  if (!URL_STORE.get().put(result, obj)) {
+    return false;
+  }
+
+  args.rval().setString(url);
+  return true;
+}
+
+bool URL::revokeObjectURL(JSContext *cx, unsigned argc, JS::Value *vp) {
+  CallArgs args = JS::CallArgsFromVp(argc, vp);
+  if (!args.requireAtLeast(cx, "createObjectURL", 1)) {
+    return false;
+  }
+
+  // The revokeObjectURL(url) static method must run these steps:
+  // 1. Let urlRecord be the result of parsing url.
+  auto chars = core::encode(cx, args.get(0));
+  if (!chars.ptr) {
+    return false;
+  }
+
+  //   2. If urlRecord’s scheme is not "blob", return.
+  //   3. Let entry be urlRecord’s blob URL entry.
+  std::string url_record(chars.ptr.get());
+  if (!url_record.starts_with("blob:")) {
+    return true;
+  }
+
+  // 4. If entry is null, then return.
+  // 5. Let isAuthorized be the result of checking for same-partition blob URL usage with entry and the current settings object.
+  // 6. If isAuthorized is false, then return.
+  // 7. Remove an entry from the Blob URL Store for url.
+  URL_STORE.get().remove(chars.ptr.get());
+  return true;
+}
+
+JSObject *URL::getObjectURL(std::string &url_str) {
+  // To obtain a blob object given a blob URL entry blobUrlEntry:
+  // 1. Let isAuthorized be true.
+  // 2. If environment is not the string "navigation", then set isAuthorized to the result of checking for same-partition blob URL usage with blobUrlEntry and environment.
+  // 3. If isAuthorized is false, then return failure.
+  // 4. Return blobUrlEntry's object.
+  auto url = URL_STORE.get().lookup(url_str);
+  return url ? url->value() : nullptr;
+}
 
 const jsurl::JSUrl *URL::url(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
@@ -611,6 +756,7 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, JS::HandleValue url_
 }
 
 bool URL::init_class(JSContext *cx, JS::HandleObject global) {
+  URL_STORE.init(cx);
   return URL::init_class_impl(cx, global);
 }
 

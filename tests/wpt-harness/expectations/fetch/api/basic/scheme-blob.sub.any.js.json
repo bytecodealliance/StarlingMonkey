@@ -1,0 +1,56 @@
+{
+  "Fetching [GET] URL.createObjectURL(blob) is OK": {
+    "status": "PASS"
+  },
+  "Fetching [GET] blob:http://www.web-platform.test:8000/ is KO": {
+    "status": "PASS"
+  },
+  "Fetching [POST] URL.createObjectURL(blob) is KO": {
+    "status": "PASS"
+  },
+  "Fetching [OPTIONS] URL.createObjectURL(blob) is KO": {
+    "status": "PASS"
+  },
+  "Fetching [HEAD] URL.createObjectURL(blob) is KO": {
+    "status": "PASS"
+  },
+  "Fetching [PUT] URL.createObjectURL(blob) is KO": {
+    "status": "PASS"
+  },
+  "Fetching [DELETE] URL.createObjectURL(blob) is KO": {
+    "status": "PASS"
+  },
+  "Fetching [INVALID] URL.createObjectURL(blob) is KO": {
+    "status": "PASS"
+  },
+  "Fetching [GET] blob:not-backed-by-a-blob/ is KO": {
+    "status": "PASS"
+  },
+  "Fetching URL.createObjectURL(empty_blob) is OK": {
+    "status": "PASS"
+  },
+  "Fetching URL.createObjectURL(empty_type_blob) is OK": {
+    "status": "PASS"
+  },
+  "Fetching URL.createObjectURL(empty_data_blob) is OK": {
+    "status": "PASS"
+  },
+  "Fetching URL.createObjectURL(invalid_type_blob) is OK": {
+    "status": "FAIL"
+  },
+  "Blob content is not sniffed for a content type [image/png]": {
+    "status": "PASS"
+  },
+  "Blob content is not sniffed for a content type [text/xml]": {
+    "status": "PASS"
+  },
+  "Set content type to the empty string for slice with invalid content type": {
+    "status": "PASS"
+  },
+  "Set content type to the empty string for slice with no content type ": {
+    "status": "PASS"
+  },
+  "Blob.slice should not sniff the content for a content type": {
+    "status": "PASS"
+  }
+}
