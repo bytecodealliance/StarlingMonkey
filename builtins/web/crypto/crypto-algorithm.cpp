@@ -1841,6 +1841,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
   case CryptoKeyFormat::Spki:
   case CryptoKeyFormat::Pkcs8: {
     // TODO: Add implementations for these
+    [[fallthrough]];
   }
   default: {
     DOMException::raise(cx, "Supplied format is not supported", "DataError");
