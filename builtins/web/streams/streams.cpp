@@ -1,4 +1,5 @@
 #include "streams.h"
+#include "buf-reader.h"
 #include "compression-stream.h"
 #include "decompression-stream.h"
 #include "event_loop.h"
@@ -23,6 +24,8 @@ bool install(api::Engine *engine) {
   if (!CompressionStream::init_class(engine->cx(), engine->global()))
     return false;
   if (!DecompressionStream::init_class(engine->cx(), engine->global()))
+    return false;
+  if (!BufReader::init_class(engine->cx(), engine->global()))
     return false;
   return true;
 }
