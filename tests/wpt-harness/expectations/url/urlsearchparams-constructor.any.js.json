@@ -24,7 +24,7 @@
     "status": "PASS"
   },
   "URLSearchParams constructor, FormData.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parse +": {
     "status": "PASS"

@@ -304,7 +304,7 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
   }
 
   if (!Request::initialize(cx, request_obj, args[0], args.get(1),
-                           Headers::HeadersGuard::Immutable)) {
+                           Headers::HeadersGuard::Request)) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 

@@ -114,6 +114,19 @@ bool File::init(JSContext *cx, HandleObject self, HandleValue fileBits, HandleVa
   return true;
 }
 
+JSObject* File::create(JSContext *cx, HandleValue fileBits, HandleValue fileName, HandleValue opts) {
+  RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
+  if (!self) {
+    return nullptr;
+  }
+
+  if (!init(cx, self, fileBits, fileName, opts)) {
+    return nullptr;
+  }
+
+  return self;
+}
+
 bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("File", 2);
 

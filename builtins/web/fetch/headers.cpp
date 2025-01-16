@@ -518,7 +518,14 @@ bool prepare_for_entries_modification(JSContext *cx, JS::HandleObject self) {
       SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Handle), PrivateValue(new_handle));
     }
   } else if (mode == Headers::Mode::CachedInContent || mode == Headers::Mode::Uninitialized) {
-    return switch_mode(cx, self, Headers::Mode::ContentOnly);
+    if (!switch_mode(cx, self, Headers::Mode::ContentOnly)) {
+      return false;
+    }
+  }
+  // bump the generation integer
+  uint32_t gen = JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Gen)).toInt32();
+  if (gen != INT32_MAX) {
+    JS::SetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Gen), JS::Int32Value(gen + 1));
   }
   return true;
 }
@@ -603,6 +610,7 @@ JSObject *Headers::create(JSContext *cx, HeadersGuard guard) {
 
   SetReservedSlot(self, static_cast<uint32_t>(Slots::HeadersList), PrivateValue(nullptr));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::HeadersSortList), PrivateValue(nullptr));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Gen), JS::Int32Value(0));
   return self;
 }
 
@@ -649,6 +657,10 @@ bool Headers::init_entries(JSContext *cx, HandleObject self, HandleValue initv) 
   }
 
   return true;
+}
+
+uint32_t Headers::get_generation(JSObject *self) {
+  return JS::GetReservedSlot(self, static_cast<uint32_t>(Headers::Slots::Gen)).toInt32();
 }
 
 bool Headers::get(JSContext *cx, unsigned argc, JS::Value *vp) {
@@ -955,6 +967,14 @@ bool Headers::delete_(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool Headers::append_valid_header(JSContext *cx, JS::HandleObject self,
                                   host_api::HostString valid_key, JS::HandleValue value,
                                   const char *fun_name) {
+  bool is_valid;
+  if (!validate_guard(cx, self, valid_key, "Headers constructor", &is_valid)) {
+    return false;
+  }
+  if (!is_valid) {
+    return true;
+  }
+
   auto value_chars = normalize_and_validate_header_value(cx, value, fun_name);
   if (!value_chars.ptr)
     return false;
@@ -1013,6 +1033,7 @@ bool Headers::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
                   JS::Int32Value(static_cast<int32_t>(HeadersGuard::None)));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::HeadersList), PrivateValue(nullptr));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::HeadersSortList), PrivateValue(nullptr));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Gen), JS::Int32Value(0));
 
   // walk the headers list writing in the ordered normalized case headers (distinct from the wire)
   if (!init_entries(cx, self, headersInit)) {

@@ -2483,6 +2483,15 @@ bool Response::initialize(JSContext *cx, JS::HandleObject response, JS::HandleVa
     }
   }
 
+  // Per the fetch spec, `type` is one of "basic", "cors", "default", "error", or "opaque".
+  // Of those, "error" is always returned if `status` is 0.
+  // Otherwise, "basic" is returned for incoming responses, and "default" for outgoing responses.
+  // Note that we don't implement the parts of the spec that'd allow "cors" or "opaque" to be
+  // returned.
+  if (RequestOrResponse::is_incoming(response)) {
+    set_type(response, Type::Basic);
+  }
+
   return true;
 }
 /**
@@ -2545,7 +2554,7 @@ JSObject *Response::create_incoming(JSContext *cx, host_api::HttpIncomingRespons
   }
 
   JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::Response), PrivateValue(response));
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS::Int32Value(Type::Default));
+  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS::Int32Value(Type::Basic));
 
   auto res = response->status();
   MOZ_ASSERT(!res.is_err(), "TODO: proper error handling");
