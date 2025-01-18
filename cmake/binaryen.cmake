@@ -9,3 +9,6 @@ set(BINARYEN_URL https://github.com/WebAssembly/binaryen/releases/download/versi
 CPMAddPackage(NAME binaryen URL ${BINARYEN_URL} DOWNLOAD_ONLY TRUE)
 set(BINARYEN_DIR ${CPM_PACKAGE_binaryen_SOURCE_DIR}/bin)
 set(WASM_OPT ${BINARYEN_DIR}/wasm-opt)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/cxx-wrapper.in ${CMAKE_BINARY_DIR}/cxx-wrapper)
+set(CMAKE_CXX_COMPILER "${CMAKE_BINARY_DIR}/cxx-wrapper")
