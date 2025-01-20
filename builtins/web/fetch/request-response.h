@@ -193,8 +193,13 @@ public:
     Status = static_cast<int>(RequestOrResponse::Slots::Count),
     StatusMessage,
     Redirected,
+    Type,
     Count,
   };
+
+  enum Type { Basic, Cors, Default, Error, Opaque, OpaqueRedirect };
+  using Type = enum Type;
+
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
@@ -206,12 +211,18 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 
   static JSObject *create(JSContext *cx);
+  static bool initialize(JSContext *cx, JS::HandleObject response, JS::HandleValue body_val,
+                         JS::HandleValue init_val);
+
   static JSObject *init_slots(HandleObject response);
   static JSObject *create_incoming(JSContext *cx, host_api::HttpIncomingResponse *response);
 
   static host_api::HttpResponse *maybe_response_handle(JSObject *obj);
+  static Type type(JSObject *obj);
   static uint16_t status(JSObject *obj);
   static JSString *status_message(JSObject *obj);
+  static void set_type(JSObject *obj, Type type);
+  static void set_status(JSObject *obj, uint16_t status);
   static void set_status_message_from_code(JSContext *cx, JSObject *obj, uint16_t code);
 };
 

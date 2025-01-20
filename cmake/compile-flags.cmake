@@ -2,11 +2,6 @@ set(WASI 1)
 set(CMAKE_CXX_STANDARD 20)
 add_compile_definitions("$<$<CONFIG:DEBUG>:DEBUG=1>")
 
-# NOTE: we shadow wasm-opt by adding $(CMAKE_CURRENT_SOURCE_DIR)/scripts to the path, which
-# includes a script called wasm-opt that immediately exits successfully. See
-# that script for more information about why we do this.
-set(ENV{PATH} "${CMAKE_CURRENT_SOURCE_DIR}/scripts:$ENV{PATH}")
-
 list(APPEND CMAKE_EXE_LINKER_FLAGS
         -Wl,-z,stack-size=1048576 -Wl,--stack-first
         -mexec-model=reactor
@@ -17,7 +12,7 @@ list(APPEND CMAKE_EXE_LINKER_FLAGS
 list(JOIN CMAKE_EXE_LINKER_FLAGS " " CMAKE_EXE_LINKER_FLAGS)
 
 list(APPEND CMAKE_CXX_FLAGS
-        -std=gnu++20 -Wall -Werror -Qunused-arguments
+        -std=gnu++20 -Wall -Werror -Qunused-arguments -Wimplicit-fallthrough
         -fno-sized-deallocation -fno-aligned-new -mthread-model single
         -fPIC -fno-rtti -fno-exceptions -fno-math-errno -pipe
         -fno-omit-frame-pointer -funwind-tables -m32

@@ -42,6 +42,7 @@ test_e2e(tla)
 test_e2e(stream-forwarding)
 test_e2e(multi-stream-forwarding)
 
+test_integration(blob)
 test_integration(btoa)
 test_integration(crypto)
 test_integration(fetch)

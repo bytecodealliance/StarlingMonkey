@@ -28,6 +28,33 @@ int main(int argc, const char *argv[]) {
   MOZ_ASSERT_UNREACHABLE("main() should not be called");
 }
 
+static uint64_t mono_clock_offset = 0;
+#define NSECS_PER_SEC 1000000000;
+
+// This overrides wasi-libc's weakly linked implementation of clock_gettime to ensure that
+// monotonic clocks really are monotonic, even across resumptions of wizer snapshots.
+int clock_gettime(clockid_t clock, timespec * ts) {
+  __wasi_clockid_t clock_id;
+  if (clock == CLOCK_REALTIME) {
+    clock_id = __WASI_CLOCKID_REALTIME;
+  } else if (clock == CLOCK_MONOTONIC) {
+    clock_id = __WASI_CLOCKID_MONOTONIC;
+  } else {
+    return EINVAL;
+  }
+  __wasi_timestamp_t t;
+  auto errno = __wasi_clock_time_get(clock_id, 1, &t);
+  if (errno != 0) {
+    return EINVAL;
+  }
+  if (clock == CLOCK_MONOTONIC) {
+    t += mono_clock_offset;
+  }
+  ts->tv_sec = t / NSECS_PER_SEC;
+  ts->tv_nsec = t % NSECS_PER_SEC;
+  return 0;
+}
+
 void wizen() {
   std::string args;
   std::getline(std::cin, args);
@@ -37,6 +64,13 @@ void wizen() {
   config->pre_initialize = true;
   ENGINE = new api::Engine(std::move(config));
   ENGINE->finish_pre_initialization();
+
+  // Ensure that the monotonic clock is always increasing, even across multiple resumptions.
+  __wasi_timestamp_t t;
+  MOZ_RELEASE_ASSERT(!__wasi_clock_time_get(__WASI_CLOCKID_MONOTONIC, 1, &t));
+  if (mono_clock_offset < t) {
+    mono_clock_offset = t;
+  }
 }
 
 WIZER_INIT(wizen);
