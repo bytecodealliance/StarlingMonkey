@@ -59,6 +59,7 @@ add_builtin(
 add_builtin(
     builtins::web::streams
     SRC
+        builtins/web/streams/buf-reader.cpp
         builtins/web/streams/compression-stream.cpp
         builtins/web/streams/decompression-stream.cpp
         builtins/web/streams/native-stream-sink.cpp
