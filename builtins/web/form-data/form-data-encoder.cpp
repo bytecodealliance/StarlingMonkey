@@ -1,0 +1,496 @@
+#include "form-data-encoder.h"
+#include "extension-api.h"
+#include "form-data.h"
+
+#include "../blob.h"
+#include "../file.h"
+#include "../streams/buf-reader.h"
+#include "../streams/native-stream-source.h"
+
+#include "encode.h"
+#include "mozilla/Assertions.h"
+
+#include <fmt/format.h>
+#include <string>
+
+namespace {
+
+const char LF = '\n';
+const char CR = '\r';
+const char *CRLF = "\r\n";
+
+size_t compute_normalized_len(std::string_view src, const char *newline) {
+  size_t len = 0;
+  size_t newline_len = strlen(newline);
+
+  for (size_t i = 0; i < src.size(); i++) {
+    if (src[i] == CR) {
+      if (i + 1 < src.size() && src[i + 1] == LF) {
+        len += newline_len;
+        i++;
+      } else {
+        len += newline_len;
+      }
+    } else if (src[i] == LF) {
+      len += newline_len;
+    } else {
+      len += 1;
+    }
+  }
+
+  return len;
+}
+
+// Replace every occurrence of U+000D (CR) not followed by U+000A (LF),
+// and every occurrence of U+000A (LF) not preceded by U+000D (CR),
+// in entry's name, by a string consisting of a U+000D (CR) and U+000A (LF).
+//
+// https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart-form-data
+std::optional<std::string> normalize_newlines(std::string_view src) {
+  std::string output;
+
+  output.reserve(compute_normalized_len(src, CRLF));
+
+  for (size_t i = 0; i < src.size(); i++) {
+    if (src[i] == CR) {
+      if (i + 1 < src.size() && src[i + 1] == LF) {
+        output += CRLF;
+        i++;
+      } else {
+        output += CRLF;
+      }
+    } else if (src[i] == LF) {
+      output += CRLF;
+    } else {
+      output.push_back(src[i]);
+    }
+  }
+
+  return output;
+}
+
+std::optional<std::string> normalize_newlines(JSContext *cx, HandleValue src) {
+  auto chars = core::encode(cx, src);
+  if (!chars) {
+    return std::nullopt;
+  }
+
+  return normalize_newlines(chars);
+}
+
+// For field names and filenames for file fields, the result of the encoding must
+// be escaped by replacing any 0x0A (LF) bytes with the byte sequence
+// `%0A`, 0x0D (CR) with `%0D` and 0x22 (") with `%22`.
+//
+// https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart-form-data
+std::optional<std::string> escape_newlines(std::string_view str) {
+  int32_t offset = 0;
+  std::string output(str);
+
+  while ((offset = output.find_first_of("\n\r\"", offset)) != std::string::npos) {
+    if (output[offset] == '\n') {
+      output.replace(offset, 1, "%0A");
+    } else if (output[offset] == '\r') {
+      output.replace(offset, 1, "%0D");
+    } else if (output[offset] == '"') {
+      output.replace(offset, 1, "%22");
+    } else {
+      offset++;
+      continue;
+    }
+  }
+
+  return output;
+}
+
+std::optional<std::string> escape_newlines(JSContext *cx, HandleValue src) {
+  auto chars = core::encode(cx, src);
+  if (!chars) {
+    return std::nullopt;
+  }
+
+  return escape_newlines(chars);
+}
+
+} // namespace
+
+namespace builtins {
+namespace web {
+namespace form_data {
+
+using blob::Blob;
+using file::File;
+using streams::BufReader;
+using streams::NativeStreamSource;
+
+using EntryList = JS::GCVector<FormDataEntry, 0, js::SystemAllocPolicy>;
+
+struct StreamContext {
+  StreamContext(const EntryList *entries, std::span<uint8_t> outbuf)
+      : entries(entries), outbuf(outbuf), read(0), done(false) {}
+  const EntryList *entries;
+
+  std::span<uint8_t> outbuf;
+  size_t read;
+  bool done;
+
+  size_t remaining() {
+    MOZ_ASSERT(outbuf.size() >= read);
+    return outbuf.size() - read;
+  }
+
+  template <typename I> size_t write(I first, I last) {
+    auto datasz = static_cast<size_t>(std::distance(first, last));
+    if (datasz == 0) {
+      return 0;
+    }
+
+    size_t bufsz = remaining();
+    if (bufsz == 0) {
+      return 0;
+    }
+
+    size_t to_write = std::min(datasz, bufsz);
+    auto dest = outbuf.begin() + read;
+
+    std::copy_n(first, to_write, dest);
+    read += to_write;
+    return to_write;
+  }
+};
+
+class MultipartFormDataImpl {
+  enum class State : int { Start, EntryHeader, EntryBody, EntryFooter, Close, Done };
+
+  State state_;
+  std::string boundary_;
+  std::string remainder_;
+  std::string_view remainder_view_;
+
+  size_t chunk_idx_;
+  size_t file_leftovers_;
+
+  bool is_draining() { return (file_leftovers_ || remainder_.size()); };
+
+  template <typename I> size_t write_and_cache_remainder(StreamContext &stream, I first, I last);
+
+  State next_state(StreamContext &stream);
+  void maybe_drain_leftovers(JSContext *cx, StreamContext &stream);
+  bool handle_entry_header(JSContext *cx, StreamContext &stream);
+  bool handle_entry_body(JSContext *cx, StreamContext &stream);
+  bool handle_entry_footer(JSContext *cx, StreamContext &stream);
+  bool handle_close(JSContext *cx, StreamContext &stream);
+
+public:
+  MultipartFormDataImpl(std::string boundary)
+      : state_(State::Start), boundary_(std::move(boundary)), chunk_idx_(0), file_leftovers_(0) {
+    remainder_.reserve(128);
+  }
+
+  std::string boundary() {  return boundary_; };
+  bool read_next(JSContext *cx, StreamContext &stream);
+};
+
+MultipartFormDataImpl::State MultipartFormDataImpl::next_state(StreamContext &stream) {
+  auto finished = (chunk_idx_ >= stream.entries->length());
+  auto empty = stream.entries->empty();
+
+  switch (state_) {
+  case State::Start:
+    return empty ? State::Done : State::EntryHeader;
+  case State::EntryHeader:
+    return State::EntryBody;
+  case State::EntryBody:
+    return State::EntryFooter;
+  case State::EntryFooter:
+    return finished ? State::Close : State::EntryHeader;
+  case State::Close:
+    return State::Done;
+  case State::Done:
+    return State::Done;
+  default:
+    MOZ_ASSERT_UNREACHABLE("Invalid state");
+  }
+}
+
+void MultipartFormDataImpl::maybe_drain_leftovers(JSContext *cx, StreamContext &stream) {
+  if (!remainder_view_.empty()) {
+    auto written = stream.write(remainder_view_.begin(), remainder_view_.end());
+    remainder_view_.remove_prefix(written);
+
+    if (remainder_view_.empty()) {
+      remainder_.clear();
+      remainder_view_ = remainder_;
+    }
+  }
+
+  if (file_leftovers_ != 0) {
+    auto entry = stream.entries->begin()[chunk_idx_];
+    MOZ_ASSERT(state_ == State::EntryBody);
+    MOZ_ASSERT(File::is_instance(entry.value));
+
+    RootedObject obj(cx, &entry.value.toObject());
+    auto blob = Blob::blob(obj);
+    auto blobsz = blob->length();
+    auto offset = blobsz - file_leftovers_;
+    file_leftovers_ -= stream.write(blob->begin() + offset, blob->end());
+  }
+}
+
+template <typename I>
+size_t MultipartFormDataImpl::write_and_cache_remainder(StreamContext &stream, I first, I last) {
+  auto datasz = static_cast<size_t>(std::distance(first, last));
+  auto written = stream.write(first, last);
+
+  MOZ_ASSERT(written <= datasz);
+
+  auto leftover = datasz - written;
+  if (leftover > 0) {
+    MOZ_ASSERT(remainder_.empty());
+    remainder_.assign(first + written, last);
+    remainder_view_ = remainder_;
+  }
+
+  return written;
+}
+
+bool MultipartFormDataImpl::handle_entry_header(JSContext *cx, StreamContext &stream) {
+  auto entry = stream.entries->begin()[chunk_idx_];
+  auto header = fmt::memory_buffer();
+  auto name = escape_newlines(entry.name).value();
+
+  fmt::format_to(std::back_inserter(header), "--{}\r\n", boundary_);
+  fmt::format_to(std::back_inserter(header), "Content-Disposition: form-data; name=\"{}\"", name);
+
+  if (entry.value.isString()) {
+    fmt::format_to(std::back_inserter(header), "\r\n\r\n");
+  } else {
+    MOZ_ASSERT(File::is_instance(entry.value));
+    RootedObject obj(cx, &entry.value.toObject());
+
+    RootedValue filename_val(cx, JS::StringValue(File::name(obj)));
+    auto filename = escape_newlines(cx, filename_val);
+
+    RootedString type_str(cx, Blob::type(obj));
+    auto type = core::encode(cx, type_str);
+
+    if (!filename || !type) {
+      return false;
+    }
+
+    auto tmp = type.size() ? std::string_view(type) : "application/octet-stream";
+    fmt::format_to(std::back_inserter(header), "; filename=\"{}\"\r\n", filename.value());
+    fmt::format_to(std::back_inserter(header), "Content-Type: {}\r\n\r\n", tmp);
+  }
+
+  // If there are leftovers that didn't fit in outbuf, put it into remainder_
+  // and it will be drained the next run.
+  write_and_cache_remainder(stream, header.begin(), header.end());
+  return true;
+}
+
+bool MultipartFormDataImpl::handle_entry_body(JSContext *cx, StreamContext &stream) {
+  auto entry = stream.entries->begin()[chunk_idx_];
+
+  if (entry.value.isString()) {
+    RootedValue value_val(cx, entry.value);
+    auto maybe_normalized = normalize_newlines(cx, value_val);
+    if (!maybe_normalized) {
+      return false;
+    }
+
+    auto normalized = maybe_normalized.value();
+    write_and_cache_remainder(stream, normalized.begin(), normalized.end());
+  } else {
+    MOZ_ASSERT(File::is_instance(entry.value));
+    RootedObject obj(cx, &entry.value.toObject());
+
+    auto blob = Blob::blob(obj);
+    auto blobsz = blob->length();
+    auto written = stream.write(blob->begin(), blob->end());
+    MOZ_ASSERT(written <= blobsz);
+    file_leftovers_ = blobsz - written;
+  }
+
+  return true;
+}
+
+bool MultipartFormDataImpl::handle_entry_footer(JSContext *cx, StreamContext &stream) {
+  auto footer = fmt::memory_buffer();
+  fmt::format_to(std::back_inserter(footer), "\r\n");
+
+  write_and_cache_remainder(stream, footer.begin(), footer.end());
+  chunk_idx_ += 1;
+
+  MOZ_ASSERT(chunk_idx_ <= stream.entries->length());
+  return true;
+}
+
+bool MultipartFormDataImpl::handle_close(JSContext *cx, StreamContext &stream) {
+  auto footer = fmt::memory_buffer();
+  fmt::format_to(std::back_inserter(footer), "--{}--", boundary_);
+
+  write_and_cache_remainder(stream, footer.begin(), footer.end());
+  return true;
+}
+
+bool MultipartFormDataImpl::read_next(JSContext *cx, StreamContext &stream) {
+  maybe_drain_leftovers(cx, stream);
+  if (is_draining()) {
+    return true;
+  }
+
+  state_ = next_state(stream);
+
+  switch (state_) {
+  case State::EntryHeader: {
+    return handle_entry_header(cx, stream);
+  }
+  case State::EntryBody: {
+    return handle_entry_body(cx, stream);
+  }
+  case State::EntryFooter: {
+    return handle_entry_footer(cx, stream);
+  }
+  case State::Close: {
+    return handle_close(cx, stream);
+  }
+  case State::Done: {
+    stream.done = true;
+    return true;
+  }
+  default:
+    MOZ_ASSERT_UNREACHABLE("Invalid state");
+    return false;
+  }
+}
+
+const JSFunctionSpec MultipartFormData::static_methods[] = {JS_FS_END};
+const JSPropertySpec MultipartFormData::static_properties[] = {JS_PS_END};
+const JSFunctionSpec MultipartFormData::methods[] = {JS_FS_END};
+const JSPropertySpec MultipartFormData::properties[] = {JS_PS_END};
+
+bool MultipartFormData::read(JSContext *cx, HandleObject self, std::span<uint8_t> buf, size_t start,
+                             size_t *read, bool *done) {
+  MOZ_ASSERT(is_instance(self));
+
+  if (buf.empty()) {
+    *read = 0;
+    return true;
+  }
+
+  size_t bufsz = buf.size();
+  size_t total = 0;
+  bool finished = false;
+  RootedObject obj(cx, form_data(self));
+
+  auto entries = FormData::entry_list(obj);
+  auto impl = as_impl(self);
+
+  // Try to fill the buffer
+  while (total < bufsz && !finished) {
+    auto subspan = buf.subspan(total);
+    auto stream = StreamContext(entries, subspan);
+
+    if (!impl->read_next(cx, stream)) {
+      return false;
+    }
+
+    total += stream.read;
+    finished = stream.done;
+  }
+
+  // Delay reporting done to produce a separate empty chunk.
+  *done = finished && total == 0;
+  *read = total;
+  return true;
+}
+
+std::string MultipartFormData::boundary(JSObject *self) {
+  MOZ_ASSERT(is_instance(self));
+  auto impl = as_impl(self);
+  MOZ_ASSERT(impl);
+
+  return impl->boundary();
+}
+
+MultipartFormDataImpl *MultipartFormData::as_impl(JSObject *self) {
+  MOZ_ASSERT(is_instance(self));
+  return reinterpret_cast<MultipartFormDataImpl *>(
+      JS::GetReservedSlot(self, Slots::Inner).toPrivate());
+}
+
+JSObject *MultipartFormData::form_data(JSObject *self) {
+  MOZ_ASSERT(is_instance(self));
+  return &JS::GetReservedSlot(self, Slots::Form).toObject();
+}
+
+JSObject *MultipartFormData::encode_stream(JSContext *cx, HandleObject self) {
+  RootedObject reader(cx, BufReader::create(cx, self, read));
+  if (!reader) {
+    return nullptr;
+  }
+
+  RootedObject native_stream(cx, BufReader::stream(reader));
+  RootedObject default_stream(cx, NativeStreamSource::stream(native_stream));
+
+  return default_stream;
+}
+
+JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
+  JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
+  if (!self) {
+    return nullptr;
+  }
+
+  if (!FormData::is_instance(form_data)) {
+    return nullptr;
+  }
+
+  auto res = host_api::Random::get_bytes(16);
+  if (auto *err = res.to_err()) {
+    return nullptr;
+  }
+
+  // Hex encode bytes to string
+  auto bytes = std::move(res.unwrap());
+
+  std::string hex_str;
+  hex_str.reserve(bytes.size() * 2);
+
+  for (auto b : bytes) {
+    fmt::format_to(std::back_inserter(hex_str), "{:02x}", b);
+  }
+
+  auto boundary = fmt::format("--Boundary{}", hex_str);
+  auto impl = new (std::nothrow) MultipartFormDataImpl(boundary);
+  if (!impl) {
+    return nullptr;
+  }
+
+  JS::SetReservedSlot(self, Slots::Form, JS::ObjectValue(*form_data));
+  JS::SetReservedSlot(self, Slots::Inner, JS::PrivateValue(reinterpret_cast<void *>(impl)));
+
+  return self;
+}
+
+bool MultipartFormData::init_class(JSContext *cx, JS::HandleObject global) {
+  return init_class_impl(cx, global);
+}
+
+bool MultipartFormData::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
+  MOZ_ASSERT_UNREACHABLE("No MultipartFormData Ctor builtin");
+  return api::throw_error(cx, api::Errors::NoCtorBuiltin, class_name);
+}
+
+void MultipartFormData::finalize(JS::GCContext *gcx, JSObject *self) {
+  MOZ_ASSERT(is_instance(self));
+  auto impl = as_impl(self);
+  if (impl) {
+    delete impl;
+  }
+}
+
+} // namespace form_data
+} // namespace web
+} // namespace builtins

@@ -1,6 +1,8 @@
 #include "request-response.h"
 
 #include "../blob.h"
+#include "../form-data/form-data.h"
+#include "../form-data/form-data-encoder.h"
 #include "../streams/native-stream-source.h"
 #include "../streams/transform-stream.h"
 #include "../url.h"
@@ -27,8 +29,6 @@
 #include "js/experimental/TypedData.h"
 #pragma clang diagnostic pop
 
-using builtins::web::blob::Blob;
-
 namespace builtins::web::streams {
 
 bool NativeStreamSource::stream_is_body(JSContext *cx, JS::HandleObject stream) {
@@ -40,6 +40,10 @@ bool NativeStreamSource::stream_is_body(JSContext *cx, JS::HandleObject stream) 
 } // namespace builtins::web::streams
 
 namespace builtins::web::fetch {
+
+using blob::Blob;
+using form_data::FormData;
+using form_data::MultipartFormData;
 
 static api::Engine *ENGINE;
 
@@ -293,6 +297,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
   // - byte sequence
   // - buffer source
   // - Blob
+  // - FormData
   // - USV strings
   // - URLSearchParams
   // - ReadableStream
@@ -320,6 +325,24 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
       MOZ_ASSERT(host_type_str);
       content_type = host_type_str.ptr.get();
     }
+  } else if (FormData::is_instance(body_obj)) {
+    RootedObject encoder(cx, MultipartFormData::create(cx, body_obj));
+    if (!encoder) {
+      return false;
+    }
+
+    RootedObject stream(cx, MultipartFormData::encode_stream(cx, encoder));
+    if (!stream) {
+      return false;
+    }
+
+    auto boundary = MultipartFormData::boundary(encoder);
+    auto type = "multipart/form-data; boundary=" + boundary;
+    host_type_str = std::string_view(type);
+    content_type = host_type_str.ptr.get();
+
+    RootedValue stream_val(cx, JS::ObjectValue(*stream));
+    JS_SetReservedSlot(self, static_cast<uint32_t>(RequestOrResponse::Slots::BodyStream), stream_val);
   } else if (body_obj && JS::IsReadableStream(body_obj)) {
     if (RequestOrResponse::body_unusable(cx, body_obj)) {
       return api::throw_error(cx, FetchErrors::BodyStreamUnusable);

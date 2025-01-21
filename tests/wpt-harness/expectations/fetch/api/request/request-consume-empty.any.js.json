@@ -36,7 +36,7 @@
     "status": "PASS"
   },
   "Consume empty FormData request body as text": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume empty ArrayBuffer request body as text": {
     "status": "PASS"
