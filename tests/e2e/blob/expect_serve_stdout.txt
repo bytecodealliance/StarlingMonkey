@@ -1,0 +1,2 @@
+stdout [0] :: Log: Counter: 5
+stdout [0] :: Log: Finished processing blob.

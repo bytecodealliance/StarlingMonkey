@@ -17,6 +17,14 @@ host_api::HostString encode_byte_string(JSContext *cx, JS::HandleValue val);
 
 jsurl::SpecString encode_spec_string(JSContext *cx, JS::HandleValue val);
 
+// Convert the given `value` to a string and ensure that it's a scalar value string
+// (https://infra.spec.whatwg.org/#scalar-value-string)
+template <typename T>
+JSString* to_scalar_value_string(JSContext* cx, T value) {
+  auto str = encode(cx, value);
+  return str ? decode(cx, str) : nullptr;
+}
+
 } // namespace core
 
 #endif

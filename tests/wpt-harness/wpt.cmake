@@ -12,13 +12,13 @@ endif()
 if(DEFINED ENV{WPT_ROOT})
     set(WPT_ROOT $ENV{WPT_ROOT})
 else()
-	CPMAddPackage(
-	  NAME wpt-suite
-	  GITHUB_REPOSITORY web-platform-tests/wpt
-	  GIT_TAG bd65bb46410dd6ea3319e3688a5248a0a7d06960
-	  DOWNLOAD_ONLY TRUE
-	)
-	set(WPT_ROOT ${CPM_PACKAGE_wpt-suite_SOURCE_DIR})
+    CPMAddPackage(
+      NAME wpt-suite
+      GITHUB_REPOSITORY web-platform-tests/wpt
+      GIT_TAG 04d2e6c42ddce90925d73a076f6cfdd5786e8e54
+      DOWNLOAD_ONLY TRUE
+    )
+    set(WPT_ROOT ${CPM_PACKAGE_wpt-suite_SOURCE_DIR})
 endif()
 
 add_builtin(wpt_support

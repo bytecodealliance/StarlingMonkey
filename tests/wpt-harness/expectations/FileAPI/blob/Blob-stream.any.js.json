@@ -1,0 +1,20 @@
+{
+  "Blob.stream()": {
+    "status": "PASS"
+  },
+  "Blob.stream() empty Blob": {
+    "status": "PASS"
+  },
+  "Blob.stream() non-unicode input": {
+    "status": "PASS"
+  },
+  "Blob.stream() garbage collection of blob shouldn't break stream consumption": {
+    "status": "PASS"
+  },
+  "Blob.stream() garbage collection of stream shouldn't break stream consumption": {
+    "status": "PASS"
+  },
+  "Reading Blob.stream() with BYOB reader": {
+    "status": "FAIL"
+  }
+}

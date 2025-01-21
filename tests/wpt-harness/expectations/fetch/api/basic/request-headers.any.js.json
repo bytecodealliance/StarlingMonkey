@@ -57,7 +57,7 @@
     "status": "FAIL"
   },
   "Fetch with GET and mode \"cors\" does not need an Origin header": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Fetch with POST and mode \"same-origin\" needs an Origin header": {
     "status": "FAIL"

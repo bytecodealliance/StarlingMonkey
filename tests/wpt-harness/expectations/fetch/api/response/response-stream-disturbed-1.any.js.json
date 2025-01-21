@@ -1,6 +1,6 @@
 {
   "Getting blob after getting the Response body - not disturbed, not locked (body source: fetch)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Getting text after getting the Response body - not disturbed, not locked (body source: fetch)": {
     "status": "PASS"
@@ -12,7 +12,7 @@
     "status": "PASS"
   },
   "Getting blob after getting the Response body - not disturbed, not locked (body source: stream)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Getting text after getting the Response body - not disturbed, not locked (body source: stream)": {
     "status": "PASS"
@@ -24,7 +24,7 @@
     "status": "PASS"
   },
   "Getting blob after getting the Response body - not disturbed, not locked (body source: string)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Getting text after getting the Response body - not disturbed, not locked (body source: string)": {
     "status": "PASS"

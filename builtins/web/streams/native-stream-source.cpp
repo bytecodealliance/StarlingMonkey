@@ -40,9 +40,9 @@ NativeStreamSource::cancelAlgorithm(JSObject *self) {
       .toPrivate();
 }
 
-JSObject *NativeStreamSource::controller(JSObject *self) {
+JSObject *NativeStreamSource::stream(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return &JS::GetReservedSlot(self, Slots::Controller).toObject();
+  return JS::GetReservedSlot(self, NativeStreamSource::Slots::Stream).toObjectOrNull();
 }
 
 /**
@@ -108,10 +108,8 @@ bool NativeStreamSource::start(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
   MOZ_ASSERT(args[0].isObject());
-  JS::RootedObject controller(cx, &args[0].toObject());
+  JS::RootedObject __attribute__((unused)) controller(cx, &args[0].toObject());
   MOZ_ASSERT(get_controller_source(cx, controller) == self);
-
-  JS::SetReservedSlot(self, NativeStreamSource::Slots::Controller, args[0]);
 
   // For TransformStream, StartAlgorithm returns the same Promise for both the
   // readable and writable stream. All other native initializations of
@@ -127,7 +125,6 @@ bool NativeStreamSource::pull(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   JS::RootedObject owner(cx, NativeStreamSource::owner(self));
   JS::RootedObject controller(cx, &args[0].toObject());
-  MOZ_ASSERT(controller == NativeStreamSource::controller(self));
   MOZ_ASSERT(get_controller_source(cx, controller) == self.get());
 
   PullAlgorithmImplementation *pull = pullAlgorithm(self);
@@ -152,25 +149,38 @@ const JSPropertySpec NativeStreamSource::static_properties[] = {
     JS_PS_END,
 };
 
-const JSFunctionSpec NativeStreamSource::methods[] = {JS_FN("start", start, 1, 0),
-                                                      JS_FN("pull", pull, 1, 0),
-                                                      JS_FN("cancel", cancel, 1, 0), JS_FS_END};
+const JSFunctionSpec NativeStreamSource::methods[] = {
+    JS_FN("start", start, 1, 0),
+    JS_FN("pull", pull, 1, 0),
+    JS_FN("cancel", cancel, 1, 0),
+    JS_FS_END
+};
 
-const JSPropertySpec NativeStreamSource::properties[] = {JS_PS_END};
+const JSPropertySpec NativeStreamSource::properties[] = {
+    JS_PS_END
+};
 
-JSObject *NativeStreamSource::create(JSContext *cx, JS::HandleObject owner,
-                                     JS::HandleValue startPromise,
-                                     PullAlgorithmImplementation *pull,
-                                     CancelAlgorithmImplementation *cancel) {
+JSObject *NativeStreamSource::create(JSContext *cx, JS::HandleObject owner, JS::HandleValue startPromise,
+                                     PullAlgorithmImplementation *pull, CancelAlgorithmImplementation *cancel,
+                                     JS::HandleFunction size, double highWaterMark) {
   JS::RootedObject source(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (!source)
+  if (!source) {
     return nullptr;
+  }
 
+  // Initialize source slots before creating `ReadableDefaultStreamObject`.
   JS::SetReservedSlot(source, Slots::Owner, JS::ObjectValue(*owner));
   JS::SetReservedSlot(source, Slots::StartPromise, startPromise);
   JS::SetReservedSlot(source, Slots::PullAlgorithm, JS::PrivateValue((void *)pull));
   JS::SetReservedSlot(source, Slots::CancelAlgorithm, JS::PrivateValue((void *)cancel));
   JS::SetReservedSlot(source, Slots::PipedToTransformStream, JS::NullValue());
+
+  JS::RootedObject stream(cx, JS::NewReadableDefaultStreamObject(cx, source, size, highWaterMark));
+  if (!stream) {
+    return nullptr;
+  }
+
+  JS::SetReservedSlot(source, Slots::Stream, JS::ObjectValue(*stream));
   return source;
 }
 } // namespace streams

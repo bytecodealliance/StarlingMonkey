@@ -17,6 +17,9 @@
   "Null arrays: Int8Array": {
     "status": "PASS"
   },
+  "Subclass of Int8Array": {
+    "status": "PASS"
+  },
   "Integer array: Int16Array": {
     "status": "PASS"
   },
@@ -24,6 +27,9 @@
     "status": "PASS"
   },
   "Null arrays: Int16Array": {
+    "status": "PASS"
+  },
+  "Subclass of Int16Array": {
     "status": "PASS"
   },
   "Integer array: Int32Array": {
@@ -35,6 +41,9 @@
   "Null arrays: Int32Array": {
     "status": "PASS"
   },
+  "Subclass of Int32Array": {
+    "status": "PASS"
+  },
   "Integer array: BigInt64Array": {
     "status": "PASS"
   },
@@ -42,6 +51,9 @@
     "status": "PASS"
   },
   "Null arrays: BigInt64Array": {
+    "status": "PASS"
+  },
+  "Subclass of BigInt64Array": {
     "status": "PASS"
   },
   "Integer array: Uint8Array": {
@@ -53,6 +65,9 @@
   "Null arrays: Uint8Array": {
     "status": "PASS"
   },
+  "Subclass of Uint8Array": {
+    "status": "PASS"
+  },
   "Integer array: Uint8ClampedArray": {
     "status": "PASS"
   },
@@ -60,6 +75,9 @@
     "status": "PASS"
   },
   "Null arrays: Uint8ClampedArray": {
+    "status": "PASS"
+  },
+  "Subclass of Uint8ClampedArray": {
     "status": "PASS"
   },
   "Integer array: Uint16Array": {
@@ -71,6 +89,9 @@
   "Null arrays: Uint16Array": {
     "status": "PASS"
   },
+  "Subclass of Uint16Array": {
+    "status": "PASS"
+  },
   "Integer array: Uint32Array": {
     "status": "PASS"
   },
@@ -80,6 +101,9 @@
   "Null arrays: Uint32Array": {
     "status": "PASS"
   },
+  "Subclass of Uint32Array": {
+    "status": "PASS"
+  },
   "Integer array: BigUint64Array": {
     "status": "PASS"
   },
@@ -87,6 +111,9 @@
     "status": "PASS"
   },
   "Null arrays: BigUint64Array": {
+    "status": "PASS"
+  },
+  "Subclass of BigUint64Array": {
     "status": "PASS"
   }
 }

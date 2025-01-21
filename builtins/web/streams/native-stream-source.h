@@ -12,7 +12,7 @@ public:
   static constexpr const char *class_name = "NativeStreamSource";
   enum Slots {
     Owner,          // Request or Response object, or TransformStream.
-    Controller,     // The ReadableStreamDefaultController.
+    Stream,         // The ReadableStreamDefaultObject.
     InternalReader, // Only used to lock the stream if it's consumed internally.
     StartPromise,   // Used as the return value of `start`, can be undefined.
                     // Needed to properly implement TransformStream.
@@ -38,7 +38,6 @@ public:
   static JS::Value startPromise(JSObject *self);
   static PullAlgorithmImplementation *pullAlgorithm(JSObject *self);
   static CancelAlgorithmImplementation *cancelAlgorithm(JSObject *self);
-  static JSObject *controller(JSObject *self);
   static JSObject *get_controller_source(JSContext *cx, JS::HandleObject controller);
   static JSObject *get_stream_source(JSContext *cx, JS::HandleObject stream);
   static bool stream_has_native_source(JSContext *cx, JS::HandleObject stream);
@@ -50,8 +49,17 @@ public:
   static bool start(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool pull(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool cancel(JSContext *cx, unsigned argc, JS::Value *vp);
+
+  // Create an instance of `NativStreamSource`
+  //
+  // `NativeStreamSource` internally creates a `ReadableDefaultStreamObject` instance. To prevent an
+  // eager pull, we choose to overwrite the default `highWaterMark` value, setting it to 0.0. With
+  // the default `highWaterMark` of 1.0, the stream implementation automatically triggers a pull,
+  // which means we enqueue a read from the host handle even though we often have no interest in it
+  // at all.
   static JSObject *create(JSContext *cx, JS::HandleObject owner, JS::HandleValue startPromise,
-                          PullAlgorithmImplementation *pull, CancelAlgorithmImplementation *cancel);
+                          PullAlgorithmImplementation *pull, CancelAlgorithmImplementation *cancel,
+                          JS::HandleFunction size = nullptr, double highWaterMark = 0.0);
 };
 } // namespace streams
 } // namespace web

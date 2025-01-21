@@ -7,7 +7,7 @@ namespace builtins {
 namespace web {
 namespace text_codec {
 
-class TextDecoder final : public BuiltinImpl<TextDecoder> {
+class TextDecoder final : public FinalizableBuiltinImpl<TextDecoder> {
   static bool decode(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool encoding_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool fatal_get(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -33,6 +33,7 @@ public:
 
   static bool init_class(JSContext *cx, JS::HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
+  static void finalize(JS::GCContext *gcx, JSObject *self);
 };
 
 } // namespace text_codec
