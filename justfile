@@ -49,13 +49,17 @@ clean-all: && do_clean
 componentize script="" outfile="starling.wasm": build
     {{ builddir }}/componentize.sh {{ script }} -o {{ outfile }}
 
+# Componentize and serve script with wasmtime
+serve script: (componentize script)
+    wasmtime serve -S common starling.wasm
+
 # Format code using clang-format. Use --fix to fix files inplace
 format *ARGS:
     {{ justdir }}/scripts/clang-format.sh {{ ARGS }}
 
 # Run integration test
-test: (build "integration-test-server")
-    ctest --test-dir {{ builddir }} -j {{ ncpus }} --output-on-failure
+test regex="": (build "integration-test-server")
+    ctest --test-dir {{ builddir }} -j {{ ncpus }} --output-on-failure -R {{ regex }}
 
 # Build web platform test suite
 [group('wpt')]
