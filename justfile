@@ -49,6 +49,7 @@ clean-all: && do_clean
 componentize script="" outfile="starling.wasm": build
     {{ builddir }}/componentize.sh {{ script }} -o {{ outfile }}
 
+# Componentize and serve script with wasmtime
 serve script: (componentize script)
     wasmtime serve -S common starling.wasm
 

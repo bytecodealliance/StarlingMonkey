@@ -169,6 +169,11 @@ Once installed, navigate to the project directory and run `just` commands as nee
 just build
 ```
 
+To load a JS script during componentization and serve its output using `Wasmtime`, run:
+``` shell
+just serve <filename>.js
+```
+
 To build and run integration tests run:
 
 ``` shell
