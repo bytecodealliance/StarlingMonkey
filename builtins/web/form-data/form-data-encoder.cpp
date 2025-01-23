@@ -2,6 +2,7 @@
 #include "extension-api.h"
 #include "form-data.h"
 
+#include "../base64.h"
 #include "../blob.h"
 #include "../file.h"
 #include "../streams/buf-reader.h"
@@ -447,22 +448,17 @@ JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
     return nullptr;
   }
 
-  auto res = host_api::Random::get_bytes(16);
+  auto res = host_api::Random::get_bytes(12);
   if (auto *err = res.to_err()) {
     return nullptr;
   }
 
   // Hex encode bytes to string
   auto bytes = std::move(res.unwrap());
+  auto bytes_str = std::string_view((char *)(bytes.ptr.get()), bytes.size());
+  auto base64_str = base64::forgivingBase64Encode(bytes_str, base64::base64EncodeTable);
 
-  std::string hex_str;
-  hex_str.reserve(bytes.size() * 2);
-
-  for (auto b : bytes) {
-    fmt::format_to(std::back_inserter(hex_str), "{:02x}", b);
-  }
-
-  auto boundary = fmt::format("--Boundary{}", hex_str);
+  auto boundary = fmt::format("--Boundary{}", base64_str);
   auto impl = new (std::nothrow) MultipartFormDataImpl(boundary);
   if (!impl) {
     return nullptr;
