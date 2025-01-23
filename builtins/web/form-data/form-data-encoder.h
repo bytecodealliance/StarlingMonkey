@@ -2,7 +2,6 @@
 #define BUILTINS_WEB_FORM_DATA_ENCODER_
 
 #include "builtin.h"
-#include "js/TypeDecls.h"
 
 namespace builtins {
 namespace web {
