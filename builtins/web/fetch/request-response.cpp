@@ -1283,7 +1283,6 @@ bool Request::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
   Value url_val = GetReservedSlot(self, static_cast<uint32_t>(Slots::URL));
   SetReservedSlot(new_request, static_cast<uint32_t>(Slots::URL), url_val);
   Value method_val = JS::StringValue(method(self));
-  ENGINE->dump_value(method_val, stderr);
   SetReservedSlot(new_request, static_cast<uint32_t>(Slots::Method), method_val);
 
   // clone operation step 2.
