@@ -20,18 +20,16 @@ const char LF = '\n';
 const char CR = '\r';
 const char *CRLF = "\r\n";
 
-size_t compute_normalized_len(std::string_view src, const char *newline) {
+size_t compute_normalized_len(std::string_view src) {
   size_t len = 0;
-  size_t newline_len = strlen(newline);
+  const size_t newline_len = strlen(CRLF);
 
   for (size_t i = 0; i < src.size(); i++) {
     if (src[i] == CR) {
       if (i + 1 < src.size() && src[i + 1] == LF) {
-        len += newline_len;
         i++;
-      } else {
-        len += newline_len;
       }
+      len += newline_len;
     } else if (src[i] == LF) {
       len += newline_len;
     } else {
@@ -50,7 +48,7 @@ size_t compute_normalized_len(std::string_view src, const char *newline) {
 std::optional<std::string> normalize_newlines(std::string_view src) {
   std::string output;
 
-  output.reserve(compute_normalized_len(src, CRLF));
+  output.reserve(compute_normalized_len(src));
 
   for (size_t i = 0; i < src.size(); i++) {
     if (src[i] == CR) {
@@ -84,7 +82,7 @@ std::optional<std::string> normalize_newlines(JSContext *cx, HandleValue src) {
 // `%0A`, 0x0D (CR) with `%0D` and 0x22 (") with `%22`.
 //
 // https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart-form-data
-std::optional<std::string> escape_newlines(std::string_view str) {
+std::optional<std::string> escape_name(std::string_view str) {
   int32_t offset = 0;
   std::string output(str);
 
@@ -104,13 +102,13 @@ std::optional<std::string> escape_newlines(std::string_view str) {
   return output;
 }
 
-std::optional<std::string> escape_newlines(JSContext *cx, HandleValue src) {
+std::optional<std::string> escape_name(JSContext *cx, HandleValue src) {
   auto chars = core::encode(cx, src);
   if (!chars) {
     return std::nullopt;
   }
 
-  return escape_newlines(chars);
+  return escape_name(chars);
 }
 
 } // namespace
@@ -140,6 +138,10 @@ struct StreamContext {
     return outbuf.size() - read;
   }
 
+ // Writes as many elements from the range [first, last) into the underlying buffer as possible.
+ //
+ // This function is deliberately infallible as it simply writes up to the available buffer size
+ // and returns how many elements were successfully written.
   template <typename I> size_t write(I first, I last) {
     auto datasz = static_cast<size_t>(std::distance(first, last));
     if (datasz == 0) {
@@ -173,7 +175,7 @@ class MultipartFormDataImpl {
 
   bool is_draining() { return (file_leftovers_ || remainder_.size()); };
 
-  template <typename I> size_t write_and_cache_remainder(StreamContext &stream, I first, I last);
+  template <typename I> void write_and_cache_remainder(StreamContext &stream, I first, I last);
 
   State next_state(StreamContext &stream);
   void maybe_drain_leftovers(JSContext *cx, StreamContext &stream);
@@ -239,7 +241,7 @@ void MultipartFormDataImpl::maybe_drain_leftovers(JSContext *cx, StreamContext &
 }
 
 template <typename I>
-size_t MultipartFormDataImpl::write_and_cache_remainder(StreamContext &stream, I first, I last) {
+void MultipartFormDataImpl::write_and_cache_remainder(StreamContext &stream, I first, I last) {
   auto datasz = static_cast<size_t>(std::distance(first, last));
   auto written = stream.write(first, last);
 
@@ -251,17 +253,18 @@ size_t MultipartFormDataImpl::write_and_cache_remainder(StreamContext &stream, I
     remainder_.assign(first + written, last);
     remainder_view_ = remainder_;
   }
-
-  return written;
 }
 
 bool MultipartFormDataImpl::handle_entry_header(JSContext *cx, StreamContext &stream) {
   auto entry = stream.entries->begin()[chunk_idx_];
   auto header = fmt::memory_buffer();
-  auto name = escape_newlines(entry.name).value();
+  auto name = escape_name(entry.name);
+
+  // Safety: The overloaded `escape_name` that takes a string argument is infallible.
+  MOZ_ASSERT(name.has_value());
 
   fmt::format_to(std::back_inserter(header), "--{}\r\n", boundary_);
-  fmt::format_to(std::back_inserter(header), "Content-Disposition: form-data; name=\"{}\"", name);
+  fmt::format_to(std::back_inserter(header), "Content-Disposition: form-data; name=\"{}\"", name.value());
 
   if (entry.value.isString()) {
     fmt::format_to(std::back_inserter(header), "\r\n\r\n");
@@ -270,12 +273,14 @@ bool MultipartFormDataImpl::handle_entry_header(JSContext *cx, StreamContext &st
     RootedObject obj(cx, &entry.value.toObject());
 
     RootedValue filename_val(cx, JS::StringValue(File::name(obj)));
-    auto filename = escape_newlines(cx, filename_val);
+    auto filename = escape_name(cx, filename_val);
+    if (!filename) {
+      return false;
+    }
 
     RootedString type_str(cx, Blob::type(obj));
     auto type = core::encode(cx, type_str);
-
-    if (!filename || !type) {
+    if (!type) {
       return false;
     }
 
