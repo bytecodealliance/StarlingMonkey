@@ -12,6 +12,7 @@ DEF_ERR(InvalidInitArg, JSEXN_TYPEERR, "{0}: |init| parameter can't be converted
 DEF_ERR(NonBodyRequestWithBody, JSEXN_TYPEERR, "Request constructor: HEAD or GET Request cannot have a body", 0)
 DEF_ERR(NonBodyResponseWithBody, JSEXN_TYPEERR, "Response constructor: response with status {0} cannot have a body", 1)
 DEF_ERR(BodyStreamUnusable, JSEXN_TYPEERR, "Can't use a ReadableStream that's locked or has ever been read from or canceled", 0)
+DEF_ERR(IncomingBodyStreamError, JSEXN_TYPEERR, "IO error reading from incoming {0} body", 1)
 DEF_ERR(BodyStreamTeeingFailed, JSEXN_ERR, "Cloning body stream failed", 0)
 DEF_ERR(InvalidStatus, JSEXN_RANGEERR, "{0}: invalid status {1}", 2)
 DEF_ERR(InvalidStreamChunk, JSEXN_TYPEERR, "ReadableStream used as a Request or Response body must produce Uint8Array values", 0)

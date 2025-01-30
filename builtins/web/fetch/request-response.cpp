@@ -78,7 +78,8 @@ public:
 
     auto read_res = body->read(HANDLE_READ_CHUNK_SIZE);
     if (auto *err = read_res.to_err()) {
-      HANDLE_ERROR(cx, *err);
+      auto receiver = Request::is_instance(owner) ? "request" : "response";
+      api::throw_error(cx, FetchErrors::IncomingBodyStreamError, receiver);
       return error_stream_controller_with_pending_exception(cx, stream);
     }
 
@@ -1006,6 +1007,7 @@ bool write_all_finish_callback(JSContext *cx, HandleObject then_handler) {
 bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_owner,
                                            JS::HandleValue extra, JS::CallArgs args) {
   JS::RootedObject then_handler(cx, &args.callee());
+  auto body = RequestOrResponse::outgoing_body_handle(body_owner);
 
   // We're guaranteed to work with a native ReadableStreamDefaultReader here,
   // which in turn is guaranteed to vend {done: bool, value: any} objects to
@@ -1023,8 +1025,13 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
   if (!JS_GetProperty(cx, chunk_obj, "value", &val))
     return false;
 
-  // The read operation returned something that's not a Uint8Array
-  if (!val.isObject() || !JS_IsUint8Array(&val.toObject())) {
+  // The read operation returned something that's not a Uint8Array, or an array whose buffer has
+  // been detached.
+  if (!val.isObject() || !JS_IsUint8Array(&val.toObject()) ||
+    JS::ArrayBufferView::fromObject(&val.toObject()).isDetached()) {
+    // Close the body stream, since we're not going to send anything to it anymore.
+    body->close();
+
     // reject the request promise
     if (Request::is_instance(body_owner)) {
       JS::RootedObject response_promise(cx, Request::response_promise(body_owner));
@@ -1043,12 +1050,42 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
 
   RootedObject array(cx, &val.toObject());
   size_t length = JS_GetTypedArrayByteLength(array);
-  bool is_shared;
-  RootedObject buffer(cx, JS_GetArrayBufferViewBuffer(cx, array, &is_shared));
-  MOZ_ASSERT(!is_shared);
-  auto ptr = static_cast<uint8_t *>(StealArrayBufferContents(cx, buffer));
-  host_api::HostBytes bytes(unique_ptr<uint8_t[]>(ptr), length);
-  auto body = RequestOrResponse::outgoing_body_handle(body_owner);
+  // No need to do anything for 0-sized chunks.
+  if (length == 0) {
+    return write_all_finish_callback(cx, then_handler);
+  }
+
+  // The specs for handling outgoing bodies for requests and responses differ, unfortunately:
+  // For requests, we need to copy the bytes, but leave the chunk as-is.
+  // See step 3.2.2.3 of https://fetch.spec.whatwg.org/#http-fetch
+  // For responses, we need to detach the chunk's buffer. That means we can use the bytes
+  // without copying.
+  // see step 10.2.5.2.1.chunk_steps of https://w3c.github.io/ServiceWorker/#fetch-event-respondwith
+  host_api::HostBytes bytes;
+  if (Request::is_instance(body_owner)) {
+    auto ptr = std::make_unique<uint8_t[]>(length);
+    if (!ptr) {
+      JS_ReportOutOfMemory(cx);
+      return false;
+    }
+    {
+      bool is_shared;
+      JS::AutoCheckCannotGC nogc(cx);
+      auto data = JS_GetUint8ArrayData(array, &is_shared, nogc);
+      MOZ_ASSERT(data);
+      MOZ_ASSERT(!is_shared);
+      memcpy(ptr.get(), data, length);
+    }
+    bytes = host_api::HostBytes(std::move(ptr), length);
+  } else {
+    bool is_shared;
+    RootedObject buffer(cx, JS_GetArrayBufferViewBuffer(cx, array, &is_shared));
+    MOZ_ASSERT(!is_shared);
+    auto ptr = static_cast<uint8_t *>(StealArrayBufferContents(cx, buffer));
+    MOZ_ASSERT(ptr);
+    bytes = host_api::HostBytes(unique_ptr<uint8_t[]>(ptr), length);
+  }
+
   auto res = body->write_all(ENGINE, std::move(bytes),
     write_all_finish_callback, then_handler);
   if (auto *err = res.to_err()) {
