@@ -1,0 +1,14 @@
+----BoundaryjXo5N4HEAXWcKrw7
+Content-Disposition: form-data; name="field1"
+
+value1
+----BoundaryjXo5N4HEAXWcKrw7
+Content-Disposition: form-data; name="field2"
+
+value2
+----BoundaryjXo5N4HEAXWcKrw7
+Content-Disposition: form-data; name="file1"; filename="dummy.txt"
+Content-Type: foo
+
+Hello World!
+----BoundaryjXo5N4HEAXWcKrw7--

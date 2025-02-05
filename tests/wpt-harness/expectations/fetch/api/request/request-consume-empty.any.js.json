@@ -18,7 +18,7 @@
     "status": "FAIL"
   },
   "Consume request's body as formData without correct type (error case)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume empty blob request body as arrayBuffer": {
     "status": "PASS"

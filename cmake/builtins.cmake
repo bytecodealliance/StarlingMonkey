@@ -25,7 +25,9 @@ add_builtin(
     SRC
         builtins/web/form-data/form-data.cpp
         builtins/web/form-data/form-data-encoder.cpp
+        builtins/web/form-data/form-data-parser.cpp
     DEPENDENCIES
+        multipart
         fmt)
 
 add_builtin(
