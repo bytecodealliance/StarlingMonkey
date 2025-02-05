@@ -9,7 +9,7 @@
     "status": "FAIL"
   },
   "ReadableStream with non-Uint8Array chunk passed to Response.formData() causes TypeError": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ReadableStream with non-Uint8Array chunk passed to Response.json() causes TypeError": {
     "status": "PASS"

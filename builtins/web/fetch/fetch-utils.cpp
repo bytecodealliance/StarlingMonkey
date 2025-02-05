@@ -1,11 +1,147 @@
 #include "fetch-utils.h"
 
-#include <string>
 #include <charconv>
+#include <string>
+#include <ranges>
+#include <string_view>
+#include <fmt/format.h>
 
 namespace builtins::web::fetch {
 
-std::optional<std::tuple<size_t, size_t>> extract_range(std::string_view range_query, size_t full_len) {
+std::string MimeType::to_string() {
+  std::string result = essence;
+
+  for (const auto& [key, value] : params) {
+      result += fmt::format(";{}={}", key, value);
+  }
+
+  return result;
+}
+
+std::string_view trim(std::string_view input) {
+    auto trimsz = input.find_first_not_of(" \t");
+    if (trimsz == std::string_view::npos) {
+        return {};
+    }
+
+    input.remove_prefix(trimsz);
+
+    trimsz = input.find_last_not_of(" \t");
+    input.remove_suffix(input.size() - trimsz - 1);
+
+    return input;
+}
+
+std::optional<MimeType> parse_mime_type(std::string_view str) {
+  auto input = trim(str);
+
+  if (input.empty()) {
+    return std::nullopt;
+  }
+
+  std::string essence;
+  std::string params;
+
+  if (auto pos = input.find(';'); pos != std::string::npos) {
+    essence = trim(input.substr(0, pos));
+    params = trim(input.substr(pos + 1));
+  } else {
+    essence = trim(input);
+  }
+
+  if (essence.empty() || essence.find('/') == std::string::npos) {
+    return std::nullopt;
+  }
+
+  MimeType mime;
+  mime.essence = essence;
+
+  if (params.empty()) {
+    return mime;
+  }
+
+  auto as_string = [](std::string_view v) -> std::string {
+    return {v.data(), v.size()};
+  };
+
+  for (const auto view : std::views::split(params, ';')) {
+    auto param = std::string_view(view.begin(), view.end());
+
+    if (auto pos = param.find('='); pos != std::string::npos) {
+      auto key = trim(param.substr(0, pos));
+      auto value = trim(param.substr(pos + 1));
+
+      if (!key.empty()) {
+        mime.params.push_back({ as_string(key), as_string(value) });
+      }
+    }
+  }
+
+  return mime;
+}
+
+// https://fetch.spec.whatwg.org/#concept-body-mime-type
+std::optional<MimeType> extract_mime_type(std::string_view query) {
+  // 1. Let charset be null.
+  // 2. Let essence be null.
+  // 3. Let mimeType be null.
+  std::string essence;
+  std::string charset;
+  MimeType mime;
+
+  bool found = false;
+
+  // 4. Let values be the result of getting, decoding, and splitting `Content-Type` from headers.
+  // 5. If values is null, then return failure.
+  // 6. For each value of values:
+  for (const auto value : std::views::split(query, ',')) {
+    // 1. Let temporaryMimeType be the result of parsing value.
+    // 2. If temporaryMimeType is failure or its essence is "*/*", then continue.
+    auto value_str = std::string_view(value.begin(), value.end());
+    auto maybe_mime = parse_mime_type(value_str);
+    if (!maybe_mime || maybe_mime.value().essence == "*/*") {
+      continue;
+    }
+
+    // 3. Set mimeType to temporaryMimeType.
+    mime = maybe_mime.value();
+    found = true;
+
+    // 4. If mimeType's essence is not essence, then:
+    if (mime.essence != essence) {
+      // 1. Set charset to null.
+      charset.clear();
+      // 2. If mimeTypes parameters["charset"] exists, then set charset to mimeType's
+      // parameters["charset"].
+      auto it = std::find_if(mime.params.begin(), mime.params.end(),
+          [&](const auto &kv) { return std::get<0>(kv) == "charset"; });
+
+      if (it != mime.params.end()) {
+        charset = std::get<1>(*it);
+      }
+
+      // 3. Set essence to mimeTypes essence.
+      essence = mime.essence;
+
+    } else {
+      // 5. Otherwise, if mimeTypes parameters["charset"] does not exist, and charset is non-null,
+      //    set mimeType's parameters["charset"] to charset.
+      auto it = std::find_if(mime.params.begin(), mime.params.end(),
+          [&](const auto &kv) { return std::get<0>(kv) == "charset"; });
+
+      if (it == mime.params.end() && !charset.empty()) {
+        mime.params.push_back({"charset", charset});
+      }
+    }
+  }
+
+  // 7. If mimeType is null, then return failure.
+  // 8. Return mimeType.
+  return found ? std::optional<MimeType>(mime) : std::nullopt;
+}
+
+std::optional<std::tuple<size_t, size_t>> extract_range(std::string_view range_query,
+                                                        size_t full_len) {
   if (!range_query.starts_with("bytes=")) {
     return std::nullopt;
   }
@@ -59,4 +195,4 @@ std::optional<std::tuple<size_t, size_t>> extract_range(std::string_view range_q
   return std::optional<std::tuple<size_t, size_t>>{{start_range, end_range}};
 }
 
-}
+} // namespace builtins::web::fetch
