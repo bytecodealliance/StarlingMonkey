@@ -111,7 +111,17 @@ std::optional<std::string> escape_name(JSContext *cx, HandleValue src) {
   return escape_name(chars);
 }
 
-} // namespace
+std::string normalize_and_escape(std::string_view src) {
+  auto normalized = normalize_newlines(src);
+  MOZ_ASSERT(normalized.has_value());
+
+  auto escaped = escape_name(normalized.value());
+  MOZ_ASSERT(escaped);
+
+  return escaped.value();
+}
+
+}// namespace
 
 namespace builtins {
 namespace web {
@@ -258,13 +268,10 @@ void MultipartFormDataImpl::write_and_cache_remainder(StreamContext &stream, I f
 bool MultipartFormDataImpl::handle_entry_header(JSContext *cx, StreamContext &stream) {
   auto entry = stream.entries->begin()[chunk_idx_];
   auto header = fmt::memory_buffer();
-  auto name = escape_name(entry.name);
-
-  // Safety: The overloaded `escape_name` that takes a string argument is infallible.
-  MOZ_ASSERT(name.has_value());
+  auto name = normalize_and_escape(entry.name);
 
   fmt::format_to(std::back_inserter(header), "--{}\r\n", boundary_);
-  fmt::format_to(std::back_inserter(header), "Content-Disposition: form-data; name=\"{}\"", name.value());
+  fmt::format_to(std::back_inserter(header), "Content-Disposition: form-data; name=\"{}\"", name);
 
   if (entry.value.isString()) {
     fmt::format_to(std::back_inserter(header), "\r\n\r\n");
