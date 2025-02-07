@@ -54,6 +54,7 @@ class FormData : public TraceableBuiltinImpl<FormData> {
   using EntryList = JS::GCVector<FormDataEntry, 0, js::SystemAllocPolicy>;
   static EntryList *entry_list(JSObject *self);
 
+  friend class UrlParser;
   friend class FormDataIterator;
   friend class MultipartFormData;
 

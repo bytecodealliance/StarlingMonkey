@@ -111,6 +111,8 @@ JSUrl *new_jsurl(const SpecString *spec);
 
 JSUrl *new_jsurl_with_base(const SpecString *spec, const JSUrl *base);
 
+void free_jsurl(JSUrl *url);
+
 SpecSlice authority(const JSUrl *url);
 
 SpecSlice path_with_query(const JSUrl *url);
@@ -161,6 +163,8 @@ JSUrlSearchParams *url_search_params(JSUrl *url);
 
 JSUrlSearchParams *new_params();
 
+void free_params(JSUrlSearchParams *params);
+
 void params_init(JSUrlSearchParams *params, const SpecString *init);
 
 void params_append(JSUrlSearchParams *params, SpecString name, SpecString value);
@@ -181,8 +185,8 @@ void params_sort(JSUrlSearchParams *params);
 
 SpecSlice params_to_string(const JSUrlSearchParams *params);
 
-} // extern "C"
+}  // extern "C"
 
-} // namespace jsurl
+}  // namespace jsurl
 
-#endif // rust_url_bindings_h
+#endif  // rust_url_bindings_h

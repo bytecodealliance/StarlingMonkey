@@ -15,7 +15,7 @@
     "status": "FAIL"
   },
   "Consume response's body as formData with correct urlencoded type": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume response's body as formData without correct type (error case)": {
     "status": "FAIL"
