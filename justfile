@@ -72,8 +72,8 @@ wpt-test filter="": wpt-build
 
 # Update web platform test expectations
 [group('wpt')]
-wpt-update: wpt-build
-    WPT_FLAGS="--update-expectations" ctest --test-dir {{ builddir }} -R wpt --verbose
+wpt-update filter="": wpt-build
+    WPT_FLAGS="--update-expectations" WPT_FILTER={{ filter }} ctest --test-dir {{ builddir }} -R wpt --verbose
 
 # Run wpt server
 [group('wpt')]
