@@ -77,25 +77,37 @@ std::optional<std::string> normalize_newlines(JSContext *cx, HandleValue src) {
   return normalize_newlines(chars);
 }
 
+size_t compute_escaped_len(std::string_view src) {
+  size_t len = 0;
+  for (char ch : src) {
+    if (ch == '\n' || ch == '\r' || ch == '"') {
+      len += 3;
+    } else {
+      ++len;
+    }
+  }
+  return len;
+}
+
 // For field names and filenames for file fields, the result of the encoding must
 // be escaped by replacing any 0x0A (LF) bytes with the byte sequence
 // `%0A`, 0x0D (CR) with `%0D` and 0x22 (") with `%22`.
 //
 // https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart-form-data
-std::optional<std::string> escape_name(std::string_view str) {
-  int32_t offset = 0;
-  std::string output(str);
+std::optional<std::string> escape_name(std::string_view src) {
+  size_t escaped_len = compute_escaped_len(src);
+  std::string output;
+  output.reserve(escaped_len);
 
-  while ((offset = output.find_first_of("\n\r\"", offset)) != std::string::npos) {
-    if (output[offset] == '\n') {
-      output.replace(offset, 1, "%0A");
-    } else if (output[offset] == '\r') {
-      output.replace(offset, 1, "%0D");
-    } else if (output[offset] == '"') {
-      output.replace(offset, 1, "%22");
+  for (char ch : src) {
+    if (ch == '\n') {
+      output.append("%0A");
+    } else if (ch == '\r') {
+      output.append("%0D");
+    } else if (ch == '"') {
+      output.append("%22");
     } else {
-      offset++;
-      continue;
+      output.push_back(ch);
     }
   }
 
@@ -109,6 +121,30 @@ std::optional<std::string> escape_name(JSContext *cx, HandleValue src) {
   }
 
   return escape_name(chars);
+}
+
+size_t compute_normalized_and_escaped_len(std::string_view src) {
+  size_t len = 0;
+
+  for (size_t i = 0; i < src.size(); ++i) {
+    char ch = src[i];
+    if (ch == '\r') {
+      len += 3; // CR -> "%0D"
+      len += 3; // LF -> "%0A"
+      if ((i + 1) < src.size() && src[i + 1] == '\n') {
+        ++i;
+      }
+    } else if (ch == '\n') {
+      len += 3; // CR -> "%0D"
+      len += 3; // LF -> "%0A"
+    } else if (ch == '"') {
+      len += 3; // -> "%22"
+    } else {
+      len += 1;
+    }
+  }
+
+  return len;
 }
 
 std::string normalize_and_escape(std::string_view src) {
@@ -200,6 +236,7 @@ public:
     remainder_.reserve(128);
   }
 
+  std::optional<size_t> query_length(JSContext* cx, const EntryList *entries);
   std::string boundary() {  return boundary_; };
   bool read_next(JSContext *cx, StreamContext &stream);
 };
@@ -378,6 +415,86 @@ bool MultipartFormDataImpl::read_next(JSContext *cx, StreamContext &stream) {
   }
 }
 
+// Computes the total size (in bytes) of the encoded multipart/form-data stream.
+//
+// Returns std::nullopt if any string conversion fails.
+std::optional<size_t> MultipartFormDataImpl::query_length(JSContext* cx, const EntryList *entries) {
+  size_t total = 0;
+
+  constexpr const char* content_disp_lit = "Content-Disposition: form-data; name=\"\"";
+  constexpr const char* content_type_lit = "Content-Type: ";
+  constexpr const char* filename_lit = "; filename=\"\"";
+  constexpr const char* default_mime_lit = "application/octet-stream";
+
+  const size_t content_disp_len = strlen(content_disp_lit);
+  const size_t content_type_len = strlen(content_type_lit);
+  const size_t filename_len = strlen(filename_lit);
+  const size_t default_mime_len = strlen(default_mime_lit);
+  const size_t crlf_len = strlen(CRLF);
+
+  // For every entry in the FormData
+  for (const auto& entry : *entries) {
+    // Add: "--" + boundary + CRLF
+    total += 2 + boundary_.size() + crlf_len;
+
+    // Add: "Content-Disposition: form-data; name=\"\""
+    total += content_disp_len;
+    total += compute_normalized_and_escaped_len(entry.name);
+
+    if (entry.value.isString()) {
+      // Terminate the header
+      total += 2 * crlf_len;
+
+      RootedValue value_str(cx, entry.value);
+      auto value = core::encode(cx, value_str);
+      if (!value) {
+        return std::nullopt;
+      }
+
+      total += compute_normalized_len(value);
+    } else {
+      MOZ_ASSERT(File::is_instance(entry.value));
+      RootedObject obj(cx, &entry.value.toObject());
+      RootedString filename_str(cx, File::name(obj));
+      auto filename = core::encode(cx, filename_str);
+      if (!filename) {
+        return std::nullopt;
+      }
+
+      // Literal: ; filename=""
+      total += filename_len;
+      total += compute_escaped_len(filename);
+      total += crlf_len;
+
+      // Literal: "Content-Type: "
+      total += content_type_len;
+
+      // The type string (defaulting to "application/octet-stream" if empty)
+      RootedString type_str(cx, Blob::type(obj));
+      auto type = core::encode(cx, type_str);
+      if (!type) {
+        return std::nullopt;
+      }
+
+      total += type.size() > 0 ? type.size() : default_mime_len;
+
+      // Terminate the header
+      total += 2 * crlf_len;
+
+      // Add payload
+      total += Blob::blob_size(obj);
+    }
+
+    // Each entry is terminated with a CRLF.
+    total += crlf_len;
+  }
+
+  // This is written as: "--" + boundary + "--"
+  total += 2 + boundary_.size() + 2;
+
+  return total;
+}
+
 const JSFunctionSpec MultipartFormData::static_methods[] = {JS_FS_END};
 const JSPropertySpec MultipartFormData::static_properties[] = {JS_PS_END};
 const JSFunctionSpec MultipartFormData::methods[] = {JS_FS_END};
@@ -436,6 +553,15 @@ MultipartFormDataImpl *MultipartFormData::as_impl(JSObject *self) {
 JSObject *MultipartFormData::form_data(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   return &JS::GetReservedSlot(self, Slots::Form).toObject();
+}
+
+std::optional<size_t> MultipartFormData::query_length(JSContext *cx, HandleObject self) {
+  RootedObject obj(cx, form_data(self));
+
+  auto entries = FormData::entry_list(obj);
+  auto impl = as_impl(self);
+
+  return impl->query_length(cx, entries);
 }
 
 JSObject *MultipartFormData::encode_stream(JSContext *cx, HandleObject self) {

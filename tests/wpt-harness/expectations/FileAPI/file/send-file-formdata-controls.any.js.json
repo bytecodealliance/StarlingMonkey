@@ -1,0 +1,38 @@
+{
+  "Upload file-for-upload-in-form-NUL-[\u0000].txt (ASCII) in fetch with FormData": {
+    "status": "PASS"
+  },
+  "Upload file-for-upload-in-form-BS-[\b].txt (ASCII) in fetch with FormData": {
+    "status": "PASS"
+  },
+  "Upload file-for-upload-in-form-VT-[\u000b].txt (ASCII) in fetch with FormData": {
+    "status": "PASS"
+  },
+  "Upload file-for-upload-in-form-LF-[\n].txt (ASCII) in fetch with FormData": {
+    "status": "PASS"
+  },
+  "Upload file-for-upload-in-form-LF-CR-[\n\r].txt (ASCII) in fetch with FormData": {
+    "status": "PASS"
+  },
+  "Upload file-for-upload-in-form-CR-[\r].txt (ASCII) in fetch with FormData": {
+    "status": "PASS"
+  },
+  "Upload file-for-upload-in-form-CR-LF-[\r\n].txt (ASCII) in fetch with FormData": {
+    "status": "PASS"
+  },
+  "Upload file-for-upload-in-form-HT-[\t].txt (ASCII) in fetch with FormData": {
+    "status": "PASS"
+  },
+  "Upload file-for-upload-in-form-FF-[\f].txt (ASCII) in fetch with FormData": {
+    "status": "PASS"
+  },
+  "Upload file-for-upload-in-form-DEL-[].txt (ASCII) in fetch with FormData": {
+    "status": "PASS"
+  },
+  "Upload file-for-upload-in-form-ESC-[\u001b].txt (ASCII) in fetch with FormData": {
+    "status": "PASS"
+  },
+  "Upload file-for-upload-in-form-SPACE-[ ].txt (ASCII) in fetch with FormData": {
+    "status": "PASS"
+  }
+}

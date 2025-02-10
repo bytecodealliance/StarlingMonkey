@@ -339,6 +339,13 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     auto boundary = MultipartFormData::boundary(encoder);
     auto type = "multipart/form-data; boundary=" + boundary;
     host_type_str = type.c_str();
+
+    auto length = MultipartFormData::query_length(cx, encoder);
+    if (!length) {
+      return false;
+    }
+
+    content_length = mozilla::Some(length.value());
     content_type = host_type_str.ptr.get();
 
     RootedValue stream_val(cx, JS::ObjectValue(*stream));
