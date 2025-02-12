@@ -53,13 +53,11 @@ std::optional<std::string> normalize_newlines(std::string_view src) {
   for (size_t i = 0; i < src.size(); i++) {
     if (src[i] == CR) {
       if (i + 1 < src.size() && src[i + 1] == LF) {
-        output += CRLF;
         i++;
-      } else {
-        output += CRLF;
       }
+      output.append(CRLF);
     } else if (src[i] == LF) {
-      output += CRLF;
+      output.append(CRLF);
     } else {
       output.push_back(src[i]);
     }
@@ -95,9 +93,8 @@ size_t compute_escaped_len(std::string_view src) {
 //
 // https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart-form-data
 std::optional<std::string> escape_name(std::string_view src) {
-  size_t escaped_len = compute_escaped_len(src);
   std::string output;
-  output.reserve(escaped_len);
+  output.reserve(compute_escaped_len(src));
 
   for (char ch : src) {
     if (ch == '\n') {
