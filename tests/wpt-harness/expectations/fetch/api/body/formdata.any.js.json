@@ -1,9 +1,9 @@
 {
   "Consume empty response.formData() as FormData": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume empty request.formData() as FormData": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume multipart/form-data headers case-insensitively": {
     "status": "FAIL"

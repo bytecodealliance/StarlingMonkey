@@ -3,10 +3,10 @@
     "status": "PASS"
   },
   "request.formData() with input: test": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: test": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: ﻿test=﻿": {
     "status": "PASS"
@@ -39,279 +39,279 @@
     "status": "PASS"
   },
   "request.formData() with input: %FE%FF": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: %FE%FF": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: %FF%FE": {
     "status": "PASS"
   },
   "request.formData() with input: %FF%FE": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: %FF%FE": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: †&†=x": {
     "status": "PASS"
   },
   "request.formData() with input: †&†=x": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: †&†=x": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: %C2": {
     "status": "PASS"
   },
   "request.formData() with input: %C2": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: %C2": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: %C2x": {
     "status": "PASS"
   },
   "request.formData() with input: %C2x": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: %C2x": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: _charset_=windows-1252&test=%C2x": {
     "status": "PASS"
   },
   "request.formData() with input: _charset_=windows-1252&test=%C2x": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: _charset_=windows-1252&test=%C2x": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: ": {
     "status": "PASS"
   },
   "request.formData() with input: ": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: ": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: a": {
     "status": "PASS"
   },
   "request.formData() with input: a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: a=b": {
     "status": "PASS"
   },
   "request.formData() with input: a=b": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: a=b": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: a=": {
     "status": "PASS"
   },
   "request.formData() with input: a=": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: a=": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: =b": {
     "status": "PASS"
   },
   "request.formData() with input: =b": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: =b": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: &": {
     "status": "PASS"
   },
   "request.formData() with input: &": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: &": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: &a": {
     "status": "PASS"
   },
   "request.formData() with input: &a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: &a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: a&": {
     "status": "PASS"
   },
   "request.formData() with input: a&": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: a&": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: a&a": {
     "status": "PASS"
   },
   "request.formData() with input: a&a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: a&a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: a&b&c": {
     "status": "PASS"
   },
   "request.formData() with input: a&b&c": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: a&b&c": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: a=b&c=d": {
     "status": "PASS"
   },
   "request.formData() with input: a=b&c=d": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: a=b&c=d": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: a=b&c=d&": {
     "status": "PASS"
   },
   "request.formData() with input: a=b&c=d&": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: a=b&c=d&": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: &&&a=b&&&&c=d&": {
     "status": "PASS"
   },
   "request.formData() with input: &&&a=b&&&&c=d&": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: &&&a=b&&&&c=d&": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: a=a&a=b&a=c": {
     "status": "PASS"
   },
   "request.formData() with input: a=a&a=b&a=c": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: a=a&a=b&a=c": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: a==a": {
     "status": "PASS"
   },
   "request.formData() with input: a==a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: a==a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: a=a+b+c+d": {
     "status": "PASS"
   },
   "request.formData() with input: a=a+b+c+d": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: a=a+b+c+d": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: %=a": {
     "status": "PASS"
   },
   "request.formData() with input: %=a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: %=a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: %a=a": {
     "status": "PASS"
   },
   "request.formData() with input: %a=a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: %a=a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: %a_=a": {
     "status": "PASS"
   },
   "request.formData() with input: %a_=a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: %a_=a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: %61=a": {
     "status": "PASS"
   },
   "request.formData() with input: %61=a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: %61=a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: %61+%4d%4D=": {
     "status": "PASS"
   },
   "request.formData() with input: %61+%4d%4D=": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: %61+%4d%4D=": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: id=0&value=%": {
     "status": "PASS"
   },
   "request.formData() with input: id=0&value=%": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: id=0&value=%": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: b=%2sf%2a": {
     "status": "PASS"
   },
   "request.formData() with input: b=%2sf%2a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: b=%2sf%2a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: b=%2%2af%2a": {
     "status": "PASS"
   },
   "request.formData() with input: b=%2%2af%2a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: b=%2%2af%2a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams constructed with: b=%%2a": {
     "status": "PASS"
   },
   "request.formData() with input: b=%%2a": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.formData() with input: b=%%2a": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }

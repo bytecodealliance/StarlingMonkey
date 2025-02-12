@@ -1,3 +1,5 @@
+#![allow(clippy::missing_safety_doc)]
+
 /// Wrapper for the Url crate and a URLSearchParams implementation that enables use from C++.
 use std::marker::PhantomData;
 use std::slice;
@@ -45,14 +47,13 @@ impl JSUrlSearchParams {
                 }
             }
             UrlOrString::Str(_) => {
-                let str;
-                if self.list.is_empty() {
-                    str = form_urlencoded::Serializer::new(String::new()).finish();
+                let str = if self.list.is_empty() {
+                    form_urlencoded::Serializer::new(String::new()).finish()
                 } else {
-                    str = form_urlencoded::Serializer::new(String::new())
+                    form_urlencoded::Serializer::new(String::new())
                         .extend_pairs(&*self.list)
-                        .finish();
-                }
+                        .finish()
+                };
                 self.url_or_str = UrlOrString::Str(str);
             }
         }
@@ -79,6 +80,19 @@ pub unsafe extern "C" fn new_jsurl_with_base(spec: &SpecString, base: &JSUrl) ->
         })),
         _ => std::ptr::null_mut(),
     }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn free_jsurl(url: *mut JSUrl) {
+    if url.is_null() {
+        return;
+    }
+
+    if !(*url).params.is_null() {
+        free_params((*url).params);
+    }
+
+    let _ = Box::from_raw(url);
 }
 
 #[no_mangle]
@@ -188,7 +202,7 @@ pub extern "C" fn search(url: &JSUrl) -> SpecSlice {
 
 #[no_mangle]
 pub extern "C" fn set_search(url: &mut JSUrl, search: &SpecString) {
-    let _ = quirks::set_search(&mut url.url, search.into());
+    quirks::set_search(&mut url.url, search.into());
     url.update_params();
 }
 
@@ -223,12 +237,21 @@ pub unsafe extern "C" fn new_params() -> *mut JSUrlSearchParams {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn free_params(params: *mut JSUrlSearchParams) {
+    if params.is_null() {
+        return;
+    }
+
+    let _ = Box::from_raw(params);
+}
+
+#[no_mangle]
 pub extern "C" fn params_init(params: &mut JSUrlSearchParams, init: &SpecString) {
     let init = unsafe { slice::from_raw_parts(init.data, init.len) };
 
     // https://url.spec.whatwg.org/#dom-urlsearchparams-urlsearchparams
     // Step 1
-    let init = if init.len() > 0 && init[0] == '?' as u8 {
+    let init = if !init.is_empty() && init[0] == b'?' {
         &init[1..]
     } else {
         init
@@ -251,14 +274,14 @@ pub extern "C" fn params_append(
 #[no_mangle]
 pub extern "C" fn params_delete(params: &mut JSUrlSearchParams, name: &SpecString) {
     let name: &str = name.into();
-    params.list.retain(|&(ref k, _)| k != &name);
+    params.list.retain(|(k, _)| k != name);
     params.update_url_or_str();
 }
 
 #[no_mangle]
 pub extern "C" fn params_has(params: &JSUrlSearchParams, name: &SpecString) -> bool {
     let name: &str = name.into();
-    params.list.iter().find(|&kv| kv.0 == name).is_some()
+    params.list.iter().any(|kv| kv.0 == name)
 }
 
 #[no_mangle]
@@ -271,7 +294,7 @@ pub extern "C" fn params_get<'a>(
         .list
         .iter()
         .find(|&kv| kv.0 == name)
-        .map(|ref kv| SpecSlice::from(kv.1.as_str()))
+        .map(|kv| SpecSlice::from(kv.1.as_str()))
         .unwrap_or_else(|| SpecSlice::new(std::ptr::null(), 0))
 }
 
@@ -299,8 +322,8 @@ pub extern "C" fn params_get_all<'a>(
     let mut values: Vec<SpecSlice> = params
         .list
         .iter()
-        .filter_map(|&(ref k, ref v)| {
-            if k == &name {
+        .filter_map(|(k, v)| {
+            if k == name {
                 Some(SpecSlice::from(v.as_str()))
             } else {
                 None
@@ -324,7 +347,7 @@ pub extern "C" fn params_set(params: &mut JSUrlSearchParams, name: SpecString, v
 
     let mut index = None;
     let mut i = 0;
-    params.list.retain(|&(ref k, _)| {
+    params.list.retain(|(k, _)| {
         if index.is_none() {
             if k == &name {
                 index = Some(i);
@@ -353,7 +376,7 @@ pub extern "C" fn params_sort(params: &mut JSUrlSearchParams) {
 }
 
 #[no_mangle]
-pub extern "C" fn params_to_string<'a>(params: &'a JSUrlSearchParams) -> SpecSlice<'a> {
+pub extern "C" fn params_to_string(params: &JSUrlSearchParams) -> SpecSlice<'_> {
     match &params.url_or_str {
         UrlOrString::Url(url) => {
             let url = unsafe { url.as_mut().unwrap() };
@@ -439,7 +462,7 @@ impl SpecSlice<'_> {
     fn new(data: *const u8, len: usize) -> Self {
         SpecSlice {
             data,
-            len: len,
+            len,
             _marker: PhantomData,
         }
     }
@@ -447,7 +470,7 @@ impl SpecSlice<'_> {
 
 impl<'a> From<&'a str> for SpecSlice<'a> {
     fn from(s: &'a str) -> SpecSlice<'a> {
-        let ptr = if s.len() > 0 {
+        let ptr = if !s.is_empty() {
             s.as_ptr()
         } else {
             std::ptr::null()

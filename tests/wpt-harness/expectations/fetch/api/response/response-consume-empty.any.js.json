@@ -15,10 +15,10 @@
     "status": "FAIL"
   },
   "Consume response's body as formData with correct urlencoded type": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume response's body as formData without correct type (error case)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume empty blob response body as arrayBuffer": {
     "status": "PASS"
@@ -36,7 +36,7 @@
     "status": "PASS"
   },
   "Consume empty FormData response body as text": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume empty ArrayBuffer response body as text": {
     "status": "PASS"

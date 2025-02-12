@@ -75,6 +75,11 @@ bool File::lastModified_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+JSString *File::name(JSObject *self) {
+  MOZ_ASSERT(is_instance(self));
+  return JS::GetReservedSlot(self, static_cast<size_t>(Slots::Name)).toString();
+}
+
 // https://w3c.github.io/FileAPI/#file-constructor
 bool File::init(JSContext *cx, HandleObject self, HandleValue fileBits, HandleValue fileName,
                 HandleValue opts) {

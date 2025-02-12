@@ -177,8 +177,10 @@ JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self) {
     return nullptr;
   }
 
+  std::copy_n(src->begin(), size, buf.get());
+
   auto array_buffer = JS::NewArrayBufferWithContents(
-      cx, size, src->begin(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory);
+      cx, size, buf.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory);
   if (!array_buffer) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
