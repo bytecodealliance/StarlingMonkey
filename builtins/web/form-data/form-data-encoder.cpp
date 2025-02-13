@@ -20,6 +20,8 @@ const char LF = '\n';
 const char CR = '\r';
 const char *CRLF = "\r\n";
 
+// Computes the length of a string after normalizing its newlines.
+// Converts CR, LF, and CRLF into a CRLF sequence.
 size_t compute_normalized_len(std::string_view src) {
   size_t len = 0;
   const size_t newline_len = strlen(CRLF);
@@ -40,11 +42,9 @@ size_t compute_normalized_len(std::string_view src) {
   return len;
 }
 
-// Replace every occurrence of U+000D (CR) not followed by U+000A (LF),
-// and every occurrence of U+000A (LF) not preceded by U+000D (CR),
-// in entry's name, by a string consisting of a U+000D (CR) and U+000A (LF).
-//
-// https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart-form-data
+// Normalizes newlines in a string by replacing:
+// - CR not followed by LF -> CRLF
+// - LF not preceded by CR -> CRLF
 std::optional<std::string> normalize_newlines(std::string_view src) {
   std::string output;
 
@@ -75,6 +75,10 @@ std::optional<std::string> normalize_newlines(JSContext *cx, HandleValue src) {
   return normalize_newlines(chars);
 }
 
+// Computes the length of a string after percent encoding following characters:
+// - LF (0x0A) -> "%0A"
+// - CR (0x0D) -> "%0D"
+// - Double quote (0x22) -> "%22"
 size_t compute_escaped_len(std::string_view src) {
   size_t len = 0;
   for (char ch : src) {
@@ -87,11 +91,11 @@ size_t compute_escaped_len(std::string_view src) {
   return len;
 }
 
-// For field names and filenames for file fields, the result of the encoding must
-// be escaped by replacing any 0x0A (LF) bytes with the byte sequence
-// `%0A`, 0x0D (CR) with `%0D` and 0x22 (") with `%22`.
-//
-// https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart-form-data
+// Percent encode following characters in a string for safe use in multipart/form-data
+// field names and filenames:
+// - LF (0x0A) -> "%0A"
+// - CR (0x0D) -> "%0D"
+// - Double quote (0x22) -> "%22"
 std::optional<std::string> escape_name(std::string_view src) {
   std::string output;
   output.reserve(compute_escaped_len(src));
@@ -120,6 +124,7 @@ std::optional<std::string> escape_name(JSContext *cx, HandleValue src) {
   return escape_name(chars);
 }
 
+// Computes the length of a string after both normalizing newlines and escaping characters.
 size_t compute_normalized_and_escaped_len(std::string_view src) {
   size_t len = 0;
 
@@ -144,6 +149,7 @@ size_t compute_normalized_and_escaped_len(std::string_view src) {
   return len;
 }
 
+// Folds normalizing newlines and escaping characters in the given string into a single function.
 std::string normalize_and_escape(std::string_view src) {
   auto normalized = normalize_newlines(src);
   MOZ_ASSERT(normalized.has_value());
@@ -205,6 +211,23 @@ struct StreamContext {
   }
 };
 
+// `MultipartFormDataImpl` encodes `FormData` into a multipart/form-data body,
+// following the specification in https://datatracker.ietf.org/doc/html/rfc7578.
+//
+// Each entry is serialized in three atomic operations: writing the header, body, and footer.
+// These parts are written into a fixed-size buffer, so the implementation must handle cases
+// where not all data can be written at once. Any unwritten data is cached as a "leftover"
+// and will be written in the next iteration before transitioning to the next state. This
+// introduces an implicit state where the encoder drains leftover data from the previous
+// operation before proceeding.
+//
+// The algorithm is implemented as a state machine with the following states:
+//   - Start:       Initialization of the process.
+//   - EntryHeader: Write the boundary and header information for the current entry.
+//   - EntryBody:   Write the actual content (payload) of the entry.
+//   - EntryFooter: Write the trailing CRLF for the entry.
+//   - Close:       Write the closing boundary indicating the end of the multipart data.
+//   - Done:        Processing is complete.
 class MultipartFormDataImpl {
   enum class State : int { Start, EntryHeader, EntryBody, EntryFooter, Close, Done };
 
@@ -260,6 +283,16 @@ MultipartFormDataImpl::State MultipartFormDataImpl::next_state(StreamContext &st
   }
 }
 
+// Drains any previously cached leftover data or remaining file data by writing
+// it to the stream.
+//
+// The draining function handles two types of leftover data:
+// - Metadata leftovers: This includes generated data for each entry, such as the boundary
+//   delimiter, content-disposition header, etc. These are cached in `remainder_`, while
+//   `remainder_view_` tracks how much remains to be written.
+// - Entry value leftovers: Tracked by `file_leftovers_`, this represents the number of
+//   bytes from a blob that still need to be written to the output buffer to complete
+//   the entry's value.
 void MultipartFormDataImpl::maybe_drain_leftovers(JSContext *cx, StreamContext &stream) {
   if (!remainder_view_.empty()) {
     auto written = stream.write(remainder_view_.begin(), remainder_view_.end());
@@ -284,6 +317,9 @@ void MultipartFormDataImpl::maybe_drain_leftovers(JSContext *cx, StreamContext &
   }
 }
 
+// Writes data from the range [first, last) to the stream. If the stream cannot
+// accept all the data, the unwritten part is stored in the remainder_ buffer
+// for later draining.
 template <typename I>
 void MultipartFormDataImpl::write_and_cache_remainder(StreamContext &stream, I first, I last) {
   auto datasz = static_cast<size_t>(std::distance(first, last));
@@ -299,6 +335,34 @@ void MultipartFormDataImpl::write_and_cache_remainder(StreamContext &stream, I f
   }
 }
 
+// https://datatracker.ietf.org/doc/html/rfc7578:
+// - A multipart/form-data body contains a series of parts separated by a boundary
+// - The parts are delimited with a boundary delimiter, constructed using CRLF, "--",
+//   and the value of the "boundary" parameter.
+//   See https://datatracker.ietf.org/doc/html/rfc7578#section-4.1
+// - Each part MUST contain a Content-Disposition header field where the disposition type is "form-data".
+//   The Content-Disposition header field MUST also contain an additional parameter of "name"; the value of
+//   the "name" parameter is the original field name from the form.
+//   See https://datatracker.ietf.org/doc/html/rfc7578#section-4.2
+// - For form data that represents the content of a file, a name for the file SHOULD be supplied as well,
+//   by using a "filename" parameter of the Content-Disposition header field.
+//   See https://datatracker.ietf.org/doc/html/rfc7578#section-4.2
+// - Each part MAY have an (optional) "Content-Type" header field, which defaults to "text/plain".  If the
+//   contents of a file are to be sent, the file data SHOULD be labeled with an appropriate media type, if
+//   known, or "application/octet-stream".
+//
+// Additionaly from the https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart%2Fform-data-encoding-algorithm
+// - The parts of the generated multipart/form-data resource that correspond to non-file fields
+//   must not have a `Content-Type` header specified.
+// - Replace every occurrence of U+000D (CR) not followed by U+000A (LF), and every occurrence
+//   of U+000A (LF) not preceded by U+000D (CR), in entry's name, by a string consisting of a
+//   U+000D (CR) and U+000A (LF)
+// - For field names and filenames for file fields, the result of the encoding in the previous
+//   bullet point must be escaped by replacing any 0x0A (LF) bytes with the byte sequence `%0A`,
+//   0x0D (CR) with `%0D` and 0x22 (") with `%22`.
+//
+// The two bullets above for "name" are folded into `normalize_and_escape`. The filename on the other
+// hand is escaped using `escape_name`.
 bool MultipartFormDataImpl::handle_entry_header(JSContext *cx, StreamContext &stream) {
   auto entry = stream.entries->begin()[chunk_idx_];
   auto header = fmt::memory_buffer();
@@ -336,6 +400,10 @@ bool MultipartFormDataImpl::handle_entry_header(JSContext *cx, StreamContext &st
   return true;
 }
 
+// https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart%2Fform-data-encoding-algorithm
+// - If entry's value is not a File object, then replace every occurrence of U+000D (CR) not followed by U+000A (LF),
+//   and every occurrence of U+000A (LF) not preceded by U+000D (CR), in entry's value, by a string consisting of a
+//   U+000D (CR) and U+000A (LF) - this is folded into `normalize_newlines`.
 bool MultipartFormDataImpl::handle_entry_body(JSContext *cx, StreamContext &stream) {
   auto entry = stream.entries->begin()[chunk_idx_];
 
@@ -362,6 +430,7 @@ bool MultipartFormDataImpl::handle_entry_body(JSContext *cx, StreamContext &stre
   return true;
 }
 
+// https://datatracker.ietf.org/doc/html/rfc2046#section-5.1.1 - writes `crlf`
 bool MultipartFormDataImpl::handle_entry_footer(JSContext *cx, StreamContext &stream) {
   auto footer = fmt::memory_buffer();
   fmt::format_to(std::back_inserter(footer), "\r\n");
@@ -373,6 +442,12 @@ bool MultipartFormDataImpl::handle_entry_footer(JSContext *cx, StreamContext &st
   return true;
 }
 
+// https://datatracker.ietf.org/doc/html/rfc2046#section-5.1.1
+//
+// The boundary delimiter line following the last body part is a distinguished delimiter that
+// indicates that no further body parts will follow.  Such a delimiter line is identical to
+// the previous delimiter lines, with the addition of two more hyphens after the boundary
+// parameter value.
 bool MultipartFormDataImpl::handle_close(JSContext *cx, StreamContext &stream) {
   auto footer = fmt::memory_buffer();
   fmt::format_to(std::back_inserter(footer), "--{}--", boundary_);
@@ -414,7 +489,9 @@ bool MultipartFormDataImpl::read_next(JSContext *cx, StreamContext &stream) {
 
 // Computes the total size (in bytes) of the encoded multipart/form-data stream.
 //
-// Returns std::nullopt if any string conversion fails.
+// Returns `std::nullopt` if any string conversion fails. This function simulates
+// the multipart/form-data encoding process without actually writing to a buffer.
+// Instead, it accumulates the total size of each encoding step.
 std::optional<size_t> MultipartFormDataImpl::query_length(JSContext* cx, const EntryList *entries) {
   size_t total = 0;
 
@@ -588,7 +665,17 @@ JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
     return nullptr;
   }
 
-  // Hex encode bytes to string
+  // The requirements for boundary are (https://datatracker.ietf.org/doc/html/rfc2046#section-5.1.1):
+  // Boundary delimiters must not appear within the encapsulated material, and must be no longer than
+  // 70 characters, not counting the two leading hyphens and consist of bcharsnospace characters,
+  // where EBNF for bcharsnospace is as follows:
+  //
+  // bcharsnospace := DIGIT / ALPHA / "'" / "(" / ")" / "+" / "_" / "," / "-" / "." / "/" / ":" / "=" / "?"
+  //
+  // e.g.:
+  // This implementation: --BoundaryjXo5N4HEAXWcKrw7
+  // WebKit: ----WebKitFormBoundaryhpShnP1JqrBTVTnC
+  // Gecko:  ----geckoformboundary8c79e61efa53dc5d441481912ad86113
   auto bytes = std::move(res.unwrap());
   auto bytes_str = std::string_view((char *)(bytes.ptr.get()), bytes.size());
   auto base64_str = base64::forgivingBase64Encode(bytes_str, base64::base64EncodeTable);
