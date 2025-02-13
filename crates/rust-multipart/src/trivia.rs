@@ -13,16 +13,8 @@ pub(crate) fn is_horizontal_space(c: u8) -> bool {
     c == b' ' || c == b'\t'
 }
 
-pub(crate) fn is_whitespace(c: u8) -> bool {
-    c == b' ' || c == b'\t' || c == b'\n' || c == b'\r'
-}
-
 pub(crate) fn ws<'s>(input: &mut Stream<'s>) -> ModalResult<&'s [u8]> {
     take_while(0.., is_horizontal_space).parse_next(input)
-}
-
-pub(crate) fn horizontal_and_vertical_space<'s>(input: &mut Stream<'s>) -> ModalResult<&'s [u8]> {
-    take_while(0.., is_whitespace).parse_next(input)
 }
 
 pub(crate) fn take_till_crlf<'s>(input: &mut Stream<'s>) -> ModalResult<&'s [u8]> {

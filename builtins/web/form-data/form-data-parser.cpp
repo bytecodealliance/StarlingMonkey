@@ -212,6 +212,8 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
     }
   }
 
+  // Return a new FormData object, appending each entry, resulting from the parsing
+  // operation, to its entry list.
   return formdata;
 }
 

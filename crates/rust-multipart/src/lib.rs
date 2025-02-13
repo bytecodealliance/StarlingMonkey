@@ -63,8 +63,18 @@ impl Entry<'_> {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
+enum State {
+    /// Reading the preamble section, which appears before the first boundary.
+    /// This data is ignored as per the multipart/form-data specification.
+    Preamble,
+    /// Reading the multipart body form entries.
+    Body,
+}
+
 #[derive(Debug, Clone)]
 pub struct MultipartParser<'a> {
+    state: State,
     stream: Stream<'a>,
 }
 
@@ -75,10 +85,18 @@ impl<'a> MultipartParser<'a> {
             state: boundary.as_bytes().into(),
         };
 
-        Self { stream }
+        Self {
+            state: State::Preamble,
+            stream,
+        }
     }
 
     pub fn parse_next(&mut self) -> Option<ModalResult<Entry<'_>>> {
+        if let State::Preamble = self.state {
+            parser::skip_preamble(&mut self.stream).ok()?;
+            self.state = State::Body;
+        }
+
         parser::next_entry.parse_next(&mut self.stream).transpose()
     }
 }

@@ -8,8 +8,7 @@ use winnow::token::{take_until, take_while};
 use crate::{Entry, EntryInfo, Stream};
 
 use crate::error::Error;
-use crate::trivia::{horizontal_and_vertical_space, is_token};
-use crate::trivia::{is_visible_ascii, quoted_string, take_till_crlf, trim, ws};
+use crate::trivia::{is_token, is_visible_ascii, quoted_string, take_till_crlf, trim, ws};
 
 #[derive(Copy, Clone, Debug)]
 enum Field<'a> {
@@ -39,15 +38,18 @@ enum Header<'a> {
 // Adopted from gecko MultipartParser:
 // https://searchfox.org/mozilla-central/source/dom/base/BodyUtil.cpp#67
 
+// Parse preamble that is to be ignored.
+// https://datatracker.ietf.org/doc/html/rfc2046#section-5.1.1:
+pub(crate) fn skip_preamble(input: &mut Stream) -> ModalResult<()> {
+  let boundary = boundary_from_stream(input);
+  take_until(0.., boundary).void().parse_next(input)
+}
+
+// https://datatracker.ietf.org/doc/html/rfc2046#section-5.1.1:
 pub(crate) fn next_entry<'s>(input: &mut Stream<'s>) -> ModalResult<Option<Entry<'s>>> {
     // Read over a boundary and advance stream to the position after the end of it.
     let boundary = boundary_from_stream(input);
-    (
-        horizontal_and_vertical_space,
-        take_until(0.., boundary),
-        boundary,
-    )
-        .parse_next(input)?;
+    alt((preceded("--", boundary), boundary, fail)).parse_next(input)?;
 
     // Check for end of data, which is boundary followed by two dashes: X-BOUNDARY--.
     if opt("--").parse_next(input)?.is_some() {
@@ -66,6 +68,7 @@ pub(crate) fn next_entry<'s>(input: &mut Stream<'s>) -> ModalResult<Option<Entry
     ))
 }
 
+// https://datatracker.ietf.org/doc/html/rfc2046#section-5.1.1:
 fn value_body<'s>(input: &mut Stream<'s>) -> ModalResult<&'s [u8]> {
     let boundary = boundary_from_stream(input);
     let body = take_until(1.., boundary).parse_next(input)?;
@@ -89,6 +92,7 @@ fn value_body<'s>(input: &mut Stream<'s>) -> ModalResult<&'s [u8]> {
     Ok(&body[..end])
 }
 
+// https://datatracker.ietf.org/doc/html/rfc2046#section-5.1.1:
 pub(crate) fn entry_info<'s>(input: &mut Stream<'s>) -> ModalResult<EntryInfo<'s>> {
     let headers: Vec<_> = repeat_till(1.., terminated(header, crlf), (ws, crlf))
         .parse_next(input)?
