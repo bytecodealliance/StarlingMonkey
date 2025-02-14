@@ -10,6 +10,7 @@
 
 #include "encode.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/ResultVariant.h"
 
 #include <fmt/format.h>
 #include <string>
@@ -24,16 +25,15 @@ const char *CRLF = "\r\n";
 // Converts CR, LF, and CRLF into a CRLF sequence.
 size_t compute_normalized_len(std::string_view src) {
   size_t len = 0;
-  const size_t newline_len = strlen(CRLF);
 
   for (size_t i = 0; i < src.size(); i++) {
     if (src[i] == CR) {
       if (i + 1 < src.size() && src[i + 1] == LF) {
         i++;
       }
-      len += newline_len;
+      len += 2; // CRLF
     } else if (src[i] == LF) {
-      len += newline_len;
+      len += 2; // CRLF
     } else {
       len += 1;
     }
@@ -131,11 +131,11 @@ size_t compute_normalized_and_escaped_len(std::string_view src) {
   for (size_t i = 0; i < src.size(); ++i) {
     char ch = src[i];
     if (ch == '\r') {
-      len += 3; // CR -> "%0D"
-      len += 3; // LF -> "%0A"
       if ((i + 1) < src.size() && src[i + 1] == '\n') {
         ++i;
       }
+      len += 3; // CR -> "%0D"
+      len += 3; // LF -> "%0A"
     } else if (ch == '\n') {
       len += 3; // CR -> "%0D"
       len += 3; // LF -> "%0A"
@@ -216,7 +216,7 @@ struct StreamContext {
 //
 // Each entry is serialized in three atomic operations: writing the header, body, and footer.
 // These parts are written into a fixed-size buffer, so the implementation must handle cases
-// where not all data can be written at once. Any unwritten data is cached as a "leftover"
+// where not all data can be written at once. Any unwritten data is stored as a "leftover"
 // and will be written in the next iteration before transitioning to the next state. This
 // introduces an implicit state where the encoder drains leftover data from the previous
 // operation before proceeding.
@@ -241,7 +241,7 @@ class MultipartFormDataImpl {
 
   bool is_draining() { return (file_leftovers_ || remainder_.size()); };
 
-  template <typename I> void write_and_cache_remainder(StreamContext &stream, I first, I last);
+  template <typename I> void write_and_store_remainder(StreamContext &stream, I first, I last);
 
   State next_state(StreamContext &stream);
   void maybe_drain_leftovers(JSContext *cx, StreamContext &stream);
@@ -252,11 +252,9 @@ class MultipartFormDataImpl {
 
 public:
   MultipartFormDataImpl(std::string boundary)
-      : state_(State::Start), boundary_(std::move(boundary)), chunk_idx_(0), file_leftovers_(0) {
-    remainder_.reserve(128);
-  }
+      : state_(State::Start), boundary_(std::move(boundary)), chunk_idx_(0), file_leftovers_(0) {}
 
-  std::optional<size_t> query_length(JSContext* cx, const EntryList *entries);
+  mozilla::Result<size_t, OutOfMemory> query_length(JSContext* cx, const EntryList *entries);
   std::string boundary() {  return boundary_; };
   bool read_next(JSContext *cx, StreamContext &stream);
 };
@@ -311,8 +309,7 @@ void MultipartFormDataImpl::maybe_drain_leftovers(JSContext *cx, StreamContext &
 
     RootedObject obj(cx, &entry.value.toObject());
     auto blob = Blob::blob(obj);
-    auto blobsz = blob->length();
-    auto offset = blobsz - file_leftovers_;
+    auto offset = blob->length() - file_leftovers_;
     file_leftovers_ -= stream.write(blob->begin() + offset, blob->end());
   }
 }
@@ -321,13 +318,13 @@ void MultipartFormDataImpl::maybe_drain_leftovers(JSContext *cx, StreamContext &
 // accept all the data, the unwritten part is stored in the remainder_ buffer
 // for later draining.
 template <typename I>
-void MultipartFormDataImpl::write_and_cache_remainder(StreamContext &stream, I first, I last) {
-  auto datasz = static_cast<size_t>(std::distance(first, last));
+void MultipartFormDataImpl::write_and_store_remainder(StreamContext &stream, I first, I last) {
+  auto to_write = static_cast<size_t>(std::distance(first, last));
   auto written = stream.write(first, last);
 
-  MOZ_ASSERT(written <= datasz);
+  MOZ_ASSERT(written <= to_write);
 
-  auto leftover = datasz - written;
+  auto leftover = to_write - written;
   if (leftover > 0) {
     MOZ_ASSERT(remainder_.empty());
     remainder_.assign(first + written, last);
@@ -396,7 +393,7 @@ bool MultipartFormDataImpl::handle_entry_header(JSContext *cx, StreamContext &st
 
   // If there are leftovers that didn't fit in outbuf, put it into remainder_
   // and it will be drained the next run.
-  write_and_cache_remainder(stream, header.begin(), header.end());
+  write_and_store_remainder(stream, header.begin(), header.end());
   return true;
 }
 
@@ -415,16 +412,16 @@ bool MultipartFormDataImpl::handle_entry_body(JSContext *cx, StreamContext &stre
     }
 
     auto normalized = maybe_normalized.value();
-    write_and_cache_remainder(stream, normalized.begin(), normalized.end());
+    write_and_store_remainder(stream, normalized.begin(), normalized.end());
   } else {
     MOZ_ASSERT(File::is_instance(entry.value));
     RootedObject obj(cx, &entry.value.toObject());
 
     auto blob = Blob::blob(obj);
-    auto blobsz = blob->length();
+    auto to_write = blob->length();
     auto written = stream.write(blob->begin(), blob->end());
-    MOZ_ASSERT(written <= blobsz);
-    file_leftovers_ = blobsz - written;
+    MOZ_ASSERT(written <= to_write);
+    file_leftovers_ = to_write - written;
   }
 
   return true;
@@ -435,7 +432,7 @@ bool MultipartFormDataImpl::handle_entry_footer(JSContext *cx, StreamContext &st
   auto footer = fmt::memory_buffer();
   fmt::format_to(std::back_inserter(footer), "\r\n");
 
-  write_and_cache_remainder(stream, footer.begin(), footer.end());
+  write_and_store_remainder(stream, footer.begin(), footer.end());
   chunk_idx_ += 1;
 
   MOZ_ASSERT(chunk_idx_ <= stream.entries->length());
@@ -452,7 +449,7 @@ bool MultipartFormDataImpl::handle_close(JSContext *cx, StreamContext &stream) {
   auto footer = fmt::memory_buffer();
   fmt::format_to(std::back_inserter(footer), "--{}--", boundary_);
 
-  write_and_cache_remainder(stream, footer.begin(), footer.end());
+  write_and_store_remainder(stream, footer.begin(), footer.end());
   return true;
 }
 
@@ -492,7 +489,7 @@ bool MultipartFormDataImpl::read_next(JSContext *cx, StreamContext &stream) {
 // Returns `std::nullopt` if any string conversion fails. This function simulates
 // the multipart/form-data encoding process without actually writing to a buffer.
 // Instead, it accumulates the total size of each encoding step.
-std::optional<size_t> MultipartFormDataImpl::query_length(JSContext* cx, const EntryList *entries) {
+mozilla::Result<size_t, OutOfMemory> MultipartFormDataImpl::query_length(JSContext* cx, const EntryList *entries) {
   size_t total = 0;
 
   constexpr const char* content_disp_lit = "Content-Disposition: form-data; name=\"\"";
@@ -522,7 +519,7 @@ std::optional<size_t> MultipartFormDataImpl::query_length(JSContext* cx, const E
       RootedValue value_str(cx, entry.value);
       auto value = core::encode(cx, value_str);
       if (!value) {
-        return std::nullopt;
+        return mozilla::Result<size_t, OutOfMemory>(OutOfMemory {});
       }
 
       total += compute_normalized_len(value);
@@ -532,7 +529,7 @@ std::optional<size_t> MultipartFormDataImpl::query_length(JSContext* cx, const E
       RootedString filename_str(cx, File::name(obj));
       auto filename = core::encode(cx, filename_str);
       if (!filename) {
-        return std::nullopt;
+        return mozilla::Result<size_t, OutOfMemory>(OutOfMemory {});
       }
 
       // Literal: ; filename=""
@@ -547,7 +544,7 @@ std::optional<size_t> MultipartFormDataImpl::query_length(JSContext* cx, const E
       RootedString type_str(cx, Blob::type(obj));
       auto type = core::encode(cx, type_str);
       if (!type) {
-        return std::nullopt;
+        return mozilla::Result<size_t, OutOfMemory>(OutOfMemory {});
       }
 
       total += type.size() > 0 ? type.size() : default_mime_len;
@@ -583,7 +580,7 @@ bool MultipartFormData::read(JSContext *cx, HandleObject self, std::span<uint8_t
     return true;
   }
 
-  size_t bufsz = buf.size();
+  size_t buffer_size = buf.size();
   size_t total = 0;
   bool finished = false;
   RootedObject obj(cx, form_data(self));
@@ -592,7 +589,7 @@ bool MultipartFormData::read(JSContext *cx, HandleObject self, std::span<uint8_t
   auto impl = as_impl(self);
 
   // Try to fill the buffer
-  while (total < bufsz && !finished) {
+  while (total < buffer_size && !finished) {
     auto subspan = buf.subspan(total);
     auto stream = StreamContext(entries, subspan);
 
@@ -629,7 +626,7 @@ JSObject *MultipartFormData::form_data(JSObject *self) {
   return &JS::GetReservedSlot(self, Slots::Form).toObject();
 }
 
-std::optional<size_t> MultipartFormData::query_length(JSContext *cx, HandleObject self) {
+mozilla::Result<size_t, OutOfMemory> MultipartFormData::query_length(JSContext *cx, HandleObject self) {
   RootedObject obj(cx, form_data(self));
 
   auto entries = FormData::entry_list(obj);
@@ -680,7 +677,7 @@ JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
   auto bytes_str = std::string_view((char *)(bytes.ptr.get()), bytes.size());
   auto base64_str = base64::forgivingBase64Encode(bytes_str, base64::base64EncodeTable);
 
-  auto boundary = fmt::format("--Boundary{}", base64_str);
+  auto boundary = fmt::format("--StarlingMonkeyFormBoundary{}", base64_str);
   auto impl = new (std::nothrow) MultipartFormDataImpl(boundary);
   if (!impl) {
     return nullptr;

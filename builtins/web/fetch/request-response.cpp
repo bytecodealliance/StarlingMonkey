@@ -19,6 +19,7 @@
 #include "js/Conversions.h"
 #include "js/JSON.h"
 #include "js/Stream.h"
+#include "mozilla/ResultVariant.h"
 #include <algorithm>
 #include <iostream>
 #include <vector>
@@ -293,7 +294,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
   const char *content_type = nullptr;
   mozilla::Maybe<size_t> content_length;
 
-  // We currently support five types of body inputs:
+  // We support all types of body inputs required by the spec:
   // - byte sequence
   // - buffer source
   // - Blob
@@ -303,7 +304,6 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
   // - ReadableStream
   // After the other other options are checked explicitly, all other inputs are
   // encoded to a UTF8 string to be treated as a USV string.
-  // TODO: Support the other possible inputs to Body.
 
   JS::RootedObject body_obj(cx, body_val.isObject() ? &body_val.toObject() : nullptr);
   host_api::HostString host_type_str;
@@ -341,11 +341,11 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     host_type_str = type.c_str();
 
     auto length = MultipartFormData::query_length(cx, encoder);
-    if (!length) {
+    if (length.isErr()) {
       return false;
     }
 
-    content_length = mozilla::Some(length.value());
+    content_length = mozilla::Some(length.unwrap());
     content_type = host_type_str.ptr.get();
 
     RootedValue stream_val(cx, JS::ObjectValue(*stream));

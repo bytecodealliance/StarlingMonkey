@@ -7,6 +7,7 @@ namespace builtins {
 namespace web {
 namespace form_data {
 
+class OutOfMemory {};
 class MultipartFormDataImpl;
 
 class MultipartFormData : public FinalizableBuiltinImpl<MultipartFormData> {
@@ -29,7 +30,7 @@ public:
   static JSObject *form_data(JSObject *self);
   static std::string boundary(JSObject *self);
 
-  static std::optional<size_t> query_length(JSContext *cx, HandleObject self);
+  static mozilla::Result<size_t, OutOfMemory> query_length(JSContext *cx, HandleObject self);
   static JSObject *encode_stream(JSContext *cx, HandleObject self);
   static JSObject *create(JSContext *cx, HandleObject form_data);
 
