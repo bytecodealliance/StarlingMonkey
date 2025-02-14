@@ -694,7 +694,6 @@ bool MultipartFormData::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 bool MultipartFormData::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
-  MOZ_ASSERT_UNREACHABLE("No MultipartFormData Ctor builtin");
   return api::throw_error(cx, api::Errors::NoCtorBuiltin, class_name);
 }
 
