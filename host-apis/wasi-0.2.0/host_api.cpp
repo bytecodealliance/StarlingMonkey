@@ -71,6 +71,15 @@ HostString scheme_to_string(const wasi_http_types_scheme_t &scheme) {
   return to_host_string(scheme.val.other);
 }
 
+void dump_io_error(wasi_io_streams_stream_error_t err) {
+#ifdef DEBUG
+  MOZ_ASSERT(err.tag == WASI_IO_STREAMS_STREAM_ERROR_LAST_OPERATION_FAILED);
+  bindings_string_t debug_str;
+  wasi_io_error_method_error_to_debug_string({err.val.last_operation_failed.__handle}, &debug_str);
+  DBG("WASI IO Error: %.*s\n", (int)debug_str.len, reinterpret_cast<const char *>(debug_str.ptr));
+#endif
+}
+
 } // namespace
 
 Result<HostBytes> Random::get_bytes(size_t num_bytes) {
@@ -330,7 +339,12 @@ bool write_to_outgoing_body(Borrow<OutputStream> borrow, const uint8_t *ptr, con
   bindings_list_u8_t list{const_cast<uint8_t *>(ptr), len};
   wasi_io_streams_stream_error_t err;
   // TODO: proper error handling.
-  return wasi_io_streams_method_output_stream_write(borrow, &list, &err);
+  bool success = wasi_io_streams_method_output_stream_write(borrow, &list, &err);
+  if (!success) {
+    dump_io_error(err);
+    return false;
+  }
+  return true;
 }
 
 HttpOutgoingBody::HttpOutgoingBody(std::unique_ptr<HandleState> state) : Pollable() {
@@ -347,6 +361,7 @@ Result<uint64_t> HttpOutgoingBody::capacity() {
   uint64_t capacity = 0;
   wasi_io_streams_stream_error_t err;
   if (!wasi_io_streams_method_output_stream_check_write(borrow, &capacity, &err)) {
+    dump_io_error(err);
     return Result<uint64_t>::err(154);
   }
   return Result<uint64_t>::ok(capacity);
@@ -767,6 +782,7 @@ Result<HttpIncomingBody::ReadResult> HttpIncomingBody::read(uint32_t chunk_size)
     if (err.tag == WASI_IO_STREAMS_STREAM_ERROR_CLOSED) {
       return Res::ok(ReadResult(true, nullptr, 0));
     }
+    dump_io_error(err);
     return Res::err(154);
   }
   return Res::ok(ReadResult(false, unique_ptr<uint8_t[]>(ret.ptr), ret.len));
