@@ -55,6 +55,7 @@ class FormData : public TraceableBuiltinImpl<FormData> {
   static EntryList *entry_list(JSObject *self);
 
   friend class FormDataIterator;
+  friend class MultipartFormData;
 
 public:
   static constexpr const char *class_name = "FormData";

@@ -1,11 +1,11 @@
 {
   "deflate compression with large flush output": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "gzip compression with large flush output": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "deflate-raw compression with large flush output": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }

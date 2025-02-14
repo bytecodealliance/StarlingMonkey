@@ -6,7 +6,7 @@
     "status": "PASS"
   },
   "Initialize Response's body with multipart/form-data": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Initialize Response's body with application/x-www-form-urlencoded;charset=UTF-8": {
     "status": "PASS"

@@ -23,6 +23,8 @@ public:
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
 
+  static JSString *name(JSObject *self);
+
   static JSObject *create(JSContext *cx, HandleValue fileBits, HandleValue fileName, HandleValue opts);
   static bool init(JSContext *cx, HandleObject self, HandleValue fileBits, HandleValue fileName, HandleValue opts);
   static bool init_class(JSContext *cx, HandleObject global);
