@@ -46,6 +46,8 @@ using blob::Blob;
 using form_data::FormData;
 using form_data::MultipartFormData;
 
+using namespace std::literals;
+
 static api::Engine *ENGINE;
 
 bool error_stream_controller_with_pending_exception(JSContext *cx, HandleObject stream) {
@@ -291,7 +293,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
   MOZ_ASSERT(!has_body(self));
   MOZ_ASSERT(!body_val.isNullOrUndefined());
 
-  const char *content_type = nullptr;
+  string_view content_type;
   mozilla::Maybe<size_t> content_length;
 
   // We support all types of body inputs required by the spec:
@@ -323,7 +325,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     if (JS::GetStringLength(type_str) > 0) {
       host_type_str = core::encode(cx, type_str);
       MOZ_ASSERT(host_type_str);
-      content_type = host_type_str.ptr.get();
+      content_type = host_type_str;
     }
   } else if (FormData::is_instance(body_obj)) {
     RootedObject encoder(cx, MultipartFormData::create(cx, body_obj));
@@ -338,7 +340,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
 
     auto boundary = MultipartFormData::boundary(encoder);
     auto type = "multipart/form-data; boundary=" + boundary;
-    host_type_str = type.c_str();
+    host_type_str = string_view(type);
 
     auto length = MultipartFormData::query_length(cx, encoder);
     if (length.isErr()) {
@@ -346,7 +348,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     }
 
     content_length = mozilla::Some(length.unwrap());
-    content_type = host_type_str.ptr.get();
+    content_type = host_type_str;
 
     RootedValue stream_val(cx, JS::ObjectValue(*stream));
     JS_SetReservedSlot(self, static_cast<uint32_t>(RequestOrResponse::Slots::BodyStream), stream_val);
@@ -394,7 +396,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
       auto slice = url::URLSearchParams::serialize(cx, body_obj);
       buf = (char *)slice.data;
       length = slice.len;
-      content_type = "application/x-www-form-urlencoded;charset=UTF-8";
+      content_type = "application/x-www-form-urlencoded;charset=UTF-8"sv;
     } else {
       auto text = core::encode(cx, body_val);
       if (!text.ptr) {
@@ -402,7 +404,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
       }
       buf = text.ptr.release();
       length = text.len;
-      content_type = "text/plain;charset=UTF-8";
+      content_type = "text/plain;charset=UTF-8"sv;
     }
 
     if (!buffer) {
@@ -443,7 +445,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     content_length.emplace(length);
   }
 
-  if (content_type || content_length.isSome()) {
+  if (!content_type.empty() || content_length.isSome()) {
     JS::RootedObject headers(cx, RequestOrResponse::headers(cx, self));
     if (!headers) {
       return false;
@@ -457,7 +459,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     }
 
     // Step 36.3 of Request constructor / 8.4 of Response constructor.
-    if (content_type &&
+    if (!content_type.empty() &&
         !Headers::set_valid_if_undefined(cx, headers, "Content-Type", content_type)) {
       return false;
     }
