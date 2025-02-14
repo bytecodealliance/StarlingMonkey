@@ -15,7 +15,7 @@
     "status": "PASS"
   },
   "Default Content-Type for Request with FormData body": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Default Content-Type for Request with URLSearchParams body": {
     "status": "PASS"

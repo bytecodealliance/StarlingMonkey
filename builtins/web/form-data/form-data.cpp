@@ -1,8 +1,10 @@
 #include "form-data.h"
-#include "blob.h"
+#include "form-data-encoder.h"
+
+#include "../blob.h"
+#include "../file.h"
 #include "decode.h"
 #include "encode.h"
-#include "file.h"
 #include "host_api.h"
 
 #include "js/TypeDecls.h"
@@ -459,6 +461,9 @@ bool install(api::Engine *engine) {
     return false;
   }
   if (!FormDataIterator::init_class(engine->cx(), engine->global())) {
+    return false;
+  }
+  if (!MultipartFormData::init_class(engine->cx(), engine->global())) {
     return false;
   }
 
