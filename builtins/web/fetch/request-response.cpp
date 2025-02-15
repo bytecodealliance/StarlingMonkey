@@ -611,31 +611,31 @@ bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::Uni
     result.setObject(*blob);
 
   } else if constexpr (result_type == RequestOrResponse::BodyReadResult::FormData) {
-    RootedObject headers(cx, RequestOrResponse::maybe_headers(self));
-    if (!headers) {
+    auto throw_invalid_header = [&] () {
       api::throw_error(cx, FetchErrors::InvalidFormDataHeader);
       return RejectPromiseWithPendingError(cx, result_promise);
+    };
+
+    RootedObject headers(cx, RequestOrResponse::maybe_headers(self));
+    if (!headers) {
+      return throw_invalid_header();
     }
 
     auto content_type_str = host_api::HostString("Content-Type");
     auto idx = Headers::lookup(cx, headers, content_type_str);
     if (!idx) {
-      api::throw_error(cx, FetchErrors::InvalidFormDataHeader);
-      return RejectPromiseWithPendingError(cx, result_promise);
+      return throw_invalid_header();
     }
 
     auto values = Headers::get_index(cx, headers, idx.value());
     auto maybe_mime = extract_mime_type(std::get<1>(*values));
-    if (!maybe_mime) {
-      api::throw_error(cx, FetchErrors::InvalidFormDataHeader);
-      return RejectPromiseWithPendingError(cx, result_promise);
+    if (maybe_mime.isErr()) {
+      return throw_invalid_header();
     }
 
-    auto parser = FormDataParser::create(maybe_mime.value().to_string());
+    auto parser = FormDataParser::create(maybe_mime.unwrap().to_string());
     if (!parser) {
-      return JS::ResolvePromise(cx, result_promise, result);
-      // TODO: add parser for url/encoded data
-      // return RejectPromiseWithPendingError(cx, result_promise);
+      return throw_invalid_header();
     }
 
     std::string_view body(buf.get(), len);

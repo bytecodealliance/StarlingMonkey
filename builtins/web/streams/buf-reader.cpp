@@ -30,7 +30,7 @@ public:
     RootedObject source(cx, BufReader::stream(reader_));
     RootedObject stream(cx, NativeStreamSource::stream(source));
 
-    size_t readsz = 0;
+    size_t read_size = 0;
     bool done = false;
 
     RootedObject buffer(cx, JS::NewArrayBuffer(cx, CHUNK_SIZE));
@@ -48,11 +48,11 @@ public:
     auto start = BufReader::position(reader_);
     auto buf = span.value();
 
-    if (!read(cx, user, buf, start, &readsz, &done)) {
+    if (!read(cx, user, buf, start, &read_size, &done)) {
       return false;
     }
 
-    MOZ_ASSERT(readsz <= buf.size());
+    MOZ_ASSERT(read_size <= buf.size());
 
     if (done) {
       if (!JS::ReadableStreamClose(cx, stream)) {
@@ -62,7 +62,7 @@ public:
       return cancel(engine);
     }
 
-    RootedObject bytes_buffer(cx, JS_NewUint8ArrayWithBuffer(cx, buffer, 0, readsz));
+    RootedObject bytes_buffer(cx, JS_NewUint8ArrayWithBuffer(cx, buffer, 0, read_size));
     if (!bytes_buffer) {
       return false;
     }
@@ -73,7 +73,7 @@ public:
       return false;
     }
 
-    BufReader::set_position(reader_, start + readsz);
+    BufReader::set_position(reader_, start + read_size);
     return cancel(engine);
   }
 

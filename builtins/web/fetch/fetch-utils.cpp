@@ -1,5 +1,7 @@
 #include "fetch-utils.h"
 
+#include "mozilla/ResultVariant.h"
+
 #include <charconv>
 #include <string>
 #include <ranges>
@@ -19,15 +21,15 @@ std::string MimeType::to_string() {
 }
 
 std::string_view trim(std::string_view input) {
-    auto trimsz = input.find_first_not_of(" \t");
-    if (trimsz == std::string_view::npos) {
+    auto trim_size = input.find_first_not_of(" \t");
+    if (trim_size == std::string_view::npos) {
         return {};
     }
 
-    input.remove_prefix(trimsz);
+    input.remove_prefix(trim_size);
 
-    trimsz = input.find_last_not_of(" \t");
-    input.remove_suffix(input.size() - trimsz - 1);
+    trim_size = input.find_last_not_of(" \t");
+    input.remove_suffix(input.size() - trim_size - 1);
 
     return input;
 }
@@ -81,7 +83,7 @@ std::optional<MimeType> parse_mime_type(std::string_view str) {
 }
 
 // https://fetch.spec.whatwg.org/#concept-body-mime-type
-std::optional<MimeType> extract_mime_type(std::string_view query) {
+mozilla::Result<MimeType, InvalidMimeType> extract_mime_type(std::string_view query) {
   // 1. Let charset be null.
   // 2. Let essence be null.
   // 3. Let mimeType be null.
@@ -137,7 +139,7 @@ std::optional<MimeType> extract_mime_type(std::string_view query) {
 
   // 7. If mimeType is null, then return failure.
   // 8. Return mimeType.
-  return found ? std::optional<MimeType>(mime) : std::nullopt;
+  return found ? mime : mozilla::Result<MimeType, InvalidMimeType>(InvalidMimeType {});
 }
 
 std::optional<std::tuple<size_t, size_t>> extract_range(std::string_view range_query,

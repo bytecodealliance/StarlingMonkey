@@ -17,7 +17,7 @@ pub(crate) fn ws<'s>(input: &mut Stream<'s>) -> ModalResult<&'s [u8]> {
     take_while(0.., is_horizontal_space).parse_next(input)
 }
 
-pub(crate) fn take_till_crlf<'s>(input: &mut Stream<'s>) -> ModalResult<&'s [u8]> {
+pub(crate) fn take_until_crlf<'s>(input: &mut Stream<'s>) -> ModalResult<&'s [u8]> {
     take_until(1.., "\r\n").parse_next(input)
 }
 

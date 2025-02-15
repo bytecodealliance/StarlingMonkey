@@ -12,8 +12,11 @@ struct MimeType {
   std::string to_string();
 };
 
+// MimeType parsing error type marker
+struct InvalidMimeType {};
+
 // https://fetch.spec.whatwg.org/#concept-body-mime-type
-std::optional<MimeType> extract_mime_type(std::string_view query);
+mozilla::Result<MimeType, InvalidMimeType> extract_mime_type(std::string_view query);
 
 
 // Extracts a valid byte range from the given `Range` header query string, following

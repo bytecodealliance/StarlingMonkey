@@ -192,17 +192,17 @@ struct StreamContext {
  // This function is deliberately infallible as it simply writes up to the available buffer size
  // and returns how many elements were successfully written.
   template <typename I> size_t write(I first, I last) {
-    auto datasz = static_cast<size_t>(std::distance(first, last));
-    if (datasz == 0) {
+    auto data_size = static_cast<size_t>(std::distance(first, last));
+    if (data_size == 0) {
       return 0;
     }
 
-    size_t bufsz = remaining();
-    if (bufsz == 0) {
+    size_t buf_size = remaining();
+    if (buf_size == 0) {
       return 0;
     }
 
-    size_t to_write = std::min(datasz, bufsz);
+    size_t to_write = std::min(data_size, buf_size);
     auto dest = outbuf.begin() + read;
 
     std::copy_n(first, to_write, dest);

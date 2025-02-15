@@ -123,10 +123,10 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
         // Each part whose `Content-Disposition` header does not contain a `filename`
         // parameter must be parsed into an entry whose value is the UTF-8 decoded without
         // BOM content of the part.
-        auto srcsz = entry.value.len;
-        auto dstsz = jsencoding::decoder_max_utf16_buffer_length(decoder.get(), srcsz);
+        auto src_size = entry.value.len;
+        auto dst_size = jsencoding::decoder_max_utf16_buffer_length(decoder.get(), src_size);
 
-        JS::UniqueTwoByteChars data(new char16_t[dstsz + 1]);
+        JS::UniqueTwoByteChars data(new char16_t[dst_size + 1]);
         if (!data) {
           JS_ReportOutOfMemory(cx);
           return nullptr;
@@ -136,9 +136,9 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
         auto dst = reinterpret_cast<uint16_t *>(data.get());
         auto src = entry.value.data;
 
-        jsencoding::decoder_decode_to_utf16(decoder.get(), src, &srcsz, dst, &dstsz, false, &ignore);
+        jsencoding::decoder_decode_to_utf16(decoder.get(), src, &src_size, dst, &dst_size, false, &ignore);
 
-        JS::RootedString value(cx, JS_NewUCString(cx, std::move(data), dstsz));
+        JS::RootedString value(cx, JS_NewUCString(cx, std::move(data), dst_size));
         if (!value) {
           return nullptr;
         }

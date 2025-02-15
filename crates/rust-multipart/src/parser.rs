@@ -8,7 +8,7 @@ use winnow::token::{take_until, take_while};
 use crate::{Entry, EntryInfo, Stream};
 
 use crate::error::Error;
-use crate::trivia::{is_token, is_visible_ascii, quoted_string, take_till_crlf, trim, ws};
+use crate::trivia::{is_token, is_visible_ascii, quoted_string, take_until_crlf, trim, ws};
 
 #[derive(Copy, Clone, Debug)]
 enum Field<'a> {
@@ -140,7 +140,7 @@ fn header<'s>(input: &mut Stream<'s>) -> ModalResult<Header<'s>> {
             (ws, Caseless("content-type:")),
             cut_err(content_type)
         ),
-        cut_err((take_while(1.., is_token), (':', ws), take_till_crlf).value(Header::Other)),
+        cut_err((take_while(1.., is_token), (':', ws), take_until_crlf).value(Header::Other)),
     ))
     .parse_next(input)
 }
