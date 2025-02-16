@@ -3,15 +3,18 @@
 #include "../blob.h"
 #include "../form-data/form-data.h"
 #include "../form-data/form-data-encoder.h"
+#include "../form-data/form-data-parser.h"
 #include "../streams/native-stream-source.h"
 #include "../streams/transform-stream.h"
 #include "../url.h"
+#include "fetch-utils.h"
 #include "encode.h"
 #include "event_loop.h"
 #include "extension-api.h"
 #include "fetch_event.h"
 #include "host_api.h"
 #include "js/String.h"
+#include "js/TypeDecls.h"
 #include "picosha2.h"
 
 #include "js/Array.h"
@@ -44,6 +47,7 @@ namespace builtins::web::fetch {
 
 using blob::Blob;
 using form_data::FormData;
+using form_data::FormDataParser;
 using form_data::MultipartFormData;
 
 using namespace std::literals;
@@ -578,6 +582,7 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
   return headers;
 }
 
+// https://fetch.spec.whatwg.org/#body-mixin
 template <RequestOrResponse::BodyReadResult result_type>
 bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::UniqueChars buf,
                                    size_t len) {
@@ -604,6 +609,43 @@ bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::Uni
     }
 
     result.setObject(*blob);
+
+  } else if constexpr (result_type == RequestOrResponse::BodyReadResult::FormData) {
+    auto throw_invalid_header = [&] () {
+      api::throw_error(cx, FetchErrors::InvalidFormDataHeader);
+      return RejectPromiseWithPendingError(cx, result_promise);
+    };
+
+    RootedObject headers(cx, RequestOrResponse::maybe_headers(self));
+    if (!headers) {
+      return throw_invalid_header();
+    }
+
+    auto content_type_str = host_api::HostString("Content-Type");
+    auto idx = Headers::lookup(cx, headers, content_type_str);
+    if (!idx) {
+      return throw_invalid_header();
+    }
+
+    auto values = Headers::get_index(cx, headers, idx.value());
+    auto maybe_mime = extract_mime_type(std::get<1>(*values));
+    if (maybe_mime.isErr()) {
+      return throw_invalid_header();
+    }
+
+    auto parser = FormDataParser::create(maybe_mime.unwrap().to_string());
+    if (!parser) {
+      return throw_invalid_header();
+    }
+
+    std::string_view body(buf.get(), len);
+    RootedObject form_data(cx, parser->parse(cx, body));
+    if (!form_data) {
+      api::throw_error(cx, FetchErrors::InvalidFormData);
+      return RejectPromiseWithPendingError(cx, result_promise);
+    }
+
+    result.setObject(*form_data);
   } else {
     JS::RootedString text(cx, JS_NewStringCopyUTF8N(cx, JS::UTF8Chars(buf.get(), len)));
     if (!text) {
@@ -1404,6 +1446,7 @@ const JSFunctionSpec Request::methods[] = {
     JS_FN("arrayBuffer", Request::bodyAll<RequestOrResponse::BodyReadResult::ArrayBuffer>, 0,
           JSPROP_ENUMERATE),
     JS_FN("blob", Request::bodyAll<RequestOrResponse::BodyReadResult::Blob>, 0, JSPROP_ENUMERATE),
+    JS_FN("formData", Request::bodyAll<RequestOrResponse::BodyReadResult::FormData>, 0, JSPROP_ENUMERATE),
     JS_FN("json", Request::bodyAll<RequestOrResponse::BodyReadResult::JSON>, 0, JSPROP_ENUMERATE),
     JS_FN("text", Request::bodyAll<RequestOrResponse::BodyReadResult::Text>, 0, JSPROP_ENUMERATE),
     JS_FN("clone", Request::clone, 0, JSPROP_ENUMERATE),
@@ -2429,6 +2472,7 @@ const JSFunctionSpec Response::methods[] = {
     JS_FN("arrayBuffer", bodyAll<RequestOrResponse::BodyReadResult::ArrayBuffer>, 0,
           JSPROP_ENUMERATE),
     JS_FN("blob", bodyAll<RequestOrResponse::BodyReadResult::Blob>, 0, JSPROP_ENUMERATE),
+    JS_FN("formData", bodyAll<RequestOrResponse::BodyReadResult::FormData>, 0, JSPROP_ENUMERATE),
     JS_FN("json", bodyAll<RequestOrResponse::BodyReadResult::JSON>, 0, JSPROP_ENUMERATE),
     JS_FN("text", bodyAll<RequestOrResponse::BodyReadResult::Text>, 0, JSPROP_ENUMERATE),
     JS_FS_END,

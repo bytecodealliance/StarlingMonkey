@@ -403,6 +403,16 @@ bool FormData::set(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 }
 
+JSObject *FormData::create(JSContext *cx) {
+  JSObject *self = JS_NewObjectWithGivenProto(cx, &class_, proto_obj);
+  if (!self) {
+    return nullptr;
+  }
+
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Entries), JS::PrivateValue(new EntryList));
+  return self;
+}
+
 bool FormData::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("FormData", 0);
 

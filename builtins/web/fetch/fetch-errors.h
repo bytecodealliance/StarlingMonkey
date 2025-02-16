@@ -21,6 +21,8 @@ DEF_ERR(InvalidHeaderName, JSEXN_TYPEERR, "{0}: Invalid header name \"{1}\"", 2)
 DEF_ERR(InvalidHeaderValue, JSEXN_TYPEERR, "{0}: Invalid header value \"{1}\"", 2)
 DEF_ERR(HeadersCloningFailed, JSEXN_ERR, "Failed to clone headers", 0)
 DEF_ERR(HeadersImmutable, JSEXN_TYPEERR, "{0}: Headers are immutable", 1)
+DEF_ERR(InvalidFormDataHeader, JSEXN_TYPEERR, "Invalid header for FormData body type", 0)
+DEF_ERR(InvalidFormData, JSEXN_TYPEERR, "FormData parsing failed", 0)
 };     // namespace FetchErrors
 
 #endif // FETCH_ERRORS_H
