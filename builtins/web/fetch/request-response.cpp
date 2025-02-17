@@ -2251,8 +2251,11 @@ bool Response::redirect(JSContext *cx, unsigned argc, Value *vp) {
   if (!url_str.data) {
     return false;
   }
-  auto parsedURL =
-      new_jsurl_with_base(&url_str, url::URL::url(worker_location::WorkerLocation::url));
+
+  auto deleter = [&](auto *url) { jsurl::free_jsurl(url); };
+  std::unique_ptr<jsurl::JSUrl, decltype(deleter)> parsedURL(
+      new_jsurl_with_base(&url_str, url::URL::url(worker_location::WorkerLocation::url)), deleter);
+
   if (!parsedURL) {
     return api::throw_error(cx, api::Errors::TypeError, "Response.redirect", "url",
                             "be a valid URL");

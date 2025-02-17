@@ -4,6 +4,7 @@
 #include "form-data.h"
 #include "rust-encoding.h"
 #include "rust-multipart-ffi.h"
+#include "rust-url.h"
 
 #include "../file.h"
 
@@ -217,6 +218,61 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
   return formdata;
 }
 
+class UrlParser : public FormDataParser {
+  virtual JSObject *parse(JSContext *cx, std::string_view body) override;
+};
+
+JSObject *UrlParser::parse(JSContext *cx, std::string_view body) {
+  RootedObject formdata(cx, FormData::create(cx));
+  if (!formdata) {
+    return nullptr;
+  }
+
+  if (body.empty()) {
+    return formdata;
+  }
+
+  jsurl::SpecString spec((uint8_t *)body.data(), body.size(), body.size());
+
+  auto deleter = [&](auto *params) { jsurl::free_params(params); };
+  std::unique_ptr<jsurl::JSUrlSearchParams, decltype(deleter)> params(jsurl::new_params(), deleter);
+  if (!params) {
+    JS_ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  jsurl::params_init(params.get(), &spec);
+  auto index = 0;
+
+  jsurl::JSSearchParam param{};
+
+  while (true) {
+    jsurl::params_at(params.get(), index, &param);
+    if (param.done || param.name.data == nullptr || param.value.data == nullptr) {
+      break;
+    }
+
+    auto val_chars = JS::UTF8Chars((char *)param.value.data, param.value.len);
+    JS::RootedString val_str(cx, JS_NewStringCopyUTF8N(cx, val_chars));
+    if (!val_str) {
+      JS_ReportOutOfMemory(cx);
+      return nullptr;
+    }
+
+    auto name = std::string_view((char *)param.name.data, param.name.len);
+    JS::RootedValue value_val(cx, JS::StringValue(val_str));
+
+    auto res = FormData::append(cx, formdata, name, value_val, UndefinedHandleValue);
+    if (!res) {
+      return nullptr;
+    }
+
+    index += 1;
+  }
+
+  return formdata;
+}
+
 std::unique_ptr<FormDataParser> FormDataParser::create(std::string_view content_type) {
   if (content_type.starts_with("multipart/form-data")) {
     jsmultipart::Slice content_slice{(uint8_t *)(content_type.data()), content_type.size()};
@@ -230,7 +286,7 @@ std::unique_ptr<FormDataParser> FormDataParser::create(std::string_view content_
     std::string_view boundary((char *)boundary_slice.data, boundary_slice.len);
     return std::make_unique<MultipartParser>(boundary);
   } else if (content_type.starts_with("application/x-www-form-urlencoded")) {
-    // TODO: add form url encoded content parser
+    return std::make_unique<UrlParser>();
   } else if (content_type.starts_with("text/plain")) {
     // TODO: add plain text content parser
   }
