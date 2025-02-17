@@ -26,9 +26,8 @@ JSObject *to_owned_buffer(JSContext *cx, jsmultipart::Slice src) {
 
   std::copy_n(src.data, src.len, buf.get());
 
-  JS::RootedObject buffer(
-      cx, JS::NewArrayBufferWithContents(cx, src.len, buf.get(),
-                                         JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
+  JS::RootedObject buffer(cx, JS::NewArrayBufferWithContents(
+      cx, src.len, buf.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
   if (!buffer) {
     JS_ReportOutOfMemory(cx);
     return nullptr;

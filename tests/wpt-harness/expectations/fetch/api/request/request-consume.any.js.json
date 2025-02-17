@@ -90,7 +90,7 @@
     "status": "PASS"
   },
   "Consume FormData request's body as FormData": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Consume blob response's body as blob": {
     "status": "PASS"
