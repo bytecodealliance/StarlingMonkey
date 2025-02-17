@@ -12,7 +12,7 @@
     "status": "PASS"
   },
   "Initialize Request's body with \"[object Object]\", multipart/form-data": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Initialize Request's body with \"This is a USVString\", text/plain;charset=UTF-8": {
     "status": "PASS"

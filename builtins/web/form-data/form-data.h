@@ -55,6 +55,8 @@ class FormData : public TraceableBuiltinImpl<FormData> {
   static EntryList *entry_list(JSObject *self);
 
   friend class FormDataIterator;
+  friend class MultipartParser;
+  friend class MultipartFormData;
 
 public:
   static constexpr const char *class_name = "FormData";
@@ -68,6 +70,7 @@ public:
 
   enum Slots { Entries, Count };
 
+  static JSObject *create(JSContext *cx);
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
   static void finalize(JS::GCContext *gcx, JSObject *self);

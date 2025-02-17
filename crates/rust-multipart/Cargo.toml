@@ -1,0 +1,26 @@
+[workspace]
+resolver = "2"
+members = ["fuzz"]
+
+[lib]
+crate-type = ["staticlib"]
+
+[package]
+name = "multipart"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+winnow = "0.7"
+
+[features]
+capi = []
+simd = ["winnow/simd"]
+
+[profile.release]
+lto = true
+panic = 'abort'
+
+[profile.dev]
+lto = true
+panic = 'abort'

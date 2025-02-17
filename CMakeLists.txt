@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.27)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if (DEFINED ENV{HOST_API})
     set(HOST_API $ENV{HOST_API})
@@ -14,7 +15,7 @@ if (DEFINED ENV{HOST_API})
             folder of StarlingMonkey, or be an absolute path pointing to custom host API implementation.")
     endif()
 else()
-    set(HOST_API ${CMAKE_CURRENT_SOURCE_DIR}/host-apis/wasi-0.2.0)
+    set(HOST_API ${CMAKE_CURRENT_SOURCE_DIR}/host-apis/wasi-0.2.3)
 endif()
 message(STATUS "Using host API: ${HOST_API}")
 
@@ -89,7 +90,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(starling-raw.wasm PRIVATE host_api extension_api builtins spidermonkey rust-url)
+target_link_libraries(starling-raw.wasm PRIVATE host_api extension_api builtins spidermonkey rust-url multipart)
 
 # build a compilation cache of ICs
 if(WEVAL)

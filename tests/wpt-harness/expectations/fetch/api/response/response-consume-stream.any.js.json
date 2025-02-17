@@ -18,7 +18,7 @@
     "status": "PASS"
   },
   "Read form data response's body as readableStream with mode=undefined": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Read blob response's body as readableStream with mode=byob": {
     "status": "FAIL"

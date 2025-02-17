@@ -1,0 +1,2 @@
+stdout [1] :: Log: [forwarded]: Hello, World!
+stdout [0] :: Log: [tee]: Hello, World!

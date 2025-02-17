@@ -1,15 +1,20 @@
 #include "request-response.h"
 
 #include "../blob.h"
+#include "../form-data/form-data.h"
+#include "../form-data/form-data-encoder.h"
+#include "../form-data/form-data-parser.h"
 #include "../streams/native-stream-source.h"
 #include "../streams/transform-stream.h"
 #include "../url.h"
+#include "fetch-utils.h"
 #include "encode.h"
 #include "event_loop.h"
 #include "extension-api.h"
 #include "fetch_event.h"
 #include "host_api.h"
 #include "js/String.h"
+#include "js/TypeDecls.h"
 #include "picosha2.h"
 
 #include "js/Array.h"
@@ -17,6 +22,7 @@
 #include "js/Conversions.h"
 #include "js/JSON.h"
 #include "js/Stream.h"
+#include "mozilla/ResultVariant.h"
 #include <algorithm>
 #include <iostream>
 #include <vector>
@@ -26,8 +32,6 @@
 #include "../worker-location.h"
 #include "js/experimental/TypedData.h"
 #pragma clang diagnostic pop
-
-using builtins::web::blob::Blob;
 
 namespace builtins::web::streams {
 
@@ -40,6 +44,13 @@ bool NativeStreamSource::stream_is_body(JSContext *cx, JS::HandleObject stream) 
 } // namespace builtins::web::streams
 
 namespace builtins::web::fetch {
+
+using blob::Blob;
+using form_data::FormData;
+using form_data::FormDataParser;
+using form_data::MultipartFormData;
+
+using namespace std::literals;
 
 static api::Engine *ENGINE;
 
@@ -78,7 +89,8 @@ public:
 
     auto read_res = body->read(HANDLE_READ_CHUNK_SIZE);
     if (auto *err = read_res.to_err()) {
-      HANDLE_ERROR(cx, *err);
+      auto receiver = Request::is_instance(owner) ? "request" : "response";
+      api::throw_error(cx, FetchErrors::IncomingBodyStreamError, receiver);
       return error_stream_controller_with_pending_exception(cx, stream);
     }
 
@@ -286,19 +298,19 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
   MOZ_ASSERT(!has_body(self));
   MOZ_ASSERT(!body_val.isNullOrUndefined());
 
-  const char *content_type = nullptr;
+  string_view content_type;
   mozilla::Maybe<size_t> content_length;
 
-  // We currently support five types of body inputs:
+  // We support all types of body inputs required by the spec:
   // - byte sequence
   // - buffer source
   // - Blob
+  // - FormData
   // - USV strings
   // - URLSearchParams
   // - ReadableStream
   // After the other other options are checked explicitly, all other inputs are
   // encoded to a UTF8 string to be treated as a USV string.
-  // TODO: Support the other possible inputs to Body.
 
   JS::RootedObject body_obj(cx, body_val.isObject() ? &body_val.toObject() : nullptr);
   host_api::HostString host_type_str;
@@ -318,8 +330,33 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     if (JS::GetStringLength(type_str) > 0) {
       host_type_str = core::encode(cx, type_str);
       MOZ_ASSERT(host_type_str);
-      content_type = host_type_str.ptr.get();
+      content_type = host_type_str;
     }
+  } else if (FormData::is_instance(body_obj)) {
+    RootedObject encoder(cx, MultipartFormData::create(cx, body_obj));
+    if (!encoder) {
+      return false;
+    }
+
+    RootedObject stream(cx, MultipartFormData::encode_stream(cx, encoder));
+    if (!stream) {
+      return false;
+    }
+
+    auto boundary = MultipartFormData::boundary(encoder);
+    auto type = "multipart/form-data; boundary=" + boundary;
+    host_type_str = string_view(type);
+
+    auto length = MultipartFormData::query_length(cx, encoder);
+    if (length.isErr()) {
+      return false;
+    }
+
+    content_length = mozilla::Some(length.unwrap());
+    content_type = host_type_str;
+
+    RootedValue stream_val(cx, JS::ObjectValue(*stream));
+    JS_SetReservedSlot(self, static_cast<uint32_t>(RequestOrResponse::Slots::BodyStream), stream_val);
   } else if (body_obj && JS::IsReadableStream(body_obj)) {
     if (RequestOrResponse::body_unusable(cx, body_obj)) {
       return api::throw_error(cx, FetchErrors::BodyStreamUnusable);
@@ -364,7 +401,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
       auto slice = url::URLSearchParams::serialize(cx, body_obj);
       buf = (char *)slice.data;
       length = slice.len;
-      content_type = "application/x-www-form-urlencoded;charset=UTF-8";
+      content_type = "application/x-www-form-urlencoded;charset=UTF-8"sv;
     } else {
       auto text = core::encode(cx, body_val);
       if (!text.ptr) {
@@ -372,7 +409,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
       }
       buf = text.ptr.release();
       length = text.len;
-      content_type = "text/plain;charset=UTF-8";
+      content_type = "text/plain;charset=UTF-8"sv;
     }
 
     if (!buffer) {
@@ -413,7 +450,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     content_length.emplace(length);
   }
 
-  if (content_type || content_length.isSome()) {
+  if (!content_type.empty() || content_length.isSome()) {
     JS::RootedObject headers(cx, RequestOrResponse::headers(cx, self));
     if (!headers) {
       return false;
@@ -427,7 +464,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     }
 
     // Step 36.3 of Request constructor / 8.4 of Response constructor.
-    if (content_type &&
+    if (!content_type.empty() &&
         !Headers::set_valid_if_undefined(cx, headers, "Content-Type", content_type)) {
       return false;
     }
@@ -545,6 +582,7 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
   return headers;
 }
 
+// https://fetch.spec.whatwg.org/#body-mixin
 template <RequestOrResponse::BodyReadResult result_type>
 bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::UniqueChars buf,
                                    size_t len) {
@@ -571,6 +609,43 @@ bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::Uni
     }
 
     result.setObject(*blob);
+
+  } else if constexpr (result_type == RequestOrResponse::BodyReadResult::FormData) {
+    auto throw_invalid_header = [&] () {
+      api::throw_error(cx, FetchErrors::InvalidFormDataHeader);
+      return RejectPromiseWithPendingError(cx, result_promise);
+    };
+
+    RootedObject headers(cx, RequestOrResponse::maybe_headers(self));
+    if (!headers) {
+      return throw_invalid_header();
+    }
+
+    auto content_type_str = host_api::HostString("Content-Type");
+    auto idx = Headers::lookup(cx, headers, content_type_str);
+    if (!idx) {
+      return throw_invalid_header();
+    }
+
+    auto values = Headers::get_index(cx, headers, idx.value());
+    auto maybe_mime = extract_mime_type(std::get<1>(*values));
+    if (maybe_mime.isErr()) {
+      return throw_invalid_header();
+    }
+
+    auto parser = FormDataParser::create(maybe_mime.unwrap().to_string());
+    if (!parser) {
+      return throw_invalid_header();
+    }
+
+    std::string_view body(buf.get(), len);
+    RootedObject form_data(cx, parser->parse(cx, body));
+    if (!form_data) {
+      api::throw_error(cx, FetchErrors::InvalidFormData);
+      return RejectPromiseWithPendingError(cx, result_promise);
+    }
+
+    result.setObject(*form_data);
   } else {
     JS::RootedString text(cx, JS_NewStringCopyUTF8N(cx, JS::UTF8Chars(buf.get(), len)));
     if (!text) {
@@ -1006,6 +1081,7 @@ bool write_all_finish_callback(JSContext *cx, HandleObject then_handler) {
 bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_owner,
                                            JS::HandleValue extra, JS::CallArgs args) {
   JS::RootedObject then_handler(cx, &args.callee());
+  auto body = RequestOrResponse::outgoing_body_handle(body_owner);
 
   // We're guaranteed to work with a native ReadableStreamDefaultReader here,
   // which in turn is guaranteed to vend {done: bool, value: any} objects to
@@ -1023,8 +1099,13 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
   if (!JS_GetProperty(cx, chunk_obj, "value", &val))
     return false;
 
-  // The read operation returned something that's not a Uint8Array
-  if (!val.isObject() || !JS_IsUint8Array(&val.toObject())) {
+  // The read operation returned something that's not a Uint8Array, or an array whose buffer has
+  // been detached.
+  if (!val.isObject() || !JS_IsUint8Array(&val.toObject()) ||
+    JS::ArrayBufferView::fromObject(&val.toObject()).isDetached()) {
+    // Close the body stream, since we're not going to send anything to it anymore.
+    body->close();
+
     // reject the request promise
     if (Request::is_instance(body_owner)) {
       JS::RootedObject response_promise(cx, Request::response_promise(body_owner));
@@ -1043,12 +1124,42 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
 
   RootedObject array(cx, &val.toObject());
   size_t length = JS_GetTypedArrayByteLength(array);
-  bool is_shared;
-  RootedObject buffer(cx, JS_GetArrayBufferViewBuffer(cx, array, &is_shared));
-  MOZ_ASSERT(!is_shared);
-  auto ptr = static_cast<uint8_t *>(StealArrayBufferContents(cx, buffer));
-  host_api::HostBytes bytes(unique_ptr<uint8_t[]>(ptr), length);
-  auto body = RequestOrResponse::outgoing_body_handle(body_owner);
+  // No need to do anything for 0-sized chunks.
+  if (length == 0) {
+    return write_all_finish_callback(cx, then_handler);
+  }
+
+  // The specs for handling outgoing bodies for requests and responses differ, unfortunately:
+  // For requests, we need to copy the bytes, but leave the chunk as-is.
+  // See step 3.2.2.3 of https://fetch.spec.whatwg.org/#http-fetch
+  // For responses, we need to detach the chunk's buffer. That means we can use the bytes
+  // without copying.
+  // see step 10.2.5.2.1.chunk_steps of https://w3c.github.io/ServiceWorker/#fetch-event-respondwith
+  host_api::HostBytes bytes;
+  if (Request::is_instance(body_owner)) {
+    auto ptr = std::make_unique<uint8_t[]>(length);
+    if (!ptr) {
+      JS_ReportOutOfMemory(cx);
+      return false;
+    }
+    {
+      bool is_shared;
+      JS::AutoCheckCannotGC nogc(cx);
+      auto data = JS_GetUint8ArrayData(array, &is_shared, nogc);
+      MOZ_ASSERT(data);
+      MOZ_ASSERT(!is_shared);
+      memcpy(ptr.get(), data, length);
+    }
+    bytes = host_api::HostBytes(std::move(ptr), length);
+  } else {
+    bool is_shared;
+    RootedObject buffer(cx, JS_GetArrayBufferViewBuffer(cx, array, &is_shared));
+    MOZ_ASSERT(!is_shared);
+    auto ptr = static_cast<uint8_t *>(StealArrayBufferContents(cx, buffer));
+    MOZ_ASSERT(ptr);
+    bytes = host_api::HostBytes(unique_ptr<uint8_t[]>(ptr), length);
+  }
+
   auto res = body->write_all(ENGINE, std::move(bytes),
     write_all_finish_callback, then_handler);
   if (auto *err = res.to_err()) {
@@ -1283,7 +1394,6 @@ bool Request::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
   Value url_val = GetReservedSlot(self, static_cast<uint32_t>(Slots::URL));
   SetReservedSlot(new_request, static_cast<uint32_t>(Slots::URL), url_val);
   Value method_val = JS::StringValue(method(self));
-  ENGINE->dump_value(method_val, stderr);
   SetReservedSlot(new_request, static_cast<uint32_t>(Slots::Method), method_val);
 
   // clone operation step 2.
@@ -1336,6 +1446,7 @@ const JSFunctionSpec Request::methods[] = {
     JS_FN("arrayBuffer", Request::bodyAll<RequestOrResponse::BodyReadResult::ArrayBuffer>, 0,
           JSPROP_ENUMERATE),
     JS_FN("blob", Request::bodyAll<RequestOrResponse::BodyReadResult::Blob>, 0, JSPROP_ENUMERATE),
+    JS_FN("formData", Request::bodyAll<RequestOrResponse::BodyReadResult::FormData>, 0, JSPROP_ENUMERATE),
     JS_FN("json", Request::bodyAll<RequestOrResponse::BodyReadResult::JSON>, 0, JSPROP_ENUMERATE),
     JS_FN("text", Request::bodyAll<RequestOrResponse::BodyReadResult::Text>, 0, JSPROP_ENUMERATE),
     JS_FN("clone", Request::clone, 0, JSPROP_ENUMERATE),
@@ -2361,6 +2472,7 @@ const JSFunctionSpec Response::methods[] = {
     JS_FN("arrayBuffer", bodyAll<RequestOrResponse::BodyReadResult::ArrayBuffer>, 0,
           JSPROP_ENUMERATE),
     JS_FN("blob", bodyAll<RequestOrResponse::BodyReadResult::Blob>, 0, JSPROP_ENUMERATE),
+    JS_FN("formData", bodyAll<RequestOrResponse::BodyReadResult::FormData>, 0, JSPROP_ENUMERATE),
     JS_FN("json", bodyAll<RequestOrResponse::BodyReadResult::JSON>, 0, JSPROP_ENUMERATE),
     JS_FN("text", bodyAll<RequestOrResponse::BodyReadResult::Text>, 0, JSPROP_ENUMERATE),
     JS_FS_END,

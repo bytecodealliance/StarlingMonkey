@@ -5,6 +5,20 @@
 
 namespace builtins::web::fetch {
 
+struct MimeType {
+  std::string essence;
+  std::vector<std::tuple<std::string, std::string>> params;
+
+  std::string to_string();
+};
+
+// MimeType parsing error type marker
+struct InvalidMimeType {};
+
+// https://fetch.spec.whatwg.org/#concept-body-mime-type
+mozilla::Result<MimeType, InvalidMimeType> extract_mime_type(std::string_view query);
+
+
 // Extracts a valid byte range from the given `Range` header query string, following
 // the steps defined for "blob" schemes in the Fetch specification:
 // https://fetch.spec.whatwg.org/#scheme-fetch
