@@ -512,7 +512,7 @@ bool Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char
   // TODO: decide whether we should abort in this case, instead of just
   // reporting.
   if (JS::SetSize(cx(), unhandledRejectedPromises) > 0) {
-    report_unhandled_promise_rejections(cx());
+    report_unhandled_promise_rejections();
   }
 
   // TODO(performance): check if it makes sense to increase the empty chunk
@@ -591,4 +591,14 @@ bool Engine::has_pending_async_tasks() { return core::EventLoop::has_pending_asy
 void Engine::queue_async_task(AsyncTask *task) { core::EventLoop::queue_async_task(task); }
 bool Engine::cancel_async_task(AsyncTask *task) {
   return core::EventLoop::cancel_async_task(this, task);
+}
+
+bool Engine::has_unhandled_promise_rejections() {
+  return JS::SetSize(CONTEXT, unhandledRejectedPromises) > 0;
+}
+void Engine::report_unhandled_promise_rejections() {
+  ::report_unhandled_promise_rejections(this->cx());
+}
+void Engine::clear_unhandled_promise_rejections() {
+  JS::SetClear(CONTEXT, unhandledRejectedPromises);
 }
