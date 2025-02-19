@@ -42,7 +42,7 @@
     "status": "FAIL"
   },
   "Adding invalid request header \"Connection: KO\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Adding invalid request header \"Content-Length: KO\"": {
     "status": "FAIL"
@@ -66,7 +66,7 @@
     "status": "PASS"
   },
   "Adding invalid request header \"Keep-Alive: KO\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Adding invalid request header \"Origin: KO\"": {
     "status": "FAIL"
@@ -78,16 +78,16 @@
     "status": "FAIL"
   },
   "Adding invalid request header \"TE: KO\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Adding invalid request header \"Trailer: KO\"": {
     "status": "FAIL"
   },
   "Adding invalid request header \"Transfer-Encoding: KO\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Adding invalid request header \"Upgrade: KO\"": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Adding invalid request header \"Via: KO\"": {
     "status": "FAIL"

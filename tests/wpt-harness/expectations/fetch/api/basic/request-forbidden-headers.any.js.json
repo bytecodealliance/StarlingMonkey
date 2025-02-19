@@ -12,7 +12,7 @@
     "status": "FAIL"
   },
   "Connection is a forbidden request header": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Content-Length is a forbidden request header": {
     "status": "FAIL"
@@ -36,7 +36,7 @@
     "status": "PASS"
   },
   "Keep-Alive is a forbidden request header": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Origin is a forbidden request header": {
     "status": "FAIL"
@@ -45,16 +45,16 @@
     "status": "FAIL"
   },
   "TE is a forbidden request header": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Trailer is a forbidden request header": {
     "status": "FAIL"
   },
   "Transfer-Encoding is a forbidden request header": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Upgrade is a forbidden request header": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Via is a forbidden request header": {
     "status": "FAIL"
