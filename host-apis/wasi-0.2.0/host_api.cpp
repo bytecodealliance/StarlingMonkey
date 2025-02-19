@@ -161,17 +161,24 @@ HttpHeaders::HttpHeaders(const HttpHeadersReadOnly &headers) : HttpHeadersReadOn
   this->handle_state_ = std::unique_ptr<HandleState>(new WASIHandle<HttpHeaders>(handle));
 }
 
-// We currently only guard against a single request header, instead of the full list in
-// https://fetch.spec.whatwg.org/#forbidden-request-header.
+// We guard against the list of forbidden headers Wasmtime uses:
+// https://github.com/bytecodealliance/wasmtime/blob/9afc64b4728d6e2067aa52331ff7b1d6f5275b5e/crates/wasi-http/src/types.rs#L273-L284
 static const std::vector forbidden_request_headers = {
-    "host",
+  "connection",
+  "host",
+  "http2-settings",
+  "keep-alive",
+  "proxy-authenticate",
+  "proxy-authorization",
+  "proxy-connection",
+  "te",
+  "transfer-encoding",
+  "upgrade",
 };
 
-// We currently only guard against a single response header, instead of the full list in
-// https://fetch.spec.whatwg.org/#forbidden-request-header.
-static const std::vector forbidden_response_headers = {
-    "host",
-};
+// WASI hosts don't currently make a difference between request and response headers
+// in their lists of forbidden headers.
+static const std::vector forbidden_response_headers = forbidden_request_headers;
 
 const std::vector<const char *> &HttpHeaders::get_forbidden_request_headers() {
   return forbidden_request_headers;
