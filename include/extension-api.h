@@ -132,6 +132,10 @@ public:
   void queue_async_task(AsyncTask *task);
   bool cancel_async_task(AsyncTask *task);
 
+  bool has_unhandled_promise_rejections();
+  void report_unhandled_promise_rejections();
+  void clear_unhandled_promise_rejections();
+
   void abort(const char *reason);
 
   bool debug_logging_enabled();

@@ -53,15 +53,48 @@ void dec_pending_promise_count(JSObject *self) {
                       JS::Int32Value(count));
 }
 
-bool add_pending_promise(JSContext *cx, JS::HandleObject self, JS::HandleObject promise) {
+// Step 5 of https://w3c.github.io/ServiceWorker/#wait-until-method
+bool dec_pending_promise_count(JSContext *cx, JS::HandleObject event, JS::HandleValue extra,
+                               JS::CallArgs args) {
+  // Step 5.1
+  dec_pending_promise_count(event);
+
+  // Note: step 5.2 not relevant to our implementation.
+  return true;
+}
+
+/// Wrapper for `dec_pending_promise_count` that also logs the rejection reason.
+///
+/// Without this logging, it's very hard to even tell that something went wrong,
+/// because the rejection is just silently ignored: the promise rejection tracker
+/// doesn't ever see it, because adding it to `waitUntil` marks it as handled.
+bool handle_wait_until_rejection(JSContext *cx, JS::HandleObject event, JS::HandleValue promiseVal,
+                                 JS::CallArgs args) {
+  fprintf(stderr, "Warning: Promise passed to FetchEvent#waitUntil was rejected with error. "
+                  "Pending tasks after that error might not run. Error details:\n");
+  RootedObject promise(cx, &promiseVal.toObject());
+  ENGINE->dump_promise_rejection(args.get(0), promise, stderr);
+  return dec_pending_promise_count(cx, event, promiseVal, args);
+}
+
+bool add_pending_promise(JSContext *cx, JS::HandleObject self, JS::HandleObject promise, bool for_waitUntil) {
   MOZ_ASSERT(FetchEvent::is_instance(self));
   MOZ_ASSERT(JS::IsPromiseObject(promise));
 
-  JS::RootedObject handler(cx);
-  handler = &JS::GetReservedSlot(
-                 self, static_cast<uint32_t>(FetchEvent::Slots::DecPendingPromiseCountFunc))
-                 .toObject();
-  if (!JS::AddPromiseReactions(cx, promise, handler, handler))
+  JS::RootedObject resolve_handler(cx);
+  resolve_handler = &GetReservedSlot(self,
+    static_cast<uint32_t>(FetchEvent::Slots::DecPendingPromiseCountFunc)).toObject();
+
+  JS::RootedObject reject_handler(cx);
+  if (for_waitUntil) {
+    RootedValue promiseVal(cx, JS::ObjectValue(*promise));
+    reject_handler = create_internal_method<handle_wait_until_rejection>(cx, self, promiseVal);
+  } else {
+    reject_handler = resolve_handler;
+  }
+  if (!reject_handler)
+    return false;
+  if (!JS::AddPromiseReactions(cx, promise, resolve_handler, reject_handler))
     return false;
 
   inc_pending_promise_count(self);
@@ -262,7 +295,7 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   // Step 4
-  add_pending_promise(cx, self, response_promise);
+  add_pending_promise(cx, self, response_promise, false);
 
   // Steps 5-7 (very roughly)
   set_state(self, State::waitToRespond);
@@ -302,20 +335,6 @@ bool FetchEvent::respondWithError(JSContext *cx, JS::HandleObject self) {
   return send_response(response, self, FetchEvent::State::respondedWithError);
 }
 
-namespace {
-
-// Step 5 of https://w3c.github.io/ServiceWorker/#wait-until-method
-bool dec_pending_promise_count(JSContext *cx, JS::HandleObject event, JS::HandleValue extra,
-                               JS::CallArgs args) {
-  // Step 5.1
-  dec_pending_promise_count(event);
-
-  // Note: step 5.2 not relevant to our implementation.
-  return true;
-}
-
-} // namespace
-
 // Steps in this function refer to the spec at
 // https://w3c.github.io/ServiceWorker/#wait-until-method
 bool FetchEvent::waitUntil(JSContext *cx, unsigned argc, JS::Value *vp) {
@@ -332,7 +351,7 @@ bool FetchEvent::waitUntil(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   // Steps 3-4
-  add_pending_promise(cx, self, promise);
+  add_pending_promise(cx, self, promise, true);
 
   // Note: step 5 implemented in dec_pending_promise_count
 
@@ -549,6 +568,11 @@ bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
 
   if (STREAMING_BODY && STREAMING_BODY->valid()) {
     STREAMING_BODY->close();
+  }
+
+  if (ENGINE->has_unhandled_promise_rejections()) {
+    fprintf(stderr, "Warning: Unhandled promise rejections detected after handling incoming request.\n");
+    ENGINE->report_unhandled_promise_rejections();
   }
 
   return true;
