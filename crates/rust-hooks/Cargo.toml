@@ -1,0 +1,13 @@
+[package]
+name = "rust-hooks"
+version = "0.1.0"
+edition = "2021"
+description = "A library for managing git hooks in Rust, copied from Gecko"
+license = "MPL-2.0"
+
+[dependencies]
+arrayvec = "0.7.6"
+
+[features]
+panic_hook = []
+default_features = ["panic_hook"]
