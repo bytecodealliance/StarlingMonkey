@@ -35,8 +35,8 @@ namespace api {
 class AsyncTask;
 
 struct EngineConfig {
-  optional<std::string> content_script_path;
-  optional<std::string> content_script;
+  mozilla::Maybe<std::string> content_script_path;
+  mozilla::Maybe<std::string> content_script;
   bool module_mode = true;
 
   /**
@@ -46,6 +46,14 @@ struct EngineConfig {
    */
   bool pre_initialize = false;
   bool verbose = false;
+
+  /**
+   * Whether to enable the script debugger. If this is enabled, the runtime will
+   * check for the DEBUGGER_PORT environment variable and try to connect to that
+   * port on localhost if it's set. If that succeeds, it expects the host to send
+   * a script to use as the debugger, using the SpiderMonkey Debugger API.
+   */
+  bool debugging = false;
 
   EngineConfig() = default;
 };
@@ -63,6 +71,7 @@ public:
   JSContext *cx();
   HandleObject global();
   EngineState state();
+  bool debugging_enabled();
 
   void finish_pre_initialization();
 

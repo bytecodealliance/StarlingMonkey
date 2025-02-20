@@ -20,7 +20,10 @@
 #include "jsfriendapi.h"
 #pragma clang diagnostic pop
 
+#include "debugger.h"
 #include "script_loader.h"
+
+#include <decode.h>
 
 #ifdef MEM_STATS
 #include <string>
@@ -425,31 +428,40 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
   TRACE("Module mode: " << config_->module_mode);
   scriptLoader->enable_module_mode(config_->module_mode);
 
+  mozilla::Maybe<std::string_view> content_script_path = config_->content_script_path;
+
   if (config_->pre_initialize) {
     state_ = EngineState::ScriptPreInitializing;
   } else {
     state_ = EngineState::Initialized;
+    // Debugging isn't supported during wizening, so only try it when doing runtime evaluation.
+    // The debugger can be initialized at runtime by whatever export is invoked on the
+    // resumed wizer snapshot.
+    content_debugger::maybe_init_debugger(this, false);
+    if (auto replacement_script_path = content_debugger::replacement_script_path()) {
+      TRACE("Using replacement script path received from debugger: " << *replacement_script_path);
+      content_script_path = replacement_script_path;
+    }
   }
 
-  if (config_->content_script_path.has_value()) {
-    TRACE("Evaluating initial script from file " << config_->content_script_path.value());
+  if (content_script_path) {
+    TRACE("Evaluating initial script from file " << content_script_path.value());
     RootedValue result(cx());
-    if (!eval_toplevel(config_->content_script_path.value().data(), &result)) {
+    if (!eval_toplevel(content_script_path.value().data(), &result)) {
       abort("evaluating top-level script");
     }
   }
 
-  if (config_->content_script.has_value()) {
+  if (config_->content_script) {
     TRACE("Evaluating initial inline script");
     JS::SourceText<mozilla::Utf8Unit> source;
     std::string path = "<eval>";
-    std::string& script = config_->content_script.value();
+    const std::string& script = config_->content_script.value();
     RootedValue result(cx());
     if (!source.init(cx(), script.c_str(), script.size(), JS::SourceOwnership::Borrowed)
         || !eval_toplevel(source, path.data(), &result)) {
       abort("evaluating top-level inline script");
     }
-  return ;
   }
 }
 
@@ -461,6 +473,9 @@ Engine *Engine::get(JSContext *cx) {
 
 HandleObject Engine::global() { return GLOBAL; }
 EngineState Engine::state() { return state_; }
+bool Engine::debugging_enabled() {
+  return config_->debugging;
+}
 
 void Engine::finish_pre_initialization() {
   MOZ_ASSERT(state_ == EngineState::ScriptPreInitializing);
