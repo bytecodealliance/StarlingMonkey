@@ -1,0 +1,216 @@
+{
+  "name": "starlingmonkey-debugger",
+  "displayName": "StarlingMonkey Debugger",
+  "version": "0.1.0",
+  "publisher": "bytecodealliance",
+  "description": "Debugger for the StarlingMonkey JS runtime",
+  "author": {
+    "name": "The Bytecode Alliance Contributors"
+  },
+  "license": "Apache-2.0 WITH LLVM-exception",
+  "keywords": [
+    "multi-root ready"
+  ],
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "icon": "images/starlingmonkey-logo.png",
+  "categories": [
+    "Debuggers"
+  ],
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BytecodeAlliance/StarlingMonkey.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BytecodeAlliance/StarlingMonkey/issues"
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "lint": "eslint src starling-debugger --ext ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "esbuild-extension": "esbuild ./src/extension.ts --bundle --tsconfig=./tsconfig.json --external:vscode --format=cjs --platform=node --outfile=dist/extension.js",
+    "esbuild-debugger": "esbuild ./starling-debugger/debugger.ts --bundle --tsconfig=./tsconfig.json --format=cjs --platform=node --outfile=dist/debugger.js",
+    "esbuild-all": "npm run esbuild-extension && npm run esbuild-debugger",
+    "watch": "npm run -S esbuild-all -- --sourcemap --sources-content=false --watch",
+    "build": "npm run -S esbuild-all -- --sourcemap --sources-content=false",
+    "package": "vsce package",
+    "publish": "vsce publish",
+    "publish-pre-release": "vsce publish --pre-release",
+    "vscode:prepublish": "rimraf dist && npm run -S esbuild-all -- --minify",
+    "test": "npm run typecheck"
+  },
+  "devDependencies": {
+    "@types/glob": "8.1.0",
+    "@types/mocha": "10.0.10",
+    "@types/node": "22.10.0",
+    "@types/path-browserify": "^1.0.3",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "8.16.0",
+    "@typescript-eslint/parser": "8.16.0",
+    "@vscode/debugadapter": "^1.68.0",
+    "@vscode/debugadapter-testsupport": "^1.68.0",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "0.24.0",
+    "eslint": "9.15.0",
+    "events": "^3.3.0",
+    "glob": "11.0.0",
+    "mocha": "11.0.0",
+    "path-browserify": "^1.0.1",
+    "rimraf": "6.0.1",
+    "typescript": "5.7.2"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onDebugResolve:starlingmonkey",
+    "onDebugDynamicConfigurations:starlingmonkey",
+    "onCommand:extension.starlingmonkey-debugger.getProgramName",
+    "onCommand:extension.starlingmonkey-debugger.getComponent"
+  ],
+  "workspaceTrust": {
+    "request": "never"
+  },
+  "contributes": {
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "extension.starlingmonkey-debugger.runEditorContents",
+          "when": "resourceLangId == javascript",
+          "group": "navigation@1"
+        },
+        {
+          "command": "extension.starlingmonkey-debugger.debugEditorContents",
+          "when": "resourceLangId == javascript",
+          "group": "navigation@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "extension.starlingmonkey-debugger.debugEditorContents",
+          "when": "resourceLangId == javascript"
+        },
+        {
+          "command": "extension.starlingmonkey-debugger.runEditorContents",
+          "when": "resourceLangId == javascript"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "extension.starlingmonkey-debugger.debugEditorContents",
+        "title": "Debug File",
+        "category": "StarlingMonkey Debugger",
+        "enablement": "!inDebugMode",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "extension.starlingmonkey-debugger.runEditorContents",
+        "title": "Run File",
+        "category": "StarlingMonkey Debugger",
+        "enablement": "!inDebugMode",
+        "icon": "$(play)"
+      }
+    ],
+    "breakpoints": [
+      {
+        "language": "javascript"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "starlingmonkey",
+        "languages": [
+          "javascript"
+        ],
+        "label": "StarlingMonkey Debugger",
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program",
+              "component"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to a JS file to debug.",
+                "default": "${workspaceFolder}/${command:AskForProgramName}"
+              },
+              "component": {
+                "type": "string",
+                "description": "Absolute path to a StarlingMonkey component to use for debugging.",
+                "default": "${workspaceFolder}/${command:AskForComponent}"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after launch.",
+                "default": true
+              },
+              "trace": {
+                "type": "boolean",
+                "description": "Enable logging of the Debug Adapter Protocol.",
+                "default": false
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "starlingmonkey",
+            "request": "launch",
+            "name": "Ask for file name",
+            "program": "${workspaceFolder}/${command:AskForProgramName}",
+            "component": "${workspaceFolder}/${command:AskForComponent}",
+            "stopOnEntry": true
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "StarlingMonkey Debugger: Launch",
+            "description": "A new configuration for debugging JS code running in StarlingMonkey.",
+            "body": {
+              "type": "starlingmonkey",
+              "request": "launch",
+              "name": "Ask for file name",
+              "program": "^\"\\${workspaceFolder}/\\${command:AskForProgramName}\"",
+              "component": "^\"\\${workspaceFolder}/\\${command:AskForComponent}\"",
+              "stopOnEntry": true
+            }
+          }
+        ],
+        "variables": {
+          "AskForProgramName": "extension.starlingmonkey-debugger.getProgramName",
+          "AskForComponent": "extension.starlingmonkey-debugger.getComponent"
+        }
+      }
+    ],
+    "configuration": [
+      {
+        "title": "StarlingMonkey Debugger",
+        "properties": {
+          "starlingmonkey.componentRuntime.executable": {
+            "type": "string",
+            "default": "wasmtime",
+            "scope": "machine-overridable",
+            "description": "The runtime to use for debugging StarlingMonkey components."
+          },
+          "starlingmonkey.componentRuntime.options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": ["serve", "-S", "cli,tcp,inherit-network", "--env", "STARLINGMONKEY_CONFIG=--verbose -d", "--dir", "${workspaceFolder}::/", "--addr", "0.0.0.0:8080"],
+            "scope": "machine-overridable",
+            "description": "CLI options to pass to the component runtime. The component to debug will always be appended to this list, and `${workspaceFolder}` will be replaced with the path to the workspace folder."
+          },
+          "starlingmonkey.componentRuntime.envOption": {
+            "type": "string",
+            "default": "--env",
+            "scope": "machine-overridable",
+            "description": "Name of the CLI option to use for setting environment variables in the component runtime. This option might be passed multiple times, with the variables provided in the format <name>=<value>."
+          }
+        }
+      }
+    ]
+  }
+}
