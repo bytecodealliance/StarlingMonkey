@@ -6,6 +6,7 @@
 #include "extension-api.h"
 #include "config-parser.h"
 #include "host_api.h"
+#include "wasi/libc-environ.h"
 #include "wizer.h"
 #ifdef MEM_STATS
 #include <string>
@@ -71,6 +72,7 @@ void wizen() {
   if (mono_clock_offset < t) {
     mono_clock_offset = t;
   }
+  __wasilibc_deinitialize_environ();
 }
 
 WIZER_INIT(wizen);

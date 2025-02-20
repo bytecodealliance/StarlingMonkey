@@ -13,7 +13,7 @@ class ConfigParser {
 
 public:
   ConfigParser() : config_(std::make_unique<api::EngineConfig>()) {
-    config_->content_script_path = DEFAULT_SCRIPT_PATH;
+    config_->content_script_path = mozilla::Some(DEFAULT_SCRIPT_PATH);
   }
 
   /**
@@ -73,23 +73,25 @@ public:
     for (size_t i = 1; i < args.size(); i++) {
       if (args[i] == "-e" || args[i] == "--eval") {
         if (i + 1 < args.size()) {
-          config_->content_script = args[i + 1];
+          config_->content_script = mozilla::Some(args[i + 1]);
           config_->content_script_path.reset();
           i++;
         }
       } else if (args[i] == "-v" || args[i] == "--verbose") {
         config_->verbose = true;
+      } else if (args[i] == "-d" || args[i] == "--enable-script-debugging") {
+        config_->debugging = true;
       } else if (args[i] == "--legacy-script") {
         config_->module_mode = false;
         if (i + 1 < args.size()) {
-          config_->content_script_path = args[i + 1];
+          config_->content_script_path = mozilla::Some(args[i + 1]);
           i++;
         }
       } else if (args[i].starts_with("--")) {
         std::cerr << "Unknown option: " << args[i] << std::endl;
         exit(1);
       } else {
-        config_->content_script_path = args[i];
+        config_->content_script_path = mozilla::Some(args[i]);
       }
     }
 

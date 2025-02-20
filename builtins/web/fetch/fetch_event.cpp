@@ -8,6 +8,7 @@
 #include "../dom-exception.h"
 
 #include <allocator.h>
+#include <debugger.h>
 #include <js/SourceText.h>
 
 #include <iostream>
@@ -543,6 +544,7 @@ bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
 
   double total_compute = 0;
 
+  content_debugger::maybe_init_debugger(ENGINE, true);
   dispatch_fetch_event(fetch_event, &total_compute);
 
   bool success = ENGINE->run_event_loop();
