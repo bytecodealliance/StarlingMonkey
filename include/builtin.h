@@ -180,6 +180,9 @@ template <typename Impl> class BuiltinImpl {
   static constexpr JSClassOps class_ops{};
   static constexpr uint32_t class_flags = 0;
 
+  // A runtime registry for subclass JSClass pointers.
+  static inline std::vector<const JSClass *> registry;
+
 public:
   static constexpr JSClass class_{
       Impl::class_name,
@@ -204,8 +207,18 @@ public:
 
   static PersistentRooted<JSObject *> proto_obj;
 
+  static void register_subclass(const JSClass *cls) {
+    registry.push_back(cls);
+  }
+
+  static bool is_subclass(const JSObject *obj) {
+    return (obj != nullptr) &&
+           std::any_of(registry.begin(), registry.end(),
+                       [obj](const auto *cls) { return JS::GetClass(obj) == cls; });
+  }
+
   static bool is_instance(const JSObject *obj) {
-    return obj != nullptr && JS::GetClass(obj) == &class_;
+    return (obj != nullptr) && (JS::GetClass(obj) == &class_ || is_subclass(obj));
   }
 
   static bool is_instance(const Value val) {

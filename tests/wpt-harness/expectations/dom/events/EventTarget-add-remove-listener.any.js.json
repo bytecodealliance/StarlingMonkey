@@ -1,0 +1,5 @@
+{
+  "Removing an event listener without explicit capture arg should succeed": {
+    "status": "PASS"
+  }
+}

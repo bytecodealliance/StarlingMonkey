@@ -417,15 +417,6 @@ Blob::LineEndings Blob::line_endings(JSObject *self) {
       JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Endings)).toInt32());
 }
 
-bool Blob::is_instance(const JSObject *obj) {
-  return obj != nullptr &&
-    (JS::GetClass(obj) == &Blob::class_ || JS::GetClass(obj) == &File::class_);
-}
-
-bool Blob::is_instance(const Value val) {
-  return val.isObject() && is_instance(&val.toObject());
-}
-
 bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
   auto blob = Blob::blob(self);
 
