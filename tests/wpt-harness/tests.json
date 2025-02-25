@@ -25,6 +25,7 @@
   "console/console-namespace-object-class-string.any.js",
   "console/console-tests-historical.any.js",
   "console/idlharness.any.js",
+  "dom/events/Event-constructors.any.js",
   "encoding/api-basics.any.js",
   "encoding/api-basics.any.js",
   "encoding/api-invalid-label.any.js",
