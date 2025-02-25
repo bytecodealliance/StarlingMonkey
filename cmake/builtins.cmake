@@ -21,6 +21,14 @@ add_builtin(builtins/web/blob.cpp)
 add_builtin(builtins/web/file.cpp)
 
 add_builtin(
+    builtins::web::event
+    SRC
+        builtins/web/event/event.cpp
+        builtins/web/event/event-target.cpp
+        builtins/web/event/custom-event.cpp
+        builtins/web/event/global-event-target.cpp)
+
+add_builtin(
     builtins::web::form_data
     SRC
         builtins/web/form-data/form-data.cpp
