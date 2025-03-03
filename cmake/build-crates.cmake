@@ -13,9 +13,11 @@
 
 set(RUST_STATICLIB_RS "${CMAKE_CURRENT_BINARY_DIR}/rust-staticlib.rs" CACHE INTERNAL "Path to the Rust staticlibs bundler source file" FORCE)
 set(RUST_STATICLIB_TOML "${CMAKE_CURRENT_BINARY_DIR}/Cargo.toml" CACHE INTERNAL "Path to the Rust staticlibs bundler Cargo.toml file" FORCE)
+set(RUST_STATICLIB_LOCK "${CMAKE_CURRENT_BINARY_DIR}/Cargo.lock" CACHE INTERNAL "Path to the Rust staticlibs bundler Cargo.toml file" FORCE)
 
 configure_file("runtime/crates/staticlib-template/rust-staticlib.rs.in" "${RUST_STATICLIB_RS}" COPYONLY)
 configure_file("runtime/crates/staticlib-template/Cargo.toml.in" "${RUST_STATICLIB_TOML}")
+configure_file("runtime/crates/staticlib-template/Cargo.lock" "${RUST_STATICLIB_LOCK}" COPYONLY)
 
 corrosion_import_crate(
         MANIFEST_PATH ${RUST_STATICLIB_TOML}
