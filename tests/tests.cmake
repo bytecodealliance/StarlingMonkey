@@ -42,6 +42,7 @@ test_e2e(tla)
 test_e2e(stream-forwarding)
 test_e2e(multi-stream-forwarding)
 test_e2e(teed-stream-as-outgoing-body)
+test_e2e(init-script)
 
 test_integration(blob)
 test_integration(btoa)

@@ -35,9 +35,18 @@ namespace api {
 class AsyncTask;
 
 struct EngineConfig {
-  mozilla::Maybe<std::string> content_script_path;
-  mozilla::Maybe<std::string> content_script;
+  mozilla::Maybe<std::string> content_script_path = mozilla::Nothing();
+  mozilla::Maybe<std::string> content_script = mozilla::Nothing();
   bool module_mode = true;
+
+  /**
+   * Path to the script to evaluate before the content script.
+   *
+   * This script is evaluated in a separate global and has access to functions not
+   * available to content. It can be used to set up the environment for the content
+   * script, e.g. by registering builtin modules or adding global properties.
+   */
+  mozilla::Maybe<std::string> initializer_script_path = mozilla::Nothing();
 
   /**
    * Whether to evaluate the top-level script in pre-initialization mode or not.
@@ -101,6 +110,15 @@ public:
   bool eval_toplevel(const char *path, MutableHandleValue result);
   bool eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char *path,
                      MutableHandleValue result);
+
+  /**
+   * Run the script set using the `-i | --initializer-script-path` option.
+   *
+   * This script runs in a separate global, and has access to functions not
+   * available to content. Notably, that includes the ability to define
+   * builtin modules, using the `defineBuiltinModule` function.
+   */
+  bool run_initialization_script();
 
   /**
    * Run the async event loop as long as there's interest registered in keeping it running.

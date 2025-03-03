@@ -24,6 +24,8 @@ namespace content_debugger {
    * @return the path to the replacement script, if any
    */
   mozilla::Maybe<std::string_view> replacement_script_path();
+
+  bool dbg_print(JSContext *cx, unsigned argc, Value *vp);
 } // namespace content_debugger
 
 #endif // DEBUGGER_H
