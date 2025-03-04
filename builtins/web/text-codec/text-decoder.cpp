@@ -18,14 +18,24 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   auto source_value = args.get(0);
   std::optional<std::span<uint8_t>> src;
+  uint8_t *src_ptr = nullptr;
 
+  // If the input is undefined, we use an empty buffer. We can't return early though,
+  // because the decoder might have state that needs to be flushed in streaming mode.
   if (source_value.isUndefined()) {
     src = std::span<uint8_t, 0>();
+    // Quoting from the encoding_rs docs:
+    // `src` must be non-`NULL` even if `src_len` is zero. When`src_len` is zero,
+    // it is OK for `src` to be something non-dereferencable, such as `0x1`.
+    // Likewise for `dst` when `dst_len` is zero. This is required due to Rust's
+    // optimization for slices within `Option`.
+    src_ptr = reinterpret_cast<uint8_t *>(0x1);
   } else {
     src = value_to_buffer(cx, source_value, "TextDecoder#decode: input");
-  }
-  if (!src.has_value()) {
-    return false;
+    if (!src.has_value()) {
+      return false;
+    }
+    src_ptr = src->data();
   }
 
   bool stream = false;
@@ -60,14 +70,14 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
   if (fatal) {
-    result = jsencoding::decoder_decode_to_utf16_without_replacement(decoder, src->data(), &srcLen,
+    result = jsencoding::decoder_decode_to_utf16_without_replacement(decoder, src_ptr, &srcLen,
                                                                      dest.get(), &destLen, !stream);
     if (result != 0) {
       return api::throw_error(cx, TextCodecErrors::DecodingFailed);
     }
   } else {
     bool hadReplacements;
-    result = jsencoding::decoder_decode_to_utf16(decoder, src->data(), &srcLen, dest.get(),
+    result = jsencoding::decoder_decode_to_utf16(decoder, src_ptr, &srcLen, dest.get(),
                                                  &destLen, !stream, &hadReplacements);
   }
   MOZ_ASSERT(result == 0);
