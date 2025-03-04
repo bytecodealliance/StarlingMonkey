@@ -1,0 +1,11 @@
+[package]
+name = "rust-encoding"
+version = "0.1.0"
+edition = "2021"
+description = "Character encoding library used by SpiderMonkey and web builtins"
+
+[lib]
+
+[dependencies]
+encoding_c = "0.9.8"
+encoding_c_mem = "0.2.6"

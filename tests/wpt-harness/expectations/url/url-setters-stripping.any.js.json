@@ -42,7 +42,7 @@
     "status": "PASS"
   },
   "Setting port with leading U+0000 (https:)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Setting port with middle U+0000 (https:)": {
     "status": "PASS"
@@ -354,7 +354,7 @@
     "status": "PASS"
   },
   "Setting port with leading U+001F (https:)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Setting port with middle U+001F (https:)": {
     "status": "PASS"
@@ -432,7 +432,7 @@
     "status": "PASS"
   },
   "Setting port with leading U+0000 (wpt++:)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Setting port with middle U+0000 (wpt++:)": {
     "status": "PASS"
@@ -744,7 +744,7 @@
     "status": "PASS"
   },
   "Setting port with leading U+001F (wpt++:)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Setting port with middle U+001F (wpt++:)": {
     "status": "PASS"
