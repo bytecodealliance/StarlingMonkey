@@ -132,9 +132,6 @@ static const char* resolve_path(const char* path, const char* base, size_t base_
   return resolve_extension(resolved_path);
 }
 
-static bool load_script(JSContext *cx, const char *script_path, const char* resolved_path,
-                        JS::SourceText<mozilla::Utf8Unit> &script);
-
 static JSObject* get_module(JSContext* cx, JS::SourceText<mozilla::Utf8Unit> &source,
                             const char* resolved_path, const JS::CompileOptions &opts) {
   RootedObject module(cx, JS::CompileModule(cx, opts, source));
@@ -185,7 +182,7 @@ static JSObject* get_module(JSContext* cx, const char* specifier, const char* re
   }
 
   JS::SourceText<mozilla::Utf8Unit> source;
-  if (!load_script(cx, specifier, resolved_path, source)) {
+  if (!SCRIPT_LOADER->load_resolved_script(cx, specifier, resolved_path, source)) {
     return nullptr;
   }
 
@@ -387,8 +384,9 @@ void ScriptLoader::enable_module_mode(bool enable) {
   MODULE_MODE = enable;
 }
 
-static bool load_script(JSContext *cx, const char *specifier, const char* resolved_path,
-                               JS::SourceText<mozilla::Utf8Unit> &script) {
+bool ScriptLoader::load_resolved_script(JSContext *cx, const char *specifier,
+                                        const char* resolved_path,
+                                        JS::SourceText<mozilla::Utf8Unit> &script) {
   FILE *file = fopen(resolved_path, "r");
   if (!file) {
     std::cerr << "Error opening file " << specifier << " (resolved to " << resolved_path << "): "
@@ -442,7 +440,7 @@ bool ScriptLoader::load_script(JSContext *cx, const char *script_path,
     resolved_path = resolve_path(script_path, BASE_PATH, strlen(BASE_PATH));
   }
 
-  return ::load_script(cx, script_path, resolved_path, script);
+  return load_resolved_script(cx, script_path, resolved_path, script);
 }
 
 bool ScriptLoader::eval_top_level_script(const char *path, JS::SourceText<mozilla::Utf8Unit> &source,

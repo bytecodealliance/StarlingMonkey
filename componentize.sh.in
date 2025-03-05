@@ -9,9 +9,11 @@ aot=@AOT@
 preopen_dir="${PREOPEN_DIR:-}"
 
 usage() {
-  echo "Usage: $(basename "$0")  [--verbose] [--legacy-script] [input.js] [-o output.wasm]"
+  echo "Usage: $(basename "$0")  [--verbose] [-i,--initializer-script-path] [--legacy-script] [input.js] [-o output.wasm]"
   echo "       Providing an input file but no output uses the input base name with a .wasm extension"
   echo "       Providing an output file but no input creates a component without running any top-level script"
+  echo "       Specifying '--verbose' causes the detailed output during initialization and execution"
+  echo "       Specifying '-i' or '--initializer-script-path' allows specifying an initializer script"
   echo "       Specifying '--legacy-script' causes evaluation as a legacy JS script instead of a module"
   exit 1
 }
@@ -24,6 +26,7 @@ fi
 IN_FILE=""
 OUT_FILE=""
 LEGACY_SCRIPT_PARAM=""
+STARLING_ARGS=""
 VERBOSE=0
 
 while [ $# -gt 0 ]
@@ -38,7 +41,12 @@ do
             OUT_FILE="$2"
             shift 2
             ;;
+        -i|--initializer-script-path)
+            STARLING_ARGS="$STARLING_ARGS $1 $2"
+            shift 2
+            ;;
         -v|--verbose)
+            STARLING_ARGS="$1 $STARLING_ARGS"
             VERBOSE=1
             shift
             ;;
@@ -76,9 +84,8 @@ if [[ -n "$IN_FILE" ]]; then
   fi
   echo "Componentizing $IN_FILE into $OUT_FILE"
 
-  STARLING_ARGS="$LEGACY_SCRIPT_PARAM$IN_FILE"
+  STARLING_ARGS="$STARLING_ARGS $LEGACY_SCRIPT_PARAM$IN_FILE"
   if [[ $VERBOSE -ne 0 ]]; then
-      STARLING_ARGS="--verbose $STARLING_ARGS"
       echo "Componentizing with args $STARLING_ARGS"
   fi
 

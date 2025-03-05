@@ -425,6 +425,12 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
   }
 #endif
 
+  if (config_->initializer_script_path) {
+    if (!run_initialization_script()) {
+      abort("running initialization script");
+    }
+  }
+
   TRACE("Module mode: " << config_->module_mode);
   scriptLoader->enable_module_mode(config_->module_mode);
 
@@ -493,7 +499,65 @@ void Engine::abort(const char *reason) {
 }
 
 bool Engine::define_builtin_module(const char* id, HandleValue builtin) {
+  TRACE("Defining builtin module '" << id << "'");
   return scriptLoader->define_builtin_module(id, builtin);
+}
+
+static bool define_builtin_module(JSContext *cx, unsigned argc, Value *vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  auto name = core::encode(cx, args.get(0));
+  if (!name) {
+    return false;
+  }
+  if (!args.get(1).isObject()) {
+    JS_ReportErrorUTF8(cx, "Second argument to defineBuiltinModule must be an object");
+    return false;
+  }
+  if (!Engine::get(cx)->define_builtin_module(name.ptr.get(), args.get(1))) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+bool Engine::run_initialization_script() {
+  auto cx = this->cx();
+
+  JS::RealmOptions options;
+  options.creationOptions()
+      .setStreamsEnabled(true)
+      .setExistingCompartment(this->global());
+
+  static JSClass global_class = {"global", JSCLASS_GLOBAL_FLAGS, &JS::DefaultGlobalClassOps};
+  RootedObject global(cx);
+  global = JS_NewGlobalObject(cx, &global_class, nullptr, JS::DontFireOnNewGlobalHook, options);
+  if (!global) {
+    return false;
+  }
+
+  JSAutoRealm ar(cx, global);
+
+  if (!JS_DefineFunction(cx, global, "defineBuiltinModule", ::define_builtin_module, 2, 0) ||
+      !JS_DefineFunction(cx, global, "print", content_debugger::dbg_print, 1, 0)) {
+    return false;
+  }
+
+  auto path = config_->initializer_script_path.value();
+  TRACE("Running initialization script from file " << path);
+  JS::SourceText<mozilla::Utf8Unit> source;
+  if (!scriptLoader->load_resolved_script(CONTEXT, path.c_str(), path.c_str(), source)) {
+    return false;
+  }
+  auto opts = new JS::CompileOptions(cx);
+  opts->setDiscardSource();
+  opts->setFile(path.c_str());
+  JS::RootedScript script(cx, Compile(cx, *opts, source));
+  if (!script) {
+    return false;
+  }
+  RootedValue result(cx);
+  return JS_ExecuteScript(cx, script, &result);
 }
 
 bool Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char *path,

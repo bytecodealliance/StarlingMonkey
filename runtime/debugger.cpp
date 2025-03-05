@@ -35,7 +35,7 @@ static bool print_location(JSContext *cx, FILE *fp = stdout) {
   return true;
 }
 
-static bool dbg_print(JSContext *cx, unsigned argc, Value *vp) {
+bool content_debugger::dbg_print(JSContext *cx, unsigned argc, Value *vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   if (!print_location(cx)) {
@@ -231,7 +231,7 @@ bool initialize_debugger(JSContext *cx, uint16_t port, bool content_already_init
   }
 
   if (!JS_DefineFunction(cx, global, "setContentPath", dbg_set_content_path, 1, 0) ||
-      !JS_DefineFunction(cx, global, "print", dbg_print, 1, 0) ||
+      !JS_DefineFunction(cx, global, "print", content_debugger::dbg_print, 1, 0) ||
       !JS_DefineFunction(cx, global, "assert", dbg_assert, 1, 0)) {
     return false;
   }

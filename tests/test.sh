@@ -32,10 +32,15 @@ print_diff_content_on_fail() {
 # Optionally create the test component if not explicitly provided
 if [ -z "$test_component" ]; then
    test_component="$test_dir/$test_name.wasm"
+   runtime_args="$test_dir/$test_name.js"
+   # If the test directory has an init.js, prepend it to the runtime args
+   if [ -f "$test_dir/init.js" ]; then
+     runtime_args="-i $test_dir/init.js $runtime_args"
+   fi
 
    # Run Wizer
    set +e
-   PREOPEN_DIR="$(dirname $(dirname "$test_dir"))" "$test_runtime/componentize.sh" $componentize_flags "$test_dir/$test_name.js" "$test_component" 1> "$stdout_log" 2> "$stderr_log"
+   PREOPEN_DIR="$(dirname $(dirname "$test_dir"))" "$test_runtime/componentize.sh" $componentize_flags $runtime_args "$test_component" 1> "$stdout_log" 2> "$stderr_log"
    wizer_result=$?
    set -e
 
