@@ -20,7 +20,9 @@
 #include "jsfriendapi.h"
 #pragma clang diagnostic pop
 
-#include "debugger.h"
+#ifdef JS_DEBUGGER
+  #include "debugger.h"
+#endif
 #include "script_loader.h"
 
 #include <decode.h>
@@ -443,11 +445,13 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
     // Debugging isn't supported during wizening, so only try it when doing runtime evaluation.
     // The debugger can be initialized at runtime by whatever export is invoked on the
     // resumed wizer snapshot.
-    content_debugger::maybe_init_debugger(this, false);
+#ifdef JS_DEBUGGER
+      content_debugger::maybe_init_debugger(this, false);
     if (auto replacement_script_path = content_debugger::replacement_script_path()) {
       TRACE("Using replacement script path received from debugger: " << *replacement_script_path);
       content_script_path = replacement_script_path;
     }
+#endif
   }
 
   if (content_script_path) {
@@ -538,10 +542,14 @@ bool Engine::run_initialization_script() {
 
   JSAutoRealm ar(cx, global);
 
-  if (!JS_DefineFunction(cx, global, "defineBuiltinModule", ::define_builtin_module, 2, 0) ||
-      !JS_DefineFunction(cx, global, "print", content_debugger::dbg_print, 1, 0)) {
+  if (!JS_DefineFunction(cx, global, "defineBuiltinModule", ::define_builtin_module, 2, 0)) {
     return false;
   }
+#ifdef JS_DEBUGGER
+  if (!JS_DefineFunction(cx, global, "print", content_debugger::dbg_print, 1, 0)) {
+    return false;
+  }
+#endif
 
   auto path = config_->initializer_script_path.value();
   TRACE("Running initialization script from file " << path);
