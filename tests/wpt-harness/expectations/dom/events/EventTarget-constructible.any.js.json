@@ -1,0 +1,11 @@
+{
+  "A constructed EventTarget can be used as expected": {
+    "status": "PASS"
+  },
+  "A constructed EventTarget implements dispatch correctly": {
+    "status": "PASS"
+  },
+  "EventTarget can be subclassed": {
+    "status": "PASS"
+  }
+}
