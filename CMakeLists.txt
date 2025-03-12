@@ -55,30 +55,22 @@ if (ENABLE_WPT)
     include("tests/wpt-harness/wpt.cmake")
 endif()
 
+set(SOURCES
+    runtime/js.cpp
+    runtime/allocator.cpp
+    runtime/encode.cpp
+    runtime/decode.cpp
+    runtime/engine.cpp
+    runtime/event_loop.cpp
+    runtime/builtin.cpp
+    runtime/script_loader.cpp
+)
+
 if (ENABLE_JS_DEBUGGER)
-    add_executable(starling-raw.wasm
-        runtime/js.cpp
-        runtime/allocator.cpp
-        runtime/encode.cpp
-        runtime/decode.cpp
-        runtime/engine.cpp
-        runtime/event_loop.cpp
-        runtime/builtin.cpp
-        runtime/script_loader.cpp
-        runtime/debugger.cpp
-    )
-else()
-    add_executable(starling-raw.wasm
-        runtime/js.cpp
-        runtime/allocator.cpp
-        runtime/encode.cpp
-        runtime/decode.cpp
-        runtime/engine.cpp
-        runtime/event_loop.cpp
-        runtime/builtin.cpp
-        runtime/script_loader.cpp
-    )
+    list(APPEND SOURCES runtime/debugger.cpp)
 endif()
+
+add_executable(starling-raw.wasm ${SOURCES})
 
 target_link_libraries(starling-raw.wasm PRIVATE host_api extension_api builtins spidermonkey rust-crates)
 
