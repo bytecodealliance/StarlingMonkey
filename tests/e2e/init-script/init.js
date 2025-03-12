@@ -5,4 +5,5 @@ const builtinMod = {
 }
 
 defineBuiltinModule('builtinMod', builtinMod);
-print("initialization done");
+if (typeof print !== 'undefined')
+    print("initialization done");
