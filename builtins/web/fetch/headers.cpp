@@ -836,11 +836,12 @@ bool Headers::append(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   if (is_valid) {
+    // name casing must come from existing name match if there is one.
+    auto idx = Headers::lookup(cx, self, name_chars);
+
     if (!prepare_for_entries_modification(cx, self))
       return false;
 
-    // name casing must come from existing name match if there is one.
-    auto idx = Headers::lookup(cx, self, name_chars);
     if (idx) {
       // set-cookie doesn't combine
       if (header_compare(name_chars, set_cookie_str) == Ordering::Equal) {
