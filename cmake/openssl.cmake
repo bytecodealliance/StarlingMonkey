@@ -18,8 +18,8 @@ ExternalProject_Add(
         URL_HASH SHA256=83049d042a260e696f62406ac5c08bf706fd84383f945cf21bd61e9ed95c396e
         USES_TERMINAL_DOWNLOAD TRUE
         PATCH_COMMAND
-        patch -d ${OPENSSL_SOURCE_DIR} -p1 < ${CMAKE_CURRENT_SOURCE_DIR}/deps/patches/getuid.patch &&
-        patch -d ${OPENSSL_SOURCE_DIR} -p1 < ${CMAKE_CURRENT_SOURCE_DIR}/deps/patches/rand.patch
+        patch -d ${OPENSSL_SOURCE_DIR} -t -p1 < ${CMAKE_CURRENT_SOURCE_DIR}/deps/patches/getuid.patch &&
+        patch -d ${OPENSSL_SOURCE_DIR} -t -p1 < ${CMAKE_CURRENT_SOURCE_DIR}/deps/patches/rand.patch
         CONFIGURE_COMMAND
         CC="clang" CFLAGS="--sysroot=${WASI_SDK_PREFIX}/share/wasi-sysroot" ${OPENSSL_SOURCE_DIR}/config
         --prefix=${OPENSSL_INSTALL_DIR}
