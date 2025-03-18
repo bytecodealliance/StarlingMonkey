@@ -199,6 +199,7 @@ void dump_promise_rejection(JSContext *cx, HandleValue reason, HandleObject prom
 static JSClass global_class = {"global", JSCLASS_GLOBAL_FLAGS, &JS::DefaultGlobalClassOps};
 
 JS::PersistentRootedObject GLOBAL;
+JS::PersistentRootedObject INIT_SCRIPT_GLOBAL;
 static ScriptLoader* scriptLoader;
 JS::PersistentRootedObject unhandledRejectedPromises;
 
@@ -256,6 +257,62 @@ bool fix_math_random(JSContext *cx, HandleObject global) {
 static Engine *ENGINE;
 JS::PersistentRootedValue SCRIPT_VALUE;
 
+bool create_content_global(JSContext * cx) {
+  JS::RealmOptions options;
+  options.creationOptions().setStreamsEnabled(true);
+
+  JS::DisableIncrementalGC(cx);
+  // JS_SetGCParameter(cx, JSGC_MAX_EMPTY_CHUNK_COUNT, 1);
+
+  RootedObject global(
+      cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::FireOnNewGlobalHook, options));
+  if (!global) {
+    return false;
+  }
+
+  JSAutoRealm ar(cx, global);
+  if (!JS::InitRealmStandardClasses(cx) || !fix_math_random(cx, global)) {
+    return false;
+  }
+
+  GLOBAL.init(cx, global);
+  return true;
+}
+
+static bool define_builtin_module(JSContext *cx, unsigned argc, Value *vp);
+
+bool create_initializer_global(Engine *engine) {
+  auto cx = engine->cx();
+
+  JS::RealmOptions options;
+  options.creationOptions()
+      .setStreamsEnabled(true)
+      .setExistingCompartment(engine->global());
+
+  static JSClass global_class = {"global", JSCLASS_GLOBAL_FLAGS, &JS::DefaultGlobalClassOps};
+  RootedObject global(cx);
+  global = JS_NewGlobalObject(cx, &global_class, nullptr, JS::DontFireOnNewGlobalHook, options);
+  if (!global) {
+    return false;
+  }
+
+  JSAutoRealm ar(cx, global);
+
+  if (!JS_DefineFunction(cx, global, "defineBuiltinModule", ::define_builtin_module, 2, 0) ||
+      !JS_DefineProperty(cx, global, "contentGlobal", ENGINE->global(), JSPROP_READONLY)) {
+    return false;
+  }
+
+#ifdef JS_DEBUGGER
+  if (!JS_DefineFunction(cx, global, "print", content_debugger::dbg_print, 1, 0)) {
+    return false;
+  }
+#endif
+
+  INIT_SCRIPT_GLOBAL.init(cx, global);
+  return true;
+}
+
 bool init_js() {
   JS_Init();
 
@@ -278,24 +335,11 @@ bool init_js() {
         cx, JSJitCompilerOption::JSJITCOMPILER_PORTABLE_BASELINE_WARMUP_THRESHOLD, 0);
   }
 
-  // TODO: check if we should set a different creation zone.
-  JS::RealmOptions options;
-  options.creationOptions().setStreamsEnabled(true);
-
-  JS::DisableIncrementalGC(cx);
-  // JS_SetGCParameter(cx, JSGC_MAX_EMPTY_CHUNK_COUNT, 1);
-
-  RootedObject global(
-      cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::FireOnNewGlobalHook, options));
-  if (!global) {
+  if (!create_content_global(cx) || !create_initializer_global(ENGINE)) {
     return false;
   }
-  GLOBAL.init(cx, global);
 
-  JSAutoRealm ar(cx, global);
-  if (!JS::InitRealmStandardClasses(cx) || !fix_math_random(cx, global)) {
-    return false;
-  }
+  JSAutoRealm ar(cx, GLOBAL);
 
   JS::SetPromiseRejectionTrackerCallback(cx, rejection_tracker);
   unhandledRejectedPromises.init(cx, JS::NewSetObject(cx));
@@ -528,28 +572,7 @@ static bool define_builtin_module(JSContext *cx, unsigned argc, Value *vp) {
 bool Engine::run_initialization_script() {
   auto cx = this->cx();
 
-  JS::RealmOptions options;
-  options.creationOptions()
-      .setStreamsEnabled(true)
-      .setExistingCompartment(this->global());
-
-  static JSClass global_class = {"global", JSCLASS_GLOBAL_FLAGS, &JS::DefaultGlobalClassOps};
-  RootedObject global(cx);
-  global = JS_NewGlobalObject(cx, &global_class, nullptr, JS::DontFireOnNewGlobalHook, options);
-  if (!global) {
-    return false;
-  }
-
-  JSAutoRealm ar(cx, global);
-
-  if (!JS_DefineFunction(cx, global, "defineBuiltinModule", ::define_builtin_module, 2, 0)) {
-    return false;
-  }
-#ifdef JS_DEBUGGER
-  if (!JS_DefineFunction(cx, global, "print", content_debugger::dbg_print, 1, 0)) {
-    return false;
-  }
-#endif
+  JSAutoRealm ar(cx, INIT_SCRIPT_GLOBAL);
 
   auto path = config_->initializer_script_path.value();
   TRACE("Running initialization script from file " << path);
@@ -567,6 +590,8 @@ bool Engine::run_initialization_script() {
   RootedValue result(cx);
   return JS_ExecuteScript(cx, script, &result);
 }
+
+HandleObject Engine::init_script_global() { return INIT_SCRIPT_GLOBAL; }
 
 bool Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char *path,
                            MutableHandleValue result) {

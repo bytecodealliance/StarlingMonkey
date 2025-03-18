@@ -84,7 +84,6 @@ public:
 
   void finish_pre_initialization();
 
-
   /**
    * Define a new builtin module
    *
@@ -119,6 +118,11 @@ public:
    * builtin modules, using the `defineBuiltinModule` function.
    */
   bool run_initialization_script();
+
+  /**
+   * Returns the global the initialization script runs in.
+   */
+  HandleObject init_script_global();
 
   /**
    * Run the async event loop as long as there's interest registered in keeping it running.
