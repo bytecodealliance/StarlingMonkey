@@ -19,6 +19,12 @@ JS::CompileOptions *COMPILE_OPTS;
 
 using host_api::HostString;
 
+namespace ScriptLoaderErrors {
+DEF_ERR(ModuleLoadingError, JSEXN_REFERENCEERR,
+        "Error loading module \"{0}\" (resolved path \"{1}\"): {2}", 3)
+DEF_ERR(BuiltinModuleExists, JSEXN_TYPEERR, "Builtin module \"{0}\" already exists", 1)
+};
+
 class AutoCloseFile {
   FILE* file;
 
@@ -371,8 +377,7 @@ bool ScriptLoader::define_builtin_module(const char* id, HandleValue builtin) {
     return false;
   }
   if (already_exists) {
-    fprintf(stderr, "Unable to define builtin %s, as it already exists", id);
-    return false;
+    return api::throw_error(cx, ScriptLoaderErrors::BuiltinModuleExists, "id");
   }
   if (!MapSet(cx, builtinModules, id_val, builtin)) {
     return false;
@@ -389,31 +394,30 @@ bool ScriptLoader::load_resolved_script(JSContext *cx, const char *specifier,
                                         JS::SourceText<mozilla::Utf8Unit> &script) {
   FILE *file = fopen(resolved_path, "r");
   if (!file) {
-    std::cerr << "Error opening file " << specifier << " (resolved to " << resolved_path << "): "
-              << std::strerror(errno) << std::endl;
-    return false;
+    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError,
+      specifier, resolved_path, std::strerror(errno));
   }
 
   AutoCloseFile autoclose(file);
   if (fseek(file, 0, SEEK_END) != 0) {
-    std::cerr << "Error seeking file " << resolved_path << std::endl;
-    return false;
+    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError,
+      specifier, resolved_path, "can't read from file");
   }
   size_t len = ftell(file);
   if (fseek(file, 0, SEEK_SET) != 0) {
-    std::cerr << "Error seeking file " << resolved_path << std::endl;
-    return false;
+    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError,
+      specifier, resolved_path, "can't read from file");
   }
 
   UniqueChars buf(js_pod_malloc<char>(len + 1));
   if (!buf) {
-    std::cerr << "Out of memory reading " << resolved_path << std::endl;
-    return false;
+    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError,
+      specifier, resolved_path, "out of memory while reading file");
   }
   size_t cc = fread(buf.get(), sizeof(char), len, file);
   if (cc != len) {
-    std::cerr << "Error reading file " << resolved_path << std::endl;
-    return false;
+    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError,
+      specifier, resolved_path, "error reading file");
   }
 
   return script.init(cx, std::move(buf), len);
