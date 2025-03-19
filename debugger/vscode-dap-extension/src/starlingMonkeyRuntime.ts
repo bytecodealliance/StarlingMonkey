@@ -85,7 +85,7 @@ class ComponentRuntimeInstance {
           console.debug(
             `Starting debug session on port ${this._nextSessionPort}`
           );
-          socket.write(`${this._nextSessionPort}`);
+          socket.write(`${this._nextSessionPort}\n`);
           this._nextSessionPort = undefined;
         }
       });
