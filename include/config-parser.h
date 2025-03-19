@@ -87,6 +87,11 @@ public:
         config_->verbose = true;
       } else if (args[i] == "-d" || args[i] == "--enable-script-debugging") {
         config_->debugging = true;
+      } else if (args[i] == "--strip-path-prefix") {
+        if (i + 1 < args.size()) {
+          config_->path_prefix = mozilla::Some(args[i + 1]);
+          i++;
+        }
       } else if (args[i] == "--legacy-script") {
         config_->module_mode = false;
         if (i + 1 < args.size()) {

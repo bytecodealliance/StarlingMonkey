@@ -14,7 +14,8 @@
 
 class ScriptLoader {
 public:
-  ScriptLoader(api::Engine* engine, JS::CompileOptions* opts);
+  ScriptLoader(api::Engine *engine, JS::CompileOptions *opts,
+               mozilla::Maybe<std::string> path_prefix);
   ~ScriptLoader();
 
   bool define_builtin_module(const char* id, HandleValue builtin);

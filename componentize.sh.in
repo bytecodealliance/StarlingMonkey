@@ -9,11 +9,12 @@ aot=@AOT@
 preopen_dir="${PREOPEN_DIR:-}"
 
 usage() {
-  echo "Usage: $(basename "$0")  [--verbose] [-i,--initializer-script-path] [--legacy-script] [input.js] [-o output.wasm]"
+  echo "Usage: $(basename "$0")  [--verbose] [-i,--initializer-script-path path] [--strip-path-prefix prefix] [--legacy-script] [input.js] [-o output.wasm]"
   echo "       Providing an input file but no output uses the input base name with a .wasm extension"
   echo "       Providing an output file but no input creates a component without running any top-level script"
   echo "       Specifying '--verbose' causes the detailed output during initialization and execution"
   echo "       Specifying '-i' or '--initializer-script-path' allows specifying an initializer script"
+  echo "       Specifying '--strip-path-prefix' will cause the provided prefix to be stripped from paths in stack traces and the debugger"
   echo "       Specifying '--legacy-script' causes evaluation as a legacy JS script instead of a module"
   exit 1
 }
@@ -42,6 +43,10 @@ do
             shift 2
             ;;
         -i|--initializer-script-path)
+            STARLING_ARGS="$STARLING_ARGS $1 $2"
+            shift 2
+            ;;
+        --strip-path-prefix)
             STARLING_ARGS="$STARLING_ARGS $1 $2"
             shift 2
             ;;

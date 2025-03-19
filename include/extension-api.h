@@ -37,6 +37,7 @@ class AsyncTask;
 struct EngineConfig {
   mozilla::Maybe<std::string> content_script_path = mozilla::Nothing();
   mozilla::Maybe<std::string> content_script = mozilla::Nothing();
+  mozilla::Maybe<std::string> path_prefix = mozilla::Nothing();
   bool module_mode = true;
 
   /**

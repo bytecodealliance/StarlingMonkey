@@ -15,6 +15,7 @@ JS::PersistentRootedObject moduleRegistry;
 JS::PersistentRootedObject builtinModules;
 static bool MODULE_MODE = true;
 static char* BASE_PATH = nullptr;
+mozilla::Maybe<std::string> PATH_PREFIX = mozilla::Nothing();
 JS::CompileOptions *COMPILE_OPTS;
 
 using host_api::HostString;
@@ -43,15 +44,19 @@ public:
   }
 };
 
-// strip off base when possible for nicer debugging stacks
-static const char* strip_base(const char* resolved_path, const char* base) {
-  size_t base_len = strlen(base);
-  if (strncmp(resolved_path, base, base_len) != 0) {
+// strip off the given prefix when possible for nicer debugging stacks
+static const char* strip_prefix(const char* resolved_path,
+                                mozilla::Maybe<std::string> path_prefix) {
+  if (!path_prefix) {
+    return strdup(resolved_path);
+  }
+  auto& base = *path_prefix;
+  if (strncmp(resolved_path, base.data(), base.length()) != 0) {
     return strdup(resolved_path);
   }
   size_t path_len = strlen(resolved_path);
-  char* buf(js_pod_malloc<char>(path_len - base_len + 1));
-  strncpy(buf, &resolved_path[base_len], path_len - base_len + 1);
+  char* buf(js_pod_malloc<char>(path_len - base.length() + 1));
+  strncpy(buf, &resolved_path[base.length()], path_len - base.length() + 1);
   return buf;
 }
 
@@ -325,7 +330,7 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
   const char* resolved_path = resolve_path(path.get(), str.ptr.get(), str.len);
 
   JS::CompileOptions opts(cx, *COMPILE_OPTS);
-  opts.setFileAndLine(strip_base(resolved_path, BASE_PATH), 1);
+  opts.setFileAndLine(strip_prefix(resolved_path, PATH_PREFIX), 1);
   return get_module(cx, path.get(), resolved_path, opts);
 }
 
@@ -349,11 +354,13 @@ bool module_metadata_hook(JSContext* cx, HandleValue referencingPrivate, HandleO
   return true;
 }
 
-ScriptLoader::ScriptLoader(api::Engine* engine, JS::CompileOptions *opts) {
+ScriptLoader::ScriptLoader(api::Engine* engine, JS::CompileOptions *opts,
+                           mozilla::Maybe<std::string> path_prefix) {
   MOZ_ASSERT(!SCRIPT_LOADER);
   ENGINE = engine;
   SCRIPT_LOADER = this;
   COMPILE_OPTS = opts;
+  PATH_PREFIX = std::move(path_prefix);
   JSContext* cx = engine->cx();
   moduleRegistry.init(cx, JS::NewMapObject(cx));
   builtinModules.init(cx, JS::NewMapObject(cx));
@@ -452,7 +459,7 @@ bool ScriptLoader::eval_top_level_script(const char *path, JS::SourceText<mozill
   JSContext *cx = ENGINE->cx();
 
   JS::CompileOptions opts(cx, *COMPILE_OPTS);
-  opts.setFileAndLine(strip_base(path, BASE_PATH), 1);
+  opts.setFileAndLine(strip_prefix(path, PATH_PREFIX), 1);
   JS::RootedScript script(cx);
   RootedObject module(cx);
   if (MODULE_MODE) {
