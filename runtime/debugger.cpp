@@ -190,7 +190,7 @@ bool initialize_debugger(JSContext *cx, uint16_t port, bool content_already_init
   }
 
   uint16_t session_port = std::strtoul(response.begin(), &end, 10);
-  if (end != response.end() || session_port > 65535) {
+  if (session_port < 1024 || session_port > 65535) {
     printf("Invalid debugging session port '%*s' received, continuing without debugging ...\n",
            static_cast<int>(response.len), response.begin());
     return true;
