@@ -188,6 +188,15 @@
       {
         "title": "StarlingMonkey Debugger",
         "properties": {
+          "starlingmonkey.jsRuntimeOptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": ["--verbose", "-d"],
+            "scope": "machine-overridable",
+            "description": "CLI options to pass to StarlingMonkey."
+          },
           "starlingmonkey.componentRuntime.executable": {
             "type": "string",
             "default": "wasmtime",
@@ -199,9 +208,9 @@
             "items": {
               "type": "string"
             },
-            "default": ["serve", "-S", "cli,tcp,inherit-network", "--env", "STARLINGMONKEY_CONFIG=--verbose -d", "--dir", "${workspaceFolder}::/", "--addr", "0.0.0.0:8080"],
+            "default": ["serve", "-S", "cli,tcp,inherit-network", "--dir", "${workspaceFolder}::/", "--addr", "0.0.0.0:8080", "${component}"],
             "scope": "machine-overridable",
-            "description": "CLI options to pass to the component runtime. The component to debug will always be appended to this list, and `${workspaceFolder}` will be replaced with the path to the workspace folder."
+            "description": "CLI options to pass to the component runtime. `${component} will be replaced with the path to the component to debug, and `${workspaceFolder}` will be replaced with the path to the workspace folder."
           },
           "starlingmonkey.componentRuntime.envOption": {
             "type": "string",
