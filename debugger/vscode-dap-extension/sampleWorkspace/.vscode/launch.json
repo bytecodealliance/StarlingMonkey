@@ -8,7 +8,7 @@
       "type": "starlingmonkey",
       "request": "launch",
       "name": "Debug main.js",
-      "program": "${workspaceFolder}/main.js",
+      "program": "${workspaceFolder}/src/main.js",
       "component": "${workspaceFolder}/out/main.wasm",
       "stopOnEntry": false,
       "trace": true
