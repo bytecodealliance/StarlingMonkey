@@ -49,6 +49,7 @@ export interface IComponentRuntimeConfig {
   envOption: string;
 }
 export interface IStarlingMonkeyRuntimeConfig {
+  jsRuntimeOptions: string[];
   componentRuntime: IComponentRuntimeConfig;
 }
 
@@ -63,7 +64,7 @@ class ComponentRuntimeInstance {
     this._nextSessionPort = port;
   }
 
-  static async start(workspaceFolder: string, component: string, config: IComponentRuntimeConfig) {
+  static async start(workspaceFolder: string, component: string, config: IStarlingMonkeyRuntimeConfig) {
     assert(!this.running, "ComponentRuntime is already running");
     this.running = true;
     this.workspaceFolder = workspaceFolder;
@@ -84,7 +85,7 @@ class ComponentRuntimeInstance {
           console.debug(
             `Starting debug session on port ${this._nextSessionPort}`
           );
-          socket.write(this._nextSessionPort.toString());
+          socket.write(`${this._nextSessionPort}`);
           this._nextSessionPort = undefined;
         }
       });
@@ -93,12 +94,25 @@ class ComponentRuntimeInstance {
     console.info(`waiting for debug protocol on port ${port}`);
 
     // Start componentRuntime as a new process
-    let args = Array.from(config.options).map(opt => opt.replace("${workspaceFolder}", workspaceFolder));
-    args.push(config.envOption);
-    args.push(`DEBUGGER_PORT=${port}`);
-    args.push(component);
-    // console.debug(`${config.executable} ${args.join(" ")}`);
-    this._componentRuntime = spawn(config.executable, args);
+    let componentRuntimeArgs = Array.from(config.componentRuntime.options).map(opt => {
+      return opt
+        .replace("${workspaceFolder}", workspaceFolder)
+        .replace("${component}", component);
+    });
+    componentRuntimeArgs.push(config.componentRuntime.envOption);
+    componentRuntimeArgs.push(
+      `STARLINGMONKEY_CONFIG="${config.jsRuntimeOptions.join(" ")}"`
+    );
+    componentRuntimeArgs.push(config.componentRuntime.envOption);
+    componentRuntimeArgs.push(`DEBUGGER_PORT=${port}`);
+    console.debug(
+      `${config.componentRuntime.executable} ${componentRuntimeArgs.join(" ")}`
+    );
+    this._componentRuntime = spawn(
+      config.componentRuntime.executable,
+      componentRuntimeArgs,
+      { cwd: workspaceFolder }
+    );
 
     this._componentRuntime.stdout.on("data", (data) => {
       console.log(`componentRuntime ${data}`);
@@ -260,7 +274,7 @@ export class StarlingMonkeyRuntime extends EventEmitter {
       );
       return;
     }
-    await ComponentRuntimeInstance.start(this._workspaceDir, component, this._config.componentRuntime);
+    await ComponentRuntimeInstance.start(this._workspaceDir, component, this._config);
   }
 
   private sendMessage(type: string, value?: any, useRawValue = false) {
@@ -271,8 +285,7 @@ export class StarlingMonkeyRuntime extends EventEmitter {
       message = JSON.stringify({ type, value });
     }
     console.debug(`sending message to runtime: ${message}`);
-    this._socket.write(`${message.length}\n`);
-    this._socket.write(message);
+    this._socket.write(`${message.length}\n${message}`);
   }
 
   private sendAndReceiveMessage(
