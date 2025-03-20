@@ -38,9 +38,13 @@ if [ -z "$test_component" ]; then
      runtime_args="-i $test_dir/init.js $runtime_args"
    fi
 
+   test_top_level="$(dirname $(dirname "$test_dir"))/"
+
+   runtime_args="--strip-path-prefix $test_top_level $runtime_args"
+
    # Run Wizer
    set +e
-   PREOPEN_DIR="$(dirname $(dirname "$test_dir"))" "$test_runtime/componentize.sh" $componentize_flags $runtime_args "$test_component" 1> "$stdout_log" 2> "$stderr_log"
+   PREOPEN_DIR="$test_top_level" "$test_runtime/componentize.sh" $componentize_flags $runtime_args "$test_component" 1> "$stdout_log" 2> "$stderr_log"
    wizer_result=$?
    set -e
 

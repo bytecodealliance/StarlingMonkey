@@ -313,7 +313,7 @@ bool create_initializer_global(Engine *engine) {
   return true;
 }
 
-bool init_js() {
+bool init_js(const EngineConfig& config) {
   JS_Init();
 
   JSContext *cx = JS_NewContext(JS::DefaultHeapMaxBytes);
@@ -353,7 +353,7 @@ bool init_js() {
   // generating bytecode for functions.
   // https://searchfox.org/mozilla-central/rev/5b2d2863bd315f232a3f769f76e0eb16cdca7cb0/js/public/CompileOptions.h#571-574
   opts->setForceFullParse();
-  scriptLoader = new ScriptLoader(ENGINE, opts);
+  scriptLoader = new ScriptLoader(ENGINE, opts, config.path_prefix);
 
   // TODO: restore in a way that doesn't cause a dependency on the Performance builtin in the core runtime.
   //   builtins::Performance::timeOrigin.emplace(
@@ -451,7 +451,7 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
 
   TRACE("StarlingMonkey engine initializing");
 
-  if (!init_js()) {
+  if (!init_js(*config_.get())) {
     abort("Initializing JS Engine");
   }
 

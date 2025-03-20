@@ -1,2 +1,2 @@
 Exception while evaluating top-level script
-tla-err.js:3:10 Error: blah
+e2e/tla-err/tla-err.js:3:10 Error: blah
