@@ -1,9 +1,9 @@
 import { Scope } from "@vscode/debugadapter";
-import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 import { EventEmitter } from "events";
 import * as Net from "net";
 import { Signal } from "./signals.js";
 import { assert } from "console";
+import { Terminal, TerminalShellExecution, window } from "vscode";
 
 export interface FileAccessor {
   isWindows: boolean;
@@ -54,21 +54,45 @@ export interface IStarlingMonkeyRuntimeConfig {
 }
 
 class ComponentRuntimeInstance {
-  private static _componentRuntime: ChildProcessWithoutNullStreams;
-  static running: boolean;
-  static workspaceFolder: string;
-  static _server: Net.Server;
-  static _nextSessionPort: number | undefined;
+  private static _workspaceFolder?: string;
+  private static _component?: string;
+  private static _server?: Net.Server;
+  private static _terminal?: Terminal;
+  private static _nextSessionPort?: number;
+  private static _runtimeExecution?: TerminalShellExecution;
 
   static setNextSessionPort(port: number) {
     this._nextSessionPort = port;
   }
 
   static async start(workspaceFolder: string, component: string, config: IStarlingMonkeyRuntimeConfig) {
-    assert(!this.running, "ComponentRuntime is already running");
-    this.running = true;
-    this.workspaceFolder = workspaceFolder;
+    if (this._workspaceFolder && this._workspaceFolder !== workspaceFolder ||
+        this._component && this._component !== component
+    ) {
+      this.reset();
+    }
 
+    this._workspaceFolder = workspaceFolder;
+    this._component = component;
+
+    this.ensureServer();
+    this.ensureHostRuntime(config, workspaceFolder, component);
+  }
+  static reset() {
+    this._workspaceFolder = undefined;
+    this._component = undefined;
+    this._nextSessionPort = undefined;
+    this._server?.close();
+    this._server = undefined;
+    this._terminal?.dispose();
+    this._terminal = undefined;
+    this._runtimeExecution = undefined;
+  }
+
+  static ensureServer() {
+    if (this._server) {
+      return;
+    }
     this._server = Net.createServer((socket) => {
       socket.on("data", (data) => {
         assert(
@@ -89,11 +113,21 @@ class ComponentRuntimeInstance {
           this._nextSessionPort = undefined;
         }
       });
+      socket.on("close", () => {
+        console.debug("ComponentRuntime disconnected");
+      });
     }).listen();
-    let port = (<Net.AddressInfo>this._server.address()).port;
-    console.info(`waiting for debug protocol on port ${port}`);
+  }
 
-    // Start componentRuntime as a new process
+  private static serverPort() {
+    return (<Net.AddressInfo>this._server!.address()).port;
+  }
+
+  private static async ensureHostRuntime(config: IStarlingMonkeyRuntimeConfig, workspaceFolder: string, component: string) {
+    if (this._runtimeExecution) {
+      return;
+    }
+
     let componentRuntimeArgs = Array.from(config.componentRuntime.options).map(opt => {
       return opt
         .replace("${workspaceFolder}", workspaceFolder)
@@ -104,28 +138,69 @@ class ComponentRuntimeInstance {
       `STARLINGMONKEY_CONFIG="${config.jsRuntimeOptions.join(" ")}"`
     );
     componentRuntimeArgs.push(config.componentRuntime.envOption);
-    componentRuntimeArgs.push(`DEBUGGER_PORT=${port}`);
+    componentRuntimeArgs.push(`DEBUGGER_PORT=${this.serverPort()}`);
+
     console.debug(
       `${config.componentRuntime.executable} ${componentRuntimeArgs.join(" ")}`
     );
-    this._componentRuntime = spawn(
-      config.componentRuntime.executable,
-      componentRuntimeArgs,
-      { cwd: workspaceFolder }
+
+    await this.ensureTerminal();
+
+    if (this._terminal!.shellIntegration) {
+      this._runtimeExecution = this._terminal!.shellIntegration.executeCommand(
+        config.componentRuntime.executable,
+        componentRuntimeArgs
+      );
+      let disposable = window.onDidEndTerminalShellExecution((event) => {
+        if (event.execution === this._runtimeExecution) {
+          this._runtimeExecution = undefined;
+          disposable.dispose();
+          console.log(`Component host runtime exited with code ${event.exitCode}`);
+        }
+      });
+    } else {
+      // Fallback to sendText if there is no shell integration.
+      // Send Ctrl+C to kill any existing component runtime first.
+      this._terminal!.sendText('\x03', false);
+      this._terminal!.sendText(
+        `${config.componentRuntime.executable} ${componentRuntimeArgs.join(" ")}`,
+        true
+      );
+    }
+  }
+
+  private static async ensureTerminal() {
+    if (this._terminal && this._terminal.exitStatus === undefined) {
+      return;
+    }
+
+    let signal = new Signal<void, void>();
+    this._terminal = window.createTerminal();
+    let terminalCloseDisposable = window.onDidCloseTerminal((terminal) => {
+      if (terminal === this._terminal) {
+        signal.resolve();
+        this._terminal = undefined;
+        this._runtimeExecution = undefined;
+        terminalCloseDisposable.dispose();
+      }
+    });
+
+    let shellIntegrationDisposable = window.onDidChangeTerminalShellIntegration(
+      async ({ terminal }) => {
+        if (terminal === this._terminal) {
+          clearTimeout(timeout);
+          shellIntegrationDisposable.dispose();
+          signal.resolve();
+        }
+      }
     );
+    // Fallback to sendText if there is no shell integration within 3 seconds of launching
+    let timeout = setTimeout(() => {
+      shellIntegrationDisposable.dispose();
+      signal.resolve();
+    }, 3000);
 
-    this._componentRuntime.stdout.on("data", (data) => {
-      console.log(`componentRuntime ${data}`);
-    });
-
-    this._componentRuntime.stderr.on("data", (data) => {
-      console.error(`componentRuntime ${data}`);
-    });
-
-    this._componentRuntime.on("close", (code) => {
-      console.info(`child process exited with code ${code}`);
-      this.running = false;
-    });
+    await signal.wait();
   }
 }
 
@@ -158,7 +233,7 @@ export class StarlingMonkeyRuntime extends EventEmitter {
   }
 
   public async start(program: string, component: string, stopOnEntry: boolean, debug: boolean  ): Promise<void> {
-    await this.startComponentRuntime(component);
+    await ComponentRuntimeInstance.start(this._workspaceDir, component, this._config);
     this.startSessionServer();
     // TODO: tell StarlingMonkey not to debug if this is false.
     this._debug = debug;
@@ -169,7 +244,7 @@ export class StarlingMonkeyRuntime extends EventEmitter {
       message.type === "connect",
       `expected "connect" message, got "${message.type}"`
     );
-    this.sendMessage("startDebugLogging");
+    // this.sendMessage("startDebugLogging");
     message = await this.sendAndReceiveMessage("loadProgram", this._sourceFile);
     assert(
       message.type === "programLoaded",
@@ -247,7 +322,7 @@ export class StarlingMonkeyRuntime extends EventEmitter {
       let message = partialMessage.slice(0, expectedLength);
       try {
         let parsed = JSON.parse(message);
-        console.debug(`received message ${partialMessage}`);
+        // console.debug(`received message ${partialMessage}`);
         resetMessageState();
         this._messageReceived.resolve(parsed);
       } catch (e) {
@@ -266,17 +341,6 @@ export class StarlingMonkeyRuntime extends EventEmitter {
     ComponentRuntimeInstance.setNextSessionPort(port);
   }
 
-  private async startComponentRuntime(component: string) {
-    if (ComponentRuntimeInstance.running) {
-      assert(
-        ComponentRuntimeInstance.workspaceFolder === this._workspaceDir,
-        "ComponentRuntime is already running in a different workspace"
-      );
-      return;
-    }
-    await ComponentRuntimeInstance.start(this._workspaceDir, component, this._config);
-  }
-
   private sendMessage(type: string, value?: any, useRawValue = false) {
     let message: string;
     if (useRawValue) {
@@ -284,7 +348,7 @@ export class StarlingMonkeyRuntime extends EventEmitter {
     } else {
       message = JSON.stringify({ type, value });
     }
-    console.debug(`sending message to runtime: ${message}`);
+    // console.debug(`sending message to runtime: ${message}`);
     this._socket.write(`${message.length}\n${message}`);
   }
 
