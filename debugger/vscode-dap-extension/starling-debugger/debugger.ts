@@ -422,6 +422,13 @@ try {
     sendMessage("scopes", scopes);
   }
 
+  interface IVariable {
+    name: string;
+    value: string;
+    type: string;
+    variablesReference: number;
+  }
+
   function getVariables(reference: number): void {
     if (reference > MAX_FRAMES) {
       let object = idToObject.get(reference);
@@ -432,7 +439,7 @@ try {
 
     assert(currentFrame);
     let frame = findFrame(currentFrame, reference - 1);
-    let locals = [];
+    let locals: IVariable[] = [];
 
     for (let name of frame.environment.names()) {
       let value = frame.environment.getVariable(name);
@@ -478,14 +485,14 @@ try {
 
   function getMembers(object: Debugger.Object): any[] {
     let names = object.getOwnPropertyNames();
-    let members = [];
+    let members: IVariable[] = [];
     for (let name of names) {
       members.push(getMember(object, name));
     }
     return members;
   }
 
-  function getMember(object: Debugger.Object, name: string): any {
+  function getMember(object: Debugger.Object, name: string): IVariable {
     let descriptor = object.getOwnPropertyDescriptor(name);
     return { name, ...formatDescriptor(descriptor) };
   }
