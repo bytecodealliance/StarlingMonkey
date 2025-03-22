@@ -5,11 +5,9 @@
 		"moduleResolution": "NodeNext",
 		"outDir": "out",
 		"lib": [
-			"WebWorker",
 			"ES2022"
 		],
 		"sourceMap": true,
-		"rootDir": "src",
 		"strict": true,
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,

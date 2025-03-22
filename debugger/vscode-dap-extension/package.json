@@ -30,15 +30,17 @@
     "compile": "tsc -p ./",
     "lint": "eslint src starling-debugger --ext ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "esbuild-extension": "esbuild ./src/extension.ts --bundle --tsconfig=./tsconfig.json --external:vscode --format=cjs --platform=node --outfile=dist/extension.js",
-    "esbuild-debugger": "esbuild ./starling-debugger/debugger.ts --bundle --tsconfig=./tsconfig.json --format=cjs --platform=node --outfile=dist/debugger.js",
+    "esbuild-extension": "esbuild ./src/extension.ts --bundle --tsconfig=./tsconfig.json --external:vscode --format=cjs --platform=node --outfile=dist/extension.js --sourcemap --sources-content=false",
+    "esbuild-debugger": "esbuild ./starling-debugger/debugger.ts --bundle --tsconfig=./tsconfig.json --platform=neutral --outfile=dist/debugger.js",
     "esbuild-all": "npm run esbuild-extension && npm run esbuild-debugger",
-    "watch": "npm run -S esbuild-all -- --sourcemap --sources-content=false --watch",
-    "build": "npm run -S esbuild-all -- --sourcemap --sources-content=false",
+    "watch-extension": "esbuild ./src/extension.ts --bundle --tsconfig=./tsconfig.json --external:vscode --format=cjs --platform=node --outfile=dist/extension.js --sourcemap --sources-content=false --watch",
+    "watch-debugger": "esbuild ./starling-debugger/debugger.ts --bundle --tsconfig=./tsconfig.json --platform=neutral --outfile=dist/debugger.js --watch",
+    "watch": "concurrently \"npm run watch-extension\" \"npm run watch-debugger\"",
+    "build": "npm run -S esbuild-all",
     "package": "vsce package",
     "publish": "vsce publish",
     "publish-pre-release": "vsce publish --pre-release",
-    "vscode:prepublish": "rimraf dist && npm run -S esbuild-all -- --minify",
+    "vscode:prepublish": "rimraf dist && npm run -S esbuild-all",
     "test": "npm run typecheck"
   },
   "devDependencies": {
@@ -52,6 +54,7 @@
     "@vscode/debugadapter": "^1.68.0",
     "@vscode/debugadapter-testsupport": "^1.68.0",
     "@vscode/vsce": "^3.2.1",
+    "concurrently": "^9.1.2",
     "esbuild": "0.24.0",
     "eslint": "9.15.0",
     "events": "^3.3.0",
@@ -193,7 +196,10 @@
             "items": {
               "type": "string"
             },
-            "default": ["--verbose", "-d"],
+            "default": [
+              "--verbose",
+              "-d"
+            ],
             "scope": "machine-overridable",
             "description": "CLI options to pass to StarlingMonkey."
           },
@@ -208,7 +214,16 @@
             "items": {
               "type": "string"
             },
-            "default": ["serve", "-S", "cli,tcp,inherit-network", "--dir", "${workspaceFolder}::/", "--addr", "0.0.0.0:8080", "${component}"],
+            "default": [
+              "serve",
+              "-S",
+              "cli,tcp,inherit-network",
+              "--dir",
+              "${workspaceFolder}::/",
+              "--addr",
+              "0.0.0.0:8080",
+              "${component}"
+            ],
             "scope": "machine-overridable",
             "description": "CLI options to pass to the component runtime. `${component} will be replaced with the path to the component to debug, and `${workspaceFolder}` will be replaced with the path to the workspace folder."
           },
