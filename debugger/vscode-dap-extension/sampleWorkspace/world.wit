@@ -1,0 +1,1860 @@
+package local:combined-wit;
+
+world combined {
+  import wasi:io/poll@0.2.3;
+  import wasi:clocks/monotonic-clock@0.2.3;
+  import wasi:io/error@0.2.3;
+  import wasi:io/streams@0.2.3;
+  import wasi:http/types@0.2.3;
+  import wasi:http/outgoing-handler@0.2.3;
+  import wasi:cli/environment@0.2.3;
+  import wasi:sockets/network@0.2.3;
+  import wasi:sockets/instance-network@0.2.3;
+  import wasi:sockets/tcp@0.2.3;
+  import wasi:sockets/tcp-create-socket@0.2.3;
+
+  export wasi:http/incoming-handler@0.2.3;
+}
+package fermyon:spin {
+  interface redis-types {
+    enum error {
+      success,
+      error,
+    }
+
+    type payload = list<u8>;
+
+    variant redis-parameter {
+      int64(s64),
+      binary(payload),
+    }
+
+    variant redis-result {
+      nil,
+      status(string),
+      int64(s64),
+      binary(payload),
+    }
+  }
+  interface inbound-redis {
+    use redis-types.{payload, error};
+
+    handle-message: func(message: payload) -> result<_, error>;
+  }
+}
+
+
+package wasi:io@0.2.3 {
+  @since(version = 0.2.0)
+  interface error {
+    @since(version = 0.2.0)
+    resource error {
+      @since(version = 0.2.0)
+      to-debug-string: func() -> string;
+    }
+  }
+  @since(version = 0.2.0)
+  interface poll {
+    @since(version = 0.2.0)
+    resource pollable {
+      @since(version = 0.2.0)
+      ready: func() -> bool;
+      @since(version = 0.2.0)
+      block: func();
+    }
+
+    @since(version = 0.2.0)
+    poll: func(in: list<borrow<pollable>>) -> list<u32>;
+  }
+  @since(version = 0.2.0)
+  interface streams {
+    @since(version = 0.2.0)
+    use error.{error};
+    @since(version = 0.2.0)
+    use poll.{pollable};
+
+    @since(version = 0.2.0)
+    variant stream-error {
+      last-operation-failed(error),
+      closed,
+    }
+
+    @since(version = 0.2.0)
+    resource input-stream {
+      @since(version = 0.2.0)
+      read: func(len: u64) -> result<list<u8>, stream-error>;
+      @since(version = 0.2.0)
+      blocking-read: func(len: u64) -> result<list<u8>, stream-error>;
+      @since(version = 0.2.0)
+      skip: func(len: u64) -> result<u64, stream-error>;
+      @since(version = 0.2.0)
+      blocking-skip: func(len: u64) -> result<u64, stream-error>;
+      @since(version = 0.2.0)
+      subscribe: func() -> pollable;
+    }
+
+    @since(version = 0.2.0)
+    resource output-stream {
+      @since(version = 0.2.0)
+      check-write: func() -> result<u64, stream-error>;
+      @since(version = 0.2.0)
+      write: func(contents: list<u8>) -> result<_, stream-error>;
+      @since(version = 0.2.0)
+      blocking-write-and-flush: func(contents: list<u8>) -> result<_, stream-error>;
+      @since(version = 0.2.0)
+      flush: func() -> result<_, stream-error>;
+      @since(version = 0.2.0)
+      blocking-flush: func() -> result<_, stream-error>;
+      @since(version = 0.2.0)
+      subscribe: func() -> pollable;
+      @since(version = 0.2.0)
+      write-zeroes: func(len: u64) -> result<_, stream-error>;
+      @since(version = 0.2.0)
+      blocking-write-zeroes-and-flush: func(len: u64) -> result<_, stream-error>;
+      @since(version = 0.2.0)
+      splice: func(src: borrow<input-stream>, len: u64) -> result<u64, stream-error>;
+      @since(version = 0.2.0)
+      blocking-splice: func(src: borrow<input-stream>, len: u64) -> result<u64, stream-error>;
+    }
+  }
+  @since(version = 0.2.0)
+  world imports {
+    @since(version = 0.2.0)
+    import error;
+    @since(version = 0.2.0)
+    import poll;
+    @since(version = 0.2.0)
+    import streams;
+  }
+}
+
+
+package wasi:clocks@0.2.3 {
+  @since(version = 0.2.0)
+  interface monotonic-clock {
+    @since(version = 0.2.0)
+    use wasi:io/poll@0.2.3.{pollable};
+
+    @since(version = 0.2.0)
+    type instant = u64;
+
+    @since(version = 0.2.0)
+    type duration = u64;
+
+    @since(version = 0.2.0)
+    now: func() -> instant;
+
+    @since(version = 0.2.0)
+    resolution: func() -> duration;
+
+    @since(version = 0.2.0)
+    subscribe-instant: func(when: instant) -> pollable;
+
+    @since(version = 0.2.0)
+    subscribe-duration: func(when: duration) -> pollable;
+  }
+  @since(version = 0.2.0)
+  interface wall-clock {
+    @since(version = 0.2.0)
+    record datetime {
+      seconds: u64,
+      nanoseconds: u32,
+    }
+
+    @since(version = 0.2.0)
+    now: func() -> datetime;
+
+    @since(version = 0.2.0)
+    resolution: func() -> datetime;
+  }
+  @since(version = 0.2.0)
+  world imports {
+    @since(version = 0.2.0)
+    import wasi:io/poll@0.2.3;
+    @since(version = 0.2.0)
+    import monotonic-clock;
+    @since(version = 0.2.0)
+    import wall-clock;
+  }
+}
+
+
+package wasi:random@0.2.3 {
+  @since(version = 0.2.0)
+  interface insecure-seed {
+    @since(version = 0.2.0)
+    insecure-seed: func() -> tuple<u64, u64>;
+  }
+  @since(version = 0.2.0)
+  interface insecure {
+    @since(version = 0.2.0)
+    get-insecure-random-bytes: func(len: u64) -> list<u8>;
+
+    @since(version = 0.2.0)
+    get-insecure-random-u64: func() -> u64;
+  }
+  @since(version = 0.2.0)
+  interface random {
+    @since(version = 0.2.0)
+    get-random-bytes: func(len: u64) -> list<u8>;
+
+    @since(version = 0.2.0)
+    get-random-u64: func() -> u64;
+  }
+  @since(version = 0.2.0)
+  world imports {
+    @since(version = 0.2.0)
+    import random;
+    @since(version = 0.2.0)
+    import insecure;
+    @since(version = 0.2.0)
+    import insecure-seed;
+  }
+}
+
+
+package wasi:filesystem@0.2.3 {
+  @since(version = 0.2.0)
+  interface types {
+    @since(version = 0.2.0)
+    use wasi:io/streams@0.2.3.{input-stream, output-stream, error};
+    @since(version = 0.2.0)
+    use wasi:clocks/wall-clock@0.2.3.{datetime};
+
+    @since(version = 0.2.0)
+    type filesize = u64;
+
+    @since(version = 0.2.0)
+    enum descriptor-type {
+      unknown,
+      block-device,
+      character-device,
+      directory,
+      fifo,
+      symbolic-link,
+      regular-file,
+      socket,
+    }
+
+    @since(version = 0.2.0)
+    flags descriptor-flags {
+      read,
+      write,
+      file-integrity-sync,
+      data-integrity-sync,
+      requested-write-sync,
+      mutate-directory,
+    }
+
+    @since(version = 0.2.0)
+    flags path-flags {
+      symlink-follow,
+    }
+
+    @since(version = 0.2.0)
+    flags open-flags {
+      create,
+      directory,
+      exclusive,
+      truncate,
+    }
+
+    @since(version = 0.2.0)
+    type link-count = u64;
+
+    @since(version = 0.2.0)
+    record descriptor-stat {
+      %type: descriptor-type,
+      link-count: link-count,
+      size: filesize,
+      data-access-timestamp: option<datetime>,
+      data-modification-timestamp: option<datetime>,
+      status-change-timestamp: option<datetime>,
+    }
+
+    @since(version = 0.2.0)
+    variant new-timestamp {
+      no-change,
+      now,
+      timestamp(datetime),
+    }
+
+    record directory-entry {
+      %type: descriptor-type,
+      name: string,
+    }
+
+    enum error-code {
+      access,
+      would-block,
+      already,
+      bad-descriptor,
+      busy,
+      deadlock,
+      quota,
+      exist,
+      file-too-large,
+      illegal-byte-sequence,
+      in-progress,
+      interrupted,
+      invalid,
+      io,
+      is-directory,
+      loop,
+      too-many-links,
+      message-size,
+      name-too-long,
+      no-device,
+      no-entry,
+      no-lock,
+      insufficient-memory,
+      insufficient-space,
+      not-directory,
+      not-empty,
+      not-recoverable,
+      unsupported,
+      no-tty,
+      no-such-device,
+      overflow,
+      not-permitted,
+      pipe,
+      read-only,
+      invalid-seek,
+      text-file-busy,
+      cross-device,
+    }
+
+    @since(version = 0.2.0)
+    enum advice {
+      normal,
+      sequential,
+      random,
+      will-need,
+      dont-need,
+      no-reuse,
+    }
+
+    @since(version = 0.2.0)
+    record metadata-hash-value {
+      lower: u64,
+      upper: u64,
+    }
+
+    @since(version = 0.2.0)
+    resource descriptor {
+      @since(version = 0.2.0)
+      read-via-stream: func(offset: filesize) -> result<input-stream, error-code>;
+      @since(version = 0.2.0)
+      write-via-stream: func(offset: filesize) -> result<output-stream, error-code>;
+      @since(version = 0.2.0)
+      append-via-stream: func() -> result<output-stream, error-code>;
+      @since(version = 0.2.0)
+      advise: func(offset: filesize, length: filesize, advice: advice) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      sync-data: func() -> result<_, error-code>;
+      @since(version = 0.2.0)
+      get-flags: func() -> result<descriptor-flags, error-code>;
+      @since(version = 0.2.0)
+      get-type: func() -> result<descriptor-type, error-code>;
+      @since(version = 0.2.0)
+      set-size: func(size: filesize) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      set-times: func(data-access-timestamp: new-timestamp, data-modification-timestamp: new-timestamp) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      read: func(length: filesize, offset: filesize) -> result<tuple<list<u8>, bool>, error-code>;
+      @since(version = 0.2.0)
+      write: func(buffer: list<u8>, offset: filesize) -> result<filesize, error-code>;
+      @since(version = 0.2.0)
+      read-directory: func() -> result<directory-entry-stream, error-code>;
+      @since(version = 0.2.0)
+      sync: func() -> result<_, error-code>;
+      @since(version = 0.2.0)
+      create-directory-at: func(path: string) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      stat: func() -> result<descriptor-stat, error-code>;
+      @since(version = 0.2.0)
+      stat-at: func(path-flags: path-flags, path: string) -> result<descriptor-stat, error-code>;
+      @since(version = 0.2.0)
+      set-times-at: func(path-flags: path-flags, path: string, data-access-timestamp: new-timestamp, data-modification-timestamp: new-timestamp) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      link-at: func(old-path-flags: path-flags, old-path: string, new-descriptor: borrow<descriptor>, new-path: string) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      open-at: func(path-flags: path-flags, path: string, open-flags: open-flags, %flags: descriptor-flags) -> result<descriptor, error-code>;
+      @since(version = 0.2.0)
+      readlink-at: func(path: string) -> result<string, error-code>;
+      @since(version = 0.2.0)
+      remove-directory-at: func(path: string) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      rename-at: func(old-path: string, new-descriptor: borrow<descriptor>, new-path: string) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      symlink-at: func(old-path: string, new-path: string) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      unlink-file-at: func(path: string) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      is-same-object: func(other: borrow<descriptor>) -> bool;
+      @since(version = 0.2.0)
+      metadata-hash: func() -> result<metadata-hash-value, error-code>;
+      @since(version = 0.2.0)
+      metadata-hash-at: func(path-flags: path-flags, path: string) -> result<metadata-hash-value, error-code>;
+    }
+
+    @since(version = 0.2.0)
+    resource directory-entry-stream {
+      @since(version = 0.2.0)
+      read-directory-entry: func() -> result<option<directory-entry>, error-code>;
+    }
+
+    @since(version = 0.2.0)
+    filesystem-error-code: func(err: borrow<error>) -> option<error-code>;
+  }
+  @since(version = 0.2.0)
+  interface preopens {
+    @since(version = 0.2.0)
+    use types.{descriptor};
+
+    @since(version = 0.2.0)
+    get-directories: func() -> list<tuple<descriptor, string>>;
+  }
+  @since(version = 0.2.0)
+  world imports {
+    @since(version = 0.2.0)
+    import wasi:io/error@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:io/poll@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:io/streams@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:clocks/wall-clock@0.2.3;
+    @since(version = 0.2.0)
+    import types;
+    @since(version = 0.2.0)
+    import preopens;
+  }
+}
+
+
+package wasi:sockets@0.2.3 {
+  @since(version = 0.2.0)
+  interface network {
+    @since(version = 0.2.0)
+    resource network;
+
+    @since(version = 0.2.0)
+    enum error-code {
+      unknown,
+      access-denied,
+      not-supported,
+      invalid-argument,
+      out-of-memory,
+      timeout,
+      concurrency-conflict,
+      not-in-progress,
+      would-block,
+      invalid-state,
+      new-socket-limit,
+      address-not-bindable,
+      address-in-use,
+      remote-unreachable,
+      connection-refused,
+      connection-reset,
+      connection-aborted,
+      datagram-too-large,
+      name-unresolvable,
+      temporary-resolver-failure,
+      permanent-resolver-failure,
+    }
+
+    @since(version = 0.2.0)
+    enum ip-address-family {
+      ipv4,
+      ipv6,
+    }
+
+    @since(version = 0.2.0)
+    type ipv4-address = tuple<u8, u8, u8, u8>;
+
+    @since(version = 0.2.0)
+    type ipv6-address = tuple<u16, u16, u16, u16, u16, u16, u16, u16>;
+
+    @since(version = 0.2.0)
+    variant ip-address {
+      ipv4(ipv4-address),
+      ipv6(ipv6-address),
+    }
+
+    @since(version = 0.2.0)
+    record ipv4-socket-address {
+      port: u16,
+      address: ipv4-address,
+    }
+
+    @since(version = 0.2.0)
+    record ipv6-socket-address {
+      port: u16,
+      flow-info: u32,
+      address: ipv6-address,
+      scope-id: u32,
+    }
+
+    @since(version = 0.2.0)
+    variant ip-socket-address {
+      ipv4(ipv4-socket-address),
+      ipv6(ipv6-socket-address),
+    }
+  }
+  @since(version = 0.2.0)
+  interface instance-network {
+    @since(version = 0.2.0)
+    use network.{network};
+
+    @since(version = 0.2.0)
+    instance-network: func() -> network;
+  }
+  @since(version = 0.2.0)
+  interface ip-name-lookup {
+    @since(version = 0.2.0)
+    use wasi:io/poll@0.2.3.{pollable};
+    @since(version = 0.2.0)
+    use network.{network, error-code, ip-address};
+
+    @since(version = 0.2.0)
+    resource resolve-address-stream {
+      @since(version = 0.2.0)
+      resolve-next-address: func() -> result<option<ip-address>, error-code>;
+      @since(version = 0.2.0)
+      subscribe: func() -> pollable;
+    }
+
+    @since(version = 0.2.0)
+    resolve-addresses: func(network: borrow<network>, name: string) -> result<resolve-address-stream, error-code>;
+  }
+  @since(version = 0.2.0)
+  interface tcp {
+    @since(version = 0.2.0)
+    use wasi:io/streams@0.2.3.{input-stream, output-stream};
+    @since(version = 0.2.0)
+    use wasi:io/poll@0.2.3.{pollable};
+    @since(version = 0.2.0)
+    use wasi:clocks/monotonic-clock@0.2.3.{duration};
+    @since(version = 0.2.0)
+    use network.{network, error-code, ip-socket-address, ip-address-family};
+
+    @since(version = 0.2.0)
+    enum shutdown-type {
+      receive,
+      send,
+      both,
+    }
+
+    @since(version = 0.2.0)
+    resource tcp-socket {
+      @since(version = 0.2.0)
+      start-bind: func(network: borrow<network>, local-address: ip-socket-address) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      finish-bind: func() -> result<_, error-code>;
+      @since(version = 0.2.0)
+      start-connect: func(network: borrow<network>, remote-address: ip-socket-address) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      finish-connect: func() -> result<tuple<input-stream, output-stream>, error-code>;
+      @since(version = 0.2.0)
+      start-listen: func() -> result<_, error-code>;
+      @since(version = 0.2.0)
+      finish-listen: func() -> result<_, error-code>;
+      @since(version = 0.2.0)
+      accept: func() -> result<tuple<tcp-socket, input-stream, output-stream>, error-code>;
+      @since(version = 0.2.0)
+      local-address: func() -> result<ip-socket-address, error-code>;
+      @since(version = 0.2.0)
+      remote-address: func() -> result<ip-socket-address, error-code>;
+      @since(version = 0.2.0)
+      is-listening: func() -> bool;
+      @since(version = 0.2.0)
+      address-family: func() -> ip-address-family;
+      @since(version = 0.2.0)
+      set-listen-backlog-size: func(value: u64) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      keep-alive-enabled: func() -> result<bool, error-code>;
+      @since(version = 0.2.0)
+      set-keep-alive-enabled: func(value: bool) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      keep-alive-idle-time: func() -> result<duration, error-code>;
+      @since(version = 0.2.0)
+      set-keep-alive-idle-time: func(value: duration) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      keep-alive-interval: func() -> result<duration, error-code>;
+      @since(version = 0.2.0)
+      set-keep-alive-interval: func(value: duration) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      keep-alive-count: func() -> result<u32, error-code>;
+      @since(version = 0.2.0)
+      set-keep-alive-count: func(value: u32) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      hop-limit: func() -> result<u8, error-code>;
+      @since(version = 0.2.0)
+      set-hop-limit: func(value: u8) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      receive-buffer-size: func() -> result<u64, error-code>;
+      @since(version = 0.2.0)
+      set-receive-buffer-size: func(value: u64) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      send-buffer-size: func() -> result<u64, error-code>;
+      @since(version = 0.2.0)
+      set-send-buffer-size: func(value: u64) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      subscribe: func() -> pollable;
+      @since(version = 0.2.0)
+      shutdown: func(shutdown-type: shutdown-type) -> result<_, error-code>;
+    }
+  }
+  @since(version = 0.2.0)
+  interface tcp-create-socket {
+    @since(version = 0.2.0)
+    use network.{network, error-code, ip-address-family};
+    @since(version = 0.2.0)
+    use tcp.{tcp-socket};
+
+    @since(version = 0.2.0)
+    create-tcp-socket: func(address-family: ip-address-family) -> result<tcp-socket, error-code>;
+  }
+  @since(version = 0.2.0)
+  interface udp {
+    @since(version = 0.2.0)
+    use wasi:io/poll@0.2.3.{pollable};
+    @since(version = 0.2.0)
+    use network.{network, error-code, ip-socket-address, ip-address-family};
+
+    @since(version = 0.2.0)
+    record incoming-datagram {
+      data: list<u8>,
+      remote-address: ip-socket-address,
+    }
+
+    @since(version = 0.2.0)
+    record outgoing-datagram {
+      data: list<u8>,
+      remote-address: option<ip-socket-address>,
+    }
+
+    @since(version = 0.2.0)
+    resource udp-socket {
+      @since(version = 0.2.0)
+      start-bind: func(network: borrow<network>, local-address: ip-socket-address) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      finish-bind: func() -> result<_, error-code>;
+      @since(version = 0.2.0)
+      %stream: func(remote-address: option<ip-socket-address>) -> result<tuple<incoming-datagram-stream, outgoing-datagram-stream>, error-code>;
+      @since(version = 0.2.0)
+      local-address: func() -> result<ip-socket-address, error-code>;
+      @since(version = 0.2.0)
+      remote-address: func() -> result<ip-socket-address, error-code>;
+      @since(version = 0.2.0)
+      address-family: func() -> ip-address-family;
+      @since(version = 0.2.0)
+      unicast-hop-limit: func() -> result<u8, error-code>;
+      @since(version = 0.2.0)
+      set-unicast-hop-limit: func(value: u8) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      receive-buffer-size: func() -> result<u64, error-code>;
+      @since(version = 0.2.0)
+      set-receive-buffer-size: func(value: u64) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      send-buffer-size: func() -> result<u64, error-code>;
+      @since(version = 0.2.0)
+      set-send-buffer-size: func(value: u64) -> result<_, error-code>;
+      @since(version = 0.2.0)
+      subscribe: func() -> pollable;
+    }
+
+    @since(version = 0.2.0)
+    resource incoming-datagram-stream {
+      @since(version = 0.2.0)
+      receive: func(max-results: u64) -> result<list<incoming-datagram>, error-code>;
+      @since(version = 0.2.0)
+      subscribe: func() -> pollable;
+    }
+
+    @since(version = 0.2.0)
+    resource outgoing-datagram-stream {
+      check-send: func() -> result<u64, error-code>;
+      @since(version = 0.2.0)
+      send: func(datagrams: list<outgoing-datagram>) -> result<u64, error-code>;
+      @since(version = 0.2.0)
+      subscribe: func() -> pollable;
+    }
+  }
+  @since(version = 0.2.0)
+  interface udp-create-socket {
+    @since(version = 0.2.0)
+    use network.{network, error-code, ip-address-family};
+    @since(version = 0.2.0)
+    use udp.{udp-socket};
+
+    @since(version = 0.2.0)
+    create-udp-socket: func(address-family: ip-address-family) -> result<udp-socket, error-code>;
+  }
+  @since(version = 0.2.0)
+  world imports {
+    @since(version = 0.2.0)
+    import network;
+    @since(version = 0.2.0)
+    import instance-network;
+    @since(version = 0.2.0)
+    import wasi:io/poll@0.2.3;
+    @since(version = 0.2.0)
+    import udp;
+    @since(version = 0.2.0)
+    import udp-create-socket;
+    @since(version = 0.2.0)
+    import wasi:io/error@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:io/streams@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:clocks/monotonic-clock@0.2.3;
+    @since(version = 0.2.0)
+    import tcp;
+    @since(version = 0.2.0)
+    import tcp-create-socket;
+    @since(version = 0.2.0)
+    import ip-name-lookup;
+  }
+}
+
+
+package wasi:cli@0.2.3 {
+  @since(version = 0.2.0)
+  interface environment {
+    @since(version = 0.2.0)
+    get-environment: func() -> list<tuple<string, string>>;
+
+    @since(version = 0.2.0)
+    get-arguments: func() -> list<string>;
+
+    @since(version = 0.2.0)
+    initial-cwd: func() -> option<string>;
+  }
+  @since(version = 0.2.0)
+  interface exit {
+    @since(version = 0.2.0)
+    exit: func(status: result);
+  }
+  @since(version = 0.2.0)
+  interface run {
+    @since(version = 0.2.0)
+    run: func() -> result;
+  }
+  @since(version = 0.2.0)
+  interface stdin {
+    @since(version = 0.2.0)
+    use wasi:io/streams@0.2.3.{input-stream};
+
+    @since(version = 0.2.0)
+    get-stdin: func() -> input-stream;
+  }
+  @since(version = 0.2.0)
+  interface stdout {
+    @since(version = 0.2.0)
+    use wasi:io/streams@0.2.3.{output-stream};
+
+    @since(version = 0.2.0)
+    get-stdout: func() -> output-stream;
+  }
+  @since(version = 0.2.0)
+  interface stderr {
+    @since(version = 0.2.0)
+    use wasi:io/streams@0.2.3.{output-stream};
+
+    @since(version = 0.2.0)
+    get-stderr: func() -> output-stream;
+  }
+  @since(version = 0.2.0)
+  interface terminal-input {
+    @since(version = 0.2.0)
+    resource terminal-input;
+  }
+  @since(version = 0.2.0)
+  interface terminal-output {
+    @since(version = 0.2.0)
+    resource terminal-output;
+  }
+  @since(version = 0.2.0)
+  interface terminal-stdin {
+    @since(version = 0.2.0)
+    use terminal-input.{terminal-input};
+
+    @since(version = 0.2.0)
+    get-terminal-stdin: func() -> option<terminal-input>;
+  }
+  @since(version = 0.2.0)
+  interface terminal-stdout {
+    @since(version = 0.2.0)
+    use terminal-output.{terminal-output};
+
+    @since(version = 0.2.0)
+    get-terminal-stdout: func() -> option<terminal-output>;
+  }
+  @since(version = 0.2.0)
+  interface terminal-stderr {
+    @since(version = 0.2.0)
+    use terminal-output.{terminal-output};
+
+    @since(version = 0.2.0)
+    get-terminal-stderr: func() -> option<terminal-output>;
+  }
+  @since(version = 0.2.0)
+  world imports {
+    @since(version = 0.2.0)
+    import environment;
+    @since(version = 0.2.0)
+    import exit;
+    @since(version = 0.2.0)
+    import wasi:io/error@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:io/poll@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:io/streams@0.2.3;
+    @since(version = 0.2.0)
+    import stdin;
+    @since(version = 0.2.0)
+    import stdout;
+    @since(version = 0.2.0)
+    import stderr;
+    @since(version = 0.2.0)
+    import terminal-input;
+    @since(version = 0.2.0)
+    import terminal-output;
+    @since(version = 0.2.0)
+    import terminal-stdin;
+    @since(version = 0.2.0)
+    import terminal-stdout;
+    @since(version = 0.2.0)
+    import terminal-stderr;
+    @since(version = 0.2.0)
+    import wasi:clocks/monotonic-clock@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:clocks/wall-clock@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:filesystem/types@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:filesystem/preopens@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:sockets/network@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:sockets/instance-network@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:sockets/udp@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:sockets/udp-create-socket@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:sockets/tcp@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:sockets/tcp-create-socket@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:sockets/ip-name-lookup@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:random/random@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:random/insecure@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:random/insecure-seed@0.2.3;
+  }
+  @since(version = 0.2.0)
+  world command {
+    @since(version = 0.2.0)
+    import environment;
+    @since(version = 0.2.0)
+    import exit;
+    @since(version = 0.2.0)
+    import wasi:io/error@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:io/poll@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:io/streams@0.2.3;
+    @since(version = 0.2.0)
+    import stdin;
+    @since(version = 0.2.0)
+    import stdout;
+    @since(version = 0.2.0)
+    import stderr;
+    @since(version = 0.2.0)
+    import terminal-input;
+    @since(version = 0.2.0)
+    import terminal-output;
+    @since(version = 0.2.0)
+    import terminal-stdin;
+    @since(version = 0.2.0)
+    import terminal-stdout;
+    @since(version = 0.2.0)
+    import terminal-stderr;
+    @since(version = 0.2.0)
+    import wasi:clocks/monotonic-clock@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:clocks/wall-clock@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:filesystem/types@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:filesystem/preopens@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:sockets/network@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:sockets/instance-network@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:sockets/udp@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:sockets/udp-create-socket@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:sockets/tcp@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:sockets/tcp-create-socket@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:sockets/ip-name-lookup@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:random/random@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:random/insecure@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:random/insecure-seed@0.2.3;
+
+    @since(version = 0.2.0)
+    export run;
+  }
+}
+
+
+package wasi:http@0.2.3 {
+  @since(version = 0.2.0)
+  interface types {
+    @since(version = 0.2.0)
+    use wasi:clocks/monotonic-clock@0.2.3.{duration};
+    @since(version = 0.2.0)
+    use wasi:io/streams@0.2.3.{input-stream, output-stream};
+    @since(version = 0.2.0)
+    use wasi:io/error@0.2.3.{error as io-error};
+    @since(version = 0.2.0)
+    use wasi:io/poll@0.2.3.{pollable};
+
+    @since(version = 0.2.0)
+    variant method {
+      get,
+      head,
+      post,
+      put,
+      delete,
+      connect,
+      options,
+      trace,
+      patch,
+      other(string),
+    }
+
+    @since(version = 0.2.0)
+    variant scheme {
+      HTTP,
+      HTTPS,
+      other(string),
+    }
+
+    @since(version = 0.2.0)
+    record DNS-error-payload {
+      rcode: option<string>,
+      info-code: option<u16>,
+    }
+
+    @since(version = 0.2.0)
+    record TLS-alert-received-payload {
+      alert-id: option<u8>,
+      alert-message: option<string>,
+    }
+
+    @since(version = 0.2.0)
+    record field-size-payload {
+      field-name: option<string>,
+      field-size: option<u32>,
+    }
+
+    @since(version = 0.2.0)
+    variant error-code {
+      DNS-timeout,
+      DNS-error(DNS-error-payload),
+      destination-not-found,
+      destination-unavailable,
+      destination-IP-prohibited,
+      destination-IP-unroutable,
+      connection-refused,
+      connection-terminated,
+      connection-timeout,
+      connection-read-timeout,
+      connection-write-timeout,
+      connection-limit-reached,
+      TLS-protocol-error,
+      TLS-certificate-error,
+      TLS-alert-received(TLS-alert-received-payload),
+      HTTP-request-denied,
+      HTTP-request-length-required,
+      HTTP-request-body-size(option<u64>),
+      HTTP-request-method-invalid,
+      HTTP-request-URI-invalid,
+      HTTP-request-URI-too-long,
+      HTTP-request-header-section-size(option<u32>),
+      HTTP-request-header-size(option<field-size-payload>),
+      HTTP-request-trailer-section-size(option<u32>),
+      HTTP-request-trailer-size(field-size-payload),
+      HTTP-response-incomplete,
+      HTTP-response-header-section-size(option<u32>),
+      HTTP-response-header-size(field-size-payload),
+      HTTP-response-body-size(option<u64>),
+      HTTP-response-trailer-section-size(option<u32>),
+      HTTP-response-trailer-size(field-size-payload),
+      HTTP-response-transfer-coding(option<string>),
+      HTTP-response-content-coding(option<string>),
+      HTTP-response-timeout,
+      HTTP-upgrade-failed,
+      HTTP-protocol-error,
+      loop-detected,
+      configuration-error,
+      internal-error(option<string>),
+    }
+
+    @since(version = 0.2.0)
+    variant header-error {
+      invalid-syntax,
+      forbidden,
+      immutable,
+    }
+
+    @since(version = 0.2.0)
+    @deprecated(version = 0.2.2)
+    type field-key = string;
+
+    @since(version = 0.2.1)
+    type field-name = field-key;
+
+    @since(version = 0.2.0)
+    type field-value = list<u8>;
+
+    @since(version = 0.2.0)
+    resource fields {
+      @since(version = 0.2.0)
+      constructor();
+      @since(version = 0.2.0)
+      from-list: static func(entries: list<tuple<field-name, field-value>>) -> result<fields, header-error>;
+      @since(version = 0.2.0)
+      get: func(name: field-name) -> list<field-value>;
+      @since(version = 0.2.0)
+      has: func(name: field-name) -> bool;
+      @since(version = 0.2.0)
+      set: func(name: field-name, value: list<field-value>) -> result<_, header-error>;
+      @since(version = 0.2.0)
+      delete: func(name: field-name) -> result<_, header-error>;
+      @since(version = 0.2.0)
+      append: func(name: field-name, value: field-value) -> result<_, header-error>;
+      @since(version = 0.2.0)
+      entries: func() -> list<tuple<field-name, field-value>>;
+      @since(version = 0.2.0)
+      clone: func() -> fields;
+    }
+
+    @since(version = 0.2.0)
+    type headers = fields;
+
+    @since(version = 0.2.0)
+    type trailers = fields;
+
+    @since(version = 0.2.0)
+    resource incoming-request {
+      @since(version = 0.2.0)
+      method: func() -> method;
+      @since(version = 0.2.0)
+      path-with-query: func() -> option<string>;
+      @since(version = 0.2.0)
+      scheme: func() -> option<scheme>;
+      @since(version = 0.2.0)
+      authority: func() -> option<string>;
+      @since(version = 0.2.0)
+      headers: func() -> headers;
+      @since(version = 0.2.0)
+      consume: func() -> result<incoming-body>;
+    }
+
+    @since(version = 0.2.0)
+    resource outgoing-request {
+      @since(version = 0.2.0)
+      constructor(headers: headers);
+      @since(version = 0.2.0)
+      body: func() -> result<outgoing-body>;
+      @since(version = 0.2.0)
+      method: func() -> method;
+      @since(version = 0.2.0)
+      set-method: func(method: method) -> result;
+      @since(version = 0.2.0)
+      path-with-query: func() -> option<string>;
+      @since(version = 0.2.0)
+      set-path-with-query: func(path-with-query: option<string>) -> result;
+      @since(version = 0.2.0)
+      scheme: func() -> option<scheme>;
+      @since(version = 0.2.0)
+      set-scheme: func(scheme: option<scheme>) -> result;
+      @since(version = 0.2.0)
+      authority: func() -> option<string>;
+      @since(version = 0.2.0)
+      set-authority: func(authority: option<string>) -> result;
+      @since(version = 0.2.0)
+      headers: func() -> headers;
+    }
+
+    @since(version = 0.2.0)
+    resource request-options {
+      @since(version = 0.2.0)
+      constructor();
+      @since(version = 0.2.0)
+      connect-timeout: func() -> option<duration>;
+      @since(version = 0.2.0)
+      set-connect-timeout: func(duration: option<duration>) -> result;
+      @since(version = 0.2.0)
+      first-byte-timeout: func() -> option<duration>;
+      @since(version = 0.2.0)
+      set-first-byte-timeout: func(duration: option<duration>) -> result;
+      @since(version = 0.2.0)
+      between-bytes-timeout: func() -> option<duration>;
+      @since(version = 0.2.0)
+      set-between-bytes-timeout: func(duration: option<duration>) -> result;
+    }
+
+    @since(version = 0.2.0)
+    resource response-outparam {
+      @since(version = 0.2.0)
+      set: static func(param: response-outparam, response: result<outgoing-response, error-code>);
+    }
+
+    @since(version = 0.2.0)
+    type status-code = u16;
+
+    @since(version = 0.2.0)
+    resource incoming-response {
+      @since(version = 0.2.0)
+      status: func() -> status-code;
+      @since(version = 0.2.0)
+      headers: func() -> headers;
+      @since(version = 0.2.0)
+      consume: func() -> result<incoming-body>;
+    }
+
+    @since(version = 0.2.0)
+    resource incoming-body {
+      @since(version = 0.2.0)
+      %stream: func() -> result<input-stream>;
+      @since(version = 0.2.0)
+      finish: static func(this: incoming-body) -> future-trailers;
+    }
+
+    @since(version = 0.2.0)
+    resource future-trailers {
+      @since(version = 0.2.0)
+      subscribe: func() -> pollable;
+      @since(version = 0.2.0)
+      get: func() -> option<result<result<option<trailers>, error-code>>>;
+    }
+
+    @since(version = 0.2.0)
+    resource outgoing-response {
+      @since(version = 0.2.0)
+      constructor(headers: headers);
+      @since(version = 0.2.0)
+      status-code: func() -> status-code;
+      @since(version = 0.2.0)
+      set-status-code: func(status-code: status-code) -> result;
+      @since(version = 0.2.0)
+      headers: func() -> headers;
+      @since(version = 0.2.0)
+      body: func() -> result<outgoing-body>;
+    }
+
+    @since(version = 0.2.0)
+    resource outgoing-body {
+      @since(version = 0.2.0)
+      write: func() -> result<output-stream>;
+      @since(version = 0.2.0)
+      finish: static func(this: outgoing-body, trailers: option<trailers>) -> result<_, error-code>;
+    }
+
+    @since(version = 0.2.0)
+    resource future-incoming-response {
+      @since(version = 0.2.0)
+      subscribe: func() -> pollable;
+      @since(version = 0.2.0)
+      get: func() -> option<result<result<incoming-response, error-code>>>;
+    }
+
+    @since(version = 0.2.0)
+    http-error-code: func(err: borrow<io-error>) -> option<error-code>;
+  }
+  @since(version = 0.2.0)
+  interface incoming-handler {
+    @since(version = 0.2.0)
+    use types.{incoming-request, response-outparam};
+
+    @since(version = 0.2.0)
+    handle: func(request: incoming-request, response-out: response-outparam);
+  }
+  @since(version = 0.2.0)
+  interface outgoing-handler {
+    @since(version = 0.2.0)
+    use types.{outgoing-request, request-options, future-incoming-response, error-code};
+
+    @since(version = 0.2.0)
+    handle: func(request: outgoing-request, options: option<request-options>) -> result<future-incoming-response, error-code>;
+  }
+  @since(version = 0.2.0)
+  world imports {
+    @since(version = 0.2.0)
+    import wasi:io/poll@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:clocks/monotonic-clock@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:clocks/wall-clock@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:random/random@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:io/error@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:io/streams@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:cli/stdout@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:cli/stderr@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:cli/stdin@0.2.3;
+    @since(version = 0.2.0)
+    import types;
+    @since(version = 0.2.0)
+    import outgoing-handler;
+  }
+  @since(version = 0.2.0)
+  world proxy {
+    @since(version = 0.2.0)
+    import wasi:io/poll@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:clocks/monotonic-clock@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:clocks/wall-clock@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:random/random@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:io/error@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:io/streams@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:cli/stdout@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:cli/stderr@0.2.3;
+    @since(version = 0.2.0)
+    import wasi:cli/stdin@0.2.3;
+    @since(version = 0.2.0)
+    import types;
+    @since(version = 0.2.0)
+    import outgoing-handler;
+
+    @since(version = 0.2.0)
+    export incoming-handler;
+  }
+}
+
+
+package fermyon:spin@2.0.0 {
+  interface key-value {
+    resource store {
+      open: static func(label: string) -> result<store, error>;
+      get: func(key: string) -> result<option<list<u8>>, error>;
+      set: func(key: string, value: list<u8>) -> result<_, error>;
+      delete: func(key: string) -> result<_, error>;
+      exists: func(key: string) -> result<bool, error>;
+      get-keys: func() -> result<list<string>, error>;
+    }
+
+    variant error {
+      store-table-full,
+      no-such-store,
+      access-denied,
+      other(string),
+    }
+  }
+  interface llm {
+    type inferencing-model = string;
+
+    record inferencing-params {
+      max-tokens: u32,
+      repeat-penalty: f32,
+      repeat-penalty-last-n-token-count: u32,
+      temperature: f32,
+      top-k: u32,
+      top-p: f32,
+    }
+
+    variant error {
+      model-not-supported,
+      runtime-error(string),
+      invalid-input(string),
+    }
+
+    record inferencing-usage {
+      prompt-token-count: u32,
+      generated-token-count: u32,
+    }
+
+    record inferencing-result {
+      text: string,
+      usage: inferencing-usage,
+    }
+
+    type embedding-model = string;
+
+    record embeddings-usage {
+      prompt-token-count: u32,
+    }
+
+    record embeddings-result {
+      embeddings: list<list<f32>>,
+      usage: embeddings-usage,
+    }
+
+    infer: func(model: inferencing-model, prompt: string, params: option<inferencing-params>) -> result<inferencing-result, error>;
+
+    generate-embeddings: func(model: embedding-model, text: list<string>) -> result<embeddings-result, error>;
+  }
+  interface mqtt {
+    variant error {
+      invalid-address,
+      too-many-connections,
+      connection-failed(string),
+      other(string),
+    }
+
+    enum qos {
+      at-most-once,
+      at-least-once,
+      exactly-once,
+    }
+
+    resource connection {
+      open: static func(address: string, username: string, password: string, keep-alive-interval-in-secs: u64) -> result<connection, error>;
+      publish: func(topic: string, payload: payload, qos: qos) -> result<_, error>;
+    }
+
+    type payload = list<u8>;
+  }
+  interface rdbms-types {
+    variant error {
+      connection-failed(string),
+      bad-parameter(string),
+      query-failed(string),
+      value-conversion-failed(string),
+      other(string),
+    }
+
+    enum db-data-type {
+      boolean,
+      int8,
+      int16,
+      int32,
+      int64,
+      uint8,
+      uint16,
+      uint32,
+      uint64,
+      floating32,
+      floating64,
+      str,
+      binary,
+      other,
+    }
+
+    variant db-value {
+      boolean(bool),
+      int8(s8),
+      int16(s16),
+      int32(s32),
+      int64(s64),
+      uint8(u8),
+      uint16(u16),
+      uint32(u32),
+      uint64(u64),
+      floating32(f32),
+      floating64(f64),
+      str(string),
+      binary(list<u8>),
+      db-null,
+      unsupported,
+    }
+
+    variant parameter-value {
+      boolean(bool),
+      int8(s8),
+      int16(s16),
+      int32(s32),
+      int64(s64),
+      uint8(u8),
+      uint16(u16),
+      uint32(u32),
+      uint64(u64),
+      floating32(f32),
+      floating64(f64),
+      str(string),
+      binary(list<u8>),
+      db-null,
+    }
+
+    record column {
+      name: string,
+      data-type: db-data-type,
+    }
+
+    type row = list<db-value>;
+
+    record row-set {
+      columns: list<column>,
+      rows: list<row>,
+    }
+  }
+  interface mysql {
+    use rdbms-types.{parameter-value, row-set, error};
+
+    resource connection {
+      open: static func(address: string) -> result<connection, error>;
+      query: func(statement: string, params: list<parameter-value>) -> result<row-set, error>;
+      execute: func(statement: string, params: list<parameter-value>) -> result<_, error>;
+    }
+  }
+  interface postgres {
+    use rdbms-types.{parameter-value, row-set, error};
+
+    resource connection {
+      open: static func(address: string) -> result<connection, error>;
+      query: func(statement: string, params: list<parameter-value>) -> result<row-set, error>;
+      execute: func(statement: string, params: list<parameter-value>) -> result<u64, error>;
+    }
+  }
+  interface redis {
+    variant error {
+      invalid-address,
+      too-many-connections,
+      type-error,
+      other(string),
+    }
+
+    resource connection {
+      open: static func(address: string) -> result<connection, error>;
+      publish: func(channel: string, payload: payload) -> result<_, error>;
+      get: func(key: string) -> result<option<payload>, error>;
+      set: func(key: string, value: payload) -> result<_, error>;
+      incr: func(key: string) -> result<s64, error>;
+      del: func(keys: list<string>) -> result<u32, error>;
+      sadd: func(key: string, values: list<string>) -> result<u32, error>;
+      smembers: func(key: string) -> result<list<string>, error>;
+      srem: func(key: string, values: list<string>) -> result<u32, error>;
+      execute: func(command: string, arguments: list<redis-parameter>) -> result<list<redis-result>, error>;
+    }
+
+    type payload = list<u8>;
+
+    variant redis-parameter {
+      int64(s64),
+      binary(payload),
+    }
+
+    variant redis-result {
+      nil,
+      status(string),
+      int64(s64),
+      binary(payload),
+    }
+  }
+  interface sqlite {
+    resource connection {
+      open: static func(database: string) -> result<connection, error>;
+      execute: func(statement: string, parameters: list<value>) -> result<query-result, error>;
+    }
+
+    variant error {
+      no-such-database,
+      access-denied,
+      invalid-connection,
+      database-full,
+      io(string),
+    }
+
+    variant value {
+      integer(s64),
+      real(f64),
+      text(string),
+      blob(list<u8>),
+      null,
+    }
+
+    record row-result {
+      values: list<value>,
+    }
+
+    record query-result {
+      columns: list<string>,
+      rows: list<row-result>,
+    }
+  }
+  interface variables {
+    variant error {
+      invalid-name(string),
+      undefined(string),
+      provider(string),
+      other(string),
+    }
+
+    get: func(name: string) -> result<string, error>;
+  }
+  world spin-imports {
+    import wasi:io/poll@0.2.3;
+    import wasi:clocks/monotonic-clock@0.2.3;
+    import wasi:io/error@0.2.3;
+    import wasi:io/streams@0.2.3;
+    import wasi:http/types@0.2.3;
+    import wasi:http/outgoing-handler@0.2.3;
+    import llm;
+    import redis;
+    import rdbms-types;
+    import postgres;
+    import mysql;
+    import mqtt;
+    import sqlite;
+    import key-value;
+    import variables;
+  }
+  world spin-redis {
+    import wasi:io/poll@0.2.3;
+    import wasi:clocks/monotonic-clock@0.2.3;
+    import wasi:io/error@0.2.3;
+    import wasi:io/streams@0.2.3;
+    import wasi:http/types@0.2.3;
+    import wasi:http/outgoing-handler@0.2.3;
+    import llm;
+    import redis;
+    import rdbms-types;
+    import postgres;
+    import mysql;
+    import mqtt;
+    import sqlite;
+    import key-value;
+    import variables;
+    import fermyon:spin/redis-types;
+
+    export fermyon:spin/inbound-redis;
+  }
+  world spin-http {
+    import wasi:io/poll@0.2.3;
+    import wasi:clocks/monotonic-clock@0.2.3;
+    import wasi:io/error@0.2.3;
+    import wasi:io/streams@0.2.3;
+    import wasi:http/types@0.2.3;
+    import wasi:http/outgoing-handler@0.2.3;
+    import llm;
+    import redis;
+    import rdbms-types;
+    import postgres;
+    import mysql;
+    import mqtt;
+    import sqlite;
+    import key-value;
+    import variables;
+
+    export wasi:http/incoming-handler@0.2.3;
+  }
+  world spin-all {
+    import wasi:io/poll@0.2.3;
+    import wasi:clocks/monotonic-clock@0.2.3;
+    import wasi:io/error@0.2.3;
+    import wasi:io/streams@0.2.3;
+    import wasi:http/types@0.2.3;
+    import wasi:http/outgoing-handler@0.2.3;
+    import llm;
+    import redis;
+    import rdbms-types;
+    import postgres;
+    import mysql;
+    import mqtt;
+    import sqlite;
+    import key-value;
+    import variables;
+    import fermyon:spin/redis-types;
+
+    export fermyon:spin/inbound-redis;
+    export wasi:http/incoming-handler@0.2.3;
+  }
+}
+
+
+package wasi:keyvalue@0.2.0-draft2 {
+  interface store {
+    variant error {
+      no-such-store,
+      access-denied,
+      other(string),
+    }
+
+    record key-response {
+      keys: list<string>,
+      cursor: option<string>,
+    }
+
+    resource bucket {
+      get: func(key: string) -> result<option<list<u8>>, error>;
+      set: func(key: string, value: list<u8>) -> result<_, error>;
+      delete: func(key: string) -> result<_, error>;
+      exists: func(key: string) -> result<bool, error>;
+      list-keys: func(cursor: option<string>) -> result<key-response, error>;
+    }
+
+    open: func(identifier: string) -> result<bucket, error>;
+  }
+  interface atomics {
+    use store.{bucket, error};
+
+    resource cas {
+      new: static func(bucket: borrow<bucket>, key: string) -> result<cas, error>;
+      current: func() -> result<option<list<u8>>, error>;
+    }
+
+    variant cas-error {
+      store-error(error),
+      cas-failed(cas),
+    }
+
+    increment: func(bucket: borrow<bucket>, key: string, delta: s64) -> result<s64, error>;
+
+    swap: func(cas: cas, value: list<u8>) -> result<_, cas-error>;
+  }
+  interface batch {
+    use store.{bucket, error};
+
+    get-many: func(bucket: borrow<bucket>, keys: list<string>) -> result<list<tuple<string, option<list<u8>>>>, error>;
+
+    set-many: func(bucket: borrow<bucket>, key-values: list<tuple<string, list<u8>>>) -> result<_, error>;
+
+    delete-many: func(bucket: borrow<bucket>, keys: list<string>) -> result<_, error>;
+  }
+  interface watcher {
+    use store.{bucket};
+
+    on-set: func(bucket: bucket, key: string, value: list<u8>);
+
+    on-delete: func(bucket: bucket, key: string);
+  }
+  world imports {
+    import store;
+    import atomics;
+    import batch;
+  }
+  world watch-service {
+    import store;
+    import atomics;
+    import batch;
+
+    export watcher;
+  }
+}
+
+
+package spin:postgres@3.0.0 {
+  interface postgres {
+    variant error {
+      connection-failed(string),
+      bad-parameter(string),
+      query-failed(string),
+      value-conversion-failed(string),
+      other(string),
+    }
+
+    enum db-data-type {
+      boolean,
+      int8,
+      int16,
+      int32,
+      int64,
+      floating32,
+      floating64,
+      str,
+      binary,
+      date,
+      time,
+      datetime,
+      timestamp,
+      other,
+    }
+
+    variant db-value {
+      boolean(bool),
+      int8(s8),
+      int16(s16),
+      int32(s32),
+      int64(s64),
+      floating32(f32),
+      floating64(f64),
+      str(string),
+      binary(list<u8>),
+      date(tuple<s32, u8, u8>),
+      time(tuple<u8, u8, u8, u32>),
+      datetime(tuple<s32, u8, u8, u8, u8, u8, u32>),
+      timestamp(s64),
+      db-null,
+      unsupported,
+    }
+
+    variant parameter-value {
+      boolean(bool),
+      int8(s8),
+      int16(s16),
+      int32(s32),
+      int64(s64),
+      floating32(f32),
+      floating64(f64),
+      str(string),
+      binary(list<u8>),
+      date(tuple<s32, u8, u8>),
+      time(tuple<u8, u8, u8, u32>),
+      datetime(tuple<s32, u8, u8, u8, u8, u8, u32>),
+      timestamp(s64),
+      db-null,
+    }
+
+    record column {
+      name: string,
+      data-type: db-data-type,
+    }
+
+    type row = list<db-value>;
+
+    record row-set {
+      columns: list<column>,
+      rows: list<row>,
+    }
+
+    resource connection {
+      open: static func(address: string) -> result<connection, error>;
+      query: func(statement: string, params: list<parameter-value>) -> result<row-set, error>;
+      execute: func(statement: string, params: list<parameter-value>) -> result<u64, error>;
+    }
+  }
+}
+
+
+package wasi:config@0.2.0-draft-2024-09-27 {
+  interface store {
+    variant error {
+      upstream(string),
+      io(string),
+    }
+
+    get: func(key: string) -> result<option<string>, error>;
+
+    get-all: func() -> result<list<tuple<string, string>>, error>;
+  }
+  world imports {
+    import store;
+  }
+}
+
+
+package fermyon:spin@3.0.0 {
+  world spin3-imports {
+    import spin:postgres/postgres@3.0.0;
+    import wasi:config/store@0.2.0-draft-2024-09-27;
+    import wasi:io/poll@0.2.3;
+    import wasi:clocks/monotonic-clock@0.2.3;
+    import wasi:io/error@0.2.3;
+    import wasi:io/streams@0.2.3;
+    import wasi:http/types@0.2.3;
+    import wasi:http/outgoing-handler@0.2.3;
+    import fermyon:spin/llm@2.0.0;
+    import fermyon:spin/redis@2.0.0;
+    import fermyon:spin/rdbms-types@2.0.0;
+    import fermyon:spin/postgres@2.0.0;
+    import fermyon:spin/mysql@2.0.0;
+    import fermyon:spin/mqtt@2.0.0;
+    import fermyon:spin/sqlite@2.0.0;
+    import fermyon:spin/key-value@2.0.0;
+    import fermyon:spin/variables@2.0.0;
+    import wasi:keyvalue/store@0.2.0-draft2;
+    import wasi:keyvalue/atomics@0.2.0-draft2;
+    import wasi:keyvalue/batch@0.2.0-draft2;
+  }
+  world spin3-redis {
+    import spin:postgres/postgres@3.0.0;
+    import wasi:config/store@0.2.0-draft-2024-09-27;
+    import wasi:io/poll@0.2.3;
+    import wasi:clocks/monotonic-clock@0.2.3;
+    import wasi:io/error@0.2.3;
+    import wasi:io/streams@0.2.3;
+    import wasi:http/types@0.2.3;
+    import wasi:http/outgoing-handler@0.2.3;
+    import fermyon:spin/llm@2.0.0;
+    import fermyon:spin/redis@2.0.0;
+    import fermyon:spin/rdbms-types@2.0.0;
+    import fermyon:spin/postgres@2.0.0;
+    import fermyon:spin/mysql@2.0.0;
+    import fermyon:spin/mqtt@2.0.0;
+    import fermyon:spin/sqlite@2.0.0;
+    import fermyon:spin/key-value@2.0.0;
+    import fermyon:spin/variables@2.0.0;
+    import wasi:keyvalue/store@0.2.0-draft2;
+    import wasi:keyvalue/atomics@0.2.0-draft2;
+    import wasi:keyvalue/batch@0.2.0-draft2;
+    import fermyon:spin/redis-types;
+
+    export fermyon:spin/inbound-redis;
+  }
+  world spin3-http {
+    import spin:postgres/postgres@3.0.0;
+    import wasi:config/store@0.2.0-draft-2024-09-27;
+    import wasi:io/poll@0.2.3;
+    import wasi:clocks/monotonic-clock@0.2.3;
+    import wasi:io/error@0.2.3;
+    import wasi:io/streams@0.2.3;
+    import wasi:http/types@0.2.3;
+    import wasi:http/outgoing-handler@0.2.3;
+    import fermyon:spin/llm@2.0.0;
+    import fermyon:spin/redis@2.0.0;
+    import fermyon:spin/rdbms-types@2.0.0;
+    import fermyon:spin/postgres@2.0.0;
+    import fermyon:spin/mysql@2.0.0;
+    import fermyon:spin/mqtt@2.0.0;
+    import fermyon:spin/sqlite@2.0.0;
+    import fermyon:spin/key-value@2.0.0;
+    import fermyon:spin/variables@2.0.0;
+    import wasi:keyvalue/store@0.2.0-draft2;
+    import wasi:keyvalue/atomics@0.2.0-draft2;
+    import wasi:keyvalue/batch@0.2.0-draft2;
+
+    export wasi:http/incoming-handler@0.2.3;
+  }
+  world spin3-all {
+    import spin:postgres/postgres@3.0.0;
+    import wasi:config/store@0.2.0-draft-2024-09-27;
+    import wasi:io/poll@0.2.3;
+    import wasi:clocks/monotonic-clock@0.2.3;
+    import wasi:io/error@0.2.3;
+    import wasi:io/streams@0.2.3;
+    import wasi:http/types@0.2.3;
+    import wasi:http/outgoing-handler@0.2.3;
+    import fermyon:spin/llm@2.0.0;
+    import fermyon:spin/redis@2.0.0;
+    import fermyon:spin/rdbms-types@2.0.0;
+    import fermyon:spin/postgres@2.0.0;
+    import fermyon:spin/mysql@2.0.0;
+    import fermyon:spin/mqtt@2.0.0;
+    import fermyon:spin/sqlite@2.0.0;
+    import fermyon:spin/key-value@2.0.0;
+    import fermyon:spin/variables@2.0.0;
+    import wasi:keyvalue/store@0.2.0-draft2;
+    import wasi:keyvalue/atomics@0.2.0-draft2;
+    import wasi:keyvalue/batch@0.2.0-draft2;
+    import fermyon:spin/redis-types;
+
+    export fermyon:spin/inbound-redis;
+    export wasi:http/incoming-handler@0.2.3;
+  }
+}
