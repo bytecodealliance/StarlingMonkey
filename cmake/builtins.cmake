@@ -113,3 +113,19 @@ add_builtin(
         fmt
     INCLUDE_DIRS
         runtime)
+
+add_builtin(
+    builtins::node
+    SRC
+        builtins/node/node.cpp
+    INCLUDE_DIRS
+        runtime)
+
+add_builtin(
+    builtins::node::process_env
+    SRC
+        builtins/node/process_env.cpp
+    DEPENDENCIES
+        host_api
+    INCLUDE_DIRS
+        runtime)
