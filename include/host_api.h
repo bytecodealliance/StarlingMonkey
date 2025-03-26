@@ -534,7 +534,7 @@ public:
 };
 
 vector<std::string> environment_get_arguments();
-vector<std::pair<HostString, HostString>> environment_get_environment();
+vector<std::pair<std::string, std::string>> environment_get_environment();
 
 } // namespace host_api
 

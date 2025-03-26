@@ -130,12 +130,24 @@ vector<std::string> environment_get_arguments() {
   return args;
 }
 
-vector<std::pair<HostString, HostString>> environment_get_environment() {
+vector<std::pair<std::string, std::string>> environment_get_environment() {
   bindings_list_tuple2_string_string_t env_vars;
   wasi_cli_environment_get_environment(&env_vars);
-  vector<std::pair<HostString, HostString>> result;
+  vector<std::pair<std::string, std::string>> result;
   for (size_t i = 0; i < env_vars.len; i++) {
-    result.emplace_back(to_host_string(env_vars.ptr[i].f0), to_host_string(env_vars.ptr[i].f1));
+    // Convert each string to std::string, trimming any trailing newlines
+    std::string key(reinterpret_cast<char *>(env_vars.ptr[i].f0.ptr), env_vars.ptr[i].f0.len);
+    std::string value(reinterpret_cast<char *>(env_vars.ptr[i].f1.ptr), env_vars.ptr[i].f1.len);
+    
+    // Trim trailing newlines
+    while (!key.empty() && key.back() == '\n') {
+      key.pop_back();
+    }
+    while (!value.empty() && value.back() == '\n') {
+      value.pop_back();
+    }
+    
+    result.emplace_back(std::move(key), std::move(value));
   }
   return result;
 }
