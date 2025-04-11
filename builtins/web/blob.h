@@ -10,7 +10,7 @@ namespace builtins {
 namespace web {
 namespace blob {
 
-class Blob : public FinalizableBuiltinImpl<Blob> {
+class Blob : public BuiltinImpl<Blob, FinalizableClassPolicy> {
   static bool arrayBuffer(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool bytes(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool slice(JSContext *cx, unsigned argc, JS::Value *vp);

@@ -30,7 +30,7 @@ struct EventListener {
   }
 };
 
-class EventTarget : public TraceableBuiltinImpl<EventTarget> {
+class EventTarget : public BuiltinImpl<EventTarget, TraceableClassPolicy> {
   static bool addEventListener(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool removeEventListener(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool dispatchEvent(JSContext *cx, unsigned argc, JS::Value *vp);

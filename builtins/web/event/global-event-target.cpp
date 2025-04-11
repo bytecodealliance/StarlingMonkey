@@ -3,7 +3,6 @@
 
 namespace {
 JS::PersistentRootedObject GLOBAL_EVENT_TARGET;
-JS::PersistentRootedObjectVector *HANDLERS;
 }
 
 namespace builtins {
@@ -26,7 +25,6 @@ static bool addEventListener(JSContext *cx, unsigned argc, Value *vp) {
 
   args.rval().setUndefined();
 
-  std::ignore = HANDLERS->append(&callback.toObject());
   return EventTarget::add_listener(cx, GLOBAL_EVENT_TARGET, type, callback, opts);
 }
 
@@ -41,7 +39,6 @@ static bool removeEventListener(JSContext *cx, unsigned argc, Value *vp) {
   RootedValue opts(cx, args.get(2));
   args.rval().setUndefined();
 
-  HANDLERS->eraseIf([&](const auto &handler) { return handler == callback.toObjectOrNull(); });
   return EventTarget::remove_listener(cx, GLOBAL_EVENT_TARGET, type, callback, opts);
 }
 
@@ -56,6 +53,13 @@ static bool dispatchEvent(JSContext *cx, unsigned argc, Value *vp) {
 }
 
 bool global_event_target_init(JSContext *cx, HandleObject global) {
+  RootedObject global_event(cx, EventTarget::create(cx));
+  if (!global_event) {
+    return false;
+  }
+
+  GLOBAL_EVENT_TARGET.init(cx, global_event);
+
   if (!JS_DefineFunction(cx, global, "addEventListener", addEventListener, 2, 0)) {
     return false;
   }
@@ -68,13 +72,6 @@ bool global_event_target_init(JSContext *cx, HandleObject global) {
     return false;
   }
 
-  auto global_event_target = EventTarget::create(cx);
-  if (!global_event_target) {
-    return false;
-  }
-
-  GLOBAL_EVENT_TARGET.init(cx, global_event_target);
-  HANDLERS = new JS::PersistentRootedObjectVector(cx);
   return true;
 }
 

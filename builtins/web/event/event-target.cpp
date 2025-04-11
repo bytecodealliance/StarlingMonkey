@@ -537,6 +537,13 @@ void EventTarget::finalize(JS::GCContext *gcx, JSObject *self) {
 
 void EventTarget::trace(JSTracer *trc, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
+
+  const JS::Value val = JS::GetReservedSlot(self, static_cast<size_t>(Slots::Listeners));
+  if (val.isNullOrUndefined()) {
+    // Nothing to trace
+    return;
+  }
+
   auto list = listeners(self);
   list->trace(trc);
 }

@@ -176,19 +176,75 @@ inline bool ThrowIfNotConstructing(JSContext *cx, const CallArgs &args, const ch
 }
 namespace builtins {
 
-template <typename Impl> class BuiltinImpl {
-  static constexpr JSClassOps class_ops{};
-  static constexpr uint32_t class_flags = 0;
+// Default objects policy with empty class ops
+struct DefaultClassPolicy {
+  template <typename Impl> static constexpr JSClassOps class_ops() {
+    JSClassOps ops = {};
+    return ops;
+  }
 
-  // A runtime registry for subclass JSClass pointers.
-  static inline std::vector<const JSClass *> registry;
+  static constexpr uint32_t class_flags() { return 0; }
+};
+
+// Policy for finalizable objects
+struct FinalizableClassPolicy {
+  template <typename Impl> static constexpr JSClassOps class_ops() {
+     JSClassOps ops { .finalize = &finalize<Impl> };
+    return ops;
+  }
+
+  static constexpr uint32_t class_flags() {
+    return JSCLASS_BACKGROUND_FINALIZE;
+  }
+
+  template <typename Impl> static void finalize(JS::GCContext *gcx, JSObject *obj) {
+    Impl::finalize(gcx, obj);
+  }
+};
+
+struct TraceableClassPolicy {
+  template <typename Impl> static constexpr JSClassOps class_ops() {
+    JSClassOps ops = {
+      .finalize = &finalize<Impl>,
+      .trace = &trace<Impl>,
+    };
+    return ops;
+  }
+
+  static constexpr uint32_t class_flags() {
+    return JSCLASS_BACKGROUND_FINALIZE;
+  }
+
+  template <typename Impl> static void finalize(JS::GCContext *gcx, JSObject *obj) {
+    Impl::finalize(gcx, obj);
+  }
+
+  template <typename Impl> static void trace(JSTracer *trc, JSObject *obj) {
+    Impl::trace(trc, obj);
+  }
+};
+
+template <typename Impl, typename ClassPolicy = DefaultClassPolicy> class BuiltinImpl {
+private:
+  static constexpr JSClassOps class_ops = ClassPolicy::template class_ops<Impl>();
+
+  static constexpr uint32_t class_flags =
+      JSCLASS_HAS_RESERVED_SLOTS(static_cast<uint32_t>(Impl::Slots::Count)) |
+      ClassPolicy::class_flags();
+
+  static std::vector<const JSClass *> &get_registry() {
+    static std::vector<const JSClass *> registry;
+    return registry;
+  }
 
 public:
   static constexpr JSClass class_{
       Impl::class_name,
-      JSCLASS_HAS_RESERVED_SLOTS(static_cast<uint32_t>(Impl::Slots::Count)) | class_flags,
+      class_flags,
       &class_ops,
   };
+
+  static JS::PersistentRootedObject proto_obj;
 
   static JS::Result<std::tuple<CallArgs, RootedObject *>>
   MethodHeaderWithName(const int required_argc, JSContext *cx, const unsigned argc, Value *vp,
@@ -205,16 +261,19 @@ public:
     return {std::make_tuple(args, &self)};
   }
 
-  static PersistentRooted<JSObject *> proto_obj;
-
   static void register_subclass(const JSClass *cls) {
-    registry.push_back(cls);
+    get_registry().push_back(cls);
   }
 
   static bool is_subclass(const JSObject *obj) {
-    return (obj != nullptr) &&
-           std::any_of(registry.begin(), registry.end(),
-                       [obj](const auto *cls) { return JS::GetClass(obj) == cls; });
+    if (obj == nullptr)
+      return false;
+
+    const JSClass *cls = JS::GetClass(obj);
+    const auto &registry = get_registry();
+
+    return std::any_of(registry.begin(), registry.end(),
+                       [cls](const auto *reg) { return reg == cls; });
   }
 
   static bool is_instance(const JSObject *obj) {
@@ -241,43 +300,10 @@ public:
 
     return proto_obj != nullptr;
   }
-
-  static void finalize(JS::GCContext *gcx, JSObject *obj) {}
 };
 
-template <typename Impl> class FinalizableBuiltinImpl : public BuiltinImpl<Impl> {
-  static constexpr JSClassOps class_ops{
-      nullptr,        // addProperty
-      nullptr,        // delProperty
-      nullptr,        // enumerate
-      nullptr,        // newEnumerate
-      nullptr,        // resolve
-      nullptr,        // mayResolve
-      Impl::finalize, // finalize
-      nullptr,        // call
-      nullptr,        // construct
-      nullptr,        // trace
-  };
-  static constexpr uint32_t class_flags = JSCLASS_BACKGROUND_FINALIZE;
-};
-
-template <typename Impl> class TraceableBuiltinImpl : public BuiltinImpl<Impl> {
-  static constexpr JSClassOps class_ops{
-      nullptr,        // addProperty
-      nullptr,        // delProperty
-      nullptr,        // enumerate
-      nullptr,        // newEnumerate
-      nullptr,        // resolve
-      nullptr,        // mayResolve
-      Impl::finalize, // finalize
-      nullptr,        // call
-      nullptr,        // construct
-      Impl::trace,    // trace
-  };
-  static constexpr uint32_t class_flags = JSCLASS_BACKGROUND_FINALIZE;
-};
-
-template <typename Impl> PersistentRooted<JSObject *> BuiltinImpl<Impl>::proto_obj{};
+template <typename Impl, typename ClassPolicy>
+PersistentRooted<JSObject *> BuiltinImpl<Impl, ClassPolicy>::proto_obj{};
 
 template <typename Impl> class BuiltinNoConstructor : public BuiltinImpl<Impl> {
 public:
