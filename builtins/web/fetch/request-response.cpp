@@ -616,7 +616,7 @@ bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::Uni
       return RejectPromiseWithPendingError(cx, result_promise);
     };
 
-    RootedObject headers(cx, RequestOrResponse::maybe_headers(self));
+    RootedObject headers(cx, RequestOrResponse::headers(cx, self));
     if (!headers) {
       return throw_invalid_header();
     }
