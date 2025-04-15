@@ -477,6 +477,9 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event, JS::HandleVect
     }
 
     if (JS_IsExceptionPending(cx)) {
+      // TODO: report an excecption as in spec:
+      // https://html.spec.whatwg.org/multipage/webappapis.html#report-an-exception
+      // https://github.com/bytecodealliance/StarlingMonkey/issues/239
       auto msg = "Exception in event listener for " + listener.type;
       engine->dump_pending_exception(msg.c_str());
       JS_ClearPendingException(cx);
