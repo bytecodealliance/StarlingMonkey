@@ -39,6 +39,38 @@ public:
 
   enum class Phase : uint8_t { NONE = 0, CAPTURING_PHASE = 1, AT_TARGET = 2, BUBBLING_PHASE = 3 };
 
+  // (From https://dom.spec.whatwg.org/#stop-propagation-flag and onwards:)
+  // Each event has the following associated flags that are all initially unset:
+  // - stop propagation flag
+  // - stop immediate propagation flag
+  // - canceled flag
+  // - in passive listener flag
+  // - composed flag
+  // - initialized flag
+  // - dispatch flag
+  //
+  // Note: we store the flags on instances instead of the class itself, since that way
+  // we can combine them with the following instance attributes without any overhead:
+  // - Trusted
+  // - Bubbles
+  // - Cancelable
+  // clang-format off
+  enum class EventFlag : uint32_t {
+    // Event type flags:
+    StopPropagation          = 1 << 0,
+    StopImmediatePropagation = 1 << 1,
+    Canceled                 = 1 << 2,
+    InPassiveListener        = 1 << 3,
+    Composed                 = 1 << 4,
+    Initialized              = 1 << 5,
+    Dispatch                 = 1 << 6,
+    // Instance attributes:
+    Trusted                  = 1 << 7,
+    Bubbles                  = 1 << 8,
+    Cancelable               = 1 << 9,
+  };
+  // clang-format on
+
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
@@ -49,24 +81,12 @@ public:
   static JSObject *related_target(JSObject *self);
   static JSObject *current_target(JSObject *self);
 
-  static bool is_bubbling(JSObject *self);
-  static bool is_cancelable(JSObject *self);
-  static bool is_stopped(JSObject *self);
-  static bool is_stopped_immediate(JSObject *self);
-  static bool is_default_prevented(JSObject *self);
-  static bool is_composed(JSObject *self);
-  static bool is_dispatched(JSObject *self);
-  static bool is_initialized(JSObject *self);
-  static bool is_trusted(JSObject *self);
+  static bool has_flag(JSObject* self, EventFlag flag);
+  static bool set_flag(JSObject* self, EventFlag flag, bool val);
 
   static Phase phase(JSObject *self);
   static double timestamp(JSObject *self);
 
-  static void set_trusted(JSObject *self, bool val);
-  static void set_dispatched(JSObject *self, bool val);
-  static void set_passive_listener(JSObject *self, bool val);
-  static void set_stop_propagation(JSObject *self, bool val);
-  static void set_stop_immediate_propagation(JSObject *self, bool val);
   static void set_canceled(JSObject *self, bool val);
   static void set_phase(JSObject *self, Phase phase);
   static void set_target(JSObject *self, HandleObject target);

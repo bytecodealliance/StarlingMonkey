@@ -45,8 +45,8 @@ bool flatten_more_opts(JSContext *cx, JS::HandleValue opts, bool *capture, bool 
   // - Let once be false.
   *once = false;
   // - Let passive and signal be null.
-  passive.set(JS::NullValue());
-  signal.set(JS::NullValue());
+  passive.setNull();
+  signal.setNull();
 
   if (!opts.isObject()) {
     return true;
@@ -77,7 +77,7 @@ bool flatten_more_opts(JSContext *cx, JS::HandleValue opts, bool *capture, bool 
     return false;
   }
   if (val.isObject()) { // TODO: check if is instance of AbortSignal
-    passive.set(val);
+    signal.set(val);
   }
 
   // - Return capture, passive, once, and signal.
@@ -103,6 +103,7 @@ namespace builtins {
 namespace web {
 namespace event {
 
+using EventFlag = Event::EventFlag;
 using dom_exception::DOMException;
 
 const JSFunctionSpec EventTarget::static_methods[] = {
@@ -206,12 +207,7 @@ bool EventTarget::add_listener(JSContext *cx, HandleObject self, HandleValue typ
   // listener's
   //  type, callback is listener's callback, and capture is listener's capture, then append listener
   //  to eventTarget's event listener list.
-  RootedString type_str(cx, JS::ToString(cx, type_val));
-  if (!type_str) {
-    return false;
-  }
-
-  auto encoded = core::encode(cx, type_str);
+  auto encoded = core::encode(cx, type_val);
   if (!encoded) {
     return false;
   }
@@ -253,12 +249,7 @@ bool EventTarget::remove_listener(JSContext *cx, HandleObject self, HandleValue 
     return false;
   }
 
-  RootedString type_str(cx, JS::ToString(cx, type_val));
-  if (!type_str) {
-    return false;
-  }
-
-  auto encoded = core::encode(cx, type_str);
+  auto encoded = core::encode(cx, type_val);
   if (!encoded) {
     return false;
   }
@@ -291,12 +282,12 @@ bool EventTarget::dispatch_event(JSContext *cx, HandleObject self, HandleValue e
 
   // 1. If event's dispatch flag is set, or if its initialized flag is not set,
   //  then throw an "InvalidStateError" DOMException.
-  if (Event::is_dispatched(event) || !Event::is_initialized(event)) {
+  if (Event::has_flag(event, EventFlag::Dispatch) || !Event::has_flag(event, EventFlag::Initialized)) {
     return DOMException::raise(cx, "EventTarget#dispatchEvent invalid Event state", "InvalidStateError");
   }
 
   // 2. Initialize event's isTrusted attribute to false.
-  Event::set_trusted(event, false);
+  Event::set_flag(event, EventFlag::Trusted, false);
 
   // 3. Return the result of dispatching event to this.
   if (!dispatch(cx, self, event, nullptr, rval)) {
@@ -314,7 +305,7 @@ bool EventTarget::dispatch_event(JSContext *cx, HandleObject self, HandleValue e
 // event only ever targets the object on which it was dispatched.
 bool EventTarget::dispatch(JSContext *cx, HandleObject self, HandleObject event, HandleObject target_override, MutableHandleValue rval) {
   // 1. Set event's dispatch flag.
-  Event::set_dispatched(event, true);
+  Event::set_flag(event, EventFlag::Dispatch, true);
   // 2. Let targetOverride be target, if legacy target override flag is not given, and target's associated Document otherwise.
   RootedObject target(cx, target_override ? target_override : self);
   // 3. Let activationTarget be null.
@@ -327,27 +318,30 @@ bool EventTarget::dispatch(JSContext *cx, HandleObject self, HandleObject event,
   //  N/A
   // 6. If target is not relatedTarget or target is event's relatedTarget
   // In simplified version this is always true, because the result of retargeting self
-  // against event's related target always returns self.
+  // against event's related target always returns self. This means that all the substeps
+  // within step 6 of this algorithm effectively implement the same functionality as the
+  // `invoke_listeners` function.
   if (!invoke_listeners(cx, target, event)) {
     return false;
   }
 
   // 7. Set event's eventPhase attribute to NONE.
-  // 8. Set event's currentTarget attribute to null.
-  // 9. Set event's path to the empty list.
-  // 10. Unset event's dispatch flag, stop propagation flag, and stop immediate propagation flag.
   Event::set_phase(event, Event::Phase::NONE);
+  // 8. Set event's currentTarget attribute to null.
   Event::set_current_target(event, nullptr);
-  Event::set_dispatched(event, false);
-  Event::set_stop_propagation(event, false);
-  Event::set_stop_immediate_propagation(event, false);
+  // 9. Set event's path to the empty list.
+  //  - Implicitly done...
+  // 10. Unset event's dispatch flag, stop propagation flag, and stop immediate propagation flag.
+  Event::set_flag(event, EventFlag::Dispatch, false);
+  Event::set_flag(event, EventFlag::StopPropagation, false);
+  Event::set_flag(event, EventFlag::StopImmediatePropagation, false);
 
   // 11. If clearTargets is true:
   Event::set_related_target(event, nullptr);
   // 12. If activationTarget is non-null:
   // N/A
   // 13. Return false if event's canceled flag is set; otherwise true.
-  rval.setBoolean(!Event::is_default_prevented(event));
+  rval.setBoolean(!Event::has_flag(event, EventFlag::Canceled));
   return true;
 }
 
@@ -357,17 +351,17 @@ bool EventTarget::invoke_listeners(JSContext *cx, HandleObject target, HandleObj
 
   // 1. Set event's target to the shadow-adjusted target of the last struct in event's path,
   //   that is either struct or preceding struct, whose shadow-adjusted target is non-null.
+  Event::set_phase(event, Event::Phase::AT_TARGET);
+  Event::set_target(event, target);
   // 2. Set event's relatedTarget to struct's relatedTarget.
+  Event::set_related_target(event, target);
   // 3. Set event's touch target list to struct's touch target list.
   // We only use a single target here as it would appear in a Even#path[0];
   // - shadow adjusted target == target
   // - relatedTarget == target
-  Event::set_phase(event, Event::Phase::AT_TARGET);
-  Event::set_target(event, target);
-  Event::set_related_target(event, target);
 
   // 4. If event's stop propagation flag is set, then return.
-  if (Event::is_stopped(event)) {
+  if (Event::has_flag(event, EventFlag::StopPropagation)) {
     return true;
   }
 
@@ -398,6 +392,14 @@ bool EventTarget::invoke_listeners(JSContext *cx, HandleObject target, HandleObj
 
 // https://dom.spec.whatwg.org/#concept-event-listener-inner-invoke
 bool EventTarget::inner_invoke(JSContext *cx, HandleObject event, JS::HandleVector<EventListener> list, bool *found) {
+  RootedString type_str(cx, Event::type(event));
+  auto event_type = core::encode(cx, type_str);
+  if (!event_type) {
+    return false;
+  }
+
+  auto type_sv = std::string_view(event_type);
+
   // 1. Let found be false.
   *found = false;
 
@@ -408,13 +410,7 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event, JS::HandleVect
     }
 
     // 1. If event's type attribute value is not listener's type, then continue.
-    RootedString type_str(cx, Event::type(event));
-    auto event_type = core::encode(cx, type_str);
-    if (!event_type) {
-      return false;
-    }
-
-    if (listener.type != std::string_view(event_type)) {
+    if (listener.type != type_sv) {
       continue;
     }
 
@@ -452,7 +448,7 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event, JS::HandleVect
     //  N/A
     // 9. If listener's passive is true, then set event's in passive listener flag.
     if (listener.passive) {
-      Event::set_passive_listener(event, true);
+      Event::set_flag(event, EventFlag::InPassiveListener, true);
     }
 
     // 10. If global is a Window object, then record timing info for event listener given event and listener.
@@ -471,31 +467,28 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event, JS::HandleVect
 
     if (JS::IsCallable(callback_obj)) {
       auto global = engine->global();
-      if (!JS::Call(cx, global, callback_val, args, &rval)) {
-        auto msg = "dispatching event " + listener.type;
-        engine->dump_pending_exception(msg.c_str());
-        return false;
-      }
+      JS::Call(cx, global, callback_val, args, &rval);
     } else {
       RootedValue handle_fn(cx);
       if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {
         return false;
       }
+      JS::Call(cx, callback_val, handle_fn, args, &rval);
+    }
 
-      if (!JS::Call(cx, callback_val, handle_fn, args, &rval)) {
-        auto msg = "dispatching event " + listener.type;
-        engine->dump_pending_exception(msg.c_str());
-        return false;
-      }
+    if (JS_IsExceptionPending(cx)) {
+      auto msg = "Exception in event listener for " + listener.type;
+      engine->dump_pending_exception(msg.c_str());
+      JS_ClearPendingException(cx);
     }
 
     // 12. Unset event's in passive listener flag.
-    Event::set_passive_listener(event, false);
+    Event::set_flag(event, Event::EventFlag::InPassiveListener, false);
     // 13. If global is a Window object, then set global's current event to currentEvent.
     // N/A
 
     // 14. If event's stop immediate propagation flag is set, then break.
-    if (Event::is_stopped_immediate(event)) {
+    if (Event::has_flag(event, EventFlag::StopImmediatePropagation)) {
       return true;
     }
   }

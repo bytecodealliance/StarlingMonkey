@@ -33,6 +33,7 @@ bool CustomEvent::detail_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+// https://dom.spec.whatwg.org/#interface-customevent
 bool CustomEvent::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("CustomEvent", 2);
 

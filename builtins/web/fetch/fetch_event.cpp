@@ -20,6 +20,8 @@ using builtins::web::event::Event;
 using builtins::web::event::EventTarget;
 using builtins::web::event::global_event_target;
 
+using EventFlag = Event::EventFlag;
+
 namespace builtins::web::fetch::fetch_event {
 
 namespace {
@@ -282,7 +284,7 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
 
   // Step 2
-  if (!Event::is_dispatched(self)) {
+  if (!Event::has_flag(self, EventFlag::Dispatch)) {
     return dom_exception::DOMException::raise(
         cx, "FetchEvent#respondWith must be called synchronously from within a FetchEvent handler",
         "InvalidStateError");
@@ -426,7 +428,7 @@ bool FetchEvent::is_active(JSObject *self) {
   // state because that requires us to extend the service's lifetime as well. In
   // the spec this is achieved using individual promise counts for the body read
   // operations.
-  return Event::is_dispatched(self) || state(self) == State::responseStreaming ||
+  return Event::has_flag(self, EventFlag::Dispatch) || state(self) == State::responseStreaming ||
          JS::GetReservedSlot(self, Slots::PendingPromiseCount).toInt32() > 0;
 }
 

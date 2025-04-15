@@ -5,57 +5,18 @@
 
 namespace {
 
-// Each event has the following associated flags that are all initially unset:
-// - stop propagation flag
-// - stop immediate propagation flag
-// - canceled flag
-// - in passive listener flag
-// - composed flag
-// - initialized flag
-// - dispatch flag
-//
-// The extra booleans are not defined as flags in the specification, but we choose
-// to retain them for implementation consistency and optimization, as this avoids
-// the need for additional slots.
-//
-// clang-format off
-enum class EventFlag : uint32_t {
-  StopPropagation          = 1 << 0,
-  StopImmediatePropagation = 1 << 1,
-  Canceled                 = 1 << 2,
-  InPassiveListener        = 1 << 3,
-  Composed                 = 1 << 4,
-  Initialized              = 1 << 5,
-  Dispatch                 = 1 << 6,
-  // Extra flags:
-  Trusted                  = 1 << 7,
-  Bubbles                  = 1 << 8,
-  Cancelable               = 1 << 9,
-};
-// clang-format on
+using builtins::web::event::Event;
 
-enum class Bubbles: bool { No, Yes };
-enum class Composed: bool { No, Yes };
-enum class Cancelable: bool { No, Yes };
-
-void set_event_flag(uint32_t *flags, EventFlag flag) {
-  *flags |= static_cast<uint32_t>(flag);
-}
-
-void clear_event_flag(uint32_t *flags, EventFlag flag) {
-  *flags &= ~(static_cast<uint32_t>(flag));
-}
-
-void set_event_flag(uint32_t *flags, EventFlag flag, bool set) {
-  set ? set_event_flag(flags, flag) : clear_event_flag(flags, flag);
-}
-
-bool test_event_flag(uint32_t flags, EventFlag flag) {
-  return (flags & static_cast<uint32_t>(flag)) != 0;
+void set_event_flag(uint32_t *flags, Event::EventFlag flag, bool val) {
+  if (val) {
+    *flags |= static_cast<uint32_t>(flag);
+  } else {
+    *flags &= ~(static_cast<uint32_t>(flag));
+  }
 }
 
 bool read_event_init(JSContext *cx, HandleValue initv,
-                     Bubbles *bubbles, Cancelable *cancelable, Composed *composed) {
+                     bool *bubbles, bool *cancelable, bool *composed) {
   // Type checked upstream
   MOZ_ASSERT(initv.isObject());
 
@@ -65,17 +26,17 @@ bool read_event_init(JSContext *cx, HandleValue initv,
   if (!JS_GetProperty(cx, obj, "bubbles", &val)) {
     return false;
   }
-  *bubbles = static_cast<Bubbles>(JS::ToBoolean(val));
+  *bubbles = JS::ToBoolean(val);
 
   if (!JS_GetProperty(cx, obj, "cancelable", &val)) {
     return false;
   }
-  *cancelable = static_cast<Cancelable>(JS::ToBoolean(val));
+  *cancelable = JS::ToBoolean(val);
 
   if (!JS_GetProperty(cx, obj, "composed", &val)) {
     return false;
   }
-  *composed = static_cast<Composed>(JS::ToBoolean(val));
+  *composed = JS::ToBoolean(val);
 
   return true;
 }
@@ -91,10 +52,10 @@ const JSFunctionSpec Event::static_methods[] = {
 };
 
 const JSPropertySpec Event::static_properties[] = {
-    JS_PSG("NONE", Event::NONE_get, JSPROP_ENUMERATE),
-    JS_PSG("CAPTURING_PHASE", Event::CAPTURING_PHASE_get, JSPROP_ENUMERATE),
-    JS_PSG("AT_TARGET", Event::AT_TARGET_get, JSPROP_ENUMERATE),
-    JS_PSG("BUBBLING_PHASE", Event::BUBBLING_PHASE_get, JSPROP_ENUMERATE),
+    JS_INT32_PS("NONE", static_cast<uint32_t>(Phase::NONE), JSPROP_ENUMERATE),
+    JS_INT32_PS("CAPTURING_PHASE", static_cast<uint32_t>(Phase::CAPTURING_PHASE), JSPROP_ENUMERATE),
+    JS_INT32_PS("AT_TARGET", static_cast<uint32_t>(Phase::AT_TARGET), JSPROP_ENUMERATE),
+    JS_INT32_PS("BUBBLING_PHASE", static_cast<uint32_t>(Phase::BUBBLING_PHASE), JSPROP_ENUMERATE),
     JS_PS_END,
 };
 
@@ -124,51 +85,42 @@ const JSPropertySpec Event::properties[] = {
     JS_PS_END,
 };
 
-#define DEFINE_EVENT_GETTER(fn, setter, expr)                 \
-bool Event::fn(JSContext *cx, unsigned argc, JS::Value *vp) { \
-  METHOD_HEADER(0);                                           \
-  args.rval().setter(expr(self));                             \
-  return true;                                                \
-}
-
-#define DEFINE_EVENT_SETTER(fn, setter, expr)                 \
-bool Event::fn(JSContext *cx, unsigned argc, JS::Value *vp) { \
-  METHOD_HEADER(0);                                           \
-  setter(self, expr);                                         \
-  return true;                                                \
-}
-
-#define DEFINE_EVENT_PHASE(fn, phase_expr)                    \
-bool Event::fn(JSContext *cx, unsigned argc, JS::Value *vp) { \
-  CallArgs args = JS::CallArgsFromVp(argc, vp);               \
-  args.rval().setInt32(static_cast<int32_t>(phase_expr));     \
-  return true;                                                \
+#define DEFINE_EVENT_GETTER(fn, setter, expr, ...)                 \
+bool Event::fn(JSContext *cx, unsigned argc, JS::Value *vp) {      \
+  METHOD_HEADER(0);                                                \
+  args.rval().setter(expr(self __VA_OPT__(,) __VA_ARGS__));        \
+  return true;                                                     \
 }
 
 DEFINE_EVENT_GETTER(type_get, setString, type)
 DEFINE_EVENT_GETTER(target_get, setObjectOrNull, target)
 DEFINE_EVENT_GETTER(srcElement_get, setObjectOrNull, target)
 DEFINE_EVENT_GETTER(currentTarget_get, setObjectOrNull, current_target)
-DEFINE_EVENT_GETTER(bubbles_get, setBoolean, is_bubbling)
-DEFINE_EVENT_GETTER(cancelable_get, setBoolean, is_cancelable)
-DEFINE_EVENT_GETTER(defaultPrevented_get, setBoolean, is_default_prevented)
-DEFINE_EVENT_GETTER(returnValue_get, setBoolean, !is_default_prevented)
-DEFINE_EVENT_GETTER(composed_get, setBoolean, is_composed)
-DEFINE_EVENT_GETTER(isTrusted_get, setBoolean, is_trusted)
 DEFINE_EVENT_GETTER(timeStamp_get, setNumber, timestamp)
+DEFINE_EVENT_GETTER(eventPhase_get, setInt32, (uint32_t)phase)
 
-DEFINE_EVENT_SETTER(stopPropagation, set_stop_propagation, true)
-DEFINE_EVENT_SETTER(stopImmediatePropagation, set_stop_immediate_propagation, true)
-DEFINE_EVENT_SETTER(preventDefault, set_canceled, true)
+DEFINE_EVENT_GETTER(bubbles_get, setBoolean, has_flag, EventFlag::Bubbles)
+DEFINE_EVENT_GETTER(cancelable_get, setBoolean, has_flag, EventFlag::Cancelable)
+DEFINE_EVENT_GETTER(defaultPrevented_get, setBoolean, has_flag, EventFlag::Canceled)
+DEFINE_EVENT_GETTER(returnValue_get, setBoolean, !has_flag, EventFlag::Canceled)
+DEFINE_EVENT_GETTER(composed_get, setBoolean, has_flag, EventFlag::Composed)
+DEFINE_EVENT_GETTER(isTrusted_get, setBoolean, has_flag, EventFlag::Trusted)
 
-DEFINE_EVENT_PHASE(NONE_get, Phase::NONE)
-DEFINE_EVENT_PHASE(CAPTURING_PHASE_get, Phase::CAPTURING_PHASE)
-DEFINE_EVENT_PHASE(AT_TARGET_get, Phase::AT_TARGET)
-DEFINE_EVENT_PHASE(BUBBLING_PHASE_get, Phase::BUBBLING_PHASE)
-
-bool Event::eventPhase_get(JSContext *cx, unsigned argc, JS::Value *vp) {
+bool Event::stopPropagation(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
-  args.rval().setInt32(static_cast<int32_t>(phase(self)));
+  set_flag(self, EventFlag::StopPropagation, true);
+  return true;
+}
+
+bool Event::stopImmediatePropagation(JSContext *cx, unsigned argc, JS::Value *vp) {
+  METHOD_HEADER(0);
+  set_flag(self, EventFlag::StopImmediatePropagation, true);
+  return true;
+}
+
+bool Event::preventDefault(JSContext *cx, unsigned argc, JS::Value *vp) {
+  METHOD_HEADER(0);
+  set_canceled(self, true);
   return true;
 }
 
@@ -226,124 +178,29 @@ JSObject *Event::related_target(JSObject *self) {
   return JS::GetReservedSlot(self, Slots::RelatedTarget).toObjectOrNull();
 }
 
+bool Event::has_flag(JSObject* self, EventFlag flag) {
+  MOZ_ASSERT(is_instance(self));
+  auto flags = JS::GetReservedSlot(self, Slots::Flags).toInt32();
+  return (flags & static_cast<uint32_t>(flag)) != 0;
+}
+
+bool Event::set_flag(JSObject* self, EventFlag flag, bool val) {
+  MOZ_ASSERT(is_instance(self));
+  auto flags = static_cast<uint32_t>(JS::GetReservedSlot(self, Slots::Flags).toInt32());
+
+  set_event_flag(&flags, flag, val);
+  SetReservedSlot(self, Slots::Flags, JS::Int32Value(flags));
+  return true;
+}
+
 Event::Phase Event::phase(JSObject *self) {
+  MOZ_ASSERT(is_instance(self));
   return static_cast<Phase>(JS::GetReservedSlot(self, Slots::EvtPhase).toInt32());
-}
-
-bool Event::is_bubbling(JSObject *self) {
-  MOZ_ASSERT(is_instance(self));
-  auto flags = JS::GetReservedSlot(self, Slots::Flags).toInt32();
-  return test_event_flag(flags, EventFlag::Bubbles);
-}
-
-bool Event::is_cancelable(JSObject *self) {
-  MOZ_ASSERT(is_instance(self));
-  auto flags = JS::GetReservedSlot(self, Slots::Flags).toInt32();
-  return test_event_flag(flags, EventFlag::Cancelable);
-}
-
-bool Event::is_stopped(JSObject *self) {
-  MOZ_ASSERT(is_instance(self));
-  auto flags = JS::GetReservedSlot(self, Slots::Flags).toInt32();
-  return test_event_flag(flags, EventFlag::StopPropagation);
-}
-
-bool Event::is_stopped_immediate(JSObject *self) {
-  MOZ_ASSERT(is_instance(self));
-  auto flags = JS::GetReservedSlot(self, Slots::Flags).toInt32();
-  return test_event_flag(flags, EventFlag::StopImmediatePropagation);
-}
-
-bool Event::is_default_prevented(JSObject *self) {
-  MOZ_ASSERT(is_instance(self));
-  auto flags = JS::GetReservedSlot(self, Slots::Flags).toInt32();
-  return test_event_flag(flags, EventFlag::Canceled);
-}
-
-bool Event::is_composed(JSObject *self) {
-  MOZ_ASSERT(is_instance(self));
-  auto flags = JS::GetReservedSlot(self, Slots::Flags).toInt32();
-  return test_event_flag(flags, EventFlag::Composed);
-}
-
-bool Event::is_dispatched(JSObject *self) {
-  MOZ_ASSERT(is_instance(self));
-  auto flags = JS::GetReservedSlot(self, Slots::Flags).toInt32();
-  return test_event_flag(flags, EventFlag::Dispatch);
-}
-
-bool Event::is_initialized(JSObject *self) {
-  MOZ_ASSERT(is_instance(self));
-  auto flags = JS::GetReservedSlot(self, Slots::Flags).toInt32();
-  return test_event_flag(flags, EventFlag::Initialized);
-}
-
-bool Event::is_trusted(JSObject *self) {
-  MOZ_ASSERT(is_instance(self));
-  auto flags = JS::GetReservedSlot(self, Slots::Flags).toInt32();
-  return test_event_flag(flags, EventFlag::Trusted);
 }
 
 double Event::timestamp(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   return JS::GetReservedSlot(self, Slots::TimeStamp).toNumber();
-}
-
-void Event::set_trusted(JSObject *self, bool val) {
-  MOZ_ASSERT(is_instance(self));
-  auto flags = static_cast<uint32_t>(JS::GetReservedSlot(self, Slots::Flags).toInt32());
-
-  set_event_flag(&flags, EventFlag::Trusted, val);
-  SetReservedSlot(self, Slots::Flags, JS::Int32Value(flags));
-}
-
-void Event::set_dispatched(JSObject *self, bool val) {
-  MOZ_ASSERT(is_instance(self));
-  auto flags = static_cast<uint32_t>(JS::GetReservedSlot(self, Slots::Flags).toInt32());
-
-  set_event_flag(&flags, EventFlag::Dispatch, val);
-  SetReservedSlot(self, Slots::Flags, JS::Int32Value(flags));
-}
-
-void Event::set_stop_propagation(JSObject *self, bool val) {
-  MOZ_ASSERT(is_instance(self));
-  auto flags = static_cast<uint32_t>(JS::GetReservedSlot(self, Slots::Flags).toInt32());
-
-  set_event_flag(&flags, EventFlag::StopPropagation, val);
-  SetReservedSlot(self, Slots::Flags, JS::Int32Value(flags));
-}
-
-void Event::set_stop_immediate_propagation(JSObject *self, bool val) {
-  MOZ_ASSERT(is_instance(self));
-  auto flags = static_cast<uint32_t>(JS::GetReservedSlot(self, Slots::Flags).toInt32());
-
-  set_event_flag(&flags, EventFlag::StopImmediatePropagation, val);
-  SetReservedSlot(self, Slots::Flags, JS::Int32Value(flags));
-}
-
-void Event::set_passive_listener(JSObject *self, bool val) {
-  MOZ_ASSERT(is_instance(self));
-  auto flags = static_cast<uint32_t>(JS::GetReservedSlot(self, Slots::Flags).toInt32());
-
-  set_event_flag(&flags, EventFlag::InPassiveListener, val);
-  SetReservedSlot(self, Slots::Flags, JS::Int32Value(flags));
-}
-
-void Event::set_canceled(JSObject *self, bool val) {
-  MOZ_ASSERT(is_instance(self));
-
-  auto flags = static_cast<uint32_t>(JS::GetReservedSlot(self, Slots::Flags).toInt32());
-
-  // https://dom.spec.whatwg.org/#set-the-canceled-flag
-  // To set the canceled flag, given an event event, if event's cancelable
-  // attribute value is true and event's in passive listener flag is unset,
-  // then set event's canceled flag, and do nothing otherwise.
-  auto canceled = val
-    && test_event_flag(flags, EventFlag::Cancelable)
-    && !test_event_flag(flags, EventFlag::InPassiveListener);
-
-  set_event_flag(&flags, EventFlag::Canceled, canceled);
-  SetReservedSlot(self, Slots::Flags, JS::Int32Value(flags));
 }
 
 void Event::set_phase(JSObject *self, Event::Phase phase) {
@@ -366,6 +223,21 @@ void Event::set_related_target(JSObject *self, HandleObject target) {
   SetReservedSlot(self, Slots::RelatedTarget, JS::ObjectOrNullValue(target));
 }
 
+void Event::set_canceled(JSObject *self, bool val) {
+  MOZ_ASSERT(is_instance(self));
+
+  // https://dom.spec.whatwg.org/#set-the-canceled-flag
+  // To set the canceled flag, given an event event, if event's cancelable
+  // attribute value is true and event's in passive listener flag is unset,
+  // then set event's canceled flag, and do nothing otherwise.
+  auto canceled = val
+    && has_flag(self, EventFlag::Cancelable)
+    && !has_flag(self, EventFlag::InPassiveListener);
+
+  set_flag(self, EventFlag::Canceled, canceled);
+}
+
+// https://dom.spec.whatwg.org/#inner-event-creation-steps
 bool Event::init(JSContext *cx, HandleObject self, HandleValue type, HandleValue init)
 {
   auto type_str = JS::ToString(cx, type);
@@ -373,9 +245,9 @@ bool Event::init(JSContext *cx, HandleObject self, HandleValue type, HandleValue
     return false;
   }
 
-  auto bubbles = Bubbles::No;
-  auto composed = Composed::No;
-  auto cancelable = Cancelable::No;
+  auto bubbles = false;
+  auto composed = false;
+  auto cancelable = false;
 
   if (init.isObject()) {
     read_event_init(cx, init, &bubbles, &cancelable, &composed);
@@ -384,11 +256,10 @@ bool Event::init(JSContext *cx, HandleObject self, HandleValue type, HandleValue
   // To initialize an event, with type, bubbles, and cancelable, run these steps:
   // - Set event's initialized flag.
   // - Unset event's stop propagation flag, stop immediate propagation flag, and canceled flag.
-  uint32_t flags = 0;
-  set_event_flag(&flags, EventFlag::Initialized);
-  set_event_flag(&flags, EventFlag::Bubbles, static_cast<bool>(bubbles));
-  set_event_flag(&flags, EventFlag::Composed, static_cast<bool>(composed));
-  set_event_flag(&flags, EventFlag::Cancelable, static_cast<bool>(cancelable));
+  uint32_t flags = static_cast<uint32_t>(EventFlag::Initialized);
+  set_event_flag(&flags, EventFlag::Bubbles, bubbles);
+  set_event_flag(&flags, EventFlag::Composed, composed);
+  set_event_flag(&flags, EventFlag::Cancelable, cancelable);
 
   // Set event's isTrusted attribute to false.
   // Set event's target to null.
@@ -426,8 +297,25 @@ bool Event::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+// https://dom.spec.whatwg.org/#dom-event-initevent
 bool Event::initEvent(JSContext *cx, unsigned argc, JS::Value *vp) {
-  return api::throw_error(cx, api::Errors::TypeError, "Event#initEvent", "obsolete", "use constructor");
+  METHOD_HEADER(1);
+
+  // The initEvent(type, bubbles, cancelable) method steps are:
+  // 1. If this's dispatch flag is set, then return.
+  if (Event::has_flag(self, EventFlag::Dispatch)) {
+    return true;
+  }
+
+  // 2. Initialize this with type, bubbles, and cancelable.
+  RootedValue type(cx, args.get(0));
+  RootedValue init(cx, args.get(1));
+
+  if (!Event::init(cx, self, type, init)) {
+    return false;
+  }
+
+  return true;
 }
 
 bool Event::init_class(JSContext *cx, JS::HandleObject global) {
