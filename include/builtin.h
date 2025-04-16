@@ -6,6 +6,7 @@
 #include <optional>
 #include <span>
 #include <tuple>
+#include <unordered_set>
 
 // TODO: remove these once the warnings are fixed
 #pragma clang diagnostic push
@@ -174,14 +175,12 @@ inline bool ThrowIfNotConstructing(JSContext *cx, const CallArgs &args, const ch
 
   return api::throw_error(cx, api::Errors::CtorCalledWithoutNew, builtinName);
 }
+
 namespace builtins {
 
 // Default objects policy with empty class ops
 struct DefaultClassPolicy {
-  template <typename Impl> static constexpr JSClassOps class_ops() {
-    JSClassOps ops = {};
-    return ops;
-  }
+  template <typename Impl> static constexpr JSClassOps class_ops() { return {}; }
 
   static constexpr uint32_t class_flags() { return 0; }
 };
@@ -189,8 +188,7 @@ struct DefaultClassPolicy {
 // Policy for finalizable objects
 struct FinalizableClassPolicy {
   template <typename Impl> static constexpr JSClassOps class_ops() {
-     JSClassOps ops { .finalize = &finalize<Impl> };
-    return ops;
+    return {.finalize = &finalize<Impl>};
   }
 
   static constexpr uint32_t class_flags() {
@@ -204,16 +202,13 @@ struct FinalizableClassPolicy {
 
 struct TraceableClassPolicy {
   template <typename Impl> static constexpr JSClassOps class_ops() {
-    JSClassOps ops = {
-      .finalize = &finalize<Impl>,
-      .trace = &trace<Impl>,
+    return {
+        .finalize = &finalize<Impl>,
+        .trace = &trace<Impl>,
     };
-    return ops;
   }
 
-  static constexpr uint32_t class_flags() {
-    return JSCLASS_BACKGROUND_FINALIZE;
-  }
+  static constexpr uint32_t class_flags() { return JSCLASS_BACKGROUND_FINALIZE; }
 
   template <typename Impl> static void finalize(JS::GCContext *gcx, JSObject *obj) {
     Impl::finalize(gcx, obj);
@@ -232,10 +227,11 @@ private:
       JSCLASS_HAS_RESERVED_SLOTS(static_cast<uint32_t>(Impl::Slots::Count)) |
       ClassPolicy::class_flags();
 
-  static std::vector<const JSClass *> &get_registry() {
-    static std::vector<const JSClass *> registry;
-    return registry;
-  }
+
+    static std::unordered_set<const JSClass *> &get_registry() {
+      static std::unordered_set<const JSClass *> registry;
+      return registry;
+    }
 
 public:
   static constexpr JSClass class_{
@@ -262,18 +258,11 @@ public:
   }
 
   static void register_subclass(const JSClass *cls) {
-    get_registry().push_back(cls);
+    get_registry().insert(cls);
   }
 
   static bool is_subclass(const JSObject *obj) {
-    if (obj == nullptr)
-      return false;
-
-    const JSClass *cls = JS::GetClass(obj);
-    const auto &registry = get_registry();
-
-    return std::any_of(registry.begin(), registry.end(),
-                       [cls](const auto *reg) { return reg == cls; });
+    return std::ranges::any_of(get_registry(), [&](auto *cls) {return cls == JS::GetClass(obj); });
   }
 
   static bool is_instance(const JSObject *obj) {
