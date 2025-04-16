@@ -4,11 +4,14 @@
 #include "builtin.h"
 #include "extension-api.h"
 
+#include "js/RefCounted.h"
+#include "mozilla/RefPtr.h"
+
 namespace builtins {
 namespace web {
 namespace event {
 
-struct EventListener {
+struct EventListener : public js::RefCounted<EventListener> {
   void trace(JSTracer *trc) {
     TraceEdge(trc, &callback, "EventListener callback");
     TraceEdge(trc, &signal, "EventListener signal");
@@ -35,13 +38,15 @@ class EventTarget : public BuiltinImpl<EventTarget, TraceableClassPolicy> {
   static bool removeEventListener(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool dispatchEvent(JSContext *cx, unsigned argc, JS::Value *vp);
 
-  using ListenerList = JS::GCVector<EventListener, 0, js::SystemAllocPolicy>;
+  using ListenerRef = RefPtr<EventListener>;
+  using ListenerList = JS::GCVector<ListenerRef, 0, js::SystemAllocPolicy>;
+
   static ListenerList *listeners(JSObject *self);
 
   static bool dispatch(JSContext *cx, HandleObject self, HandleObject event,
                        HandleObject target_override, MutableHandleValue rval);
 
-  static bool inner_invoke(JSContext *cx, HandleObject event, JS::HandleVector<EventListener> list,
+  static bool inner_invoke(JSContext *cx, HandleObject event, JS::HandleVector<ListenerRef> list,
                            bool *found);
 
   static bool invoke_listeners(JSContext *cx, HandleObject target, HandleObject event);

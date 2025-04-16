@@ -262,7 +262,7 @@ public:
   }
 
   static bool is_subclass(const JSObject *obj) {
-    return std::ranges::any_of(get_registry(), [&](auto *cls) {return cls == JS::GetClass(obj); });
+    return std::ranges::any_of(get_registry(), [&](auto *cls) { return cls == JS::GetClass(obj); });
   }
 
   static bool is_instance(const JSObject *obj) {

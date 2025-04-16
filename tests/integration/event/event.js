@@ -3,7 +3,6 @@ import { strictEqual, deepStrictEqual, throws } from '../../assert.js';
 
 export const handler = serveTest(async (t) => {
   await t.test('event-listener-exception-handling', async () => {
-
     const calledListeners = [];
     const thrownErrors = [];
 
@@ -50,6 +49,49 @@ export const handler = serveTest(async (t) => {
       'Error from fourth',
       'Second error should be from fourth listener'
     );
+  });
 
+  await t.test('listener-removal-during-dispatch', async () => {
+    const calledListeners = [];
+    const target = new EventTarget();
+
+    function secondListener() {
+      calledListeners.push('second');
+    }
+
+    function fourthListener() {
+      calledListeners.push('fourth');
+    }
+
+    // First listener removes two others
+    target.addEventListener('test', function() {
+      calledListeners.push('first');
+
+      // Remove both second and fourth listeners
+      target.removeEventListener('test', secondListener);
+      target.removeEventListener('test', fourthListener);
+    });
+
+    target.addEventListener('test', secondListener);
+
+    target.addEventListener('test', function() {
+      calledListeners.push('third');
+    });
+
+    target.addEventListener('test', fourthListener);
+
+    target.addEventListener('test', function() {
+      calledListeners.push('fifth');
+    });
+
+    target.dispatchEvent(new Event('test'));
+
+    strictEqual(calledListeners.length, 3, 'Only 3 out of 5 listeners should be called');
+
+    deepStrictEqual(
+      calledListeners,
+      ['first', 'third', 'fifth'],
+      'Second and fourth listeners should be skipped due to removal'
+    );
   });
 });

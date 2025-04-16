@@ -3,6 +3,8 @@
 #include "event.h"
 
 #include "../dom-exception.h"
+
+#include "js/GCPolicyAPI.h"
 #include "mozilla/Assertions.h"
 
 namespace {
@@ -62,7 +64,6 @@ bool flatten_more_opts(JSContext *cx, JS::HandleValue opts, bool *capture, bool 
   }
   *once = JS::ToBoolean(val);
 
-
   // - If options["passive"] exists, then set passive to options["passive"].
   if (!JS_GetProperty(cx, obj, "passive", &val)) {
     return false;
@@ -98,6 +99,30 @@ bool default_passive_value() {
 }
 
 } // namespace
+
+namespace JS {
+
+template <typename T> struct JS::GCPolicy<RefPtr<T>> {
+  static void trace(JSTracer *trc, RefPtr<T> *tp, const char *name) {
+    if (T *target = tp->get()) {
+      GCPolicy<T>::trace(trc, target, name);
+    }
+  }
+  static bool needsSweep(RefPtr<T> *tp) {
+    if (T *target = tp->get()) {
+      return GCPolicy<T>::needsSweep(target);
+    }
+    return false;
+  }
+  static bool isValid(const RefPtr<T> &t) {
+    if (T *target = t.get()) {
+      return GCPolicy<T>::isValid(*target);
+    }
+    return true;
+  }
+};
+
+} // namespace JS
 
 namespace builtins {
 namespace web {
@@ -165,7 +190,8 @@ bool EventTarget::dispatchEvent(JSContext *cx, unsigned argc, JS::Value *vp) {
 }
 
 // https://dom.spec.whatwg.org/#add-an-event-listener
-bool EventTarget::add_listener(JSContext *cx, HandleObject self, HandleValue type_val, HandleValue callback_val, HandleValue opts_val) {
+bool EventTarget::add_listener(JSContext *cx, HandleObject self, HandleValue type_val,
+                               HandleValue callback_val, HandleValue opts_val) {
   MOZ_ASSERT(is_instance(self));
 
   // 1. Let capture, passive, once, and signal be the result of flattening more options.
@@ -196,7 +222,8 @@ bool EventTarget::add_listener(JSContext *cx, HandleObject self, HandleValue typ
   }
 
   if (!callback_val.isObject()) {
-    return api::throw_error(cx, api::Errors::TypeError, "addEventListener", "callback", "be an object");
+    return api::throw_error(cx, api::Errors::TypeError, "addEventListener", "callback",
+                            "be an object");
   }
 
   // - If listener's passive is null, then set it to the default passive value given listener's type
@@ -216,20 +243,19 @@ bool EventTarget::add_listener(JSContext *cx, HandleObject self, HandleValue typ
   auto list = listeners(self);
 
   auto it = std::find_if(list->begin(), list->end(), [&](const auto &listener) {
-    return type == listener.type
-      && callback_val == listener.callback.get()
-      && capture == listener.capture;
+    return type == listener->type && callback_val == listener->callback.get() &&
+           capture == listener->capture;
   });
 
   if (it == list->end()) {
-    EventListener listener;
-    listener.callback = callback_val;
-    listener.signal = signal_val;
-    listener.type = type;
-    listener.passive = passive;
-    listener.capture = capture;
-    listener.once = once;
-    listener.removed = false;
+    auto listener = mozilla::MakeRefPtr<EventListener>();
+    listener->callback = callback_val;
+    listener->signal = signal_val;
+    listener->type = type;
+    listener->passive = passive;
+    listener->capture = capture;
+    listener->once = once;
+    listener->removed = false;
 
     list->append(listener);
   }
@@ -241,7 +267,8 @@ bool EventTarget::add_listener(JSContext *cx, HandleObject self, HandleValue typ
 }
 
 // https://dom.spec.whatwg.org/#dom-eventtarget-removeeventlistener
-bool EventTarget::remove_listener(JSContext *cx, HandleObject self, HandleValue type_val, HandleValue callback_val, HandleValue opts_val) {
+bool EventTarget::remove_listener(JSContext *cx, HandleObject self, HandleValue type_val,
+                                  HandleValue callback_val, HandleValue opts_val) {
   MOZ_ASSERT(is_instance(self));
 
   bool capture = false;
@@ -258,12 +285,12 @@ bool EventTarget::remove_listener(JSContext *cx, HandleObject self, HandleValue 
   auto list = listeners(self);
 
   auto it = std::find_if(list->begin(), list->end(), [&](const auto &listener) {
-    return type == listener.type
-      && callback_val == listener.callback.get()
-      && capture == listener.capture;
+    return type == listener->type && callback_val == listener->callback.get() &&
+           capture == listener->capture;
   });
 
   if (it != list->end()) {
+    (*it)->removed = true;
     list->erase(it);
   }
 
@@ -271,19 +298,23 @@ bool EventTarget::remove_listener(JSContext *cx, HandleObject self, HandleValue 
 }
 
 // https://dom.spec.whatwg.org/#dom-eventtarget-dispatchevent
-bool EventTarget::dispatch_event(JSContext *cx, HandleObject self, HandleValue event_val, MutableHandleValue rval) {
+bool EventTarget::dispatch_event(JSContext *cx, HandleObject self, HandleValue event_val,
+                                 MutableHandleValue rval) {
   MOZ_ASSERT(is_instance(self));
 
   if (!Event::is_instance(event_val)) {
-    return api::throw_error(cx, api::Errors::TypeError, "EventTarget.dispatch", "event", "be an Event");
+    return api::throw_error(cx, api::Errors::TypeError, "EventTarget.dispatch", "event",
+                            "be an Event");
   }
 
   RootedObject event(cx, &event_val.toObject());
 
   // 1. If event's dispatch flag is set, or if its initialized flag is not set,
   //  then throw an "InvalidStateError" DOMException.
-  if (Event::has_flag(event, EventFlag::Dispatch) || !Event::has_flag(event, EventFlag::Initialized)) {
-    return DOMException::raise(cx, "EventTarget#dispatchEvent invalid Event state", "InvalidStateError");
+  if (Event::has_flag(event, EventFlag::Dispatch) ||
+      !Event::has_flag(event, EventFlag::Initialized)) {
+    return DOMException::raise(cx, "EventTarget#dispatchEvent invalid Event state",
+                               "InvalidStateError");
   }
 
   // 2. Initialize event's isTrusted attribute to false.
@@ -299,14 +330,16 @@ bool EventTarget::dispatch_event(JSContext *cx, HandleObject self, HandleValue e
 
 // https://dom.spec.whatwg.org/#concept-event-dispatch
 //
-// StarlingMonkey currently doesn't support Node objects (i.e. every check with `isNode()` returns false),
-// which means we don't need to build a full event propagation path that walks parent nodes, deals with
-// shadow DOM retargeting, or handles activation behaviors. In a simplified version we assume that the
-// event only ever targets the object on which it was dispatched.
-bool EventTarget::dispatch(JSContext *cx, HandleObject self, HandleObject event, HandleObject target_override, MutableHandleValue rval) {
+// StarlingMonkey currently doesn't support Node objects (i.e. every check with `isNode()` returns
+// false), which means we don't need to build a full event propagation path that walks parent nodes,
+// deals with shadow DOM retargeting, or handles activation behaviors. In a simplified version we
+// assume that the event only ever targets the object on which it was dispatched.
+bool EventTarget::dispatch(JSContext *cx, HandleObject self, HandleObject event,
+                           HandleObject target_override, MutableHandleValue rval) {
   // 1. Set event's dispatch flag.
   Event::set_flag(event, EventFlag::Dispatch, true);
-  // 2. Let targetOverride be target, if legacy target override flag is not given, and target's associated Document otherwise.
+  // 2. Let targetOverride be target, if legacy target override flag is not given, and target's
+  // associated Document otherwise.
   RootedObject target(cx, target_override ? target_override : self);
   // 3. Let activationTarget be null.
   //  N/A
@@ -369,7 +402,7 @@ bool EventTarget::invoke_listeners(JSContext *cx, HandleObject target, HandleObj
   Event::set_current_target(event, target);
   // 6. Let listeners be a clone of event's currentTarget attribute value's event listener list.
   auto list = listeners(target);
-  JS::RootedVector<EventListener> list_clone(cx);
+  JS::RootedVector<ListenerRef> list_clone(cx);
   for (auto &listener : *list) {
     if (!list_clone.append(listener)) {
       return false;
@@ -389,9 +422,9 @@ bool EventTarget::invoke_listeners(JSContext *cx, HandleObject target, HandleObj
   return true;
 }
 
-
 // https://dom.spec.whatwg.org/#concept-event-listener-inner-invoke
-bool EventTarget::inner_invoke(JSContext *cx, HandleObject event, JS::HandleVector<EventListener> list, bool *found) {
+bool EventTarget::inner_invoke(JSContext *cx, HandleObject event,
+                               JS::HandleVector<ListenerRef> list, bool *found) {
   RootedString type_str(cx, Event::type(event));
   auto event_type = core::encode(cx, type_str);
   if (!event_type) {
@@ -403,14 +436,17 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event, JS::HandleVect
   // 1. Let found be false.
   *found = false;
 
+  // Track if any listeners were marked for removal
+  bool has_removed_listeners = false;
+
   // 2. For each listener of listeners, whose removed is false:
   for (auto &listener : list) {
-    if (listener.removed) {
+    if (listener->removed) {
       continue;
     }
 
     // 1. If event's type attribute value is not listener's type, then continue.
-    if (listener.type != type_sv) {
+    if (listener->type != type_sv) {
       continue;
     }
 
@@ -423,21 +459,10 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event, JS::HandleVect
 
     // 5. If listener's once is true, then remove an event listener given event's
     //  currentTarget attribute value and listener.
-    if (listener.once) {
-      auto current_target = Event::current_target(event);
-      MOZ_ASSERT(is_instance(current_target));
-
-      auto target_list = listeners(current_target);
-      MOZ_ASSERT(target_list);
-
-      auto it = std::find_if(target_list->begin(), target_list->end(), [&](const auto &other) {
-        return listener == other;
-      });
-
-      if (it != target_list->end()) {
-        it->removed = true;
-        target_list->erase(it);
-      }
+    if (listener->once) {
+      // Actual removal is moved out of the loop for performance reasons.
+      listener->removed = true;
+      has_removed_listeners = true;
     }
 
     // 6. Let global be listener callback's associated realm's global object.
@@ -447,18 +472,18 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event, JS::HandleVect
     //  2. If invocationTargetInShadowTree is false, then set global's current event to event.
     //  N/A
     // 9. If listener's passive is true, then set event's in passive listener flag.
-    if (listener.passive) {
+    if (listener->passive) {
       Event::set_flag(event, EventFlag::InPassiveListener, true);
     }
 
-    // 10. If global is a Window object, then record timing info for event listener given event and listener.
-    // N/A
+    // 10. If global is a Window object, then record timing info for event listener given event and
+    // listener. N/A
     //
 
     // 11. Call a user object's operation with listener's callback, "handleEvent", event,
     // and event's currentTarget attribute value.
     auto engine = api::Engine::get(cx);
-    RootedValue callback_val(cx, listener.callback);
+    RootedValue callback_val(cx, listener->callback);
     RootedObject callback_obj(cx, &callback_val.toObject());
 
     RootedValue rval(cx);
@@ -480,7 +505,7 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event, JS::HandleVect
       // TODO: report an excecption as in spec:
       // https://html.spec.whatwg.org/multipage/webappapis.html#report-an-exception
       // https://github.com/bytecodealliance/StarlingMonkey/issues/239
-      auto msg = "Exception in event listener for " + listener.type;
+      auto msg = "Exception in event listener for " + listener->type;
       engine->dump_pending_exception(msg.c_str());
       JS_ClearPendingException(cx);
     }
@@ -493,6 +518,17 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event, JS::HandleVect
     // 14. If event's stop immediate propagation flag is set, then break.
     if (Event::has_flag(event, EventFlag::StopImmediatePropagation)) {
       return true;
+    }
+  }
+
+  if (has_removed_listeners) {
+    auto current_target = Event::current_target(event);
+    MOZ_ASSERT(is_instance(current_target));
+
+    auto target_list = listeners(current_target);
+    if (target_list) {
+      // Remove all listeners where removed == true
+      target_list->eraseIf([](const auto &listener) { return listener->removed; });
     }
   }
 
