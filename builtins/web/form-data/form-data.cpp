@@ -170,7 +170,7 @@ FormData::EntryList *FormData::entry_list(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
 
   auto entries = static_cast<EntryList *>(
-      JS::GetReservedSlot(self, static_cast<size_t>(FormData::Slots::Entries)).toPrivate());
+      JS::GetReservedSlot(self, static_cast<size_t>(Slots::Entries)).toPrivate());
 
   MOZ_ASSERT(entries);
   return entries;
@@ -447,6 +447,13 @@ void FormData::finalize(JS::GCContext *gcx, JSObject *self) {
 
 void FormData::trace(JSTracer *trc, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
+
+  const JS::Value val = JS::GetReservedSlot(self, static_cast<size_t>(Slots::Entries));
+  if (val.isNullOrUndefined()) {
+    // Nothing to trace
+    return;
+  }
+
   auto entries = entry_list(self);
   entries->trace(trc);
 }

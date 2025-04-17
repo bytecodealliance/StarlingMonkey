@@ -5,6 +5,8 @@
 #include "extension-api.h"
 #include "host_api.h"
 
+#include "../event/event.h"
+
 namespace builtins::web::fetch::fetch_event {
 
 class FetchEvent final : public BuiltinNoConstructor<FetchEvent> {
@@ -23,10 +25,11 @@ public:
     respondedWithError,
   };
 
-  enum class Slots {
-    Dispatch,
-    Request,
-    State,
+  static constexpr int ParentSlots = event::Event::Slots::Count;
+
+  enum Slots {
+    Request = ParentSlots,
+    CurrentState,
     PendingPromiseCount,
     DecPendingPromiseCountFunc,
     ClientInfo,
@@ -56,9 +59,6 @@ public:
 
   static bool respondWithError(JSContext *cx, JS::HandleObject self);
   static bool is_active(JSObject *self);
-  static bool is_dispatching(JSObject *self);
-  static void start_dispatching(JSObject *self);
-  static void stop_dispatching(JSObject *self);
 
   static State state(JSObject *self);
   static void set_state(JSObject *self, State state);
@@ -68,6 +68,8 @@ public:
 
   static void increase_interest();
   static void decrease_interest();
+
+  static bool init_class(JSContext *cx, HandleObject global);
 };
 
 bool install(api::Engine *engine);
