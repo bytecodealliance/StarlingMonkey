@@ -258,6 +258,12 @@ bool EventTarget::add_listener(JSContext *cx, HandleObject self, HandleValue typ
     listener->removed = false;
 
     list->append(listener);
+  } else if((*it)->removed) {
+    // if existing listener was marked for removal, then move it to the end of the list
+    // and update its removed flag. This is done to ensure that the order of listeners.
+    (*it)->removed = false;
+    list->erase(it);
+    list->append(*it);
   }
 
   // - If listener's signal is not null, then add the following abort steps to it:
@@ -436,6 +442,8 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event,
   // 1. Let found be false.
   *found = false;
 
+  bool listeners_removed = false;
+
   // 2. For each listener of listeners, whose removed is false:
   for (auto &listener : list) {
     if (listener->removed) {
@@ -457,12 +465,9 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event,
     // 5. If listener's once is true, then remove an event listener given event's
     //  currentTarget attribute value and listener.
     if (listener->once) {
-      auto current_target = Event::current_target(event);
-      MOZ_ASSERT(is_instance(current_target));
-
-      auto target_list = listeners(current_target);
-      MOZ_ASSERT(target_list);
-      target_list->eraseIf([&listener](const auto &other) { return other == listener; });
+      // Removing the listener from the list is deferred until the end of the loop.
+      listener->removed = true;
+      listeners_removed = true;
     }
 
     // 6. Let global be listener callback's associated realm's global object.
@@ -519,6 +524,15 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event,
     if (Event::has_flag(event, EventFlag::StopImmediatePropagation)) {
       return true;
     }
+  }
+
+  if (listeners_removed) {
+    auto current_target = Event::current_target(event);
+    MOZ_ASSERT(is_instance(current_target));
+
+    auto target_list = listeners(current_target);
+    MOZ_ASSERT(target_list);
+    target_list->eraseIf([](const auto &listener) { return listener->removed; });
   }
 
   return true;
