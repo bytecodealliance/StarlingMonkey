@@ -18,9 +18,9 @@
     "status": "PASS"
   },
   "Two-argument delete()": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Two-argument delete() respects undefined as second arg": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }
