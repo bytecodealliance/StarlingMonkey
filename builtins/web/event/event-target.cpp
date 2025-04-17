@@ -436,9 +436,6 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event,
   // 1. Let found be false.
   *found = false;
 
-  // Track if any listeners were marked for removal
-  bool has_removed_listeners = false;
-
   // 2. For each listener of listeners, whose removed is false:
   for (auto &listener : list) {
     if (listener->removed) {
@@ -460,9 +457,12 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event,
     // 5. If listener's once is true, then remove an event listener given event's
     //  currentTarget attribute value and listener.
     if (listener->once) {
-      // Actual removal is moved out of the loop for performance reasons.
-      listener->removed = true;
-      has_removed_listeners = true;
+      auto current_target = Event::current_target(event);
+      MOZ_ASSERT(is_instance(current_target));
+
+      auto target_list = listeners(current_target);
+      MOZ_ASSERT(target_list);
+      target_list->eraseIf([&listener](const auto &other) { return other == listener; });
     }
 
     // 6. Let global be listener callback's associated realm's global object.
@@ -518,17 +518,6 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event,
     // 14. If event's stop immediate propagation flag is set, then break.
     if (Event::has_flag(event, EventFlag::StopImmediatePropagation)) {
       return true;
-    }
-  }
-
-  if (has_removed_listeners) {
-    auto current_target = Event::current_target(event);
-    MOZ_ASSERT(is_instance(current_target));
-
-    auto target_list = listeners(current_target);
-    if (target_list) {
-      // Remove all listeners where removed == true
-      target_list->eraseIf([](const auto &listener) { return listener->removed; });
     }
   }
 
