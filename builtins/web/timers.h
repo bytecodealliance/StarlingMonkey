@@ -5,8 +5,13 @@
 
 namespace builtins::web::timers {
 
+template <bool repeat>
+bool set_timeout_or_interval(JSContext *cx, HandleObject handler, JS::HandleValueVector args, int32_t delay_ms, int32_t *timer_id);
+
+void clear_timeout_or_interval(int32_t timer_id);
+
 bool install(api::Engine *engine);
 
-}
+} // namespace builtins::web::timers
 
 #endif

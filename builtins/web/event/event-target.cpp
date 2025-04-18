@@ -3,11 +3,14 @@
 #include "event.h"
 
 #include "../dom-exception.h"
+#include "../abort/abort-signal.h"
 
 #include "js/GCPolicyAPI.h"
 #include "mozilla/Assertions.h"
 
 namespace {
+
+using builtins::web::abort::AbortSignal;
 
 // https://dom.spec.whatwg.org/#concept-flatten-options
 bool flatten_opts(JSContext *cx, JS::HandleValue opts, bool *rval) {
@@ -77,7 +80,7 @@ bool flatten_more_opts(JSContext *cx, JS::HandleValue opts, bool *capture, bool 
   if (!JS_GetProperty(cx, obj, "signal", &val)) {
     return false;
   }
-  if (val.isObject()) { // TODO: check if is instance of AbortSignal
+  if (val.isObject() && AbortSignal::is_instance(val)) {
     signal.set(val);
   }
 
@@ -130,6 +133,7 @@ namespace event {
 
 using EventFlag = Event::EventFlag;
 using dom_exception::DOMException;
+using abort::AbortSignal;
 
 const JSFunctionSpec EventTarget::static_methods[] = {
     JS_FS_END,
@@ -213,8 +217,14 @@ bool EventTarget::add_listener(JSContext *cx, HandleObject self, HandleValue typ
   //  of the service worker events, then report a warning to the console that this might not give
   //  the expected results.
   //  N/A
+
   // - If listener's signal is not null and is aborted, then return.
-  // TODO: add AbortSignal
+  if (signal_val.isObject() && AbortSignal::is_instance(signal_val)) {
+    RootedObject signal(cx, &signal_val.toObject());
+    if (AbortSignal::is_aborted(signal)) {
+      return true;
+    }
+  }
 
   // - If listener's callback is null, then return.
   if (callback_val.isNullOrUndefined()) {
@@ -268,8 +278,40 @@ bool EventTarget::add_listener(JSContext *cx, HandleObject self, HandleValue typ
 
   // - If listener's signal is not null, then add the following abort steps to it:
   //  Remove an event listener with eventTarget and listener.
-  // TODO: add AbortSignal
+  if(signal_val.isObject() && AbortSignal::is_instance(signal_val)) {
+    RootedObject signal(cx, &signal_val.toObject());
+
+    JS::RootedValueVector args(cx);
+    if (!args.reserve(4)) {
+      return false;
+    }
+
+    args[0].set(ObjectValue(*self));
+    args[1].set(type_val);
+    args[2].set(callback_val);
+    args[3].set(opts_val);
+
+    auto algorithm = abort::make_algorithm(cx, &abort_algorithm, args);
+    if (!algorithm) {
+      return false;
+    }
+
+    AbortSignal::add_algorithm(signal, std::move(algorithm.value()));
+  }
+
   return true;
+}
+
+bool EventTarget::abort_algorithm(JSContext *cx, std::span<HeapValue> args) {
+  MOZ_ASSERT(args.size() == 4);
+  MOZ_ASSERT(EventTarget::is_instance(args[0]));
+
+  RootedObject self(cx, &args[0].toObject());
+  RootedValue type(cx, args[1]);
+  RootedValue callback(cx, args[2]);
+  RootedValue opts(cx, args[3]);
+
+  return remove_listener(cx, self, type, callback, opts);
 }
 
 // https://dom.spec.whatwg.org/#dom-eventtarget-removeeventlistener
@@ -546,6 +588,11 @@ JSObject *EventTarget::create(JSContext *cx) {
 
   SetReservedSlot(self, Slots::Listeners, JS::PrivateValue(new ListenerList));
   return self;
+}
+
+bool EventTarget::init(JSContext *cx, HandleObject self) {
+  SetReservedSlot(self, Slots::Listeners, JS::PrivateValue(new ListenerList));
+  return true;
 }
 
 bool EventTarget::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {

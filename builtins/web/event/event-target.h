@@ -50,6 +50,7 @@ class EventTarget : public BuiltinImpl<EventTarget, TraceableClassPolicy> {
                            bool *found);
 
   static bool invoke_listeners(JSContext *cx, HandleObject target, HandleObject event);
+  static bool abort_algorithm(JSContext *cx, std::span<HeapValue> args);
 
 public:
   static constexpr const char *class_name = "EventTarget";
@@ -71,6 +72,7 @@ public:
 
   static JSObject *create(JSContext *cx);
 
+  static bool init(JSContext *cx, HandleObject self);
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
   static void finalize(JS::GCContext *gcx, JSObject *self);
