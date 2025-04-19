@@ -154,12 +154,6 @@ template <bool repeat> bool setTimeout_or_interval(JSContext *cx, const unsigned
   if (args.length() > 1 && !JS::ToInt32(cx, args.get(1), &delay_ms)) {
     return false;
   }
-  if (delay_ms < 0) {
-    delay_ms = 0;
-  }
-
-  // Convert delay from milliseconds to nanoseconds, as that's what Timers operate on.
-  const int64_t delay = static_cast<int64_t>(delay_ms) * 1000000;
 
   JS::RootedValueVector handler_args(cx);
   if (args.length() > 2 && !handler_args.initCapacity(args.length() - 2)) {
@@ -170,19 +164,38 @@ template <bool repeat> bool setTimeout_or_interval(JSContext *cx, const unsigned
     handler_args.infallibleAppend(args[i]);
   }
 
-  const auto timer = new TimerTask(delay, repeat, handler, handler_args);
-  ENGINE->queue_async_task(timer);
-  args.rval().setInt32(timer->timer_id());
+  int32_t timer_id = 0;
+  if (!set_timeout_or_interval<repeat>(cx, handler, handler_args, delay_ms, &timer_id)) {
+    return false;
+  }
 
+  args.rval().setInt32(timer_id);
   return true;
 }
+
+template <bool repeat>
+bool set_timeout_or_interval(JSContext *cx, HandleObject handler, JS::HandleValueVector handle_args, int32_t delay_ms, int32_t *timer_id) {
+  if (delay_ms < 0) {
+    delay_ms = 0;
+  }
+
+  // Convert delay from milliseconds to nanoseconds, as that's what Timers operate on.
+  const int64_t delay = static_cast<int64_t>(delay_ms) * 1000000;
+  const auto timer = new TimerTask(delay, repeat, handler, handle_args);
+  ENGINE->queue_async_task(timer);
+
+  *timer_id = timer->timer_id();
+  return true;
+}
+
 
 /**
  * The `clearTimeout` and `clearInterval` global functions
  * https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html#dom-cleartimeout
  * https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html#dom-clearinterval
  */
-template <bool interval> bool clearTimeout_or_interval(JSContext *cx, unsigned argc, Value *vp) {
+template <bool interval>
+bool clearTimeout_or_interval(JSContext *cx, unsigned argc, Value *vp) {
   const CallArgs args = CallArgsFromVp(argc, vp);
   if (!args.requireAtLeast(cx, interval ? "clearInterval" : "clearTimeout", 1)) {
     return false;
@@ -193,10 +206,13 @@ template <bool interval> bool clearTimeout_or_interval(JSContext *cx, unsigned a
     return false;
   }
 
-  TimerTask::clear(id);
-
+  clear_timeout_or_interval(id);
   args.rval().setUndefined();
   return true;
+}
+
+void clear_timeout_or_interval(int32_t timer_id) {
+  TimerTask::clear(timer_id);
 }
 
 constexpr JSFunctionSpec methods[] = {
