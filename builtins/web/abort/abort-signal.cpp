@@ -348,7 +348,7 @@ JSObject *AbortSignal::create_with_timeout(JSContext *cx, HandleValue timeout) {
   }
 
   JS::RootedObject handler(cx, JS_GetFunctionObject(on_timeout));
-  if (!timers::set_timeout_or_interval<false>(cx, handler, args, ms, &timer_id)) {
+  if (!timers::set_timeout(cx, handler, args, ms, &timer_id)) {
     return nullptr;
   }
 
