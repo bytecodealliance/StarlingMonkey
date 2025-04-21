@@ -216,7 +216,14 @@ bool URLSearchParams::delete_(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!name.data)
     return false;
 
-  jsurl::params_delete(params, &name);
+  if (args.hasDefined(1)) {
+    auto value = core::encode_spec_string(cx, args.get(1));
+    if (!value.data) return false;
+    jsurl::params_delete_kv(params, &name, &value);
+  } else {
+    jsurl::params_delete(params, &name);
+  }
+
   args.rval().setUndefined();
   return true;
 }
@@ -230,7 +237,14 @@ bool URLSearchParams::has(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!name.data)
     return false;
 
-  args.rval().setBoolean(jsurl::params_has(params, &name));
+  if (args.hasDefined(1)) {
+    auto value = core::encode_spec_string(cx, args.get(1));
+    if (!value.data) return false;
+    args.rval().setBoolean(jsurl::params_has_kv(params, &name, &value));
+  } else {
+    args.rval().setBoolean(jsurl::params_has(params, &name));
+  }
+
   return true;
 }
 

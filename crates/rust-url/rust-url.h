@@ -171,7 +171,11 @@ void params_append(JSUrlSearchParams *params, SpecString name, SpecString value)
 
 void params_delete(JSUrlSearchParams *params, const SpecString *name);
 
+void params_delete_kv(JSUrlSearchParams *params, const SpecString *name, const SpecString *value);
+
 bool params_has(const JSUrlSearchParams *params, const SpecString *name);
+
+bool params_has_kv(JSUrlSearchParams *params, const SpecString *name, const SpecString *value);
 
 SpecSlice params_get(const JSUrlSearchParams *params, const SpecString *name);
 

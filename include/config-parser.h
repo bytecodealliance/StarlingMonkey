@@ -77,8 +77,7 @@ public:
           config_->content_script_path.reset();
           i++;
         }
-      }
-      if (args[i] == "-i" || args[i] == "--initializer-script-path") {
+      } else if (args[i] == "-i" || args[i] == "--initializer-script-path") {
         if (i + 1 < args.size()) {
           config_->initializer_script_path = mozilla::Some(args[i + 1]);
           i++;

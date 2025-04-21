@@ -279,9 +279,32 @@ pub extern "C" fn params_delete(params: &mut JSUrlSearchParams, name: &SpecStrin
 }
 
 #[no_mangle]
+pub extern "C" fn params_delete_kv(
+    params: &mut JSUrlSearchParams,
+    name: &SpecString,
+    value: &SpecString,
+) {
+    let name: &str = name.into();
+    let value: &str = value.into();
+    params.list.retain(|(k, v)| !(k == name && v == value));
+    params.update_url_or_str();
+}
+
+#[no_mangle]
 pub extern "C" fn params_has(params: &JSUrlSearchParams, name: &SpecString) -> bool {
     let name: &str = name.into();
     params.list.iter().any(|kv| kv.0 == name)
+}
+
+#[no_mangle]
+pub extern "C" fn params_has_kv(
+    params: &JSUrlSearchParams,
+    name: &SpecString,
+    value: &SpecString,
+) -> bool {
+    let name: &str = name.into();
+    let value: &str = value.into();
+    params.list.iter().any(|(k, v)| k == name && v == value)
 }
 
 #[no_mangle]

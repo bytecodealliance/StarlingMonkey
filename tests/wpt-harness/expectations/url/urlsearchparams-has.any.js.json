@@ -6,9 +6,9 @@
     "status": "PASS"
   },
   "Two-argument has()": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Two-argument has() respects undefined as second arg": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }
