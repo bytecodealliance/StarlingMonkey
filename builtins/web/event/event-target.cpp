@@ -134,6 +134,33 @@ namespace event {
 using EventFlag = Event::EventFlag;
 using dom_exception::DOMException;
 using abort::AbortSignal;
+using abort::AbortAlgorithm;
+
+struct Terminator : AbortAlgorithm {
+  Heap<JSObject *> target;
+  Heap<Value> type;
+  Heap<Value> callback;
+  Heap<Value> opts;
+
+  Terminator(JSContext *cx, HandleObject target, HandleValue type, HandleValue callback, HandleValue opts)
+      : target(target), type(type), callback(callback), opts(opts) {}
+
+  bool run(JSContext *cx) override {
+    RootedObject self(cx, target);
+    RootedValue type_val(cx, type);
+    RootedValue callback_val(cx, callback);
+    RootedValue opts_val(cx, opts);
+
+    return EventTarget::remove_listener(cx, self, type_val, callback_val, opts_val);
+  }
+
+  void trace(JSTracer *trc) override {
+    JS::TraceEdge(trc, &target, "EventTarget Terminator target");
+    JS::TraceEdge(trc, &type, "EventTarget Terminator type");
+    JS::TraceEdge(trc, &callback, "EventTarget Terminator callback");
+    JS::TraceEdge(trc, &opts, "EventTarget Terminator opts");
+  }
+};
 
 const JSFunctionSpec EventTarget::static_methods[] = {
     JS_FS_END,
@@ -278,40 +305,13 @@ bool EventTarget::add_listener(JSContext *cx, HandleObject self, HandleValue typ
 
   // - If listener's signal is not null, then add the following abort steps to it:
   //  Remove an event listener with eventTarget and listener.
-  if(signal_val.isObject() && AbortSignal::is_instance(signal_val)) {
+  if (signal_val.isObject() && AbortSignal::is_instance(signal_val)) {
+    auto terminator = js::MakeUnique<Terminator>(cx, self, type_val, callback_val, opts_val);
     RootedObject signal(cx, &signal_val.toObject());
-
-    JS::RootedValueVector args(cx);
-    if (!args.reserve(4)) {
-      return false;
-    }
-
-    args[0].set(ObjectValue(*self));
-    args[1].set(type_val);
-    args[2].set(callback_val);
-    args[3].set(opts_val);
-
-    auto algorithm = abort::make_algorithm(cx, &abort_algorithm, args);
-    if (!algorithm) {
-      return false;
-    }
-
-    AbortSignal::add_algorithm(signal, std::move(algorithm.value()));
+    AbortSignal::add_algorithm(signal, std::move(terminator));
   }
 
   return true;
-}
-
-bool EventTarget::abort_algorithm(JSContext *cx, std::span<HeapValue> args) {
-  MOZ_ASSERT(args.size() == 4);
-  MOZ_ASSERT(EventTarget::is_instance(args[0]));
-
-  RootedObject self(cx, &args[0].toObject());
-  RootedValue type(cx, args[1]);
-  RootedValue callback(cx, args[2]);
-  RootedValue opts(cx, args[3]);
-
-  return remove_listener(cx, self, type, callback, opts);
 }
 
 // https://dom.spec.whatwg.org/#dom-eventtarget-removeeventlistener

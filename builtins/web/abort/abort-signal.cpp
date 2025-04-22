@@ -153,8 +153,13 @@ WeakIndexSet *AbortSignal::dependent_signals(JSObject *self) {
       JS::GetReservedSlot(self, Slots::DependentSignals).toPrivate());
 }
 
+Value AbortSignal::reason(JSObject *self) {
+  MOZ_ASSERT(is_instance(self));
+  return JS::GetReservedSlot(self, Slots::Reason);
+}
+
 // https://dom.spec.whatwg.org/#abortsignal-add
-bool AbortSignal::add_algorithm(JSObject *self, AbortAlgorithm algorithm) {
+bool AbortSignal::add_algorithm(JSObject *self, js::UniquePtr<AbortAlgorithm> algorithm) {
   MOZ_ASSERT(is_instance(self));
 
   // To add an algorithm algorithm to an AbortSignal object signal:
@@ -165,16 +170,12 @@ bool AbortSignal::add_algorithm(JSObject *self, AbortAlgorithm algorithm) {
 
   // 2. Append algorithm to signal's abort algorithms.
   auto algorithms = AbortSignal::algorithms(self);
-  if (!algorithms->append(std::move(algorithm))) {
-    return false;
-  }
-
-  return true;
+  return algorithms->append(std::move(algorithm));
 }
 
 bool AbortSignal::is_dependent(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return !JS::GetReservedSlot(self, Slots::Dependent).toBoolean();
+  return JS::GetReservedSlot(self, Slots::Dependent).toBoolean();
 }
 
 // https://dom.spec.whatwg.org/#abortsignal-aborted
@@ -210,6 +211,7 @@ bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
       set_reason(cx, signal, reason);
       // 2. Append dependentSignal to dependentSignalsToAbort.
       if (!dep_signals_to_abort.append(signal)) {
+        return false;
       }
     }
   };
@@ -233,7 +235,7 @@ bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {
   // 1. For each algorithm of signal's abort algorithms: run algorithm.
   auto algorithms = AbortSignal::algorithms(self);
   for (auto &algorithm : *algorithms) {
-    if (!algorithm.run(cx)) return false;
+    if (!algorithm->run(cx)) return false;
   }
 
   // 2. Empty signals's abort algorithms.
@@ -373,7 +375,7 @@ JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signa
     RootedObject signal(cx, &signals[i].toObject());
 
     if (is_aborted(signal)) {
-      SetReservedSlot(self, Slots::Reason, JS::GetReservedSlot(signal, Slots::Reason));
+      SetReservedSlot(self, Slots::Reason, reason(signal));
       return self;
     }
   }
@@ -391,20 +393,20 @@ JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signa
       // 1. Append signal to resultSignal's source signals.
       our_signals->insert(signal);
       // 2. Append resultSignal to signal's dependent signals.
-      auto their_signals = source_signals(signal);
+      auto their_signals = dependent_signals(signal);
       their_signals->insert(self);
     }
     // 2. Otherwise...
     else {
       auto src_signals = source_signals(signal);
       // for each sourceSignal of signal's source signals:
-      for (auto const &sig : src_signals->items()) {
+      for (auto const &source : src_signals->items()) {
         // 1. Assert: sourceSignal is not aborted and not dependent.
-        MOZ_ASSERT(!is_aborted(sig) && !is_dependent(sig));
+        MOZ_ASSERT(!is_aborted(source) && !is_dependent(source));
         // 2. Append sourceSignal to resultSignal's source signals.
-        our_signals->insert(sig);
+        our_signals->insert(source);
         // 3. Append resultSignal to sourceSignal's dependent signals.
-        auto their_signals = source_signals(sig);
+        auto their_signals = dependent_signals(source);
         their_signals->insert(self);
       };
     }
@@ -451,12 +453,15 @@ void AbortSignal::trace(JSTracer *trc, JSObject *self) {
 bool AbortSignal::init_class(JSContext *cx, JS::HandleObject global) {
   EventTarget::register_subclass(&class_);
 
+  if (!init_class_impl(cx, global)) {
+    return false;
+  }
+
   if (!(abort_type_atom = JS_AtomizeAndPinString(cx, "atom"))) {
     return false;
   }
 
-  return init_class_impl(cx, global, EventTarget::proto_obj) &&
-         JS_DeleteProperty(cx, global, class_.name);
+  return true;
 }
 
 bool install(api::Engine *engine) {

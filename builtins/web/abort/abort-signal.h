@@ -10,29 +10,12 @@ namespace builtins {
 namespace web {
 namespace abort {
 
-using AlgorithmFn = bool (*)(JSContext *, std::span<HeapValue>);
-
 struct AbortAlgorithm {
-  AlgorithmFn algorithm;
-  std::vector<HeapValue> args;
+  bool virtual run(JSContext *cx) = 0;
+  void virtual trace(JSTracer *trc) { };
 
-  bool run(JSContext *cx) {
-    return algorithm(cx, args);
-  }
-
-  void trace(JSTracer *trc) {
-    for (auto& arg : args) {
-      JS::TraceEdge(trc, &arg, "AbortAlgorithm arg");
-    }
-  }
+  virtual ~AbortAlgorithm() = default;
 };
-
-inline std::optional<AbortAlgorithm>
-make_algorithm(JSContext* cx, AlgorithmFn func, JS::HandleValueVector args)
-{
-  std::vector<JS::Heap<Value>> vec {args.begin(), args.end()};
-  return AbortAlgorithm{func, std::move(vec)};
-}
 
 class AbortSignal : public BuiltinImpl<AbortSignal, TraceableClassPolicy> {
   static bool aborted_get(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -50,7 +33,7 @@ class AbortSignal : public BuiltinImpl<AbortSignal, TraceableClassPolicy> {
   static bool abort(JSContext *cx, HandleObject self, HandleValue reason);
   static bool run_abort_steps(JSContext *cx, HandleObject self);
 
-  using AlgorithmList = JS::GCVector<AbortAlgorithm, 0, js::SystemAllocPolicy>;
+  using AlgorithmList = JS::GCVector<js::UniquePtr<AbortAlgorithm>, 0, js::SystemAllocPolicy>;
 
   static JSObject *create(JSContext *cx);
 
@@ -81,7 +64,9 @@ public:
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
 
-  static bool add_algorithm(JSObject *self, AbortAlgorithm algorithm);
+  static Value reason(JSObject *self);
+
+  static bool add_algorithm(JSObject *self, js::UniquePtr<AbortAlgorithm> algorithm);
   static bool is_dependent(JSObject *self);
   static bool is_aborted(JSObject *self);
 

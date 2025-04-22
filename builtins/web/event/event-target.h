@@ -50,7 +50,8 @@ class EventTarget : public BuiltinImpl<EventTarget, TraceableClassPolicy> {
                            bool *found);
 
   static bool invoke_listeners(JSContext *cx, HandleObject target, HandleObject event);
-  static bool abort_algorithm(JSContext *cx, std::span<HeapValue> args);
+
+  static bool on_abort(JSContext *cx, std::span<HeapValue> args);
 
 public:
   static constexpr const char *class_name = "EventTarget";

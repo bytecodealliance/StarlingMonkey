@@ -84,7 +84,7 @@
     "status": "PASS"
   },
   "Request is still 'used' if signal is aborted before fetching": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "response.arrayBuffer() rejects if already aborted": {
     "status": "PASS"
@@ -102,60 +102,6 @@
     "status": "PASS"
   },
   "response.text() rejects if already aborted": {
-    "status": "PASS"
-  },
-  "Call text() twice on aborted response": {
-    "status": "PASS"
-  },
-  "Already aborted signal does not make request": {
-    "status": "PASS"
-  },
-  "Already aborted signal can be used for many fetches": {
-    "status": "PASS"
-  },
-  "Signal can be used to abort other fetches, even if another fetch succeeded before aborting": {
-    "status": "PASS"
-  },
-  "Underlying connection is closed when aborting after receiving response": {
-    "status": "PASS"
-  },
-  "Underlying connection is closed when aborting after receiving response - no-cors": {
-    "status": "PASS"
-  },
-  "Fetch aborted & connection closed when aborted after calling response.arrayBuffer()": {
-    "status": "PASS"
-  },
-  "Fetch aborted & connection closed when aborted after calling response.blob()": {
-    "status": "PASS"
-  },
-  "Fetch aborted & connection closed when aborted after calling response.bytes()": {
-    "status": "PASS"
-  },
-  "Fetch aborted & connection closed when aborted after calling response.formData()": {
-    "status": "PASS"
-  },
-  "Fetch aborted & connection closed when aborted after calling response.json()": {
-    "status": "PASS"
-  },
-  "Fetch aborted & connection closed when aborted after calling response.text()": {
-    "status": "PASS"
-  },
-  "Stream errors once aborted. Underlying connection closed.": {
-    "status": "PASS"
-  },
-  "Stream errors once aborted, after reading. Underlying connection closed.": {
-    "status": "PASS"
-  },
-  "Stream will not error if body is empty. It's closed with an empty queue before it errors.": {
-    "status": "PASS"
-  },
-  "Readable stream synchronously cancels with AbortError if aborted before reading": {
-    "status": "PASS"
-  },
-  "Signal state is cloned": {
-    "status": "PASS"
-  },
-  "Clone aborts with original controller": {
     "status": "PASS"
   }
 }
