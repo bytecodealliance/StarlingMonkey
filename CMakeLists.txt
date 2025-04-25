@@ -38,6 +38,7 @@ include("spidermonkey")
 include("openssl")
 include("${HOST_API}/host_api.cmake")
 include("build-crates")
+include("lint")
 
 option(ENABLE_JS_DEBUGGER "Enable support for debugging content via a socket connection" ON)
 

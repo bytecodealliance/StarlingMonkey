@@ -45,6 +45,12 @@ do_clean:
 clean-all: && do_clean
     @echo "This will remove {{builddir}}"
 
+# Run clang-tidy
+lint: (build "clang-tidy")
+
+# Run clang-tidy and apply offered fixes
+lint-fix: (build "clang-tidy-fix")
+
 # Componentize js script
 componentize script="" outfile="starling.wasm": build
     {{ builddir }}/componentize.sh {{ script }} -o {{ outfile }}
