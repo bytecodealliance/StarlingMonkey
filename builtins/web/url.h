@@ -64,7 +64,7 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 };
 
-class URL : public FinalizableBuiltinImpl<URL> {
+class URL : public BuiltinImpl<URL, FinalizableClassPolicy> {
   static bool hash_set(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool host_set(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool hostname_set(JSContext *cx, unsigned argc, JS::Value *vp);

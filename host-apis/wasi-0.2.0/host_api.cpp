@@ -16,12 +16,12 @@ size_t poll_handles(vector<WASIHandle<host_api::Pollable>::Borrowed> handles) {
   return ready_index;
 }
 
-size_t api::AsyncTask::select(std::vector<AsyncTask *> &tasks) {
+size_t api::AsyncTask::select(std::vector<RefPtr<AsyncTask>> &tasks) {
   auto count = tasks.size();
   std::vector<WASIHandle<host_api::Pollable>::Borrowed> handles;
 
   for (size_t idx = 0; idx < count; ++idx) {
-    auto *task = tasks.at(idx);
+    auto task = tasks.at(idx);
     auto id = task->id();
 
     if (id == IMMEDIATE_TASK_HANDLE) {
