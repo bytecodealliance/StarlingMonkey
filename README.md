@@ -126,11 +126,12 @@ cd cmake-build-release
 
 ### Web Platform Tests
 
-To run the [Web Platform Tests](https://web-platform-tests.org/) suite, the WPT runner requires `Node.js` to be installed, and during build configuration the option `ENABLE_WPT:BOOL=ON` must be set.
+To run the [Web Platform Tests](https://web-platform-tests.org/) suite, the WPT runner requires `Node.js` above v18.0 to be installed, and during build configuration the option `ENABLE_WPT:BOOL=ON` must be set.
 
 ```bash
 cmake -S . -B cmake-build-debug -DENABLE_WPT:BOOL=ON -DCMAKE_BUILD_TYPE=Debug
 cmake --build cmake-build-debug --parallel 8 --target wpt-runtime
+cat deps/wpt-hosts | sudo tee -a /etc/hosts # Required to resolve test server hostnames
 cd cmake-build-debug
 ctest -R wpt --verbose # Note: some of the tests run fairly slowly in debug builds, so be patient
 ```
