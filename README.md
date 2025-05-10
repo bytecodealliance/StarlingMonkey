@@ -184,6 +184,7 @@ just test
 To build and run Web Platform Tests run:
 
 ``` shell
+just wpt-setup # prepare WPT hosts
 just wpt-test # run all tests
 just wpt-test console/console-log-symbol.any.js # run specific test
 ```
