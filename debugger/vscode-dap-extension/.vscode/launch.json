@@ -8,6 +8,7 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
         "${workspaceFolder}/sampleWorkspace"
+        // "/home/ivan/testing/js-wat"
       ],
       "outFiles": [
         "${workspaceFolder}/dist/**/*.js"
@@ -23,6 +24,7 @@
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--extensionDevelopmentKind=web",
         "${workspaceFolder}/sampleWorkspace"
+        //"/home/ivan/testing/js-wat"
       ],
       "outFiles": [
         "${workspaceFolder}/dist/**/*.js"
