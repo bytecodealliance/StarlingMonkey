@@ -2,7 +2,6 @@ import { Scope } from "@vscode/debugadapter";
 import { EventEmitter } from "events";
 import * as Net from "net";
 import { Signal } from "./signals.js";
-import { assert } from "console";
 import { Terminal, TerminalShellExecution, window } from "vscode";
 
 export interface FileAccessor {
@@ -20,20 +19,208 @@ export interface IRuntimeBreakpoint {
 interface IRuntimeStackFrame {
   index: number;
   name: string;
-  file: string;
-  line: number;
+  file?: string;
+  line?: number;
   column?: number;
   instruction?: number;
 }
 
 interface IRuntimeStack {
   count: number;
-  frames: IRuntimeStackFrame[];
+  frames: ReadonlyArray<IRuntimeStackFrame>;
 }
 
-interface IRuntimeMessage {
-  type: string;
-  value: any;
+// TODO: not sure where this is coming from
+type OutputType = 'prio' | 'out' | 'err' | 'console';
+
+// Events raised from the SMRuntime to the SMDebugger (via `emit`, so
+// in-process).
+type RuntimeEventMap = {
+  programLoaded: [],
+  output: [type: OutputType, text: string, filePath: string, line: number, column: number],
+  stopOnEntry: [],
+  stopOnBreakpoint: [],
+  // TODO: are these used? Does SM support them?
+  stopOnDataBreakpoint: [],
+  stopOnInstructionBreakpoint: [],
+  stopOnException: [exception: any | undefined],
+  stopOnStep: [],
+  end: [],
+}
+
+// Messages sent from the SMRuntime to the ComponentResourceInstance.
+// These are sent as JSON via the SMR _server socket (and then seem
+// to be passed on to the debugger.ts script).
+//
+// These appear to be sent but it's not clear if all of them
+// are processed by the CRI
+type RuntimeToInstanceMessage =
+  | LoadProgramMessage
+  | ContinueMessage
+  | GetStackMessage
+  | GetScopesMessage
+  | GetBreakpointsForLineMessage
+  | SetBreakpointMessage
+  | GetVariablesMessage
+  | SetVariableMessage
+  | EvaluateMessage
+  | StartDebugLoggingMessage
+  | StopDebugLoggingMessage;
+
+interface LoadProgramMessage {
+  type: 'loadProgram';
+  value: string; // source file
+}
+
+interface ContinueMessage {
+  type: 'continue' | 'next' | 'stepIn' | 'stepOut';
+  value?: undefined,
+}
+
+interface GetStackMessage {
+  type: 'getStack';
+  value: {
+    index: number;
+    count: number;
+  }
+}
+
+interface GetScopesMessage {
+  type: 'getScopes';
+  value: number; // frameId
+}
+
+interface GetBreakpointsForLineMessage {
+  type: 'getBreakpointsForLine';
+  value: {
+    path: string;
+    line: number;
+  }
+}
+
+interface SetBreakpointMessage {
+  type: 'setBreakpoint';
+  value: {
+    path: string;
+    line: number;
+    column?: number;
+  }
+}
+
+interface GetVariablesMessage {
+  type: 'getVariables';
+  value: number; // reference
+}
+
+interface SetVariableMessage {
+  type: 'setVariable';
+  value: string; // manually encoded JSON text
+}
+interface EvaluateMessage {
+  type: 'evaluate';
+  value: {
+    expression: string;
+  }
+}
+interface StartDebugLoggingMessage {
+  type: 'startDebugLogging';
+  value?: undefined;
+}
+
+interface StopDebugLoggingMessage {
+  type: 'stopDebugLogging';
+  value?: undefined;
+}
+
+// TODO: do we need a 'paused' state, for when we are at a breakpoint?
+// Running seems to adequately cover it but I am not sure if there are
+// actions/messagest that should only be available when paused (e.g.
+// get stack, get-set variables).
+type RuntimeState =
+  | Initialising
+  | Connecting
+  | LoadingScript
+  | Running;
+
+interface Initialising {
+  state: 'init';
+}
+interface Connecting {
+  state: 'connecting';
+} 
+interface LoadingScript {
+  state: 'loadingScript';
+}
+interface Running {
+  state: 'running';
+}
+
+// Messages from the ComponentRuntimeInstance to the SMRuntime,
+// received as JSON via SMRuntime._server socket.
+export type InstanceToRuntimeMessage =
+  | IConnectMessage
+  | IProgramLoadedMessage
+  | IBreakpointHitMessage
+  | IStopOnStepMessage
+  | StackResponse
+  | ScopesResponse
+  | BreakpointsForLineResponse
+  | BreakpointSetResponse
+  | VariablesResponse
+  | VariableSetResponse
+  | EvaluateResponse;
+
+interface IConnectMessage {
+  type: 'connect';
+}
+interface IProgramLoadedMessage {
+  type: 'programLoaded';
+}
+interface IBreakpointHitMessage {
+  type: 'breakpointHit';
+  value: number; // offset into frame
+}
+interface IStopOnStepMessage {
+  type: 'stopOnStep';
+}
+interface StackResponse {
+  type: 'stack';
+  value: ReadonlyArray<IRuntimeStackFrame>;
+}
+interface ScopesResponse {
+  type: 'scopes';
+  value: ReadonlyArray<Scope>,
+}
+interface BreakpointsForLineResponse {
+  type: 'breakpointsForLine';
+  value: ReadonlyArray<{
+    line: number;
+    column: number,
+  }>
+}
+interface BreakpointSetResponse {
+  type: 'breakpointSet';
+  value: IRuntimeBreakpoint;
+}
+interface VariablesResponse {
+  type: 'variables',
+  value: ReadonlyArray<IRuntimeVariable>,
+  diagnostics: string;
+}
+interface VariableSetResponse {
+  type: 'variableSet',
+  value: IRuntimeVariable,
+}
+interface EvaluateResponse {
+  type: 'evaluate';
+  value: {
+    result: string;
+    variablesReference: number;
+  }
+}
+
+function assert(condition: any, msg?: string): asserts condition {
+  console.assert(condition, msg);
 }
 
 interface IRuntimeVariable {
@@ -204,7 +391,7 @@ class ComponentRuntimeInstance {
   }
 }
 
-export class StarlingMonkeyRuntime extends EventEmitter {
+export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
   private _debug!: boolean;
   private _stopOnEntry!: boolean;
   public get fileAccessor(): FileAccessor {
@@ -217,7 +404,8 @@ export class StarlingMonkeyRuntime extends EventEmitter {
   private _server!: Net.Server;
   private _socket!: Net.Socket;
 
-  private _messageReceived = new Signal<IRuntimeMessage, void>();
+  private _state: RuntimeState = { state: 'init' };
+  private _messageReceived = new Signal<InstanceToRuntimeMessage, void>();
 
   private _sourceFile!: string;
   public get sourceFile() {
@@ -233,24 +421,99 @@ export class StarlingMonkeyRuntime extends EventEmitter {
   }
 
   public async start(program: string, component: string, stopOnEntry: boolean, debug: boolean  ): Promise<void> {
+    this._state = { state: 'connecting' };
     await ComponentRuntimeInstance.start(this._workspaceDir, component, this._config);
     this.startSessionServer();
     // TODO: tell StarlingMonkey not to debug if this is false.
     this._debug = debug;
     this._stopOnEntry = stopOnEntry;
     this._sourceFile = this.normalizePath(program);
-    let message = await this._messageReceived.wait();
-    assert(
-      message.type === "connect",
-      `expected "connect" message, got "${message.type}"`
-    );
-    // this.sendMessage("startDebugLogging");
-    message = await this.sendAndReceiveMessage("loadProgram", this._sourceFile);
-    assert(
-      message.type === "programLoaded",
-      `expected "programLoaded" message, got "${message.type}"`
-    );
-    this.emit("programLoaded");
+
+    this.runDebugLoop();
+  }
+
+  async runDebugLoop() {
+    // We have a slightly odd mix here of state machine stuff (unsolicited messages)
+    // and request-response stuff.  Feels like there should be a better way.
+
+    while (true) {
+      let message = await this._messageReceived.wait();
+
+      // Deal with request-response messages
+      // TODO: I still feel like this would be safer with correlation IDs but :shrug: for now
+      if (message.type === 'breakpointSet') {
+        this._bpSet.resolve(message);
+        continue;
+      }
+      if (message.type === 'variables') {
+        console.warn(`*** we have some variables! ${message.value.map(v => v.name)}`);
+        this._variables.resolve(message);
+        continue;
+      }
+      if (message.type === 'variableSet') {
+        this._variableSet.resolve(message);
+        continue;
+      }
+      if (message.type === 'evaluate') {
+        this._eval.resolve(message);
+        continue;
+      }
+      if (message.type === 'stack') {
+        this._stack.resolve(message);
+        continue;
+      }
+      if (message.type === 'scopes') {
+        this._scopes.resolve(message);
+        continue;
+      }
+      if (message.type === 'breakpointsForLine') {
+        this._bpsForLine.resolve(message);
+        continue;
+      }
+
+      switch (this._state.state) {
+        case 'init':
+          console.warn(`unexpected message '${message.type}' during init - ignored`);
+          break;
+        case 'connecting':
+          switch (message.type) {
+            case 'connect':
+              console.debug(`connected to SM host (received '${message.type}' message)`);
+              this.sendMessage({ type: "loadProgram", value: this._sourceFile });
+              this._state = { state: 'loadingScript' };
+              break;
+            default:
+              console.warn(`unexpected message '${message.type}' during ${this._state.state} - ignored`);
+              break;
+          }
+          break;
+        case 'loadingScript':
+          switch (message.type) {
+            case 'programLoaded':
+              console.debug(`loaded debugger script into SM host (received '${message.type}' message)`);
+              this._state = { state: 'running' };
+              this.emit('programLoaded');
+              break;
+            default:
+              console.warn(`unexpected message '${message.type}' during ${this._state.state} - ignored`);
+              break;
+          }
+          break;
+        case 'running':
+          switch (message.type) {
+            case 'breakpointHit':
+              this.emit('stopOnBreakpoint');
+              break;
+            case 'stopOnStep':
+              this.emit('stopOnStep');
+              break;
+            default:
+              console.warn(`unexpected message '${message.type}' during ${this._state.state} - ignored`);
+              break;
+          }
+          break;
+      }
+    }
   }
 
   /**
@@ -299,6 +562,9 @@ export class StarlingMonkeyRuntime extends EventEmitter {
         return;
       }
 
+      // console.debug(`*** SUBSEQUENT FROM WHEREVER. data=${data}`);
+      console.debug(`<-- received: ${data}`);
+
       partialMessage += data;
 
       if (!lengthReceived) {
@@ -320,6 +586,7 @@ export class StarlingMonkeyRuntime extends EventEmitter {
         return;
       }
       let message = partialMessage.slice(0, expectedLength);
+      console.debug(`  <-- parsed: ${message}`);
       try {
         let parsed = JSON.parse(message);
         // console.debug(`received message ${partialMessage}`);
@@ -341,24 +608,15 @@ export class StarlingMonkeyRuntime extends EventEmitter {
     ComponentRuntimeInstance.setNextSessionPort(port);
   }
 
-  private sendMessage(type: string, value?: any, useRawValue = false) {
-    let message: string;
+  private sendMessage(message: RuntimeToInstanceMessage, useRawValue = false) {
+    let json: string;
     if (useRawValue) {
-      message = `{"type": "${type}", "value": ${value}}`;
+      json = `{"type": "${message.type}", "value": ${message.value}}`;
     } else {
-      message = JSON.stringify({ type, value });
+      json = JSON.stringify(message);
     }
     // console.debug(`sending message to runtime: ${message}`);
-    this._socket.write(`${message.length}\n${message}`);
-  }
-
-  private sendAndReceiveMessage(
-    type: string,
-    value?: any,
-    useRawValue = false
-  ): Promise<any> {
-    this.sendMessage(type, value, useRawValue);
-    return this._messageReceived.wait();
+    this._socket.write(`${json.length}\n${json}`);
   }
 
   public async run() {
@@ -370,20 +628,27 @@ export class StarlingMonkeyRuntime extends EventEmitter {
   }
 
   public async continue() {
-    let message = await this.sendAndReceiveMessage("continue");
-    // TODO: handle other results, such as run to completion
-    assert(
-      message.type === "breakpointHit",
-      `expected "breakpointHit" message, got "${message.type}"`
-    );
-    this.emit("stopOnBreakpoint");
+    if (this._state.state === 'running') {
+      this.sendMessage({ type: 'continue' });
+    } else {
+      console.warn(`unexpected 'continue' call while in state ${this._state.state}`);
+    }
+
+    // this.sendMessage({ type: 'continue' });
+    // let message = await this.sendAndReceiveMessage({ type: "continue" });
+    // // TODO: handle other results, such as run to completion
+    // assert(
+    //   message.type === "breakpointHit",
+    //   `expected "breakpointHit" message, got "${message.type}"`
+    // );
+    // this.emit("stopOnBreakpoint");
   }
 
-  public next(granularity: "statement" | "line" | "instruction") {
+  public next(_granularity: "statement" | "line" | "instruction") {
     this.handleStep("next");
   }
 
-  public stepIn(targetId: number | undefined) {
+  public stepIn(_targetId: number | undefined) {
     this.handleStep("stepIn");
   }
 
@@ -391,28 +656,40 @@ export class StarlingMonkeyRuntime extends EventEmitter {
     this.handleStep("stepOut");
   }
 
-  private async handleStep(type: "next" | "stepIn" | "stepOut") {
-    let message = await this.sendAndReceiveMessage(type);
-    // TODO: handle other results, such as run to completion
-    assert(
-      message.type === "stopOnStep",
-      `expected "stopOnStep" message, got "${message.type}"`
-    );
-    this.emit("stopOnStep");
+  private handleStep(type: "next" | "stepIn" | "stepOut") {
+    this.sendMessage({ type });
+    // let message = await this.sendAndReceiveMessage({ type });
+    // // TODO: handle other results, such as run to completion
+    // // TODO: this can barf if the step lands you on a breakpoint
+    // assert(
+    //   message.type === "stopOnStep",
+    //   `expected "stopOnStep" message, got "${message.type}"`
+    // );
+    // this.emit("stopOnStep");
   }
 
   public async stack(index: number, count: number): Promise<IRuntimeStack> {
-    let message = await this.sendAndReceiveMessage("getStack", {
+    this.sendMessage({ type: "getStack", value: {
       index,
       count,
-    });
-    assert(
-      message.type === "stack",
-      `expected "stack" message, got "${message.type}"`
-    );
+    }});
+
+    // let message = await this.sendAndReceiveMessage({ type: "getStack", value: {
+    //   index,
+    //   count,
+    // }});
+    // assert(
+    //   message.type === "stack",
+    //   `expected "stack" message, got "${message.type}"`
+    // );
+
+    let message = await this._stack.wait();
+    
     let stack = message.value;
     for (let frame of stack) {
-      frame.file = this.qualifyPath(frame.file);
+      if (frame.file) {
+        frame.file = this.qualifyPath(frame.file);
+      }
     }
     return {
       count: stack.length,
@@ -420,31 +697,48 @@ export class StarlingMonkeyRuntime extends EventEmitter {
     };
   }
 
-  async getScopes(frameId: number): Promise<Scope[]> {
-    let message = await this.sendAndReceiveMessage("getScopes", frameId);
-    assert(
-      message.type === "scopes",
-      `expected "scopes" message, got "${message.type}"`
-    );
+  async getScopes(frameId: number): Promise<ReadonlyArray<Scope>> {
+    // let message = await this.sendAndReceiveMessage({ type: "getScopes", value: frameId });
+    this.sendMessage({ type: "getScopes", value: frameId });
+    let message = await this._scopes.wait();
+    // assert(
+    //   message.type === "scopes",
+    //   `expected "scopes" message, got "${message.type}"`
+    // );
     return message.value;
   }
 
   public async getBreakpointLocations(
     path: string,
     line: number
-  ): Promise<{ line: number; column: number }[]> {
+  ): Promise<ReadonlyArray<{ line: number; column: number }>> {
     // TODO: support the full set of query params from BreakpointLocationsArguments
     path = this.normalizePath(path);
-    let message = await this.sendAndReceiveMessage("getBreakpointsForLine", {
+    // let message = await this.sendAndReceiveMessage({ type: "getBreakpointsForLine", value: {
+    //   path,
+    //   line,
+    // }});
+    await this.sendMessage({ type: "getBreakpointsForLine", value: {
       path,
       line,
-    });
-    assert(
-      message.type === "breakpointsForLine",
-      `expected "breakpointsForLine" message, got "${message.type}"`
-    );
+    }});
+
+    let message = await this._bpsForLine.wait();
+    // assert(
+    //   message.type === "breakpointsForLine",
+    //   `expected "breakpointsForLine" message, got "${message.type}"`
+    // );
+    console.debug(`returning BPs, message.value=${message.value}`);
     return message.value;
   }
+
+  private _bpSet: Signal<BreakpointSetResponse, void> = new Signal();
+  private _variables: Signal<VariablesResponse, void> = new Signal();
+  private _eval: Signal<EvaluateResponse, void> = new Signal();
+  private _variableSet: Signal<VariableSetResponse, void> = new Signal();
+  private _stack: Signal<StackResponse, void> = new Signal();
+  private _scopes: Signal<ScopesResponse, void> = new Signal();
+  private _bpsForLine: Signal<BreakpointsForLineResponse, void> = new Signal();
 
   public async setBreakPoint(
     path: string,
@@ -452,24 +746,34 @@ export class StarlingMonkeyRuntime extends EventEmitter {
     column?: number
   ): Promise<IRuntimeBreakpoint> {
     path = this.normalizePath(path);
-    let response = await this.sendAndReceiveMessage("setBreakpoint", {
+
+    this.sendMessage({ type: "setBreakpoint", value: {
       path,
       line,
       column,
-    });
-    assert(
-      response.type === "breakpointSet",
-      `expected "breakpointSet" message, got "${response.type}"`
-    );
+    }});
+
+    // let response = await this.sendAndReceiveMessage({ type: "setBreakpoint", value: {
+    //   path,
+    //   line,
+    //   column,
+    // }});
+
+    let response = await this._bpSet.wait();
+
     return response.value;
   }
 
-  public async getVariables(reference: number): Promise<IRuntimeVariable[]> {
-    let message = await this.sendAndReceiveMessage("getVariables", reference);
-    assert(
-      message.type === "variables",
-      `expected "variables" message, got "${message.type}"`
-    );
+  public async getVariables(reference: number): Promise<ReadonlyArray<IRuntimeVariable>> {
+    console.warn(`*** asking for variable #${reference}`);
+    this.sendMessage({ type: "getVariables", value: reference });
+    // let message = await this.sendAndReceiveMessage({ type: "getVariables", value: reference });
+    let message = await this._variables.wait();
+    console.warn(`*** ...and got response for variable #${reference}: DIAG=${message.diagnostics}`);
+    // assert(
+    //   message.type === "variables",
+    //   `expected "variables" message, got "${message.type}"`
+    // );
     return message.value;
   }
 
@@ -479,16 +783,32 @@ export class StarlingMonkeyRuntime extends EventEmitter {
     value: string
   ): Promise<IRuntimeVariable> {
     // Manually encode the value so that it'll be decoded as raw values by the runtime, instead of everything becoming a string.
+    // TODO: this seems extraordinarily illegal. What if value contains a double quote, etc. Or is it guaranteed not to by the debug protocol?
     let rawValue = `{"variablesReference": ${variablesReference}, "name": "${name}", "value": ${value}}`;
-    let message = await this.sendAndReceiveMessage(
-      "setVariable",
-      rawValue,
+    // let message = await this.sendAndReceiveMessage(
+    //   { type: "setVariable", value: rawValue },
+    //   true
+    // );
+    this.sendMessage(
+      { type: "setVariable", value: rawValue },
       true
     );
-    assert(
-      message.type === "variableSet",
-      `expected "variableSet" message, got "${message.type}"`
-    );
+
+    let message = await this._variableSet.wait();
+
+    // assert(
+    //   message.type === "variableSet",
+    //   `expected "variableSet" message, got "${message.type}"`
+    // );
+    return message.value;
+  }
+
+  public async evaluate(expression: string): Promise<{
+    result: string;
+    variablesReference: number;
+  }> {
+    this.sendMessage({ type: 'evaluate', value: { expression } });
+    let message = await this._eval.wait();
     return message.value;
   }
 

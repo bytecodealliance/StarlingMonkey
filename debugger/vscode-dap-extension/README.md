@@ -10,6 +10,14 @@ The extension works for content built with a recent (`0.18` and up) version of [
 
 ### Building Content
 
+**SAMPLE WORKSPACE? JUST RUN THIS:**
+
+`componentize-js --wit world.wit -o main.wasm --runtime-args "--enable-script-debugging" main.js`
+
+(you will need to `npm install -g @bytecodealliance/componentize-js`)
+
+**MOAR DEETS**
+
 The content needs to be invoked via the `wasi:http/incoming-handler@0.2.*/handle` function. In other words, it needs to target the `wasi:http/proxy@0.2` world.
 
 Additionally, it needs to import a few additionally interfaces, which you can add to your `*.wit` by adding these lines:

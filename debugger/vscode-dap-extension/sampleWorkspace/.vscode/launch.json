@@ -8,8 +8,9 @@
       "type": "starlingmonkey",
       "request": "launch",
       "name": "Debug StarlingMonkey component",
-      "component": "${workspaceFolder}/out/main.wasm",
-      "stopOnEntry": true,
+      "component": "${workspaceFolder}/main.wasm",
+      "program": "${workspaceFolder}/main.js",
+      "stopOnEntry": false,
       "trace": true
     }
   ]
