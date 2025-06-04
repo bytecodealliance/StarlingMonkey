@@ -31,10 +31,10 @@
     "compile": "tsc -p ./",
     "lint": "eslint src starling-debugger --ext ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "esbuild-extension": "esbuild ./src/extension.ts --bundle --tsconfig=./tsconfig.json --external:vscode --format=cjs --platform=node --outfile=dist/extension.js --sourcemap --sources-content=false",
+    "esbuild-extension": "esbuild ./src/extension.ts --bundle --tsconfig=./tsconfig.json --external:vscode --external:source-map --format=cjs --platform=node --outfile=dist/extension.js --sourcemap --sources-content=false",
     "esbuild-debugger": "esbuild ./starling-debugger/debugger.ts --bundle --tsconfig=./tsconfig.json --platform=neutral --outfile=dist/debugger.js",
     "esbuild-all": "npm run esbuild-extension && npm run esbuild-debugger",
-    "watch-extension": "esbuild ./src/extension.ts --bundle --tsconfig=./tsconfig.json --external:vscode --format=cjs --platform=node --outfile=dist/extension.js --sourcemap --sources-content=false --watch",
+    "watch-extension": "esbuild ./src/extension.ts --bundle --tsconfig=./tsconfig.json --external:vscode --external:source-map --format=cjs --platform=node --outfile=dist/extension.js --sourcemap --sources-content=false --watch",
     "watch-debugger": "esbuild ./starling-debugger/debugger.ts --bundle --tsconfig=./tsconfig.json --platform=neutral --outfile=dist/debugger.js --watch",
     "watch": "concurrently \"npm run watch-extension\" \"npm run watch-debugger\"",
     "build": "npm run -S esbuild-all",
@@ -43,6 +43,10 @@
     "publish-pre-release": "vsce publish --pre-release",
     "vscode:prepublish": "rimraf dist && npm run -S esbuild-all",
     "test": "npm run typecheck"
+  },
+  "dependencies": {
+    "request-light": "^0.8.0",
+    "source-map": "^0.7.4"
   },
   "devDependencies": {
     "@types/glob": "8.1.0",
