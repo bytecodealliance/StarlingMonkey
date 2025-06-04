@@ -1,4 +1,5 @@
-import type { InstanceToRuntimeMessage } from "../src/starlingMonkeyRuntime";
+import type { SourceLocation } from "../src/sourcemaps/sourceMaps";
+import type { InstanceToRuntimeMessage, RuntimeToInstanceMessage } from "../shared/messages";
 
 // Type definitions for SpiderMonkey Debugger API
 declare class Debugger {
@@ -119,10 +120,11 @@ try {
 
   dbg.onEnterFrame = function (frame: Debugger.Frame): void {
     dbg.onEnterFrame = undefined;
+    let path = frame.script.url;
     for (let script of dbg.findScripts()) {
       addScript(script);
     }
-    sendMessage({ type: "programLoaded" });
+    sendMessage({ type: "programLoaded", value: path });
     return handlePausedFrame(frame);
   };
 
@@ -147,98 +149,6 @@ try {
           `Exception during paused frame handling: ${e}. Stack:\n${e.stack}`
         );
     }
-  }
-
-  // Messages this script RECEIVES
-  type RuntimeToInstanceMessage =
-    | LoadProgramMessage
-    | ContinueMessage
-    | GetStackMessage
-    | GetScopesMessage
-    | GetBreakpointsForLineMessage
-    | SetBreakpointMessage
-    | GetVariablesMessage
-    | SetVariableMessage
-    | EvaluateMessage
-    // EXTRA
-    | StartDebugLoggingMessage
-    | StopDebugLoggingMessage;
-
-  // COPIED FROM StarlingMonkeyRuntime.ts
-
-  interface LoadProgramMessage {
-    type: 'loadProgram';
-    value: string; // source file
-  }
-
-  interface ContinueMessage {
-    type: 'continue' | 'next' | 'stepIn' | 'stepOut';
-    value?: undefined,
-  }
-
-  interface GetStackMessage {
-    type: 'getStack';
-    value: {
-      index: number;
-      count: number;
-    }
-  }
-
-  interface GetScopesMessage {
-    type: 'getScopes';
-    value: number; // frameId
-  }
-
-  interface GetBreakpointsForLineMessage {
-    type: 'getBreakpointsForLine';
-    value: {
-      path: string;
-      line: number;
-    }
-  }
-
-  interface GetVariablesMessage {
-    type: 'getVariables';
-    value: number; // reference
-  }
-
-  // COPIED BUT MODIFIED
-
-  interface SetBreakpointMessage {
-    type: 'setBreakpoint';
-    value: {
-      path: string;
-      line: number;
-      column: number;  // this is optional in SMR
-    }
-  }
-
-  interface SetVariableMessage {
-    type: 'setVariable';
-    value: {
-      variablesReference: number;
-      name: string;
-      value: any;
-    } // in SMR this a string of manually encoded JSON text because reasons I guess
-  }
-
-  interface EvaluateMessage {
-    type: 'evaluate';
-    value: {
-      expression: string;
-    }
-  }
-
-  // END COPY / MODIFIED
-
-  // These seem to be commented out in SMR
-
-  interface StartDebugLoggingMessage {
-    type: 'startDebugLogging';
-  }
-
-  interface StopDebugLoggingMessage {
-    type: 'stopDebugLogging';
   }
 
   function waitForSocket(): void {
@@ -422,7 +332,7 @@ try {
   }: {
     path: string;
     line: number;
-    column: number;
+    column?: number;
   }): void {
     let fileScripts = scripts.get(path);
     if (!fileScripts) {
@@ -452,9 +362,10 @@ try {
   interface IRuntimeStackFrame {
     index: number;
     name: string;
-    file?: string;
-    line?: number;
-    column?: number;
+    sourceLocation?: SourceLocation;
+    // path?: string;
+    // line?: number;
+    // column?: number;
     instruction?: number;
   }
   function getStack(index: number, count: number): void {
@@ -473,9 +384,11 @@ try {
       };
       if (frame.script) {
         const offsetMeta = frame.script.getOffsetMetadata(frame.offset);
-        entry.file = frame.script.url;
-        entry.line = offsetMeta.lineNumber;
-        entry.column = offsetMeta.columnNumber;
+        entry.sourceLocation = {
+          path: frame.script.url,
+          line: offsetMeta.lineNumber,
+          column: offsetMeta.columnNumber
+        };
       }
 
       stack.push(entry);
@@ -536,21 +449,16 @@ try {
     if (reference > MAX_FRAMES) {
       let object = idToObject.get(reference);
       let locals = getMembers(object!);
-      sendMessage({ type: "variables", value: locals, diagnostics: "from getMembers" });
+      sendMessage({ type: "variables", value: locals });
       return;
     }
-
-    let diagnostics = ["from frame env"];
 
     assert(currentFrame);
     let frame = findFrame(currentFrame, reference - 1);
     let locals: IVariable[] = [];
 
     for (let name of frame.environment.names()) {
-      diagnostics.push(name);
       let value = frame.environment.getVariable(name);
-      diagnostics.push(typeof value);
-      diagnostics.push(`${JSON.stringify(value)}`);
       locals.push({ name, ...formatValue(value) });
     }
 
@@ -564,7 +472,7 @@ try {
       });
     }
 
-    sendMessage({ type: "variables", value: locals, diagnostics: `${diagnostics}` });
+    sendMessage({ type: "variables", value: locals });
   }
 
   function setVariable({
@@ -610,9 +518,7 @@ try {
     value: string;
     type: string;
     variablesReference: number;
-    diagnostics: string;
   } {
-    let diagnostics = [`FV: ${JSON.stringify(value)}`];
     let formatted;
     let type: string = typeof value;
     let structured = false;
@@ -636,19 +542,16 @@ try {
     }
     let variablesReference = 0;
     if (structured) {
-      diagnostics.push('FV: structured!');
-      const vr2 = objectToId.get(value);
-      if (!vr2) {
+      const existingVarRef = objectToId.get(value);
+      if (!existingVarRef) {
         variablesReference = varRefsIndex++;
         idToObject.set(variablesReference, value);
         objectToId.set(value, variablesReference);
-        diagnostics.push(`FV: not in o21, added at ${variablesReference}`);
       } else {
-        diagnostics.push(`FV: in o21 at ${vr2}`);
-        variablesReference = vr2;
+        variablesReference = existingVarRef;
       }
     }
-    return { value: formatted, type, variablesReference, diagnostics: `${diagnostics}` };
+    return { value: formatted, type, variablesReference };
   }
 
   function formatDescriptor(descriptor: Debugger.PropertyDescriptor): {

@@ -259,7 +259,7 @@ export class StarlingMonkeyDebugSession extends LoggingDebugSession {
     response: DebugProtocol.StackTraceResponse,
     args: DebugProtocol.StackTraceArguments
   ): void {
-    const startFrame = args.startFrame || 0;
+    const startFrame = args.startFrame ?? 0;
     const maxLevels = args.levels || 1000;
 
     this._runtime.stack(startFrame, maxLevels).then((stk) => {
@@ -268,13 +268,11 @@ export class StarlingMonkeyDebugSession extends LoggingDebugSession {
           const sf: DebugProtocol.StackFrame = new StackFrame(
             f.index,
             f.name,
-            this.createSource(f.file),
+            this.createSource(f.sourceLocation?.path),
           );
-          if (f.line) {
-            sf.line = this.convertDebuggerLineToClient(f.line)
-          }
-          if (f.column) {
-            sf.column = this.convertDebuggerColumnToClient(f.column);
+          if (f.sourceLocation) {
+            sf.line = this.convertDebuggerLineToClient(f.sourceLocation.line)
+            sf.column = this.convertDebuggerColumnToClient(f.sourceLocation.column);
           }
 
           return sf;
@@ -303,11 +301,8 @@ export class StarlingMonkeyDebugSession extends LoggingDebugSession {
     args: DebugProtocol.VariablesArguments,
     _request?: DebugProtocol.Request
   ): Promise<void> {
-    console.warn(`** dbg: session wants vars #${args.variablesReference} in fmt ${args.format} (filter: ${args.filter})`);
     let variables = await this._runtime.getVariables(args.variablesReference);
     response.body = { variables: variables.slice() };
-    let vv = variables.map(v => `${v.value}|${v.type}`);
-    console.warn(`** dbg: session retting ${vv}`);
     this.sendResponse(response);
   }
 
@@ -330,12 +325,7 @@ export class StarlingMonkeyDebugSession extends LoggingDebugSession {
     args: DebugProtocol.EvaluateArguments,
     _request?: DebugProtocol.Request
   ): Promise<void> {
-    console.warn(`*** EVAL EVAL EVAL!  ${args.expression}`);
     let result = await this._runtime.evaluate(args.expression);
-    // response.body = {
-    //   result: 'spork spork spork',
-    //   variablesReference: 4098,
-    // };
     response.body = result;
     this.sendResponse(response);
   }
