@@ -20,66 +20,17 @@ import {
 import { StarlingMonkeyDebugSession } from "./starlingMonkeyDebugger.js";
 import { FileAccessor, IStarlingMonkeyRuntimeConfig } from "./starlingMonkeyRuntime.js";
 
-// function registerCommand(context: ExtensionContext, name: String, handler: (resource: Uri | undefined) => Promise<void>) {
-//   const fullName = `extension.starlingmonkey-debugger.${name}`;
-//   const subscription = commands.registerCommand(fullName, handler);
-//   context.subscriptions.push(subscription);
-// }
-
-function registerInputCommand(context: ExtensionContext, name: String, options?: InputBoxOptions) {
+function registerInputCommand(context: ExtensionContext, name: string, options?: InputBoxOptions) {
   const fullName = `extension.starlingmonkey-debugger.${name}`;
   const handler = async () => await window.showInputBox(options);
   const subscription = commands.registerCommand(fullName, handler);
   context.subscriptions.push(subscription);
 }
 
-// function defaultToActiveDocument(resource: Uri | undefined): Uri | undefined {
-//   if (!resource && window.activeTextEditor) {
-//     return window.activeTextEditor.document.uri;
-//   }
-//   return resource;
-// }
-
-// async function runEditorContents(resource: Uri | undefined): Promise<void> {
-//   const targetResource = defaultToActiveDocument(resource);
-//   if (targetResource) {
-//     await debug.startDebugging(
-//       undefined,
-//       {
-//         type: "starlingmonkey",
-//         name: "Run File",
-//         request: "launch",
-//         program: targetResource.fsPath,
-//         component: "${workspaceFolder}/${command:AskForComponent}",
-//       },
-//       { noDebug: true }
-//     );
-//   }
-// }
-
-// async function debugEditorContents(resource: Uri | undefined): Promise<void> {
-//   const targetResource = defaultToActiveDocument(resource);
-//   if (targetResource) {
-//     await debug.startDebugging(undefined, {
-//       type: "starlingmonkey",
-//       name: "Debug File",
-//       request: "launch",
-//       program: targetResource.fsPath,
-//       component: "${workspaceFolder}/${command:AskForComponent}",
-//       stopOnEntry: true,
-//     });
-//   }
-// }
-
 export function activateStarlingMonkeyDebug(
   context: ExtensionContext,
   factory?: DebugAdapterDescriptorFactory
 ) {
-  // TODO: these do not work.  Are they needed or just copied from the
-  // sample "mock" debugger?
-  // registerCommand(context, "runEditorContents", runEditorContents);
-  // registerCommand(context, "debugEditorContents", debugEditorContents);
-
   registerInputCommand(context, "getProgramName", {
     placeHolder: "Please enter the name of a JS file in the workspace folder",
     value: "index.js",
@@ -126,7 +77,7 @@ export function activateStarlingMonkeyDebug(
   }
 }
 
-function isDisposable(obj: any): obj is { dispose(): any } {
+function isDisposable(obj: any): obj is { dispose(): any } { // eslint-disable-line @typescript-eslint/no-explicit-any
   return typeof obj["dispose"] === "function";
 }
 
@@ -168,7 +119,7 @@ export const workspaceFileAccessor: FileAccessor = {
     let uri: Uri;
     try {
       uri = pathToUri(path);
-    } catch (e) {
+    } catch {
       return new TextEncoder().encode(`cannot read '${path}'`);
     }
 
@@ -182,7 +133,7 @@ export const workspaceFileAccessor: FileAccessor = {
 function pathToUri(path: string) {
   try {
     return Uri.file(path);
-  } catch (e) {
+  } catch {
     return Uri.parse(path);
   }
 }
@@ -191,7 +142,7 @@ class InlineDebugAdapterFactory implements DebugAdapterDescriptorFactory {
   createDebugAdapterDescriptor(
     session: DebugSession
   ): ProviderResult<DebugAdapterDescriptor> {
-    let config = workspace.getConfiguration("starlingmonkey");
+    const config = workspace.getConfiguration("starlingmonkey");
     return new DebugAdapterInlineImplementation(
       new StarlingMonkeyDebugSession(
         workspaceFileAccessor,

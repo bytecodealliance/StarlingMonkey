@@ -75,7 +75,7 @@ export class SourceMaps implements ISourceMaps {
 
   private _sourceMapCache = new Map<string, Promise<SourceMap>>(); // all cached source maps
   private _generatedToSourceMaps = new Map<string, SourceMap>(); // generated file -> SourceMap
-  private _sourceToGeneratedMaps = new Map<string, SourceMap>(); // source file -> SourceMap
+  private _sourceToGeneratedMaps = new Map<string, [SourceMap, string | undefined]>(); // source file -> SourceMap
   private _preLoad: Promise<void>;
 
   public constructor(
@@ -92,6 +92,7 @@ export class SourceMaps implements ISourceMaps {
       this._preLoad = PathUtils.multiGlob(generatedCodeGlobs).then((paths) => {
         return Promise.all(
           paths.map((path) => {
+            // path is absolute at this point
             return this._findSourceMapUrlInFile(path)
               .then((uri) => {
                 return this._getSourceMap(uri, Path.relative(this.workspacePath, path));
@@ -116,7 +117,7 @@ export class SourceMaps implements ISourceMaps {
 
   public MapPathFromSource(pathToSource: string): Promise<string | null> {
     return this._preLoad.then(() => {
-      return this._findSourceToGeneratedMapping(pathToSource).then((map) => {
+      return this._findSourceToGeneratedMapping(pathToSource, {}).then((map) => {
         return map ? map.generatedPath() : null;
       });
     });
@@ -126,11 +127,21 @@ export class SourceMaps implements ISourceMaps {
     location: SourceLocation,
     bias?: Bias
   ): Promise<boolean> {
+    // console.warn(`  ... entered MapFromSource`);
     return this._preLoad.then(() => {
-      return this._findSourceToGeneratedMapping(location.path).then((map) => {
+      // console.warn(`  ... finding mapping`);
+      let lookup: { key?: string | undefined } = {};
+      return this._findSourceToGeneratedMapping(location.path, lookup).then((map) => {
+        // console.warn(`  ... find mapping completed with ${map ? "map" : "null"}`);
         if (map) {
-          const mr = map.generatedPositionFor(location.path, location.line, location.column, bias);
+          const posKey = lookup.key ?? location.path;
+          // console.warn(`  ... got a sourcemap genpath=${map.generatedPath()}, lookup key=${lookup.key}`);
+          const mr = map.generatedPositionFor(posKey, location.line, location.column, bias);
+          // if (!mr) {
+          //   console.warn(`  ... BUT THE GEN POS IS NULL!!!`);
+          // }
           if (mr && mr.line !== null && mr.column !== null) {
+            // console.warn(`  ... got a pos in ${map.generatedPath()}`);
             location.path = map.generatedPath();
             location.line = mr.line;
             location.column = mr.column;
@@ -188,6 +199,7 @@ export class SourceMaps implements ISourceMaps {
               location.column,
               Bias.GREATEST_LOWER_BOUND
             );
+            // TODO: oh no! originalPosition ^^ can return all fields null which results in "did map" but it just gives us the input back!
             if (!mr) {
               mr = map.originalPositionFor(
                 location.line,
@@ -234,7 +246,8 @@ export class SourceMaps implements ISourceMaps {
    * and some heuristics.
    */
   private _findSourceToGeneratedMapping(
-    pathToSource: string
+    pathToSource: string,
+    lookupKey: { key?: string | undefined }
   ): Promise<SourceMap | null> {
     if (!pathToSource) {
       return Promise.resolve(null);
@@ -242,8 +255,10 @@ export class SourceMaps implements ISourceMaps {
 
     // try to find in cache by source path
     const pathToSourceKey = PathUtils.pathNormalize(pathToSource);
-    const map = this._sourceToGeneratedMaps.get(pathToSourceKey);
-    if (map) {
+    const found = this._sourceToGeneratedMaps.get(pathToSourceKey);
+    if (found) {
+      const [map, key] = found;
+      lookupKey.key = key;
       return Promise.resolve(map);
     }
 
@@ -279,9 +294,23 @@ export class SourceMaps implements ISourceMaps {
         return map;
       })
       .then((map) => {
+        if (!map) {
+          for (const m of this._generatedToSourceMaps.values()) {
+            for (const s of m.allSourcePaths() || []) {
+              // TODO: this is *very* suspicious!
+              if (s.endsWith(pathToSourceKey)) {
+                lookupKey.key = s;
+                return m;
+              }
+            }
+          }
+        }
+        return map;
+      })
+      .then((map) => {
         if (map) {
           // remember found map for source key
-          this._sourceToGeneratedMaps.set(pathToSourceKey, map);
+          this._sourceToGeneratedMaps.set(pathToSourceKey, [map, lookupKey.key]);
         }
         return map;
       });
@@ -363,7 +392,7 @@ export class SourceMaps implements ISourceMaps {
         let uri = matches[1].trim();
         if (pathToGenerated) {
           console.log(
-            `_findSourceMapUrl: source map url found at end of generated file '${pathToGenerated}'`
+            `_findSourceMapUrl: source map url ${uri} found at end of generated file '${pathToGenerated}'`
           );
           return URI.parse(uri, Path.dirname(pathToGenerated));
         } else {
@@ -511,8 +540,8 @@ export class SourceMaps implements ISourceMaps {
       this._generatedToSourceMaps.set(genPath, map);
       const sourcePaths = map.allSourcePaths();
       for (let path of sourcePaths) {
-        this._sourceToGeneratedMaps.set(path, map);
-        console.log(`_registerSourceMap: ${path} -> ${genPath}`);
+        this._sourceToGeneratedMaps.set(path, [map, undefined]);
+        console.log(`_registerSourceMap: ${path} -> ${map.generatedPath()}`);
       }
     }
     return map;
@@ -590,11 +619,16 @@ export class SourceMap {
 
     // use source-map utilities to normalize sources entries
     this._sources = sm.sources.map(util.normalize).map((source: any) => {
-      return this._sourceRoot &&
-        util.isAbsolute(this._sourceRoot) &&
-        util.isAbsolute(source)
-        ? util.relative(this._sourceRoot, source)
-        : source;
+      if (this._sourceRoot && util.isAbsolute(this._sourceRoot) && util.isAbsolute(source)) {
+        return util.relative(this._sourceRoot, source);
+      } else {
+        return source;
+      }
+      // return this._sourceRoot &&
+      //   util.isAbsolute(this._sourceRoot) &&
+      //   util.isAbsolute(source)
+      //   ? util.relative(this._sourceRoot, source)
+      //   : source;
     });
 
 		return new SM.SourceMapConsumer(sm).then(x => {
@@ -678,10 +712,12 @@ export class SourceMap {
         column: column,
         bias: bias || Bias.LEAST_UPPER_BOUND,
       };
+      // console.warn(`  ... now looking up needle ${JSON.stringify(needle)}`);
 
       return this._smc.generatedPositionFor(needle);
     }
 
+    // console.warn(`  ... did NOT find source BOOOOO!`);
     return null;
   }
 
@@ -715,6 +751,11 @@ export class SourceMap {
     for (let name of this._sources!) {
       if (absPath === name) {
         return name;
+      }
+    }
+    for (let name of this._sources!) {
+      if (name.endsWith(absPath)) {
+        return absPath;
       }
     }
     return null;
