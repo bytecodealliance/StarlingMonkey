@@ -26,7 +26,7 @@ interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
   noDebug?: boolean;
 }
 
-interface IAttachRequestArguments extends ILaunchRequestArguments {}
+interface IAttachRequestArguments extends ILaunchRequestArguments {} // eslint-disable-line @typescript-eslint/no-empty-object-type
 
 export class StarlingMonkeyDebugSession extends LoggingDebugSession {
   private static threadID = 1;
@@ -192,8 +192,8 @@ export class StarlingMonkeyDebugSession extends LoggingDebugSession {
     const breakpoints = response.body.breakpoints;
     if (args.breakpoints) {
       for (const bp of args.breakpoints) {
-        let line = this.convertClientLineToDebugger(bp.line);
-        let column = bp.column
+        const line = this.convertClientLineToDebugger(bp.line);
+        const column = bp.column
           ? this.convertClientColumnToDebugger(bp.column)
           : undefined;
         const result = await this._runtime.setBreakPoint(path, line, column);
@@ -271,7 +271,7 @@ export class StarlingMonkeyDebugSession extends LoggingDebugSession {
             this.createSource(f.sourceLocation?.path),
           );
           if (f.sourceLocation) {
-            sf.line = this.convertDebuggerLineToClient(f.sourceLocation.line)
+            sf.line = this.convertDebuggerLineToClient(f.sourceLocation.line);
             sf.column = this.convertDebuggerColumnToClient(f.sourceLocation.column);
           }
 
@@ -291,7 +291,7 @@ export class StarlingMonkeyDebugSession extends LoggingDebugSession {
     response: DebugProtocol.ScopesResponse,
     args: DebugProtocol.ScopesArguments
   ): Promise<void> {
-    let scopes = await this._runtime.getScopes(args.frameId);
+    const scopes = await this._runtime.getScopes(args.frameId);
     response.body = { scopes: scopes.slice() };
     this.sendResponse(response);
   }
@@ -301,7 +301,7 @@ export class StarlingMonkeyDebugSession extends LoggingDebugSession {
     args: DebugProtocol.VariablesArguments,
     _request?: DebugProtocol.Request
   ): Promise<void> {
-    let variables = await this._runtime.getVariables(args.variablesReference);
+    const variables = await this._runtime.getVariables(args.variablesReference);
     response.body = { variables: variables.slice() };
     this.sendResponse(response);
   }
@@ -311,7 +311,7 @@ export class StarlingMonkeyDebugSession extends LoggingDebugSession {
     args: DebugProtocol.SetVariableArguments
   ): Promise<void> {
     // TODO: implement
-    let message = await this._runtime.setVariable(
+    const message = await this._runtime.setVariable(
       args.variablesReference,
       args.name,
       args.value
@@ -325,7 +325,7 @@ export class StarlingMonkeyDebugSession extends LoggingDebugSession {
     args: DebugProtocol.EvaluateArguments,
     _request?: DebugProtocol.Request
   ): Promise<void> {
-    let result = await this._runtime.evaluate(args.expression);
+    const result = await this._runtime.evaluate(args.expression);
     response.body = result;
     this.sendResponse(response);
   }

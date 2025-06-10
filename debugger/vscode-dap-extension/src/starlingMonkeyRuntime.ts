@@ -32,7 +32,7 @@ type RuntimeEventMap = {
   // TODO: are these used? Does SM support them?
   stopOnDataBreakpoint: [],
   stopOnInstructionBreakpoint: [],
-  stopOnException: [exception: any | undefined],
+  stopOnException: [exception: unknown | undefined],
   stopOnStep: [],
   end: [],
 }
@@ -60,7 +60,7 @@ interface Running {
   state: 'running';
 }
 
-function assert(condition: any, msg?: string): asserts condition {
+function assert(condition: boolean, msg?: string): asserts condition {
   console.assert(condition, msg);
 }
 
@@ -149,7 +149,7 @@ class ComponentRuntimeInstance {
       return;
     }
 
-    let componentRuntimeArgs = Array.from(config.componentRuntime.options).map(opt => {
+    const componentRuntimeArgs = Array.from(config.componentRuntime.options).map(opt => {
       return opt
         .replace("${workspaceFolder}", workspaceFolder)
         .replace("${component}", component);
@@ -172,7 +172,7 @@ class ComponentRuntimeInstance {
         config.componentRuntime.executable,
         componentRuntimeArgs
       );
-      let disposable = window.onDidEndTerminalShellExecution((event) => {
+      const disposable = window.onDidEndTerminalShellExecution((event) => {
         if (event.execution === this._runtimeExecution) {
           this._runtimeExecution = undefined;
           disposable.dispose();
@@ -195,9 +195,9 @@ class ComponentRuntimeInstance {
       return;
     }
 
-    let signal = new Signal<void, void>();
+    const signal = new Signal<void, void>();
     this._terminal = window.createTerminal();
-    let terminalCloseDisposable = window.onDidCloseTerminal((terminal) => {
+    const terminalCloseDisposable = window.onDidCloseTerminal((terminal) => {
       if (terminal === this._terminal) {
         signal.resolve();
         this._terminal = undefined;
@@ -206,7 +206,7 @@ class ComponentRuntimeInstance {
       }
     });
 
-    let shellIntegrationDisposable = window.onDidChangeTerminalShellIntegration(
+    const shellIntegrationDisposable = window.onDidChangeTerminalShellIntegration(
       async ({ terminal }) => {
         if (terminal === this._terminal) {
           clearTimeout(timeout);
@@ -216,7 +216,7 @@ class ComponentRuntimeInstance {
       }
     );
     // Fallback to sendText if there is no shell integration within 3 seconds of launching
-    let timeout = setTimeout(() => {
+    const timeout = setTimeout(() => {
       shellIntegrationDisposable.dispose();
       signal.resolve();
     }, 3000);
@@ -272,7 +272,7 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
     // and request-response stuff.  Feels like there should be a better way.
 
     while (true) {
-      let message = await this._messageReceived.wait();
+      const message = await this._messageReceived.wait();
 
       // Deal with request-response messages
       // TODO: I still feel like this would be safer with correlation IDs but :shrug: for now
@@ -390,8 +390,8 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
           );
           return;
         }
-        let extensionDir = `${__dirname}/../`;
-        let debuggerScript = await this._fileAccessor.readFile(`${extensionDir}/dist/debugger.js`);
+        const extensionDir = `${__dirname}/../`;
+        const debuggerScript = await this._fileAccessor.readFile(`${extensionDir}/dist/debugger.js`);
         this._socket.write(`${debuggerScript.length}\n${debuggerScript}`);
         debuggerScriptSent = true;
         return;
@@ -417,17 +417,17 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
       if (partialMessage.length < expectedLength) {
         return;
       }
-      let message = partialMessage.slice(0, expectedLength);
+      const message = partialMessage.slice(0, expectedLength);
       console.debug(`<-- received: ${message}`);
       try {
-        let parsed = JSON.parse(message);
+        const parsed = JSON.parse(message);
         resetMessageState();
         this._messageReceived.resolve(parsed);
       } catch (e) {
         console.warn(`Illformed message received. Error: ${e}, message: ${partialMessage}`);
         resetMessageState();
       }
-    }
+    };
 
     this._server = Net.createServer(socket => {
       this._socket = socket;
@@ -435,7 +435,7 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
       socket.on("data", handleData);
       socket.on("end", () => this.emit("end"));
     }).listen();
-    let port = (<Net.AddressInfo>this._server.address()).port;
+    const port = (<Net.AddressInfo>this._server.address()).port;
     ComponentRuntimeInstance.setNextSessionPort(port);
   }
 
@@ -490,18 +490,27 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
     const message = await this._stack.wait();
     
     const stack = message.value;
-    for (let frame of stack) {
+    for (const frame of stack) {
       if (frame.sourceLocation) {
         // Because JS is all by-reference, location objects can end up being
         // shared across frames or calls. We don't want qualification or translation
         // to be applied twice to the same location, so we always spin off a
         // new object instance to perform the translation on.
-        let sourceLocation = { ...frame.sourceLocation };
+        const sourceLocation = { ...frame.sourceLocation };
         sourceLocation.path = this.qualifyPath(frame.sourceLocation.path);
-        await this._translateLocationFromContent(sourceLocation);
+        const premappingSourcePath = sourceLocation.path;
+        const didMap = await this._translateLocationFromContent(sourceLocation);
+        if (didMap && sourceLocation.path !== premappingSourcePath && !Path.isAbsolute(sourceLocation.path)) {
+          // We have been SOURCEMAPPED into a relative path and you can bet your bottom
+          // dollar it's not relative to what we expect it to be.
+          const premappingDir = Path.dirname(premappingSourcePath);
+          const postmappingPath = Path.join(premappingDir, sourceLocation.path);
+          sourceLocation.path = postmappingPath;
+        }
         frame.sourceLocation = sourceLocation;
       }
     }
+
     return {
       count: stack.length,
       frames: stack,
@@ -510,13 +519,13 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
 
   private async _translateLocationFromContent(loc: SourceLocation) {
     if (!this._sourceMaps) {
-      return true;
+      return false;
     }
-    let origColumn = loc.column;
+    const origColumn = loc.column;
     if (typeof loc.column === "number" && loc.column > 0) {
       loc.column -= 1;
     }
-    let didMap = await this._sourceMaps.MapToSource(loc);
+    const didMap = await this._sourceMaps.MapToSource(loc);
     if (!didMap) {
       loc.column = origColumn;  // revert the change we made for sourcemap processing
     }
@@ -525,13 +534,13 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
 
   private async _translateLocationToContent(loc: SourceLocation) {
     if (!this._sourceMaps) {
-      return true;
+      return false;
     }
-    let origColumn = loc.column;
+    const origColumn = loc.column;
     if (typeof loc.column === "number") {
       loc.column += 1;
     }
-    let didMap = await this._sourceMaps.MapFromSource(loc);
+    const didMap = await this._sourceMaps.MapFromSource(loc);
     if (!didMap) {
       loc.column = origColumn;  // revert the change we made for sourcemap processing
     }
@@ -540,7 +549,7 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
 
   async getScopes(frameId: number): Promise<ReadonlyArray<Scope>> {
     this.sendMessage({ type: "getScopes", value: frameId });
-    let message = await this._scopes.wait();
+    const message = await this._scopes.wait();
     return message.value;
   }
 
@@ -551,12 +560,12 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
     // TODO: support the full set of query params from BreakpointLocationsArguments
     path = this.normalizePath(path);
 
-    let loc = new SourceLocation(path, line, 0);
+    const loc = new SourceLocation(path, line, 0);
     await this._translateLocationToContent(loc);
     
     await this.sendMessage({ type: "getBreakpointsForLine", value: loc });
 
-    let message = await this._bpsForLine.wait();
+    const message = await this._bpsForLine.wait();
     return message.value;
   }
 
@@ -575,32 +584,48 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
   ): Promise<IRuntimeBreakpoint> {
     path = this.normalizePath(path);
 
-    let loc = new SourceLocation(path, line, column ?? 0);
+    const loc = new SourceLocation(path, line, column ?? 0);
     await this._translateLocationToContent(loc);
 
     this.sendMessage({ type: "setBreakpoint", value: loc });
 
-    // let response = await this.sendAndReceiveMessage({ type: "setBreakpoint", value: {
-    //   path,
-    //   line,
-    //   column,
-    // }});
-
-    let response = await this._bpSet.wait();
+    const response = await this._bpSet.wait();
 
     if (response.value.id !== -1) {
-      loc.line = response.value.line;
-      loc.column = response.value.column ?? 0;
-    }
-    await this._translateLocationFromContent(loc);
+      // let loc = {
+      //   path: response.value.script,
+      //   line: response.value.line,
+      //   column: response.value.column ?? 0,
+      // };
 
-    return { id: response.value.id, ...loc };
+      // console.warn(`*** SET BP: debugger told us ${response.value.script} L${response.value.line} (path was ${loc.path})`);
+      // const didMap = await this._translateLocationFromContent(loc);
+      // console.warn(`*** SET BP: TRANSLATED bploc ${loc.path} L${loc.line} - DID MAP? ${didMap}`);
+      
+      // return { id: response.value.id, script: loc.path, ...loc };
+      
+      // SERIOUSLY IS THIS WHAT WE ARE MEANT TO DO
+      // BECAUSE THIS IS WHAT SEEMS TO WORK
+      return {
+        id: response.value.id,
+        line,
+        column: column ?? 0,
+      };
+
+      // loc.line = response.value.line;
+      // loc.column = response.value.column ?? 0;
+    }
+    // console.warn(`*** SET BP: debugger told us ${response.value.script} L${response.value.line}`);
+    // await this._translateLocationFromContent(loc);
+    // console.warn(`*** SET BP: TRANSLATED bploc ${loc.path} L${loc.line}`);
+
+    // return { id: response.value.id, script: loc.path, ...loc };
     return response.value;
   }
 
   public async getVariables(reference: number): Promise<ReadonlyArray<IRuntimeVariable>> {
     this.sendMessage({ type: "getVariables", value: reference });
-    let message = await this._variables.wait();
+    const message = await this._variables.wait();
     return message.value;
   }
 
@@ -609,10 +634,7 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
     name: string,
     value: string
   ): Promise<IRuntimeVariable> {
-    const jsValue: any = JSON.parse(value);
-    // Manually encode the value so that it'll be decoded as raw values by the runtime, instead of everything becoming a string.
-    // TODO: this seems extraordinarily illegal. What if value contains a double quote, etc. Or is it guaranteed not to by the debug protocol?
-    // let rawValue = `{"variablesReference": ${variablesReference}, "name": "${name}", "value": ${value}}`;
+    const jsValue: unknown = JSON.parse(value);
     this.sendMessage(
       { type: "setVariable", value: {
         variablesReference,
@@ -621,7 +643,7 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
       }}
     );
 
-    let message = await this._variableSet.wait();
+    const message = await this._variableSet.wait();
     return message.value;
   }
 
@@ -630,7 +652,7 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
     variablesReference: number;
   }> {
     this.sendMessage({ type: 'evaluate', value: { expression } });
-    let message = await this._eval.wait();
+    const message = await this._eval.wait();
     return message.value;
   }
 

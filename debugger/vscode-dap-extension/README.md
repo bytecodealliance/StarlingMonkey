@@ -12,7 +12,11 @@ The extension works for content built with a recent (`0.18` and up) version of [
 
 **SAMPLE WORKSPACE? JUST RUN THIS:**
 
-`componentize-js --wit world.wit -o main.wasm --runtime-args "--enable-script-debugging" main.js`
+**`js` workspace:** `componentize-js --wit world.wit -o main.wasm --runtime-args "--enable-script-debugging" main.js`
+
+**`ts` workspace:** `npm run compile`
+
+**`spin-ts` workspace:** `spin build`
 
 (you will need to `npm install -g @bytecodealliance/componentize-js`)
 

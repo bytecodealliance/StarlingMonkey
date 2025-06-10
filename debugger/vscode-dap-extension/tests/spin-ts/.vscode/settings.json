@@ -1,0 +1,12 @@
+{
+    "starlingmonkey": {
+        "componentRuntime": {
+            "executable": "spin",
+            "options": [
+                "up",
+                "-f",
+                "${workspaceFolder}",
+            ],
+        }
+    }
+}

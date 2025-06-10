@@ -5,7 +5,7 @@ import {
   activateStarlingMonkeyDebug,
 } from "./activateStarlingMonkeyDebugger.js";
 
-const runMode: "inline" = "inline";
+const runMode = "inline" as const;  // TODO: bring back 'server' option
 
 export function activate(context: ExtensionContext) {
   switch (runMode) {

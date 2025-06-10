@@ -332,7 +332,7 @@ try {
   }: {
     path: string;
     line: number;
-    column?: number;
+    column: number;
   }): void {
     let fileScripts = scripts.get(path);
     if (!fileScripts) {

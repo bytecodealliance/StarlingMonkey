@@ -1,0 +1,19 @@
+spin_manifest_version = 2
+
+[application]
+authors = ["itowlson <ivan.towlson@fermyon.com>"]
+description = ""
+name = "spin-ts"
+version = "0.1.0"
+
+[[trigger.http]]
+route = "/..."
+component = "spin-ts"
+
+[component.spin-ts]
+source = "dist/spin-ts.wasm"
+allowed_outbound_hosts = ["*://127.0.0.1:*"] # required for communication with the IDE
+exclude_files = ["**/node_modules"]
+[component.spin-ts.build]
+command = ["npm install", "npm run build"]
+watch = ["src/**/*.ts"]

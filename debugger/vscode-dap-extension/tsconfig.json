@@ -7,7 +7,6 @@
         "lib": [
             "ES2022"
         ],
-        // Correctness
         "strict": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
@@ -17,13 +16,13 @@
         "strictNullChecks": true,
         "strictFunctionTypes": true,
         "noUnusedParameters": true,
-        // Emit
         "sourceMap": true,
         "preserveConstEnums": true,
         "removeComments": false,
         "inlineSourceMap": false
     },
     "exclude": [
-        "node_modules"
+        "node_modules",
+        "tests"
     ]
 }

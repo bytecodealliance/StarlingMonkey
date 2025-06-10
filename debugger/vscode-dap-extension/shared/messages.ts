@@ -4,7 +4,7 @@ import type { Scope } from "@vscode/debugadapter";
 export interface IRuntimeBreakpoint {
   id: number;
   line: number;
-  column?: number;
+  column: number;
 }
 
 export interface IRuntimeStackFrame {
@@ -72,7 +72,7 @@ interface SetBreakpointMessage {
   value: {
     path: string;
     line: number;
-    column?: number;
+    column: number;
   }
 }
 
@@ -86,7 +86,7 @@ interface SetVariableMessage {
   value: {
     variablesReference: number;
     name: string;
-    value: any;
+    value: unknown;
   }
 }
 interface EvaluateMessage {
