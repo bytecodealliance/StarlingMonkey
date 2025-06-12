@@ -155,10 +155,15 @@ export interface VariablesResponse {
   type: 'variables',
   value: ReadonlyArray<IRuntimeVariable>,
 }
-export interface VariableSetResponse {
-  type: 'variableSet',
-  value: IRuntimeVariable,
-}
+export type VariableSetResponse = TypedErrorable<'variableSet', IRuntimeVariable>;
+// export interface VariableSetResponse {
+//   type: 'variableSet',
+//   value: IRuntimeVariable,
+// }
+// export interface VariableSetErrorResponse {
+//   type: 'variableSet',
+//   error: string,
+// }
 export interface EvaluateResponse {
   type: 'evaluate';
   value: {
@@ -173,3 +178,12 @@ export interface IRuntimeVariable {
   variablesReference: number;
 }
 
+export function succeeded<M, V>(message: TypedErrorable<M, V>): message is { type: M, value: V } {
+  return !failed(message);
+}
+export function failed<T>(e: Errorable<T>): e is { error: string } {
+  return (<{ error?: string }>e).error !== undefined;
+}
+
+export type TypedErrorable<M, V> = { type: M, value: V } | { type: M, error: string };
+export type Errorable<V> = V | { error: string };

@@ -17,6 +17,7 @@ import {
   StarlingMonkeyRuntime,
   FileAccessor,
 } from "./starlingMonkeyRuntime.js";
+import { failed } from "../shared/messages.js";
 
 interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
   program: string;
@@ -316,7 +317,12 @@ export class StarlingMonkeyDebugSession extends LoggingDebugSession {
       args.name,
       args.value
     );
-    response.body = { value: message.value, type: message.type, variablesReference: message.variablesReference };
+    if (failed(message)) {
+      response.success = false;
+      response.message = message.error;
+    } else {
+      response.body = { value: message.value, type: message.type, variablesReference: message.variablesReference };
+    }
     this.sendResponse(response);
   }
 

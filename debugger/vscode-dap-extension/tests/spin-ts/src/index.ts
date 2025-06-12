@@ -1,6 +1,5 @@
-
 function handle(_request: Request): Response {
-  let thingy = 'world';
+  const thingy = 'world';
   let message = `Hello, ${thingy}`;
   return new Response(message, {
     status: 200,

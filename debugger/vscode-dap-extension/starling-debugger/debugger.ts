@@ -493,7 +493,12 @@ try {
     } else {
       assert(currentFrame);
       let frame = findFrame(currentFrame, variablesReference - 1);
-      frame.environment.setVariable(name, value);
+      try {
+        frame.environment.setVariable(name, value);
+      } catch (e) {
+        sendMessage({ type: 'variableSet', error: `${e}` });
+        return;
+      }
       newValue = { name, ...formatValue(frame.environment.getVariable(name)) };
     }
 
