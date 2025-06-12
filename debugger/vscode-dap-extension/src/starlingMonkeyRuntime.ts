@@ -6,7 +6,7 @@ import { Signal } from "./signals.js";
 import { Terminal, TerminalShellExecution, window } from "vscode";
 import { SourceLocation, SourceMaps } from "./sourcemaps/sourceMaps.js";
 import { dirname } from "path";
-import { BreakpointSetResponse, BreakpointsForLineResponse, EvaluateResponse, InstanceToRuntimeMessage, IRuntimeBreakpoint, IRuntimeStackFrame, IRuntimeVariable, RuntimeToInstanceMessage, ScopesResponse, StackResponse, VariableSetResponse, VariablesResponse } from '../shared/messages';
+import { BreakpointSetResponse, BreakpointsForLineResponse, EvaluateResponse, InstanceToRuntimeMessage, IRuntimeBreakpoint, IRuntimeStackFrame, IRuntimeVariable, RuntimeToInstanceMessage, ScopesResponse, StackResponse, succeeded, VariableSetResponse, VariablesResponse } from '../shared/messages';
 
 export interface FileAccessor {
   isWindows: boolean;
@@ -633,7 +633,7 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
     variablesReference: number,
     name: string,
     value: string
-  ): Promise<IRuntimeVariable> {
+  ): Promise<IRuntimeVariable | { error: string }> {
     const jsValue: unknown = JSON.parse(value);
     this.sendMessage(
       { type: "setVariable", value: {
@@ -644,7 +644,11 @@ export class StarlingMonkeyRuntime extends EventEmitter<RuntimeEventMap> {
     );
 
     const message = await this._variableSet.wait();
-    return message.value;
+    if (succeeded(message)) {
+      return message.value;
+    } else {
+      return { error: message.error };
+    }
   }
 
   public async evaluate(expression: string): Promise<{
