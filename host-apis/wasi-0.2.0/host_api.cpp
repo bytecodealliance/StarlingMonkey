@@ -2,6 +2,8 @@
 #include "bindings/bindings.h"
 #include "handles.h"
 
+#include <utility>
+#include <vector>
 #include <wasi/libc-environ.h>
 
 static std::optional<wasi_clocks_monotonic_clock_own_pollable_t> immediately_ready;
@@ -128,12 +130,33 @@ vector<std::string> environment_get_arguments() {
   return args;
 }
 
+vector<std::pair<std::string, std::string>> environment_get_environment() {
+  bindings_list_tuple2_string_string_t env_vars;
+  wasi_cli_environment_get_environment(&env_vars);
+  vector<std::pair<std::string, std::string>> result;
+  for (size_t i = 0; i < env_vars.len; i++) {
+    // Convert each string to std::string, trimming any trailing newlines
+    std::string key(reinterpret_cast<char *>(env_vars.ptr[i].f0.ptr), env_vars.ptr[i].f0.len);
+    std::string value(reinterpret_cast<char *>(env_vars.ptr[i].f1.ptr), env_vars.ptr[i].f1.len);
+    
+    // Trim trailing newlines
+    while (!key.empty() && key.back() == '\n') {
+      key.pop_back();
+    }
+    while (!value.empty() && value.back() == '\n') {
+      value.pop_back();
+    }
+    
+    result.emplace_back(std::move(key), std::move(value));
+  }
+  return result;
+}
+
 HttpHeaders::HttpHeaders(std::unique_ptr<HandleState> state)
     : HttpHeadersReadOnly(std::move(state)) {}
 
 HttpHeaders::HttpHeaders() {
-  handle_state_ =
-      std::make_unique<WASIHandle<HttpHeaders>>(wasi_http_types_constructor_fields());
+  handle_state_ = std::make_unique<WASIHandle<HttpHeaders>>(wasi_http_types_constructor_fields());
 }
 
 Result<HttpHeaders *> HttpHeaders::FromEntries(vector<tuple<HostString, HostString>> &entries) {
@@ -166,16 +189,11 @@ HttpHeaders::HttpHeaders(const HttpHeadersReadOnly &headers) : HttpHeadersReadOn
 // We guard against the list of forbidden headers Wasmtime uses:
 // https://github.com/bytecodealliance/wasmtime/blob/9afc64b4728d6e2067aa52331ff7b1d6f5275b5e/crates/wasi-http/src/types.rs#L273-L284
 static const std::vector forbidden_request_headers = {
-  "connection",
-  "host",
-  "http2-settings",
-  "keep-alive",
-  "proxy-authenticate",
-  "proxy-authorization",
-  "proxy-connection",
-  "te",
-  "transfer-encoding",
-  "upgrade",
+    "connection",         "host",
+    "http2-settings",     "keep-alive",
+    "proxy-authenticate", "proxy-authorization",
+    "proxy-connection",   "te",
+    "transfer-encoding",  "upgrade",
 };
 
 // WASI hosts don't currently make a difference between request and response headers
@@ -395,10 +413,10 @@ class BodyWriteAllTask final : public api::AsyncTask {
 
 public:
   explicit BodyWriteAllTask(HttpOutgoingBody *outgoing_body, HostBytes bytes,
-                          api::TaskCompletionCallback completion_callback,
-                          HandleObject callback_receiver)
-      : outgoing_body_(outgoing_body), cb_(completion_callback),
-        cb_receiver_(callback_receiver), bytes_(std::move(bytes)) {
+                            api::TaskCompletionCallback completion_callback,
+                            HandleObject callback_receiver)
+      : outgoing_body_(outgoing_body), cb_(completion_callback), cb_receiver_(callback_receiver),
+        bytes_(std::move(bytes)) {
     outgoing_pollable_ = outgoing_body_->subscribe().unwrap();
   }
 
@@ -435,9 +453,7 @@ public:
     return true;
   }
 
-  [[nodiscard]] int32_t id() override {
-    return outgoing_pollable_;
-  }
+  [[nodiscard]] int32_t id() override { return outgoing_pollable_; }
 
   void trace(JSTracer *trc) override {
     JS::TraceEdge(trc, &cb_receiver_, "BodyWriteAllTask completion callback receiver");
@@ -445,7 +461,8 @@ public:
 };
 
 Result<Void> HttpOutgoingBody::write_all(api::Engine *engine, HostBytes bytes,
-  api::TaskCompletionCallback callback, HandleObject cb_receiver) {
+                                         api::TaskCompletionCallback callback,
+                                         HandleObject cb_receiver) {
   if (!valid()) {
     // TODO: proper error handling for all 154 error codes.
     return Result<Void>::err(154);
@@ -709,8 +726,7 @@ HttpOutgoingRequest *HttpOutgoingRequest::make(string_view method_str, optional<
     wasi_http_types_method_outgoing_request_set_authority(borrow, maybe_authority);
 
     // TODO: error handling on result
-    wasi_http_types_method_outgoing_request_set_path_with_query(borrow,
-                                                                      maybe_path_with_query);
+    wasi_http_types_method_outgoing_request_set_path_with_query(borrow, maybe_path_with_query);
   }
 
   auto *state = new WASIHandle<HttpOutgoingRequest>(handle);

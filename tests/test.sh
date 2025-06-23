@@ -90,7 +90,7 @@ if [ -z "$test_component" ]; then
    fi
 fi
 
-$wasmtime serve -S common --addr 0.0.0.0:0 "$test_component" 1> "$stdout_log" 2> "$stderr_log" &
+$wasmtime serve -S common --addr 0.0.0.0:0 --env TEST_VAR=test_value --env ANOTHER_VAR=another_value --env EMPTY_VAR= "$test_component" 1> "$stdout_log" 2> "$stderr_log" &
 wasmtime_pid="$!"
 
 function cleanup {
