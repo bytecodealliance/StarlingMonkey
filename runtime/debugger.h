@@ -1,5 +1,6 @@
 #ifndef DEBUGGER_H
 #define DEBUGGER_H
+
 #include "extension-api.h"
 
 namespace content_debugger {
