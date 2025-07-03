@@ -323,9 +323,14 @@ namespace content_debugger {
 
 void maybe_init_debugger(api::Engine *engine, bool content_already_initialized) {}
 
-bool dbg_print(JSContext *cx, unsigned argc, Value *vp) { return false; }
+bool dbg_print(JSContext *cx, unsigned argc, Value *vp) {
+  MOZ_ASSERT_UNREACHABLE("dbg_print only available with ENABLE_JS_DEBUGGER build option set.");
+  return false;
+}
 
-mozilla::Maybe<std::string_view> replacement_script_path() { return mozilla::Nothing(); }
+mozilla::Maybe<std::string_view> replacement_script_path() {
+  return mozilla::Nothing();
+}
 
 } // namespace content_debugger
 
