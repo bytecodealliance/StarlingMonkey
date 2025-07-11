@@ -1,0 +1,47 @@
+# TODO: separate workflow for now to facilitate testing
+
+name: Debugger
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+defaults:
+  run:
+    shell: bash
+
+# Cancel any in-flight jobs for the same PR/branch so there's only one active
+# at a time
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  debugger:
+    name: Build and package debugger
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./debugger/vscode-dap-extension
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build debugger VS Code extension
+      run: |
+        npm install --no-save
+        npm run compile
+    - name: Lint debugger VS Code extension
+      run: |
+        npx eslint
+    - name: Package debugger VS Code extension
+      run: |
+        npm install -g vsce
+        npm run package
+        mkdir ~/vsix
+        mv *.vsix ~/vsix
+    - name: Archive extension package
+      uses: actions/upload-artifact@v4
+      with:
+        name: debugger-vsix
+        path: ~/vsix  # upload-artifact doesn't respect working-directory

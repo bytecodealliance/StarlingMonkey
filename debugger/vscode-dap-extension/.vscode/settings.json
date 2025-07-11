@@ -1,0 +1,9 @@
+{
+    "search.exclude": {
+        "out": true
+    },
+    "typescript.tsc.autoDetect": "off",
+
+    "git.branchProtection": ["main"],
+    "git.branchProtectionPrompt": "alwaysCommitToNewBranch"
+}
