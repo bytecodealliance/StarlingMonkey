@@ -1,0 +1,21 @@
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length
+
+# Treat all warnings as errors
+WarningsAsErrors: '*'
+
+# Only warn on headers in the code tree
+HeaderFilterRegex: 'builtins/|runtime/'
+
+# Use the same style as clang-format (look for .clang-format)
+FormatStyle: file
+
+# Don’t analyze temporary dtors (speeds up checking)
+AnalyzeTemporaryDtors: false
