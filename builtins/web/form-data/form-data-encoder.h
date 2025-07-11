@@ -10,7 +10,7 @@ namespace form_data {
 class OutOfMemory {};
 class MultipartFormDataImpl;
 
-class MultipartFormData : public FinalizableBuiltinImpl<MultipartFormData> {
+class MultipartFormData : public BuiltinImpl<MultipartFormData, FinalizableClassPolicy> {
   static MultipartFormDataImpl *as_impl(JSObject *self);
 
   static bool read(JSContext *cx, HandleObject self, std::span<uint8_t> buf,

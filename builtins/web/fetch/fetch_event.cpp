@@ -1,11 +1,13 @@
 #include "fetch_event.h"
-#include "../performance.h"
-#include "../url.h"
-#include "../worker-location.h"
 #include "encode.h"
 #include "request-response.h"
 
 #include "../dom-exception.h"
+#include "../event/event-target.h"
+#include "../event/global-event-target.h"
+#include "../performance.h"
+#include "../url.h"
+#include "../worker-location.h"
 
 #include <allocator.h>
 #include <debugger.h>
@@ -14,44 +16,43 @@
 #include <iostream>
 #include <memory>
 
-using namespace std::literals::string_view_literals;
+using builtins::web::event::Event;
+using builtins::web::event::EventTarget;
+using builtins::web::event::global_event_target;
+
+using EventFlag = Event::EventFlag;
 
 namespace builtins::web::fetch::fetch_event {
 
 namespace {
 
 api::Engine *ENGINE;
+JSString *fetch_type_atom;
 
-PersistentRooted<JSObject *> INSTANCE;
-JS::PersistentRootedObjectVector *FETCH_HANDLERS;
+JS::PersistentRootedObject INSTANCE;
 host_api::HttpOutgoingBody *STREAMING_BODY;
 
 void inc_pending_promise_count(JSObject *self) {
   MOZ_ASSERT(FetchEvent::is_instance(self));
-  auto count =
-      JS::GetReservedSlot(self, static_cast<uint32_t>(FetchEvent::Slots::PendingPromiseCount))
-          .toInt32();
+  auto count = JS::GetReservedSlot(self, FetchEvent::Slots::PendingPromiseCount).toInt32();
   count++;
   MOZ_ASSERT(count > 0);
   if (count == 1) {
     ENGINE->incr_event_loop_interest();
   }
-  JS::SetReservedSlot(self, static_cast<uint32_t>(FetchEvent::Slots::PendingPromiseCount),
-                      JS::Int32Value(count));
+
+  JS::SetReservedSlot(self, FetchEvent::Slots::PendingPromiseCount, JS::Int32Value(count));
 }
 
 void dec_pending_promise_count(JSObject *self) {
   MOZ_ASSERT(FetchEvent::is_instance(self));
-  auto count =
-      JS::GetReservedSlot(self, static_cast<uint32_t>(FetchEvent::Slots::PendingPromiseCount))
-          .toInt32();
+  auto count = JS::GetReservedSlot(self, FetchEvent::Slots::PendingPromiseCount).toInt32();
   MOZ_ASSERT(count > 0);
   count--;
   if (count == 0) {
     ENGINE->decr_event_loop_interest();
   }
-  JS::SetReservedSlot(self, static_cast<uint32_t>(FetchEvent::Slots::PendingPromiseCount),
-                      JS::Int32Value(count));
+  JS::SetReservedSlot(self, FetchEvent::Slots::PendingPromiseCount, JS::Int32Value(count));
 }
 
 // Step 5 of https://w3c.github.io/ServiceWorker/#wait-until-method
@@ -283,7 +284,7 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
 
   // Step 2
-  if (!is_dispatching(self)) {
+  if (!Event::has_flag(self, EventFlag::Dispatch)) {
     return dom_exception::DOMException::raise(
         cx, "FetchEvent#respondWith must be called synchronously from within a FetchEvent handler",
         "InvalidStateError");
@@ -385,25 +386,30 @@ const JSPropertySpec FetchEvent::properties[] = {
 
 JSObject *FetchEvent::create(JSContext *cx) {
   JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (!self)
+  if (!self) {
     return nullptr;
+  }
+
+  JS::RootedValue type(cx, JS::StringValue(fetch_type_atom));
+  JS::RootedValue init(cx);
+  if (!Event::init(cx, self, type, init)) {
+    return nullptr;
+  }
 
   JS::RootedObject request(cx, prepare_downstream_request(cx));
-  if (!request)
+  if (!request) {
     return nullptr;
+  }
 
-  JS::RootedObject dec_count_handler(cx,
-                                     create_internal_method<dec_pending_promise_count>(cx, self));
-  if (!dec_count_handler)
+  JS::RootedObject dec_count_handler(cx, create_internal_method<dec_pending_promise_count>(cx, self));
+  if (!dec_count_handler) {
     return nullptr;
+  }
 
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::Request), JS::ObjectValue(*request));
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::Dispatch), JS::FalseValue());
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::State),
-                      JS::Int32Value((int)State::unhandled));
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::PendingPromiseCount), JS::Int32Value(0));
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::DecPendingPromiseCountFunc),
-                      JS::ObjectValue(*dec_count_handler));
+  JS::SetReservedSlot(self, Slots::Request, JS::ObjectValue(*request));
+  JS::SetReservedSlot(self, Slots::CurrentState, JS::Int32Value((int)State::unhandled));
+  JS::SetReservedSlot(self, Slots::PendingPromiseCount, JS::Int32Value(0));
+  JS::SetReservedSlot(self, Slots::DecPendingPromiseCountFunc, JS::ObjectValue(*dec_count_handler));
 
   INSTANCE.init(cx, self);
   self = INSTANCE;
@@ -422,38 +428,20 @@ bool FetchEvent::is_active(JSObject *self) {
   // state because that requires us to extend the service's lifetime as well. In
   // the spec this is achieved using individual promise counts for the body read
   // operations.
-  return JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::Dispatch)).toBoolean() ||
-         state(self) == State::responseStreaming ||
-         JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::PendingPromiseCount)).toInt32() > 0;
-}
-
-bool FetchEvent::is_dispatching(JSObject *self) {
-  MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::Dispatch)).toBoolean();
-}
-
-void FetchEvent::start_dispatching(JSObject *self) {
-  MOZ_ASSERT(!is_dispatching(self));
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::Dispatch), JS::TrueValue());
-}
-
-void FetchEvent::stop_dispatching(JSObject *self) {
-  MOZ_ASSERT(is_dispatching(self));
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::Dispatch), JS::FalseValue());
+  return Event::has_flag(self, EventFlag::Dispatch) || state(self) == State::responseStreaming ||
+         JS::GetReservedSlot(self, Slots::PendingPromiseCount).toInt32() > 0;
 }
 
 FetchEvent::State FetchEvent::state(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return static_cast<State>(
-      JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::State)).toInt32());
+  return static_cast<FetchEvent::State>(JS::GetReservedSlot(self, Slots::CurrentState).toInt32());
 }
 
-void FetchEvent::set_state(JSObject *self, State new_state) {
+void FetchEvent::set_state(JSObject *self, FetchEvent::State new_state) {
   MOZ_ASSERT(is_instance(self));
   auto current_state = state(self);
   MOZ_ASSERT((uint8_t)new_state > (uint8_t)current_state);
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::State),
-                      JS::Int32Value(static_cast<int32_t>(new_state)));
+  JS::SetReservedSlot(self, Slots::CurrentState, JS::Int32Value(static_cast<int32_t>(new_state)));
 
   if (current_state == State::responseStreaming &&
     (new_state == State::responseDone || new_state == State::respondedWithError)) {
@@ -469,63 +457,15 @@ bool FetchEvent::response_started(JSObject *self) {
   return current_state != State::unhandled && current_state != State::waitToRespond;
 }
 
-static bool addEventListener(JSContext *cx, unsigned argc, Value *vp) {
-  JS::CallArgs args = CallArgsFromVp(argc, vp);
-  if (!args.requireAtLeast(cx, "addEventListener", 2)) {
-    return false;
-  }
-
-  auto event_chars = core::encode(cx, args[0]);
-  if (!event_chars) {
-    return false;
-  }
-
-  if (strncmp(event_chars.begin(), "fetch", event_chars.len)) {
-    fprintf(stderr,
-            "Error: addEventListener only supports the event 'fetch' right now, "
-            "but got event '%s'\n",
-            event_chars.begin());
-    exit(1);
-  }
-
-  RootedValue val(cx, args[1]);
-  if (!val.isObject() || !JS_ObjectIsFunction(&val.toObject())) {
-    fprintf(stderr, "Error: addEventListener: Argument 2 is not a function.\n");
-    exit(1);
-  }
-
-  return FETCH_HANDLERS->append(&val.toObject());
-}
-
 static void dispatch_fetch_event(HandleObject event, double *total_compute) {
   MOZ_ASSERT(FetchEvent::is_instance(event));
-  // auto pre_handler = system_clock::now();
 
-  RootedValue result(ENGINE->cx());
   RootedValue event_val(ENGINE->cx(), JS::ObjectValue(*event));
-  HandleValueArray argsv = HandleValueArray(event_val);
-  RootedValue handler(ENGINE->cx());
   RootedValue rval(ENGINE->cx());
+  RootedObject event_target(ENGINE->cx(), global_event_target());
+  MOZ_RELEASE_ASSERT(event_target);
 
-  FetchEvent::start_dispatching(event);
-
-  for (size_t i = 0; i < FETCH_HANDLERS->length(); i++) {
-    handler.setObject(*(*FETCH_HANDLERS)[i]);
-    if (!JS_CallFunctionValue(ENGINE->cx(), ENGINE->global(), handler, argsv, &rval)) {
-      ENGINE->dump_pending_exception("dispatching FetchEvent\n");
-      break;
-    }
-    if (FetchEvent::state(event) != FetchEvent::State::unhandled) {
-      break;
-    }
-  }
-
-  FetchEvent::stop_dispatching(event);
-
-  // double diff =
-  //     duration_cast<microseconds>(system_clock::now() - pre_handler).count();
-  // *total_compute += diff;
-  // LOG("Request handler took %fms\n", diff / 1000);
+  EventTarget::dispatch_event(ENGINE->cx(), event_target, event_val, &rval);
 }
 
 bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
@@ -580,17 +520,21 @@ bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
   return true;
 }
 
+bool FetchEvent::init_class(JSContext *cx, JS::HandleObject global) {
+  Event::register_subclass(&class_);
+  return init_class_impl(cx, global, Event::proto_obj) && JS_DeleteProperty(cx, global, class_.name);
+}
+
 bool install(api::Engine *engine) {
   ENGINE = engine;
-  FETCH_HANDLERS = new JS::PersistentRootedObjectVector(engine->cx());
 
-  if (!JS_DefineFunction(engine->cx(), engine->global(), "addEventListener", addEventListener, 2,
-                         0)) {
-    MOZ_RELEASE_ASSERT(false);
+  if (!(fetch_type_atom = JS_AtomizeAndPinString(engine->cx(), "fetch"))) {
+    return false;
   }
 
-  if (!FetchEvent::init_class(engine->cx(), engine->global()))
+  if (!FetchEvent::init_class(engine->cx(), engine->global())) {
     return false;
+  }
 
   if (!FetchEvent::create(engine->cx())) {
     MOZ_RELEASE_ASSERT(false);

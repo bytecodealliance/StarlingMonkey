@@ -8,7 +8,7 @@ namespace builtins {
 namespace web {
 namespace fetch {
 
-class Headers final : public FinalizableBuiltinImpl<Headers> {
+class Headers final : public BuiltinImpl<Headers, FinalizableClassPolicy> {
   static bool append(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool delete_(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool entries(JSContext *cx, unsigned argc, JS::Value *vp);

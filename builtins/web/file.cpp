@@ -153,6 +153,7 @@ bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 }
 
 bool File::init_class(JSContext *cx, JS::HandleObject global) {
+  Blob::register_subclass(&class_);
   return init_class_impl(cx, global, Blob::proto_obj);
 }
 
