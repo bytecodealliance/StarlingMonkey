@@ -36,7 +36,7 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
 };
 
-class FormData : public TraceableBuiltinImpl<FormData> {
+class FormData : public BuiltinImpl<FormData, TraceableClassPolicy> {
   static bool append(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool remove(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool get(JSContext *cx, unsigned argc, JS::Value *vp);

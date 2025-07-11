@@ -1,0 +1,131 @@
+{
+  "Piping through a duck-typed pass-through transform stream should work": {
+    "status": "PASS"
+  },
+  "Piping through a transform errored on the writable end does not cause an unhandled promise rejection": {
+    "status": "PASS"
+  },
+  "pipeThrough should not call pipeTo on this": {
+    "status": "PASS"
+  },
+  "pipeThrough should not call pipeTo on the ReadableStream prototype": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check this and not allow 'null'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check readable and not allow 'null'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check this and not allow 'undefined'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check readable and not allow 'undefined'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check this and not allow '0'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check readable and not allow '0'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check this and not allow 'NaN'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check readable and not allow 'NaN'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check this and not allow 'true'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check readable and not allow 'true'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check this and not allow 'ReadableStream'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check readable and not allow 'ReadableStream'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check this and not allow '[object ReadableStream]'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check readable and not allow '[object ReadableStream]'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check writable and not allow 'null'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check writable and not allow 'undefined'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check writable and not allow '0'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check writable and not allow 'NaN'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check writable and not allow 'true'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check writable and not allow 'WritableStream'": {
+    "status": "PASS"
+  },
+  "pipeThrough should brand-check writable and not allow '[object Object]'": {
+    "status": "PASS"
+  },
+  "pipeThrough should rethrow errors from accessing readable or writable": {
+    "status": "PASS"
+  },
+  "invalid values of signal should throw; specifically 'null'": {
+    "status": "FAIL"
+  },
+  "invalid values of signal should throw; specifically '0'": {
+    "status": "FAIL"
+  },
+  "invalid values of signal should throw; specifically 'NaN'": {
+    "status": "FAIL"
+  },
+  "invalid values of signal should throw; specifically 'true'": {
+    "status": "FAIL"
+  },
+  "invalid values of signal should throw; specifically 'AbortSignal'": {
+    "status": "FAIL"
+  },
+  "invalid values of signal should throw; specifically '[object Object]'": {
+    "status": "FAIL"
+  },
+  "pipeThrough should accept a real AbortSignal": {
+    "status": "PASS"
+  },
+  "pipeThrough should throw if this is locked": {
+    "status": "PASS"
+  },
+  "pipeThrough should throw if writable is locked": {
+    "status": "PASS"
+  },
+  "pipeThrough should not care if readable is locked": {
+    "status": "PASS"
+  },
+  "preventCancel should work": {
+    "status": "PASS"
+  },
+  "preventClose should work": {
+    "status": "PASS"
+  },
+  "preventAbort should work": {
+    "status": "PASS"
+  },
+  "pipeThrough() should throw if an option getter grabs a writer": {
+    "status": "FAIL"
+  },
+  "pipeThrough() should not throw if option is null": {
+    "status": "FAIL"
+  },
+  "pipeThrough() should not throw if signal is undefined": {
+    "status": "PASS"
+  },
+  "pipeThrough() should throw if readable/writable getters throw": {
+    "status": "PASS"
+  }
+}
