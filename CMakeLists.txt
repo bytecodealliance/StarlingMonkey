@@ -64,11 +64,8 @@ set(SOURCES
     runtime/event_loop.cpp
     runtime/builtin.cpp
     runtime/script_loader.cpp
+    runtime/debugger.cpp
 )
-
-if (ENABLE_JS_DEBUGGER)
-    list(APPEND SOURCES runtime/debugger.cpp)
-endif()
 
 add_executable(starling-raw.wasm ${SOURCES})
 
