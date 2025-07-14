@@ -1,18 +1,20 @@
 #include "openssl/rsa.h"
 #include "openssl/sha.h"
 #include <fmt/format.h>
-#include <iostream>
+#include <openssl/core_names.h>
 #include <openssl/ecdsa.h>
+#include <openssl/err.h>
 #include <optional>
 #include <span>
 #include <vector>
 
 #include "../base64.h"
 #include "../dom-exception.h"
-#include "crypto-algorithm.h"
 
+#include "crypto-algorithm.h"
 #include "crypto-key-ec-components.h"
 #include "crypto-key-rsa-components.h"
+#include "crypto-raii.h"
 #include "encode.h"
 
 namespace builtins::web::crypto {
@@ -21,10 +23,10 @@ using dom_exception::DOMException;
 
 // namespace {
 
-int numBitsToBytes(int x) { return (x / 8) + (7 + (x % 8)) / 8; }
+int num_bits_to_bytes(int x) { return (x / 8) + (7 + (x % 8)) / 8; }
 
 std::pair<mozilla::UniquePtr<uint8_t[], JS::FreePolicy>, size_t>
-convertToBytesExpand(JSContext *cx, const BIGNUM *bignum, size_t minimumBufferSize) {
+to_bytes_expand(JSContext *cx, const BIGNUM *bignum, size_t minimumBufferSize) {
   int length = BN_num_bytes(bignum);
 
   size_t bufferSize = std::max<size_t>(length, minimumBufferSize);
@@ -263,6 +265,7 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPrivateKeyFromJWK(JSContext *cx
   if (dataResult.isErr()) {
     DOMException::raise(cx, "Data provided to an operation does not meet requirements",
                         "DataError");
+    return nullptr;
   }
   auto data = dataResult.unwrap();
   auto exponentResult = base64::forgivingBase64Decode(data, base64::base64URLDecodeTable);
@@ -405,10 +408,9 @@ JS::Result<NamedCurve> toNamedCurve(JSContext *cx, JS::HandleValue value) {
 }
 
 JS::Result<size_t> curveSize(JSContext *cx, JS::HandleObject key) {
-
   JS::RootedObject alg(cx, CryptoKey::get_algorithm(key));
-
   JS::RootedValue namedCurve_val(cx);
+
   JS_GetProperty(cx, alg, "namedCurve", &namedCurve_val);
   auto namedCurve_chars = core::encode(cx, namedCurve_val);
   if (!namedCurve_chars) {
@@ -718,26 +720,26 @@ CryptoAlgorithmSignVerify::normalize(JSContext *cx, JS::HandleValue value) {
 namespace {
   std::optional<std::pair<mozilla::UniquePtr<uint8_t[], JS::FreePolicy>, size_t>> hmacSignature(JSContext *cx,
   const EVP_MD* algorithm, const std::span<uint8_t>& keyData, const std::span<uint8_t> data) {
-    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    EvpMdCtxPtr ctx(EVP_MD_CTX_new());
     if (!ctx) {
       return std::nullopt;
     }
 
-    EVP_PKEY * hkey = EVP_PKEY_new_mac_key(EVP_PKEY_HMAC, nullptr, keyData.data(), keyData.size());
+    EvpPkeyPtr hkey(EVP_PKEY_new_mac_key(EVP_PKEY_HMAC, nullptr, keyData.data(), keyData.size()));
     if (!hkey) {
       return std::nullopt;
     }
 
-    if (1 != EVP_DigestSignInit(ctx, nullptr, algorithm, nullptr, hkey)) {
+    if (1 != EVP_DigestSignInit(ctx.get(), nullptr, algorithm, nullptr, hkey.get())) {
       return std::nullopt;
     }
 
-    if (1 != EVP_DigestSignUpdate(ctx, data.data(), data.size())) {
+    if (1 != EVP_DigestSignUpdate(ctx.get(), data.data(), data.size())) {
       return std::nullopt;
     }
 
     size_t len = 0;
-    if (1 != EVP_DigestSignFinal(ctx, nullptr, &len)) {
+    if (1 != EVP_DigestSignFinal(ctx.get(), nullptr, &len)) {
       return std::nullopt;
     }
 
@@ -747,7 +749,7 @@ namespace {
       return std::nullopt;
     }
 
-    if (1 != EVP_DigestSignFinal(ctx, cipherText.get(), &len)) {
+    if (1 != EVP_DigestSignFinal(ctx.get(), cipherText.get(), &len)) {
       return std::nullopt;
     }
     return std::pair<mozilla::UniquePtr<uint8_t[], JS::FreePolicy>, size_t>(std::move(cipherText), len);
@@ -840,22 +842,37 @@ JSObject *CryptoAlgorithmECDSA_Sign_Verify::sign(JSContext *cx, JS::HandleObject
   auto digest = digestOption.value();
 
   // 4. Let d be the ECDSA private key associated with key.
-  #pragma clang diagnostic push
-  #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  const EC_KEY * ecKey = EVP_PKEY_get0_EC_KEY(CryptoKey::key(key));
-  #pragma clang diagnostic pop
-  if (!ecKey) {
-    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
+  EVP_PKEY *pkey = CryptoKey::key(key);
+  EvpPkeyCtxPtr ctx(EVP_PKEY_CTX_new(pkey, nullptr));
+  if (!ctx ||
+      EVP_PKEY_sign_init(ctx.get()) <= 0 ||
+      EVP_PKEY_CTX_set_signature_md(ctx.get(), algorithm) <= 0) {
+    DOMException::raise(cx, "SubtleCrypto.sign: failed to sign", "OperationError");
     return nullptr;
   }
 
-  // 5. Let params be the EC domain parameters associated with key.
-  #pragma clang diagnostic push
-  #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  auto sig = ECDSA_do_sign(digest.data(), digest.size(), const_cast<EC_KEY*>(ecKey));
-  #pragma clang diagnostic pop
+  size_t derLen = 0;
+  if (EVP_PKEY_sign(ctx.get(), nullptr, &derLen, digest.data(), digest.size()) <= 0) {
+    DOMException::raise(cx, "SubtleCrypto.sign: failed to sign", "OperationError");
+    return nullptr;
+  }
+
+  mozilla::UniquePtr<uint8_t[], JS::FreePolicy> derBuf{
+    static_cast<uint8_t *>(JS_malloc(cx, derLen))};
+  if (!derBuf) {
+    JS_ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  if (EVP_PKEY_sign(ctx.get(), derBuf.get(), &derLen, digest.data(), digest.size()) <= 0) {
+    DOMException::raise(cx, "SubtleCrypto.sign: failed to sign", "OperationError");
+    return nullptr;
+  }
+
+  const unsigned char *p = derBuf.get();
+  EcdsaSigPtr sig(d2i_ECDSA_SIG(nullptr, &p, derLen));
   if (!sig) {
-    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
+    DOMException::raise(cx, "SubtleCrypto.sign: failed to sign", "OperationError");
     return nullptr;
   }
 
@@ -868,33 +885,26 @@ JSObject *CryptoAlgorithmECDSA_Sign_Verify::sign(JSContext *cx, JS::HandleObject
   //         Convert s to an octet string of length n and append this sequence of bytes to result.
   // Otherwise, the namedCurve attribute of the [[algorithm]] internal slot of key is a value specified in an applicable specification:
   //     Perform the ECDSA signature steps specified in that specification, passing in M, params and d and resulting in result.
-  const BIGNUM* r;
-  const BIGNUM* s;
-  ECDSA_SIG_get0(sig, &r, &s);
-  auto keySize = curveSize(cx, key);
-  if (keySize.isErr()) {
+  const BIGNUM *r_raw, *s_raw;
+  ECDSA_SIG_get0(sig.get(), &r_raw, &s_raw);
+  size_t coord_size = num_bits_to_bytes(curveSize(cx, key).unwrap());
+
+  auto [r_bytes, r_len] = to_bytes_expand(cx, r_raw, coord_size);
+  auto [s_bytes, s_len] = to_bytes_expand(cx, s_raw, coord_size);
+
+  size_t result_size = r_len + s_len;
+  mozilla::UniquePtr<uint8_t[], JS::FreePolicy> result{
+    static_cast<uint8_t *>(JS_malloc(cx, result_size))};
+  if (!result) {
+    JS_ReportOutOfMemory(cx);
     return nullptr;
   }
 
-  size_t keySizeInBytes = numBitsToBytes(keySize.unwrap());
-
-  auto rBytesAndSize = convertToBytesExpand(cx, r, keySizeInBytes);
-  auto *rBytes = rBytesAndSize.first.get();
-  auto rBytesSize = rBytesAndSize.second;
-
-  auto sBytesAndSize = convertToBytesExpand(cx, s, keySizeInBytes);
-  auto *sBytes = sBytesAndSize.first.get();
-  auto sBytesSize = sBytesAndSize.second;
-
-  auto resultSize = rBytesSize + sBytesSize;
-  mozilla::UniquePtr<uint8_t[], JS::FreePolicy> result{
-      static_cast<uint8_t *>(JS_malloc(cx, resultSize))};
-
-  std::memcpy(result.get(), rBytes, rBytesSize);
-  std::memcpy(result.get() + rBytesSize, sBytes, sBytesSize);
+  memcpy(result.get(), r_bytes.get(), r_len);
+  memcpy(result.get() + r_len, s_bytes.get(), s_len);
 
   // 7. Return the result of creating an ArrayBuffer containing result.
-  JS::RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, resultSize, result.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
+  JS::RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, result_size, result.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
   if (!buffer) {
     // We can be here if the array buffer was too large -- if that was the case then a
     // JSMSG_BAD_ARRAY_LENGTH will have been created. Otherwise we're probably out of memory.
@@ -906,9 +916,9 @@ JSObject *CryptoAlgorithmECDSA_Sign_Verify::sign(JSContext *cx, JS::HandleObject
 
   // `signature` is now owned by `buffer`
   static_cast<void>(result.release());
-
   return buffer;
 };
+
 JS::Result<bool> CryptoAlgorithmECDSA_Sign_Verify::verify(JSContext *cx, JS::HandleObject key, std::span<uint8_t> signature, std::span<uint8_t> data) {
   MOZ_ASSERT(CryptoKey::is_instance(key));
   // 1. If the [[type]] internal slot of key is not "public", then throw an InvalidAccessError.
@@ -930,19 +940,9 @@ JS::Result<bool> CryptoAlgorithmECDSA_Sign_Verify::verify(JSContext *cx, JS::Han
     DOMException::raise(cx, "OperationError", "OperationError");
     return JS::Result<bool>(JS::Error());
   }
-
   auto digest = digestOption.value();
 
   // 4. Let Q be the ECDSA public key associated with key.
-  #pragma clang diagnostic push
-  #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  const EC_KEY * ecKey = EVP_PKEY_get0_EC_KEY(CryptoKey::key(key));
-  #pragma clang diagnostic pop
-  if (!ecKey) {
-    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
-    return JS::Result<bool>(JS::Error());
-  }
-
   // 5. Let params be the EC domain parameters associated with key.
   // 6. If the namedCurve attribute of the [[algorithm]] internal slot of key is "P-256", "P-384" or "P-521":
       // Perform the ECDSA verifying process, as specified in RFC6090, Section 5.3, with M as the received message, signature as the received signature and using params as the EC domain parameters, and Q as the public key.
@@ -953,26 +953,62 @@ JS::Result<bool> CryptoAlgorithmECDSA_Sign_Verify::verify(JSContext *cx, JS::Han
     return JS::Result<bool>(JS::Error());
   }
 
-  size_t keySizeInBytes = numBitsToBytes(keySize.unwrap());
+  size_t coordSize = num_bits_to_bytes(keySize.unwrap());
+  if (signature.size() != coordSize * 2) {
+    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
+    return JS::Result<bool>(JS::Error());
+  }
 
-  auto sig = ECDSA_SIG_new();
-  auto r = BN_bin2bn(signature.data(), keySizeInBytes, nullptr);
-  auto s = BN_bin2bn(signature.data() + keySizeInBytes, keySizeInBytes, nullptr);
+  BignumPtr r(BN_bin2bn(signature.data(), coordSize, nullptr));
+  if (!r) {
+    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
+    return JS::Result<bool>(JS::Error());
+  }
 
-  if (!ECDSA_SIG_set0(sig, r, s)) {
+  BignumPtr s(BN_bin2bn(signature.data() + coordSize, coordSize, nullptr));
+  if (!s) {
+    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
+    return JS::Result<bool>(JS::Error());
+  }
+
+  EcdsaSigPtr sig(ECDSA_SIG_new());
+  if (!sig || !ECDSA_SIG_set0(sig.get(), r.release(), s.release())) {
+    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
+    return JS::Result<bool>(JS::Error());
+  }
+
+  int derLen = i2d_ECDSA_SIG(sig.get(), nullptr);
+  if (derLen <= 0) {
+    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
+    return JS::Result<bool>(JS::Error());
+  }
+
+  mozilla::UniquePtr<unsigned char[], JS::FreePolicy> derBuf{
+    static_cast<unsigned char *>(JS_malloc(cx, derLen))};
+  if (!derBuf) {
+    JS_ReportOutOfMemory(cx);
+    return JS::Result<bool>(JS::Error());
+  }
+
+  unsigned char *p = derBuf.get();
+  i2d_ECDSA_SIG(sig.get(), &p);
+
+  EVP_PKEY *pkey = CryptoKey::key(key);
+  EvpPkeyCtxPtr ctx(EVP_PKEY_CTX_new(pkey, nullptr));
+  if (!ctx ||
+      EVP_PKEY_verify_init(ctx.get()) <= 0 ||
+      EVP_PKEY_CTX_set_signature_md(ctx.get(), algorithm) <= 0) {
     DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
     return JS::Result<bool>(JS::Error());
   }
 
   // 7. Let result be a boolean with the value true if the signature is valid and the value false otherwise.
-  #pragma clang diagnostic push
-  #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  bool result = ECDSA_do_verify(digest.data(), digest.size(), sig, const_cast<EC_KEY*>(ecKey)) == 1;
-  #pragma clang diagnostic pop
+  int ret = EVP_PKEY_verify(ctx.get(), derBuf.get(), derLen, digest.data(), digest.size());
 
   // 8. Return result.
-  return result;
+  return ret == 1;
 };
+
 JSObject *CryptoAlgorithmECDSA_Sign_Verify::toObject(JSContext *cx) {
   return nullptr;
 };
@@ -1010,36 +1046,36 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify::sign(JSContext *cx, JS::
   //  [[algorithm]] internal slot of key as the Hash option for the EMSA-PKCS1-v1_5 encoding
   //  method.
   // 3. If performing the operation results in an error, then throw an OperationError.
-  auto ctx = EVP_PKEY_CTX_new(CryptoKey::key(key), nullptr);
+  EvpPkeyCtxPtr ctx(EVP_PKEY_CTX_new(CryptoKey::key(key), nullptr));
   if (!ctx) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return nullptr;
   }
 
-  if (EVP_PKEY_sign_init(ctx) <= 0) {
+  if (EVP_PKEY_sign_init(ctx.get()) <= 0) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return nullptr;
   }
 
-  if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING) <= 0) {
+  if (EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_PADDING) <= 0) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return nullptr;
   }
 
-  if (EVP_PKEY_CTX_set_signature_md(ctx, algorithm) <= 0) {
+  if (EVP_PKEY_CTX_set_signature_md(ctx.get(), algorithm) <= 0) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return nullptr;
   }
 
   size_t signature_length;
-  if (EVP_PKEY_sign(ctx, nullptr, &signature_length, digest->data(), digest->size()) <= 0) {
+  if (EVP_PKEY_sign(ctx.get(), nullptr, &signature_length, digest->data(), digest->size()) <= 0) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return nullptr;
   }
 
   // 4. Let signature be the value S that results from performing the operation.
   mozilla::UniquePtr<uint8_t[], JS::FreePolicy> signature{static_cast<uint8_t *>(JS_malloc(cx, signature_length))};
-  if (EVP_PKEY_sign(ctx, signature.get(), &signature_length, digest->data(), digest->size()) <= 0) {
+  if (EVP_PKEY_sign(ctx.get(), signature.get(), &signature_length, digest->data(), digest->size()) <= 0) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return nullptr;
   }
@@ -1081,28 +1117,28 @@ JS::Result<bool> CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify::verify(JSContext 
 
   auto digest = digestOption.value();
 
-  auto ctx = EVP_PKEY_CTX_new(CryptoKey::key(key), nullptr);
+  EvpPkeyCtxPtr ctx(EVP_PKEY_CTX_new(CryptoKey::key(key), nullptr));
   if (!ctx) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return JS::Result<bool>(JS::Error());
   }
 
-  if (EVP_PKEY_verify_init(ctx) != 1) {
+  if (EVP_PKEY_verify_init(ctx.get()) != 1) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return JS::Result<bool>(JS::Error());
   }
 
-  if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING) != 1) {
+  if (EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_PADDING) != 1) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return JS::Result<bool>(JS::Error());
   }
 
-  if (EVP_PKEY_CTX_set_signature_md(ctx, algorithm) != 1) {
+  if (EVP_PKEY_CTX_set_signature_md(ctx.get(), algorithm) != 1) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return JS::Result<bool>(JS::Error());
   }
 
-  return EVP_PKEY_verify(ctx, signature.data(), signature.size(), digest.data(), digest.size()) ==
+  return EVP_PKEY_verify(ctx.get(), signature.data(), signature.size(), digest.data(), digest.size()) ==
          1;
 }
 
@@ -1587,7 +1623,101 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
       return CryptoKey::createECDSA(cx, this, std::move(key), extractable, usages);
       break;
     }
-    case CryptoKeyFormat::Pkcs8:
+    case CryptoKeyFormat::Pkcs8: {
+      if (!usages.canOnlySign()) {
+        DOMException::raise(cx, "PKCS#8 private keys only support 'sign' operations", "SyntaxError");
+        return nullptr;
+      }
+
+      auto keyBytes = std::get<std::span<uint8_t>>(keyData);
+      const uint8_t *data = keyBytes.data();
+
+      EvpPkeyPtr pkey(d2i_PrivateKey(EVP_PKEY_NONE, nullptr, &data, keyBytes.size()));
+      if (!pkey) {
+        DOMException::raise(cx, "Invalid PKCS#8 key data", "DataError");
+        return nullptr;
+      }
+
+      if (EVP_PKEY_id(pkey.get()) != EVP_PKEY_EC) {
+        DOMException::raise(cx, "PKCS#8 key is not an EC key", "DataError");
+        return nullptr;
+      }
+
+      char curve_name[64];
+      size_t curve_name_len = sizeof(curve_name);
+      if (!EVP_PKEY_get_utf8_string_param(pkey.get(), OSSL_PKEY_PARAM_GROUP_NAME, curve_name,
+                                          sizeof(curve_name), &curve_name_len)) {
+        DOMException::raise(cx, "Failed to get EC curve name", "DataError");
+        return nullptr;
+      }
+
+      std::string curveName(curve_name, curve_name_len);
+      NamedCurve actualCurve;
+      if (curveName == "prime256v1") {
+        actualCurve = NamedCurve::P256;
+      } else if (curveName == "secp384r1") {
+        actualCurve = NamedCurve::P384;
+      } else if (curveName == "secp521r1") {
+        actualCurve = NamedCurve::P521;
+      } else {
+        DOMException::raise(cx, "Unsupported curve in PKCS#8 key", "DataError");
+        return nullptr;
+      }
+
+      if (actualCurve != this->namedCurve) {
+        DOMException::raise(cx, "PKCS#8 curve does not match expected curve", "DataError");
+        return nullptr;
+      }
+
+      BIGNUM *x_raw = nullptr;
+      BIGNUM *y_raw = nullptr;
+      BIGNUM *d_raw = nullptr;
+
+      if (!EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_EC_PUB_X, &x_raw) ||
+          !EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_EC_PUB_Y, &y_raw) ||
+          !EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_PRIV_KEY, &d_raw)) {
+        DOMException::raise(cx, "Failed to extract EC parameters", "DataError");
+        return nullptr;
+      }
+
+      BignumPtr x(x_raw);
+      BignumPtr y(y_raw);
+      BignumPtr d(d_raw);
+
+      if (!x || !y || !d) {
+        DOMException::raise(cx, "Invalid EC private key", "DataError");
+        return nullptr;
+      }
+
+      size_t coordSize;
+      switch (actualCurve) {
+      case NamedCurve::P256:
+        coordSize = 32;
+        break;
+      case NamedCurve::P384:
+        coordSize = 48;
+        break;
+      case NamedCurve::P521:
+        coordSize = 66;
+        break;
+      }
+
+      auto [x_bytes, x_size] = to_bytes_expand(cx, x.get(), coordSize);
+      auto [y_bytes, y_size] = to_bytes_expand(cx, y.get(), coordSize);
+      auto [d_bytes, d_size] = to_bytes_expand(cx, d.get(), coordSize);
+
+      if (!x_bytes || !y_bytes || !d_bytes) {
+        JS_ReportOutOfMemory(cx);
+        return nullptr;
+      }
+
+      std::string_view x_sv(reinterpret_cast<const char *>(x_bytes.get()), x_size);
+      std::string_view y_sv(reinterpret_cast<const char *>(y_bytes.get()), y_size);
+      std::string_view d_sv(reinterpret_cast<const char *>(d_bytes.get()), d_size);
+
+      auto ecKey = CryptoKeyECComponents::createPrivate(x_sv, y_sv, d_sv);
+      return CryptoKey::createECDSA(cx, this, std::move(ecKey), extractable, usages);
+    }
     case CryptoKeyFormat::Raw:
     case CryptoKeyFormat::Spki: {
       MOZ_ASSERT(false);
@@ -1612,7 +1742,14 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
       data = jwk.release();
       break;
     }
-    case CryptoKeyFormat::Pkcs8:
+    case CryptoKeyFormat::Pkcs8: {
+      std::optional<std::span<uint8_t>> buffer = value_to_buffer(cx, key_data, "");
+      if (!buffer.has_value()) {
+        return nullptr;
+      }
+      data = buffer.value();
+      break;
+    }
     case CryptoKeyFormat::Raw:
     case CryptoKeyFormat::Spki: {
       // TODO finish this
@@ -1620,9 +1757,10 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
       return nullptr;
     }
   }
-  return this->importKey(cx, format, data, extractable, usages);
 
+  return this->importKey(cx, format, data, extractable, usages);
 }
+
 JSObject *CryptoAlgorithmECDSA_Import::toObject(JSContext *cx) {
   // Let algorithm be a new RsaHashedKeyAlgorithm dictionary.
   JS::RootedObject algorithm(cx, JS_NewPlainObject(cx));
@@ -1665,6 +1803,7 @@ std::unique_ptr<CryptoAlgorithmECDSA_Sign_Verify> CryptoAlgorithmECDSA_Sign_Veri
 
 std::unique_ptr<CryptoAlgorithmECDSA_Import> CryptoAlgorithmECDSA_Import::fromParameters(JSContext *cx, JS::HandleObject parameters) {
   JS::Rooted<JS::Value> namedCurve_val(cx);
+
   if (!JS_GetProperty(cx, parameters, "namedCurve", &namedCurve_val)) {
     return nullptr;
   }
@@ -1838,8 +1977,118 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
     // 9. Return key.
     return CryptoKey::createRSA(cx, this, std::move(key), extractable, usages);
   }
-  case CryptoKeyFormat::Spki:
   case CryptoKeyFormat::Pkcs8: {
+    if (!usages.canOnlySign()) {
+      DOMException::raise(cx, "PKCS#8 private keys only support 'sign' operations", "SyntaxError");
+      return nullptr;
+    }
+
+    auto keyBytes = std::get<std::span<uint8_t>>(keyData);
+    const uint8_t *data = keyBytes.data();
+
+    auto pkey_deleter = [](EVP_PKEY *pkey) { EVP_PKEY_free(pkey); };
+    std::unique_ptr<EVP_PKEY, decltype(pkey_deleter)> pkey(
+        d2i_PrivateKey(EVP_PKEY_NONE, nullptr, &data, keyBytes.size()), pkey_deleter);
+
+    if (!pkey) {
+      DOMException::raise(cx, "Invalid PKCS#8 key data", "DataError");
+      return nullptr;
+    }
+
+    if (EVP_PKEY_id(pkey.get()) != EVP_PKEY_RSA) {
+      DOMException::raise(cx, "PKCS#8 key is not an RSA key", "DataError");
+      return nullptr;
+    }
+
+    // Extract basic RSA parameters
+    BIGNUM *n_raw = nullptr;
+    BIGNUM *e_raw = nullptr;
+    BIGNUM *d_raw = nullptr;
+
+    if (!EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_N, &n_raw) ||
+        !EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_E, &e_raw) ||
+        !EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_D, &d_raw)) {
+      DOMException::raise(cx, "Failed to extract RSA parameters", "DataError");
+      return nullptr;
+    }
+
+    BignumPtr n(n_raw);
+    BignumPtr e(e_raw);
+    BignumPtr d(d_raw);
+
+    if (!n || !e || !d) {
+      DOMException::raise(cx, "Invalid RSA private key", "DataError");
+      return nullptr;
+    }
+
+    // Convert basic parameters using convertToBytesExpand
+    auto [modulus_bytes, modulus_size] = to_bytes_expand(cx, n.get(), 0);
+    auto [exponent_bytes, exponent_size] = to_bytes_expand(cx, e.get(), 0);
+    auto [priv_exponent_bytes, priv_exponent_size] = to_bytes_expand(cx, d.get(), 0);
+
+    if (!modulus_bytes || !exponent_bytes || !priv_exponent_bytes) {
+      JS_ReportOutOfMemory(cx);
+      return nullptr;
+    }
+
+    std::string_view modulus_sv(reinterpret_cast<const char *>(modulus_bytes.get()), modulus_size);
+    std::string_view exponent_sv(reinterpret_cast<const char *>(exponent_bytes.get()), exponent_size);
+    std::string_view priv_exponent_sv(reinterpret_cast<const char *>(priv_exponent_bytes.get()), priv_exponent_size);
+
+    BIGNUM *p_raw = nullptr;
+    BIGNUM *q_raw = nullptr;
+    BIGNUM *dmp1_raw = nullptr;
+    BIGNUM *dmq1_raw = nullptr;
+    BIGNUM *iqmp_raw = nullptr;
+
+    bool has_crt_params =
+        EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_FACTOR1, &p_raw) &&
+        EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_FACTOR2, &q_raw) &&
+        EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_EXPONENT1, &dmp1_raw) &&
+        EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_EXPONENT2, &dmq1_raw) &&
+        EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_COEFFICIENT1, &iqmp_raw);
+
+    if (has_crt_params) {
+      BignumPtr p(p_raw);
+      BignumPtr q(q_raw);
+      BignumPtr dmp1(dmp1_raw);
+      BignumPtr dmq1(dmq1_raw);
+      BignumPtr iqmp(iqmp_raw);
+
+      int byte_len = BN_num_bytes(n.get());
+
+      auto [p_bytes, p_size] = to_bytes_expand(cx, p.get(), byte_len);
+      auto [q_bytes, q_size] = to_bytes_expand(cx, q.get(), byte_len);
+      auto [dp_bytes, dp_size] = to_bytes_expand(cx, dmp1.get(), byte_len);
+      auto [dq_bytes, dq_size] = to_bytes_expand(cx, dmq1.get(), byte_len);
+      auto [qi_bytes, qi_size] = to_bytes_expand(cx, iqmp.get(), byte_len);
+
+      if (!p_bytes || !q_bytes || !dp_bytes || !dq_bytes || !qi_bytes) {
+        JS_ReportOutOfMemory(cx);
+        return nullptr;
+      }
+
+      std::string_view p_sv(reinterpret_cast<const char *>(p_bytes.get()), p_size);
+      std::string_view q_sv(reinterpret_cast<const char *>(q_bytes.get()), q_size);
+      std::string_view dp_sv(reinterpret_cast<const char *>(dp_bytes.get()), dp_size);
+      std::string_view dq_sv(reinterpret_cast<const char *>(dq_bytes.get()), dq_size);
+      std::string_view qi_sv(reinterpret_cast<const char *>(qi_bytes.get()), qi_size);
+
+      // Create prime info structures
+      CryptoKeyRSAComponents::PrimeInfo prime1(p_sv, dp_sv);
+      CryptoKeyRSAComponents::PrimeInfo prime2(q_sv, dq_sv, qi_sv);
+
+      // Create RSA key with CRT parameters
+      auto rsa_key = CryptoKeyRSAComponents::createPrivateWithAdditionalData(
+          modulus_sv, exponent_sv, priv_exponent_sv, prime1, prime2, {});
+
+      return CryptoKey::createRSA(cx, this, std::move(rsa_key), extractable, usages);
+    } else {
+      auto key = CryptoKeyRSAComponents::createPrivate(modulus_sv, exponent_sv, priv_exponent_sv);
+      return CryptoKey::createRSA(cx, this, std::move(key), extractable, usages);
+    }
+  }
+  case CryptoKeyFormat::Spki: {
     // TODO: Add implementations for these
     [[fallthrough]];
   }

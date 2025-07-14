@@ -1,9 +1,13 @@
 #include "crypto-key.h"
 #include "crypto-algorithm.h"
+#include "crypto-raii.h"
 #include "encode.h"
-#include "openssl/rsa.h"
-#include <iostream>
+
+#include "../dom-exception.h"
+
+#include <openssl/core_names.h>
 #include <openssl/ec.h>
+#include <openssl/err.h>
 #include <utility>
 
 namespace builtins {
@@ -43,7 +47,7 @@ CryptoKeyUsages::CryptoKeyUsages(bool encrypt, bool decrypt, bool sign, bool ver
 
 CryptoKeyUsages CryptoKeyUsages::from(std::vector<std::string> key_usages) {
   uint8_t mask = 0;
-  for (auto usage : key_usages) {
+  for (const auto &usage : key_usages) {
     if (usage == "encrypt") {
       mask |= encrypt_flag;
     } else if (usage == "decrypt") {
@@ -74,8 +78,8 @@ JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue
   if (!key_usages_is_array) {
     // TODO: This should check if the JS::HandleValue is iterable and if so, should convert it into
     // a JS Array
-    api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.importKey",
-      "keyUsages", "be a sequence");
+    api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.importKey", "keyUsages",
+                     "be a sequence");
     return JS::Result<CryptoKeyUsages>(JS::Error());
   }
 
@@ -115,11 +119,11 @@ JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue
     } else if (usage == "unwrapKey") {
       mask |= unwrap_key_flag;
     } else {
-      api::throw_error(cx, api::Errors::TypeError,
-        "crypto.subtle.importKey",
-        "each value in the 'keyUsages' list",
-        "be one of 'encrypt', 'decrypt', 'sign', 'verify', 'deriveKey', 'deriveBits', "
-        "'wrapKey', or 'unwrapKey'");
+      api::throw_error(
+          cx, api::Errors::TypeError, "crypto.subtle.importKey",
+          "each value in the 'keyUsages' list",
+          "be one of 'encrypt', 'decrypt', 'sign', 'verify', 'deriveKey', 'deriveBits', "
+          "'wrapKey', or 'unwrapKey'");
       return JS::Result<CryptoKeyUsages>(JS::Error());
     }
   }
@@ -234,6 +238,7 @@ bool CryptoKey::usages_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     }
     return true;
   };
+
   if (usage.canDecrypt()) {
     if (!append("decrypt")) {
       return false;
@@ -283,7 +288,6 @@ bool CryptoKey::usages_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::SetReservedSlot(self, Slots::UsagesArray, cached_usage);
 
   args.rval().setObject(*array);
-
   return true;
 }
 
@@ -310,37 +314,283 @@ bool CryptoKey::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 namespace {
-int numBitsToBytes(int x) { return (x / 8) + (7 + (x % 8)) / 8; }
 
-BIGNUM *convertToBigNumber(std::string_view bytes) {
-  return BN_bin2bn(reinterpret_cast<const unsigned char *>(bytes.data()), bytes.length(), nullptr);
+int bn_len(BIGNUM *a) { return BN_num_bytes(a) * 8; }
+
+int curve_identifier(NamedCurve curve) {
+  switch (curve) {
+  case NamedCurve::P256:
+    return NID_X9_62_prime256v1;
+  case NamedCurve::P384:
+    return NID_secp384r1;
+  case NamedCurve::P521:
+    return NID_secp521r1;
+  }
+
+  MOZ_ASSERT_UNREACHABLE();
+  return 0;
 }
 
-BIGNUM *convertToPaddedBigNumber(std::string_view bytes, size_t expected_length) {
+BignumPtr make_bignum(std::string_view bytes) {
+  if (bytes.empty()) {
+    return nullptr;
+  }
+
+  auto bn = BN_bin2bn(reinterpret_cast<const unsigned char *>(bytes.data()),
+                      static_cast<int>(bytes.length()), nullptr);
+  return BignumPtr(bn);
+}
+
+BignumPtr make_bignum_with_padding(std::string_view bytes, size_t expected_length) {
   if (bytes.length() != expected_length) {
     return nullptr;
   }
 
-  return BN_bin2bn(reinterpret_cast<const unsigned char *>(bytes.data()), bytes.length(), nullptr);
+  return make_bignum(bytes);
 }
 
-int getBigNumberLength(BIGNUM *a) { return BN_num_bytes(a) * 8; }
-
-int curveIdentifier(NamedCurve curve) {
-  switch (curve) {
-  case NamedCurve::P256: {
-    return NID_X9_62_prime256v1;
+const char *get_curve_name(int curve_nid) {
+  switch (curve_nid) {
+  case NID_X9_62_prime256v1:
+    return "prime256v1";
+  case NID_secp384r1:
+    return "secp384r1";
+  case NID_secp521r1:
+    return "secp521r1";
+  default:
+    return nullptr;
   }
-  case NamedCurve::P384: {
-    return NID_secp384r1;
-  }
-  case NamedCurve::P521: {
-    return NID_secp521r1;
-  }
-  }
-  MOZ_ASSERT_UNREACHABLE();
-  return 0;
 }
+
+int get_curve_degree_bytes(int curve_nid) {
+  switch (curve_nid) {
+  case NID_X9_62_prime256v1:
+    return 32;
+  case NID_secp384r1:
+    return 48;
+  case NID_secp521r1:
+    return 66;
+  default:
+    return -1;
+  }
+}
+
+bool validate_key(JSContext *cx, const EvpPkeyPtr &pkey, bool has_private) {
+  if (!pkey) {
+    return false;
+  }
+
+  auto check_ctx = EvpPkeyCtxPtr(EVP_PKEY_CTX_new(pkey.get(), nullptr));
+  if (!check_ctx) {
+    return false;
+  }
+
+  int valid = has_private ? EVP_PKEY_pairwise_check(check_ctx.get())
+                          : EVP_PKEY_public_check(check_ctx.get());
+
+  if (valid != 1) {
+    auto reason = ERR_reason_error_string(ERR_get_error());
+    dom_exception::DOMException::raise(cx, "KeyValidation", reason);
+    return false;
+  }
+
+  return true;
+}
+
+EvpPkeyPtr create_ec_key_from_parts(JSContext *cx, CryptoAlgorithmECDSA_Import *algorithm,
+                                    const std::string_view &x_coord,
+                                    const std::string_view &y_coord,
+                                    const std::string_view &private_key = {}) {
+  if (x_coord.empty() || y_coord.empty()) {
+    return nullptr;
+  }
+
+  auto has_private_key = !private_key.empty();
+  auto curve_nid = curve_identifier(algorithm->namedCurve);
+  auto curve_name = get_curve_name(curve_nid);
+  MOZ_ASSERT(curve_name);
+
+  auto group = EcGroupPtr(EC_GROUP_new_by_curve_name(curve_nid));
+  if (!group) {
+    return nullptr;
+  }
+
+  auto degree_bytes = get_curve_degree_bytes(curve_nid);
+  auto x_bn = make_bignum_with_padding(x_coord, degree_bytes);
+  if (!x_bn) {
+    return nullptr;
+  }
+
+  auto y_bn = make_bignum_with_padding(y_coord, degree_bytes);
+  if (!y_bn) {
+    return nullptr;
+  }
+
+  auto point = EcPointPtr(EC_POINT_new(group.get()));
+  if (!point) {
+    return nullptr;
+  }
+
+  if (!EC_POINT_set_affine_coordinates(group.get(), point.get(), x_bn.get(), y_bn.get(), nullptr)) {
+    return nullptr;
+  }
+
+  auto form = EC_GROUP_get_point_conversion_form(group.get());
+  unsigned char *pub_key = nullptr;
+  auto pub_key_len = EC_POINT_point2buf(group.get(), point.get(), form, &pub_key, nullptr);
+  if (pub_key_len == 0 || !pub_key) {
+    return nullptr;
+  }
+
+  auto bld = ParamBldPtr(OSSL_PARAM_BLD_new());
+  if (!bld) {
+    return nullptr;
+  }
+
+  if (!OSSL_PARAM_BLD_push_utf8_string(bld.get(), OSSL_PKEY_PARAM_GROUP_NAME, curve_name, 0) ||
+      !OSSL_PARAM_BLD_push_BN(bld.get(), OSSL_PKEY_PARAM_EC_PUB_X, x_bn.get()) ||
+      !OSSL_PARAM_BLD_push_BN(bld.get(), OSSL_PKEY_PARAM_EC_PUB_Y, y_bn.get()) ||
+      !OSSL_PARAM_BLD_push_octet_string(bld.get(), OSSL_PKEY_PARAM_PUB_KEY, pub_key, pub_key_len)) {
+    return nullptr;
+  }
+
+  BignumPtr d_bn = nullptr; // bignum must outlive the OSSL_PARAM_BLD
+  if (has_private_key) {
+    d_bn = make_bignum_with_padding(private_key, degree_bytes);
+    if (!d_bn) {
+      return nullptr;
+    }
+
+    if (!OSSL_PARAM_BLD_push_BN(bld.get(), OSSL_PKEY_PARAM_PRIV_KEY, d_bn.get())) {
+      return nullptr;
+    }
+  }
+
+  auto params = ParamPtr(OSSL_PARAM_BLD_to_param(bld.get()));
+  if (!params) {
+    return nullptr;
+  }
+
+  auto ctx = EvpPkeyCtxPtr(EVP_PKEY_CTX_new_from_name(nullptr, "EC", nullptr));
+  if (!ctx) {
+    return nullptr;
+  }
+
+  if (EVP_PKEY_fromdata_init(ctx.get()) <= 0) {
+    return nullptr;
+  }
+
+  EVP_PKEY *pkey_raw = nullptr;
+  int key_type = private_key.empty() ? EVP_PKEY_PUBLIC_KEY : EVP_PKEY_KEYPAIR;
+
+  int result = EVP_PKEY_fromdata(ctx.get(), &pkey_raw, key_type, params.get());
+  if (result <= 0 || !pkey_raw) {
+    return nullptr;
+  }
+
+  auto pkey = EvpPkeyPtr(pkey_raw);
+  if (!pkey || !validate_key(cx, pkey, has_private_key)) {
+    return nullptr;
+  }
+
+  return pkey;
+}
+
+EvpPkeyPtr create_rsa_key_from_parts(
+    JSContext *cx, const std::string_view &modulus, const std::string_view &public_exponent,
+    const std::string_view &private_exponent = {}, const std::string_view &prime1 = {},
+    const std::string_view &prime2 = {}, const std::string_view &exponent1 = {},
+    const std::string_view &exponent2 = {}, const std::string_view &coefficient = {}) {
+
+  auto param_bld = ParamBldPtr(OSSL_PARAM_BLD_new());
+  if (!param_bld) {
+    return nullptr;
+  }
+
+  auto n_bn = make_bignum(modulus);
+  if (!n_bn || !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_N, n_bn.get())) {
+    return nullptr;
+  }
+
+  auto e_bn = make_bignum(public_exponent);
+  if (!e_bn || !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_E, e_bn.get())) {
+    return nullptr;
+  }
+
+  // bignum must outlive the OSSL_PARAM_BLD
+  BignumPtr d_bn = nullptr;
+  BignumPtr p_bn = nullptr;
+  BignumPtr q_bn = nullptr;
+  BignumPtr dmp1_bn = nullptr;
+  BignumPtr dmq1_bn = nullptr;
+  BignumPtr iqmp_bn = nullptr;
+
+  bool is_private = !private_exponent.empty();
+  if (is_private) {
+    d_bn = make_bignum(private_exponent);
+    if (!d_bn || !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_D, d_bn.get())) {
+      return nullptr;
+    }
+
+    p_bn = make_bignum(prime1);
+    if (!p_bn ||
+        !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_FACTOR1, p_bn.get())) {
+      return nullptr;
+    }
+
+    q_bn = make_bignum(prime2);
+    if (!q_bn ||
+        !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_FACTOR2, q_bn.get())) {
+      return nullptr;
+    }
+
+    dmp1_bn = make_bignum(exponent1);
+    if (!dmp1_bn ||
+        !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_EXPONENT1, dmp1_bn.get())) {
+      return nullptr;
+    }
+
+    dmq1_bn = make_bignum(exponent2);
+    if (!dmq1_bn ||
+        !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_EXPONENT2, dmq1_bn.get())) {
+      return nullptr;
+    }
+
+    iqmp_bn = make_bignum(coefficient);
+    if (!iqmp_bn ||
+        !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_COEFFICIENT1, iqmp_bn.get())) {
+      return nullptr;
+    }
+  }
+
+  auto params = ParamPtr(OSSL_PARAM_BLD_to_param(param_bld.get()));
+  if (!params) {
+    return nullptr;
+  }
+
+  auto ctx = EvpPkeyCtxPtr(EVP_PKEY_CTX_new_from_name(nullptr, "RSA", nullptr));
+  if (!ctx) {
+    return nullptr;
+  }
+
+  if (EVP_PKEY_fromdata_init(ctx.get()) <= 0) {
+    return nullptr;
+  }
+
+  EVP_PKEY *pkey_raw = nullptr;
+  int key_type = is_private ? EVP_PKEY_KEYPAIR : EVP_PKEY_PUBLIC_KEY;
+  if (EVP_PKEY_fromdata(ctx.get(), &pkey_raw, key_type, params.get()) <= 0) {
+    return nullptr;
+  }
+
+  auto pkey = EvpPkeyPtr(pkey_raw);
+  if (!pkey || !validate_key(cx, pkey, is_private)) {
+    return nullptr;
+  }
+
+  return pkey;
+}
+
 } // namespace
 
 JSObject *CryptoKey::createHMAC(JSContext *cx, CryptoAlgorithmHMAC_Import *algorithm,
@@ -360,8 +610,7 @@ JSObject *CryptoKey::createHMAC(JSContext *cx, CryptoAlgorithmHMAC_Import *algor
   }
 
   JS::SetReservedSlot(instance, Slots::Algorithm, JS::ObjectValue(*alg));
-  JS::SetReservedSlot(instance, Slots::Type,
-                      JS::Int32Value(static_cast<uint8_t>(CryptoKeyType::Secret)));
+  JS::SetReservedSlot(instance, Slots::Type, JS::Int32Value(static_cast<uint8_t>(CryptoKeyType::Secret)));
   JS::SetReservedSlot(instance, Slots::Extractable, JS::BooleanValue(extractable));
   JS::SetReservedSlot(instance, Slots::Usages, JS::Int32Value(usages.toInt()));
   JS::SetReservedSlot(instance, Slots::KeyDataLength, JS::Int32Value(data->size()));
@@ -374,6 +623,7 @@ JSObject *CryptoKey::createECDSA(JSContext *cx, CryptoAlgorithmECDSA_Import *alg
                                  CryptoKeyUsages usages) {
   MOZ_ASSERT(cx);
   MOZ_ASSERT(algorithm);
+
   CryptoKeyType keyType;
   switch (keyData->type) {
   case CryptoKeyECComponents::Type::Public: {
@@ -400,60 +650,15 @@ JSObject *CryptoKey::createECDSA(JSContext *cx, CryptoAlgorithmECDSA_Import *alg
     return nullptr;
   }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  auto curve_nid = curveIdentifier(algorithm->namedCurve);
-  auto ec = EC_KEY_new_by_curve_name(curve_nid);
-  if (!ec) {
-    // TODO: Should we create a JS Exception here?
-    return nullptr;
-  }
-  // JWK requires the length of x, y, d to match the group degree.
-  const EC_GROUP *group = EC_KEY_get0_group(ec);
-  int degree_bytes = numBitsToBytes(EC_GROUP_get_degree(group));
+  std::string_view private_key_data =
+      keyType == CryptoKeyType::Private ? keyData->d : std::string_view{};
 
-  // Read the public key's uncompressed affine coordinates.
-  auto x = convertToPaddedBigNumber(keyData->x, degree_bytes);
-  if (!x) {
+  auto pkey = create_ec_key_from_parts(cx, algorithm, keyData->x, keyData->y, private_key_data);
+
+  if (!pkey) {
     return nullptr;
   }
 
-  auto y = convertToPaddedBigNumber(keyData->y, degree_bytes);
-  if (!y) {
-    return nullptr;
-  }
-
-  if (!EC_KEY_set_public_key_affine_coordinates(ec, x, y)) {
-    // TODO: Should we create a JS Exception here?
-    return nullptr;
-  }
-
-  // Extract the "d" parameters.
-  if (!keyData->d.empty()) {
-    auto d = convertToPaddedBigNumber(keyData->d, degree_bytes);
-    if (!d) {
-      return nullptr;
-    }
-
-    if (!EC_KEY_set_private_key(ec, d)) {
-      // TODO: Should we create a JS Exception here?
-      return nullptr;
-    }
-  }
-
-  // Verify the key.
-  if (!EC_KEY_check_key(ec)) {
-    return nullptr;
-  }
-
-  // Wrap the EC_KEY into an EVP_PKEY.
-  EVP_PKEY *pkey = EVP_PKEY_new();
-  if (!pkey || !EVP_PKEY_set1_EC_KEY(pkey, ec)) {
-    return nullptr;
-  }
-#pragma clang diagnostic pop
-
-  //////////////
   JS::RootedObject instance(
       cx, JS_NewObjectWithGivenProto(cx, &CryptoKey::class_, CryptoKey::proto_obj));
   if (!instance) {
@@ -469,7 +674,7 @@ JSObject *CryptoKey::createECDSA(JSContext *cx, CryptoAlgorithmECDSA_Import *alg
   JS::SetReservedSlot(instance, Slots::Type, JS::Int32Value(static_cast<uint8_t>(keyType)));
   JS::SetReservedSlot(instance, Slots::Extractable, JS::BooleanValue(extractable));
   JS::SetReservedSlot(instance, Slots::Usages, JS::Int32Value(usages.toInt()));
-  JS::SetReservedSlot(instance, Slots::Key, JS::PrivateValue(pkey));
+  JS::SetReservedSlot(instance, Slots::Key, JS::PrivateValue(pkey.release()));
   return instance;
 }
 
@@ -478,6 +683,7 @@ JSObject *CryptoKey::createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_I
                                CryptoKeyUsages usages) {
   MOZ_ASSERT(cx);
   MOZ_ASSERT(algorithm);
+
   CryptoKeyType keyType;
   switch (keyData->type) {
   case CryptoKeyRSAComponents::Type::Public: {
@@ -495,7 +701,8 @@ JSObject *CryptoKey::createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_I
   }
 
   // When creating a private key, we require the p and q prime information.
-  if (keyType == CryptoKeyType::Private && !keyData->hasAdditionalPrivateKeyParameters) {
+  const auto is_private = keyType == CryptoKeyType::Private;
+  if (is_private && !keyData->hasAdditionalPrivateKeyParameters) {
     return nullptr;
   }
 
@@ -510,98 +717,35 @@ JSObject *CryptoKey::createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_I
   }
 
   // For private keys, we require the private exponent, as well as p and q prime information.
-  if (keyType == CryptoKeyType::Private) {
+  if (is_private) {
     if (keyData->privateExponent.empty() || keyData->firstPrimeInfo->primeFactor.empty() ||
         keyData->secondPrimeInfo->primeFactor.empty()) {
       return nullptr;
     }
   }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  auto rsa = RSA_new();
-#pragma clang diagnostic pop
-  if (!rsa) {
-    return nullptr;
-  }
+  const auto get_param = [=](std::string_view value) {
+    return is_private ? value : std::string_view{};
+  };
+  const auto get_param2 = [=](auto &&info, auto &&member) {
+    return (is_private && info) ? member : std::string_view{};
+  };
 
-  auto n = convertToBigNumber(keyData->modulus);
-  auto e = convertToBigNumber(keyData->exponent);
-  if (!n || !e) {
-    return nullptr;
-  }
+  auto private_exponent = get_param(keyData->privateExponent);
+  auto prime1 = get_param2(keyData->firstPrimeInfo, keyData->firstPrimeInfo->primeFactor);
+  auto prime2 = get_param2(keyData->secondPrimeInfo, keyData->secondPrimeInfo->primeFactor);
+  auto exponent1 = get_param2(keyData->firstPrimeInfo, keyData->firstPrimeInfo->factorCRTExponent);
+  auto exponent2 = get_param2(keyData->secondPrimeInfo, keyData->secondPrimeInfo->factorCRTExponent);
+  auto coeff = get_param2(keyData->secondPrimeInfo, keyData->secondPrimeInfo->factorCRTCoefficient);
 
-// Calling with d null is fine as long as n and e are not null
-// Ownership of n and e transferred to OpenSSL
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  if (!RSA_set0_key(rsa, n, e, nullptr)) {
-    return nullptr;
-  }
-#pragma clang diagnostic pop
-
-  if (keyType == CryptoKeyType::Private) {
-    auto d = convertToBigNumber(keyData->privateExponent);
-    if (!d) {
-      return nullptr;
-    }
-
-// Calling with n and e null is fine as long as they were set prior
-// Ownership of d transferred to OpenSSL
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    if (!RSA_set0_key(rsa, nullptr, nullptr, d)) {
-      return nullptr;
-    }
-#pragma clang diagnostic pop
-
-    auto p = convertToBigNumber(keyData->firstPrimeInfo->primeFactor);
-    auto q = convertToBigNumber(keyData->secondPrimeInfo->primeFactor);
-    if (!p || !q) {
-      return nullptr;
-    }
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    // Ownership of p and q transferred to OpenSSL
-    if (!RSA_set0_factors(rsa, p, q)) {
-      return nullptr;
-    }
-#pragma clang diagnostic pop
-
-    // We set dmp1, dmpq1, and iqmp member of the RSA struct if the keyData has corresponding data.
-
-    // dmp1 -- d mod (p - 1)
-    auto dmp1 = (!keyData->firstPrimeInfo->factorCRTExponent.empty())
-                    ? convertToBigNumber(keyData->firstPrimeInfo->factorCRTExponent)
-                    : nullptr;
-    // dmq1 -- d mod (q - 1)
-    auto dmq1 = (!keyData->secondPrimeInfo->factorCRTExponent.empty())
-                    ? convertToBigNumber(keyData->secondPrimeInfo->factorCRTExponent)
-                    : nullptr;
-    // iqmp -- q^(-1) mod p
-    auto iqmp = (!keyData->secondPrimeInfo->factorCRTCoefficient.empty())
-                    ? convertToBigNumber(keyData->secondPrimeInfo->factorCRTCoefficient)
-                    : nullptr;
-
-// Ownership of dmp1, dmq1 and iqmp transferred to OpenSSL
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    if (!RSA_set0_crt_params(rsa, dmp1, dmq1, iqmp)) {
-#pragma clang diagnostic pop
-      return nullptr;
-    }
-  }
-
-  auto pkey = EVP_PKEY_new();
+  auto pkey = create_rsa_key_from_parts(cx, keyData->modulus, keyData->exponent, private_exponent,
+                                        prime1, prime2, exponent1, exponent2, coeff);
   if (!pkey) {
     return nullptr;
   }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  if (EVP_PKEY_set1_RSA(pkey, rsa) != 1) {
-#pragma clang diagnostic pop
+  auto n_copy = make_bignum(keyData->modulus);
+  if (!n_copy) {
     return nullptr;
   }
 
@@ -615,8 +759,9 @@ JSObject *CryptoKey::createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_I
   if (!alg) {
     return nullptr;
   }
+
   // Set the modulusLength attribute of algorithm to the length, in bits, of the RSA public modulus.
-  JS::RootedValue modulusLength(cx, JS::NumberValue(getBigNumberLength(n)));
+  JS::RootedValue modulusLength(cx, JS::NumberValue(bn_len(n_copy.get())));
   if (!JS_SetProperty(cx, alg, "modulusLength", modulusLength)) {
     return nullptr;
   }
@@ -628,6 +773,7 @@ JSObject *CryptoKey::createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_I
   JS::RootedObject buffer(
       cx, JS::NewArrayBufferWithContents(cx, keyData->exponent.size(), p.get(),
                                          JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
+
   // `buffer` takes ownership of `p` if the call to NewArrayBufferWithContents was successful
   // if the call was not successful, we need to free `p` before exiting from the function.
   if (!buffer) {
@@ -644,8 +790,7 @@ JSObject *CryptoKey::createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_I
 
   // Set the publicExponent attribute of algorithm to the BigInteger representation of the RSA
   // public exponent.
-  JS::RootedObject byte_array(cx,
-                              JS_NewUint8ArrayWithBuffer(cx, buffer, 0, keyData->exponent.size()));
+  JS::RootedObject byte_array(cx, JS_NewUint8ArrayWithBuffer(cx, buffer, 0, keyData->exponent.size()));
   JS::RootedValue publicExponent(cx, JS::ObjectValue(*byte_array));
   if (!JS_SetProperty(cx, alg, "publicExponent", publicExponent)) {
     return nullptr;
@@ -655,13 +800,12 @@ JSObject *CryptoKey::createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_I
   JS::SetReservedSlot(instance, Slots::Type, JS::Int32Value(static_cast<uint8_t>(keyType)));
   JS::SetReservedSlot(instance, Slots::Extractable, JS::BooleanValue(extractable));
   JS::SetReservedSlot(instance, Slots::Usages, JS::Int32Value(usages.toInt()));
-  JS::SetReservedSlot(instance, Slots::Key, JS::PrivateValue(pkey));
+  JS::SetReservedSlot(instance, Slots::Key, JS::PrivateValue(pkey.release()));
   return instance;
 }
 
 CryptoKeyType CryptoKey::type(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-
   return static_cast<CryptoKeyType>(JS::GetReservedSlot(self, Slots::Type).toInt32());
 }
 
