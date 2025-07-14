@@ -1,17 +1,14 @@
 #include "extension-api.h"
-
-#include <cassert>
-#include <chrono>
-#include <cstdlib>
-#include <iostream>
+#include "allocator.h"
+#include "debugger.h"
+#include "encode.h"
+#include "event_loop.h"
+#include "script_loader.h"
 
 // TODO: remove these once the warnings are fixed
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
-#include "allocator.h"
-#include "encode.h"
-#include "event_loop.h"
 #include "js/CompilationAndEvaluation.h"
 #include "js/Modules.h"
 #include "js/ForOfIterator.h"
@@ -20,12 +17,10 @@
 #include "jsfriendapi.h"
 #pragma clang diagnostic pop
 
-#ifdef JS_DEBUGGER
-  #include "debugger.h"
-#endif
-#include "script_loader.h"
-
-#include <decode.h>
+#include <cassert>
+#include <chrono>
+#include <cstdlib>
+#include <iostream>
 
 #ifdef MEM_STATS
 #include <string>
@@ -299,15 +294,10 @@ bool create_initializer_global(Engine *engine) {
   JSAutoRealm ar(cx, global);
 
   if (!JS_DefineFunction(cx, global, "defineBuiltinModule", ::define_builtin_module, 2, 0) ||
-      !JS_DefineProperty(cx, global, "contentGlobal", ENGINE->global(), JSPROP_READONLY)) {
+      !JS_DefineProperty(cx, global, "contentGlobal", ENGINE->global(), JSPROP_READONLY) ||
+      !JS_DefineFunction(cx, global, "print", content_debugger::dbg_print, 1, 0)) {
     return false;
   }
-
-#ifdef JS_DEBUGGER
-  if (!JS_DefineFunction(cx, global, "print", content_debugger::dbg_print, 1, 0)) {
-    return false;
-  }
-#endif
 
   INIT_SCRIPT_GLOBAL.init(cx, global);
   return true;
@@ -489,13 +479,11 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
     // Debugging isn't supported during wizening, so only try it when doing runtime evaluation.
     // The debugger can be initialized at runtime by whatever export is invoked on the
     // resumed wizer snapshot.
-#ifdef JS_DEBUGGER
-      content_debugger::maybe_init_debugger(this, false);
+    content_debugger::maybe_init_debugger(this, false);
     if (auto replacement_script_path = content_debugger::replacement_script_path()) {
       TRACE("Using replacement script path received from debugger: " << *replacement_script_path);
       content_script_path = replacement_script_path;
     }
-#endif
   }
 
   if (content_script_path) {
