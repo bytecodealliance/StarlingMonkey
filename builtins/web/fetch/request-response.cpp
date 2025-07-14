@@ -1,5 +1,6 @@
 #include "request-response.h"
 
+#include "../abort/abort-signal.h"
 #include "../blob.h"
 #include "../form-data/form-data.h"
 #include "../form-data/form-data-encoder.h"
@@ -9,13 +10,11 @@
 #include "../url.h"
 #include "fetch-utils.h"
 #include "encode.h"
-#include "event_loop.h"
 #include "extension-api.h"
 #include "fetch_event.h"
 #include "host_api.h"
 #include "js/String.h"
 #include "js/TypeDecls.h"
-#include "picosha2.h"
 
 #include "js/Array.h"
 #include "js/ArrayBuffer.h"
@@ -23,9 +22,6 @@
 #include "js/JSON.h"
 #include "js/Stream.h"
 #include "mozilla/ResultVariant.h"
-#include <algorithm>
-#include <iostream>
-#include <vector>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
@@ -45,6 +41,7 @@ bool NativeStreamSource::stream_is_body(JSContext *cx, JS::HandleObject stream) 
 
 namespace builtins::web::fetch {
 
+using abort::AbortSignal;
 using blob::Blob;
 using form_data::FormData;
 using form_data::FormDataParser;
@@ -1310,6 +1307,11 @@ JSString *Request::method(HandleObject obj) {
   return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::Method)).toString();
 }
 
+JSObject *Request::signal(JSObject *obj) {
+  MOZ_ASSERT(is_instance(obj));
+  return &JS::GetReservedSlot(obj, static_cast<uint32_t>(Request::Slots::Signal)).toObject();
+}
+
 bool Request::method_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
 
@@ -1349,6 +1351,12 @@ bool Request::body_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool Request::bodyUsed_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
   args.rval().setBoolean(RequestOrResponse::body_used(self));
+  return true;
+}
+
+bool Request::signal_get(JSContext *cx, unsigned argc, JS::Value *vp) {
+  METHOD_HEADER(0)
+  args.rval().setObject(*Request::signal(self));
   return true;
 }
 
@@ -1395,6 +1403,21 @@ bool Request::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
   SetReservedSlot(new_request, static_cast<uint32_t>(Slots::URL), url_val);
   Value method_val = JS::StringValue(method(self));
   SetReservedSlot(new_request, static_cast<uint32_t>(Slots::Method), method_val);
+
+  // Assert: this's signal is non-null.
+  MOZ_ASSERT(Request::signal(self));
+
+  // Let clonedSignal be the result of creating a dependent abort signal from « this's signal »,
+  // using AbortSignal and this's relevant realm.
+  RootedValue signal_val(cx, GetReservedSlot(self, static_cast<uint32_t>(Slots::Signal)));
+  RootedValueArray<1> signals(cx);
+  signals[0].set(signal_val);
+
+  RootedObject signal(cx, AbortSignal::create_with_signals(cx, signals));
+  if (!signal) {
+    return false;
+  }
+  SetReservedSlot(new_request, static_cast<uint32_t>(Slots::Signal), ObjectValue(*signal));
 
   // clone operation step 2.
   // If request’s body is non-null, set newRequest’s body to the result of cloning request’s body.
@@ -1459,6 +1482,7 @@ const JSPropertySpec Request::properties[] = {
     JS_PSG("headers", Request::headers_get, JSPROP_ENUMERATE),
     JS_PSG("body", Request::body_get, JSPROP_ENUMERATE),
     JS_PSG("bodyUsed", Request::bodyUsed_get, JSPROP_ENUMERATE),
+    JS_PSG("signal", Request::signal_get, JSPROP_ENUMERATE),
     JS_STRING_SYM_PS(toStringTag, "Request", JSPROP_READONLY),
     JS_PS_END,
 };
@@ -1479,6 +1503,7 @@ void Request::init_slots(JSObject *requestInstance) {
                       JS::PrivateValue(nullptr));
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::Headers), JS::NullValue());
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::BodyStream), JS::NullValue());
+  JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::Signal), JS::NullValue());
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::HasBody), JS::FalseValue());
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::BodyUsed), JS::FalseValue());
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::Method),
@@ -1497,6 +1522,7 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
   init_slots(request);
   JS::RootedString url_str(cx);
   JS::RootedString method_str(cx);
+  JS::RootedObject signal_obj(cx);
   bool method_needs_normalization = false;
 
   JS::RootedObject input_request(cx);
@@ -1525,7 +1551,7 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
     // (implicit)
 
     // 3.  Set `signal` to `input`’s signal.
-    // (signals not yet supported)
+    signal_obj = Request::signal(input_request);
 
     // 12.  Set `request` to a new request with the following properties:
     // (moved into step 6 because we can leave everything at the default values
@@ -1617,6 +1643,7 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
   JS::RootedValue method_val(cx);
   JS::RootedValue headers_val(cx);
   JS::RootedValue body_val(cx);
+  JS::RootedValue signal_val(cx);
 
   bool is_get = true;
   bool is_get_or_head = is_get;
@@ -1627,7 +1654,8 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
     JS::RootedObject init(cx, init_val.toObjectOrNull());
     if (!JS_GetProperty(cx, init, "method", &method_val) ||
         !JS_GetProperty(cx, init, "headers", &headers_val) ||
-        !JS_GetProperty(cx, init, "body", &body_val)) {
+        !JS_GetProperty(cx, init, "body", &body_val) ||
+        !JS_GetProperty(cx, init, "signal", &signal_val)) {
       return false;
     }
   } else if (!init_val.isNullOrUndefined()) {
@@ -1736,27 +1764,42 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
   }
 
   // 26.  If `init["signal"]` exists, then set `signal` to it.
-  // (signals NYI)
+  if (!signal_val.isUndefined()) {
+    signal_obj = signal_val.toObjectOrNull();
+  }
+  // 27. If init["priority"] exists, then:
+  // (Prority NYI)
 
-  // 27.  Set this’s request to `request`.
+  // 28.  Set this’s request to `request`.
   // (implicit)
 
-  // 28.  Set this’s signal to a new `AbortSignal` object with this’s relevant
-  // Realm.
-  // 29.  If `signal` is not null, then make this’s signal follow `signal`.
-  // (signals NYI)
+  // 29. Let signals be « signal » if signal is non-null; otherwise « ».
+  JS::RootedValueVector signals(cx);
+  if (signal_obj) {
+    auto res = signals.append(JS::ObjectValue(*signal_obj));
+    if (!res) return false;
+  }
 
-  // 30.  Set this’s headers to a new `Headers` object with this’s relevant
+  // 30. Set this's signal to the result of creating a dependent abort signal from signals,
+  // using AbortSignal and this's relevant realm.
+  RootedObject signal(cx, AbortSignal::create_with_signals(cx, signals));
+  if (!signal) {
+    return false;
+  }
+
+  SetReservedSlot(request, static_cast<uint32_t>(Slots::Signal), ObjectValue(*signal));
+
+  // 31.  Set this’s headers to a new `Headers` object with this’s relevant
   // Realm, whose header list is `request`’s header list and guard is
   // "`request`". (implicit)
 
-  // 31.  If this’s requests mode is "`no-cors`", then:
+  // 32.  If this’s requests mode is "`no-cors`", then:
   // 1.  If this’s requests method is not a CORS-safelisted method, then throw a
   // `TypeError`.
   // 2.  Set this’s headers’s guard to "`request-no-cors`".
   // (N/A)
 
-  // 32.  If `init` is not empty, then:
+  // 33.  If `init` is not empty, then:
   // 1.  Let `headers` be a copy of this’s headers and its associated header
   // list.
   // 2.  If `init["headers"]` exists, then set `headers` to `init["headers"]`.
@@ -1785,12 +1828,12 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
     }
   }
 
-  // 33.  Let `inputBody` be `input`’s requests body if `input` is a `Request`
+  // 34.  Let `inputBody` be `input`’s requests body if `input` is a `Request`
   // object;
   //      otherwise null.
   // (skipped)
 
-  // 34.  If either `init["body"]` exists and is non-null or `inputBody` is
+  // 35.  If either `init["body"]` exists and is non-null or `inputBody` is
   // non-null, and `request`’s method is ``GET`` or ``HEAD``, then throw a
   // TypeError.
   if ((input_has_body || !body_val.isNullOrUndefined()) && is_get_or_head) {
@@ -1798,7 +1841,7 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
     return false;
   }
 
-  // 35.  Let `initBody` be null.
+  // 36.  Let `initBody` be null.
   // (skipped)
 
   // Note: steps 36-41 boil down to "if there's an init body, use that.
@@ -1821,7 +1864,7 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
   JS::SetReservedSlot(request, static_cast<uint32_t>(Slots::Headers),
                       JS::ObjectOrNullValue(headers));
 
-  // 36.  If `init["body"]` exists and is non-null, then:
+  // 37.  If `init["body"]` exists and is non-null, then:
   if (!body_val.isNullOrUndefined()) {
     // 1.  Let `Content-Type` be null.
     // 2.  Set `initBody` and `Content-Type` to the result of extracting
@@ -1836,16 +1879,16 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
       return false;
     }
   } else if (input_has_body) {
-    // 37.  Let `inputOrInitBody` be `initBody` if it is non-null; otherwise
+    // 38.  Let `inputOrInitBody` be `initBody` if it is non-null; otherwise
     // `inputBody`. (implicit)
-    // 38.  If `inputOrInitBody` is non-null and `inputOrInitBody`’s source is
+    // 39.  If `inputOrInitBody` is non-null and `inputOrInitBody`’s source is
     // null, then:
     // 1.  If this’s requests mode is neither "`same-origin`" nor "`cors`", then
     // throw a `TypeError.
     // 2.  Set this’s requests use-CORS-preflight flag.
     // (N/A)
     // 39.  Let `finalBody` be `inputOrInitBody`.
-    // 40.  If `initBody` is null and `inputBody` is non-null, then:
+    // 41.  If `initBody` is null and `inputBody` is non-null, then:
     // (implicit)
     // 1.  If `input` is unusable, then throw a TypeError.
     // 2.  Set `finalBody` to the result of creating a proxy for `inputBody`.
@@ -1888,7 +1931,7 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
     JS::SetReservedSlot(request, static_cast<uint32_t>(Slots::HasBody), JS::BooleanValue(true));
   }
 
-  // 41.  Set this’s requests body to `finalBody`.
+  // 42.  Set this’s requests body to `finalBody`.
   // (implicit)
 
   return true;
@@ -2682,6 +2725,68 @@ JSObject *Response::create_incoming(JSContext *cx, host_api::HttpIncomingRespons
   }
 
   return self;
+}
+
+ResponseFutureTask::ResponseFutureTask(const HandleObject request, host_api::FutureHttpIncomingResponse *future)
+      : request_(request), future_(future) {
+    auto res = future->subscribe();
+
+    MOZ_ASSERT(!res.is_err(), "Subscribing to a future should never fail");
+    handle_ = res.unwrap();
+}
+
+bool ResponseFutureTask::run(api::Engine *engine) {
+  // MOZ_ASSERT(ready());
+  JSContext *cx = engine->cx();
+
+  const RootedObject request(cx, request_);
+  RootedObject response_promise(cx, Request::response_promise(request));
+
+  auto res = future_->maybe_response();
+  if (res.is_err()) {
+    api::throw_error(cx, FetchErrors::FetchNetworkError);
+    return RejectPromiseWithPendingError(cx, response_promise);
+  }
+
+  auto maybe_response = res.unwrap();
+  if(!maybe_response.has_value()) {
+    return cancel(engine);
+  }
+
+  auto response = maybe_response.value();
+  RootedObject response_obj(cx, Response::create_incoming(cx, response));
+  if (!response_obj) {
+    return false;
+  }
+
+  RequestOrResponse::set_url(response_obj, RequestOrResponse::url(request));
+  RootedValue response_val(cx, ObjectValue(*response_obj));
+  if (!ResolvePromise(cx, response_promise, response_val)) {
+    return false;
+  }
+
+  return cancel(engine);
+}
+
+bool ResponseFutureTask::cancel(api::Engine *engine) {
+  // TODO(TS): implement
+  handle_ = -1;
+  return true;
+}
+
+bool ResponseFutureTask::abort(api::Engine *engine) {
+  JSContext *cx = engine->cx();
+  RootedObject request(cx, request_);
+  RootedObject signal(cx, Request::signal(request));
+  RootedObject promise(cx, Request::response_promise(request));
+  RootedValue error(cx, abort::AbortSignal::reason(signal));
+
+  if (!fetch::abort_fetch(cx, promise, request, nullptr, error)) {
+    return false;
+  }
+
+  future_->unsubscribe();
+  return true;
 }
 
 namespace request_response {
