@@ -47,6 +47,7 @@ using JS::NullHandleValue;
 using JS::UndefinedHandleValue;
 
 using JS::PersistentRooted;
+using HeapValue = JS::Heap<Value>;
 
 std::optional<std::span<uint8_t>> value_to_buffer(JSContext *cx, HandleValue val,
                                                   const char *val_desc);

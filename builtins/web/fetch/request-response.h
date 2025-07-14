@@ -5,6 +5,9 @@
 #include "headers.h"
 #include "host_api.h"
 
+#include "js/Stream.h"
+#include "../abort/abort-signal.h"
+
 namespace builtins {
 namespace web {
 namespace fetch {
@@ -125,6 +128,7 @@ class Request final : public BuiltinImpl<Request> {
 
   static bool body_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool bodyUsed_get(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool signal_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
   static bool clone(JSContext *cx, unsigned argc, JS::Value *vp);
 
@@ -141,11 +145,13 @@ public:
     Method = static_cast<int>(RequestOrResponse::Slots::Count),
     ResponsePromise,
     PendingResponseHandle,
+    Signal,
     Count,
   };
 
   static JSObject *response_promise(JSObject *obj);
   static JSString *method(JS::HandleObject obj);
+  static JSObject *signal(JSObject *obj);
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -233,48 +239,11 @@ class ResponseFutureTask final : public api::AsyncTask {
 
 public:
   explicit ResponseFutureTask(const HandleObject request,
-                              host_api::FutureHttpIncomingResponse *future)
-      : request_(request), future_(future) {
-    auto res = future->subscribe();
-    MOZ_ASSERT(!res.is_err(), "Subscribing to a future should never fail");
-    handle_ = res.unwrap();
-  }
+                              host_api::FutureHttpIncomingResponse *future);
 
-  [[nodiscard]] bool run(api::Engine *engine) override {
-    // MOZ_ASSERT(ready());
-    JSContext *cx = engine->cx();
-
-    const RootedObject request(cx, request_);
-    RootedObject response_promise(cx, Request::response_promise(request));
-
-    auto res = future_->maybe_response();
-    if (res.is_err()) {
-      api::throw_error(cx, FetchErrors::FetchNetworkError);
-      return RejectPromiseWithPendingError(cx, response_promise);
-    }
-
-    auto maybe_response = res.unwrap();
-    MOZ_ASSERT(maybe_response.has_value());
-    auto response = maybe_response.value();
-    RootedObject response_obj(cx, Response::create_incoming(cx, response));
-    if (!response_obj) {
-      return false;
-    }
-
-    RequestOrResponse::set_url(response_obj, RequestOrResponse::url(request));
-    RootedValue response_val(cx, ObjectValue(*response_obj));
-    if (!ResolvePromise(cx, response_promise, response_val)) {
-      return false;
-    }
-
-    return cancel(engine);
-  }
-
-  [[nodiscard]] bool cancel(api::Engine *engine) override {
-    // TODO(TS): implement
-    handle_ = -1;
-    return true;
-  }
+  [[nodiscard]] bool run(api::Engine *engine) override;
+  [[nodiscard]] bool cancel(api::Engine *engine) override;
+  [[nodiscard]] bool abort(api::Engine *engine);
 
   void trace(JSTracer *trc) override { TraceEdge(trc, &request_, "Request for response future"); }
 };
