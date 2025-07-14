@@ -260,8 +260,13 @@ bool EventTarget::add_listener(JSContext *cx, HandleObject self, HandleValue typ
     list->append(listener);
   } else if((*it)->removed) {
     // if existing listener was marked for removal, then move it to the end of the list
-    // and update its removed flag. This is done to ensure that the order of listeners.
+    // and update its removed flag. This is done to ensure the order of listeners. We only
+    // update listener's properties that are not check for listener equality.
+    (*it)->signal = signal_val;
+    (*it)->passive = passive;
+    (*it)->once = once;
     (*it)->removed = false;
+
     list->erase(it);
     list->append(*it);
   }
@@ -409,10 +414,12 @@ bool EventTarget::invoke_listeners(JSContext *cx, HandleObject target, HandleObj
   // 6. Let listeners be a clone of event's currentTarget attribute value's event listener list.
   auto list = listeners(target);
   JS::RootedVector<ListenerRef> list_clone(cx);
+  if (!list_clone.reserve(list->length())) {
+    return false;
+  }
+
   for (auto &listener : *list) {
-    if (!list_clone.append(listener)) {
-      return false;
-    }
+    list_clone.infallibleAppend(listener);
   }
 
   // 7. Let invocationTargetInShadowTree be struct's invocation-target-in-shadow-tree.
@@ -507,7 +514,7 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event,
     }
 
     if (JS_IsExceptionPending(cx)) {
-      // TODO: report an excecption as in spec:
+      // TODO: report an exception as in spec:
       // https://html.spec.whatwg.org/multipage/webappapis.html#report-an-exception
       // https://github.com/bytecodealliance/StarlingMonkey/issues/239
       auto msg = "Exception in event listener for " + listener->type;
