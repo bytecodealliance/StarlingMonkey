@@ -1,0 +1,17 @@
+{
+  "Supports passive option on addEventListener only": {
+    "status": "PASS"
+  },
+  "preventDefault should be ignored if-and-only-if the passive option is true": {
+    "status": "PASS"
+  },
+  "returnValue should be ignored if-and-only-if the passive option is true": {
+    "status": "PASS"
+  },
+  "passive behavior of one listener should be unaffected by the presence of other listeners": {
+    "status": "PASS"
+  },
+  "Equivalence of option values": {
+    "status": "PASS"
+  }
+}
