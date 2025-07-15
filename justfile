@@ -59,7 +59,7 @@ format *ARGS:
 
 # Run integration test
 test regex="": (build "integration-test-server")
-    ctest --test-dir {{ builddir }} -j {{ ncpus }} --output-on-failure -R {{ regex }}
+    ctest --test-dir {{ builddir }} -j {{ ncpus }} --output-on-failure {{ if regex == "" { regex } else { "-R " + regex } }}
 
 # Build web platform test suite
 [group('wpt')]
