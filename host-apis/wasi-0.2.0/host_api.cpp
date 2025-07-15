@@ -2,8 +2,6 @@
 #include "bindings/bindings.h"
 #include "handles.h"
 
-#include <wasi/libc-environ.h>
-
 static std::optional<wasi_clocks_monotonic_clock_own_pollable_t> immediately_ready;
 
 size_t poll_handles(vector<WASIHandle<host_api::Pollable>::Borrowed> handles) {
@@ -1032,9 +1030,6 @@ void exports_wasi_http_incoming_handler(exports_wasi_http_incoming_request reque
   // that it properly initializes the runtime and installs a request handler.
   if (!REQUEST_HANDLER) {
     init_from_environment();
-  } else {
-    // Resuming a wizer snapshot, so we have to ensure that the environment is reset.
-    __wasilibc_initialize_environ();
   }
   MOZ_ASSERT(REQUEST_HANDLER);
 
