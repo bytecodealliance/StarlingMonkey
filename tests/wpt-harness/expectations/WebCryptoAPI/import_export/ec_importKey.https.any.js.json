@@ -51,7 +51,7 @@
     "status": "FAIL"
   },
   "Empty Usages: P-256 bits (pkcs8, buffer(138), {name: ECDSA, namedCurve: P-256}, true, [])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-256}, true, [sign])": {
     "status": "FAIL"
@@ -108,13 +108,13 @@
     "status": "FAIL"
   },
   "Good parameters: P-256 bits (pkcs8, buffer(138), {name: ECDSA, namedCurve: P-256}, false, [sign])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-256 bits (pkcs8, buffer(138), {name: ECDSA, namedCurve: P-256}, false, [sign, sign])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Empty Usages: P-256 bits (pkcs8, buffer(138), {name: ECDSA, namedCurve: P-256}, false, [])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-256}, false, [sign])": {
     "status": "PASS"
@@ -177,7 +177,7 @@
     "status": "FAIL"
   },
   "Empty Usages: P-384 bits (pkcs8, buffer(185), {name: ECDSA, namedCurve: P-384}, true, [])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-384}, true, [sign])": {
     "status": "FAIL"
@@ -234,13 +234,13 @@
     "status": "FAIL"
   },
   "Good parameters: P-384 bits (pkcs8, buffer(185), {name: ECDSA, namedCurve: P-384}, false, [sign])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-384 bits (pkcs8, buffer(185), {name: ECDSA, namedCurve: P-384}, false, [sign, sign])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Empty Usages: P-384 bits (pkcs8, buffer(185), {name: ECDSA, namedCurve: P-384}, false, [])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-384}, false, [sign])": {
     "status": "PASS"
@@ -303,7 +303,7 @@
     "status": "FAIL"
   },
   "Empty Usages: P-521 bits (pkcs8, buffer(241), {name: ECDSA, namedCurve: P-521}, true, [])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-521}, true, [sign])": {
     "status": "FAIL"
@@ -360,13 +360,13 @@
     "status": "FAIL"
   },
   "Good parameters: P-521 bits (pkcs8, buffer(241), {name: ECDSA, namedCurve: P-521}, false, [sign])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-521 bits (pkcs8, buffer(241), {name: ECDSA, namedCurve: P-521}, false, [sign, sign])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Empty Usages: P-521 bits (pkcs8, buffer(241), {name: ECDSA, namedCurve: P-521}, false, [])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-521}, false, [sign])": {
     "status": "PASS"
