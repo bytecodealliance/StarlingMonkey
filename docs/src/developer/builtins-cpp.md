@@ -279,19 +279,11 @@ StarlingMonkey provides macros and helper functions to simplify native class imp
     }
     ```
 
-#### Step 3: Register the Class with StarlingMonkey Engine
-
-Finally, ensure your class is installed into the StarlingMonkey engine during initialization:
-
-```cpp
-// Example initialization code
-#include "my_class.h"
-
-void initialize_builtins(api::Engine *engine) {
-  builtins::my_class::install(engine);
-}
-
-```
+> [!NOTE] Registering the Class with StarlingMonkey Engine
+>
+> When you use `add_builtin` in your CMakeLists.txt file, it automatically adds your builtin to the
+> `builtins.incl`file, which is then processed by these macros to ensure your `install` function is
+> called during engine initialization.
 
 ## Providing a custom host API implementation
 
