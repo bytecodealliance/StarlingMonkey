@@ -4,14 +4,13 @@
 #include "builtin.h"
 #include "extension-api.h"
 #include "js/AllocPolicy.h"
-#include "js/TypeDecls.h"
 #include "js/Vector.h"
 
 namespace builtins {
 namespace web {
 namespace blob {
 
-class Blob : public FinalizableBuiltinImpl<Blob> {
+class Blob : public BuiltinImpl<Blob, FinalizableClassPolicy> {
   static bool arrayBuffer(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool bytes(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool slice(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -46,8 +45,6 @@ public:
   static JSString *type(JSObject *self);
   static LineEndings line_endings(JSObject *self);
 
-  static bool is_instance(const JSObject *obj);
-  static bool is_instance(const Value val);
   static bool append_value(JSContext *cx, HandleObject self, HandleValue val);
   static bool init_blob_parts(JSContext *cx, HandleObject self, HandleValue iterable);
   static bool init_options(JSContext *cx, HandleObject self, HandleValue opts);
