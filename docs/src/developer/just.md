@@ -9,39 +9,37 @@ refer to the official [installation instructions][just-install] for your specifi
 Once installed, navigate to the project directory and run `just` commands as needed. For instance,
 the following commands will configure a default `cmake-build-debug` directory and build the project.
 
-```shell
-$ just build
+```console
+just build
 ```
 
 To load a JS script during componentization and serve its output using `Wasmtime`, run:
 
-```shell
-$ just serve <filename>.js
+```console
+just serve <filename>.js
 ```
 
 To build and run integration tests run:
 
-```shell
-$ just test
+```console
+just test
 ```
 
 To build and run Web Platform Tests run:
 
-```shell
-$ just wpt-setup # prepare WPT hosts
-$ just wpt-test # run all tests
-$ just wpt-test console/console-log-symbol.any.js # run specific test
+```console
+just wpt-setup # prepare WPT hosts
+just wpt-test # run all tests
+just wpt-test console/console-log-symbol.any.js # run specific test
 ```
 
 To view a complete list of available recipes, run:
 
-```shell
-$ just --list
-
+```console
+just --list
 ```
 
-> **Note**
->
+> [!NOTE]
 > By default, the CMake configuration step is skipped if the build directory already exists.
 > However, this can sometimes cause issues if the existing build directory was configured for a
 > different target. For instance:
@@ -53,7 +51,7 @@ $ just --list
 > To resolve this, you can force cmake to reconfigure the build directory by adding the
 > `reconfigure=true` parameter. For example:
 >
-> ```shell
+> ```console
 > just reconfigure=true wpt-build
 > ```
 
@@ -63,8 +61,8 @@ The default build mode is debug, which automatically configures the build direct
 `cmake-build-debug`. You can switch to a different build mode, such as release, by specifying the
 mode parameter. For example:
 
-```shell
-$ just mode=release build
+```console
+just mode=release build
 ```
 
 This command will set the build mode to release, and the build directory will automatically change
@@ -72,8 +70,8 @@ to `cmake-build-release`.
 
 If you want to override the default build directory, you can use the `builddir` parameter.
 
-```shell
-$ just builddir=mybuilddir mode=release build
+```console
+just builddir=mybuilddir mode=release build
 ```
 
 This command configures CMake to use `mybuilddir` as the build directory and sets the build mode to
@@ -83,15 +81,15 @@ This command configures CMake to use `mybuilddir` as the build directory and set
 
 You can also start a Web Platform Tests (WPT) server with:
 
-```shell
-$ just wpt-server
+```console
+just wpt-server
 ```
 
 After starting the server, individual tests can be run by sending a request with the test name to
 the server instance. For example:
 
-```shell
-$ curl http://127.0.0.1:7676/console/console-log-symbol.any.js
+```console
+curl http://127.0.0.1:7676/console/console-log-symbol.any.js
 
 ```
 

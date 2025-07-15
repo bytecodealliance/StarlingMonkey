@@ -6,9 +6,11 @@ src = "src"
 title = "StarlingMonkey Developer Documentation"
 description = "Documentation for StarlingMonkey"
 
-[preprocessor]
+[preprocessor.alerts]
+renderers = ["html", "linkcheck"]
 
-[output]
+[output.linkcheck]
+traverse-parent-directories = true
 
 [output.html]
 git-repository-url = "https://github.com/bytecodealliance/StarlingMonkey"
@@ -17,7 +19,7 @@ default-theme = "light"
 preferred-dark-theme = "navy"
 copy-fonts = true
 no-section-label = false
-curly-quotes = true
+smart-punctuation = true
 
 [output.html.fold]
 enable = true

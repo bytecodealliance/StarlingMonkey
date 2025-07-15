@@ -15,23 +15,23 @@ With sufficiently new versions of `cmake` and `rustup` installed, the build proc
 
 1. Clone the repo
 
-```bash
-$ git clone https://github.com/bytecodealliance/StarlingMonkey
-$ cd StarlingMonkey
+```console
+git clone https://github.com/bytecodealliance/StarlingMonkey
+cd StarlingMonkey
 ```
 
 2. Run the configuration script
 
 For a release configuration, run
 
-```bash
-$ cmake -S . -B cmake-build-release -DCMAKE_BUILD_TYPE=Release
+```console
+cmake -S . -B cmake-build-release -DCMAKE_BUILD_TYPE=Release
 ```
 
 For a debug configuration, run
 
-```bash
-$ cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
+```console
+cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
 ```
 
 3. Build the runtime
@@ -44,32 +44,32 @@ script.
 The following command will build the `starling-raw.wasm` runtime module in the `cmake-build-release`
 directory:
 
-```bash
+```console
 # Use cmake-build-debug for the debug build
 # Change the value for `--parallel` to match the number of CPU cores in your system
-$ cmake --build cmake-build-release --parallel 8
+cmake --build cmake-build-release --parallel 8
 ```
 
 Then, the `starling-raw.wasm` module can be turned into a component with the following command:
 
-```bash
-$ cd cmake-build-release
-$ ./componentize.sh -o starling.wasm
+```console
+cd cmake-build-release
+./componentize.sh -o starling.wasm
 ```
 
 The resulting runtime can be used to load and evaluate JS code dynamically:
 
-```bash
-$ wasmtime -S http starling.wasm -e "console.log('hello world')"
+```console
+wasmtime -S http starling.wasm -e "console.log('hello world')"
 # or, to load a file:
-$ wasmtime -S http --dir . starling.wasm index.js
+wasmtime -S http --dir . starling.wasm index.js
 ```
 
 Alternatively, a JS file can be provided during componentization:
 
-```bash
-$ cd cmake-build-release
-$ ./componentize.sh index.js -o starling.wasm
+```console
+cd cmake-build-release
+./componentize.sh index.js -o starling.wasm
 ```
 
 This way, the JS file will be loaded during componentization, and the top-level code will be
