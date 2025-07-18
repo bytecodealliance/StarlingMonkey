@@ -26,3 +26,6 @@ add_custom_target(clang-tidy-fix
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Running clang‑tidy over the codebase and applying fixes"
   VERBATIM)
+
+add_dependencies(clang-tidy starling-raw.wasm)
+add_dependencies(clang-tidy-fix starling-raw.wasm)
