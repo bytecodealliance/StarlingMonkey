@@ -146,7 +146,7 @@ class InlineDebugAdapterFactory implements DebugAdapterDescriptorFactory {
     return new DebugAdapterInlineImplementation(
       new StarlingMonkeyDebugSession(
         workspaceFileAccessor,
-        session.workspaceFolder ? session.workspaceFolder.uri.fsPath : '/',  // TODO: this fucks up normalisation though
+        session.workspaceFolder ? session.workspaceFolder.uri.fsPath : '/',  // TODO: this messes up normalisation though
         <IStarlingMonkeyRuntimeConfig><unknown>config
       )
     );

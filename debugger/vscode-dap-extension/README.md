@@ -10,35 +10,48 @@ The extension works for content built with a recent (`0.18` and up) version of [
 
 ### Building Content
 
-**SAMPLE WORKSPACE? JUST RUN THIS:**
+Build using `componentize-js`.  You will need to `npm install -g @bytecodealliance/componentize-js`.
 
-**`js` workspace:** `componentize-js --wit world.wit -o main.wasm --runtime-args "--enable-script-debugging" main.js`
+When invoking `componentize-js`, you **must** pass the `--runtime-args "--enable-script-debugging"` flag.
 
-**`ts` workspace:** `npm run compile`
+**JavaScript**
 
-**`spin-ts` workspace:** `spin build`
+`componentize-js --wit world.wit -o main.wasm --runtime-args "--enable-script-debugging" main.js`
 
-(you will need to `npm install -g @bytecodealliance/componentize-js`)
+**TypeScript**
 
-**MOAR DEETS**
+In `package.json`:
 
-The content needs to be invoked via the `wasi:http/incoming-handler@0.2.*/handle` function. In other words, it needs to target the `wasi:http/proxy@0.2` world.
-
-Additionally, it needs to import a few additionally interfaces, which you can add to your `*.wit` by adding these lines:
-
-```wit
-  import wasi:cli/environment@0.2.3;
-  import wasi:sockets/network@0.2.3;
-  import wasi:sockets/instance-network@0.2.3;
-  import wasi:sockets/tcp@0.2.3;
-  import wasi:sockets/tcp-create-socket@0.2.3;
+```
+"scripts": {
+    "compile": "mkdirp out && tsc && componentize-js --wit world.wit -o out/main2.wasm --runtime-args \"--enable-script-debugging\" dist/main2.js"
+}
 ```
 
-And finally, when invoking `componentize-js`, the arguments `--runtime-args "--enable-script-debugging"` need to be passed.
+then `npm run compile`
 
-### Running Content
+## Running Content
 
 To debug content, you need to create a launch config of the type `starlingmonkey`. By default, this will start the [Wasmtime](https://wasmtime.dev/) WebAssembly runtime with the provided component.
+
+Example launch config:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "starlingmonkey",
+      "request": "launch",
+      "name": "Debug StarlingMonkey component",
+      "component": "${workspaceFolder}/main.wasm",
+      "program": "${workspaceFolder}/main.js",
+      "stopOnEntry": false,
+      "trace": true
+    }
+  ]
+}
+```
 
 Once `wasmtime` is running, sending a request to the host/port it's running on will cause StarlingMonkey to connect to the debugger.
 
@@ -49,3 +62,15 @@ The extension adds a `StarlingMonkey Debugger` section to VS Code's configuratio
 Additionally, all settings in this section can be overridden in the launch configuration.
 
 [^1]: Alternatively, you can use another WebAssembly Components runtime, as long as it supports outgoing TCP socket connections, and passing environment variables to the guest. In that case, you'll have to update the [configuration](#configuration) to ensure the right options are passed to the runtime.
+
+## Extension Developer Info
+
+### Testing
+
+Use the `tests` directory (and add to it!).  Build commands:
+
+**`js` workspace:** `componentize-js --wit world.wit -o main.wasm --runtime-args "--enable-script-debugging" main.js`
+
+**`ts` workspace:** `npm run compile`
+
+**`spin-ts` workspace:** `spin build`

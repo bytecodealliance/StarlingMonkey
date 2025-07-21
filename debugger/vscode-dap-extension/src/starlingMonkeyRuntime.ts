@@ -137,6 +137,9 @@ class ComponentRuntimeInstance {
       socket.on("close", () => {
         console.debug("ComponentRuntime disconnected");
       });
+      socket.on("error", e => {
+        console.warn(`ComponentRuntime socket error ${e}`);
+      });
     }).listen();
   }
 
