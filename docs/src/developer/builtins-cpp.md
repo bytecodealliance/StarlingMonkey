@@ -265,7 +265,7 @@ StarlingMonkey provides macros and helper functions to simplify native class imp
 - `METHOD_HEADER(required_argc)`:
 
   - Initializes method arguments.
-  - Ensures the receiver (~this~) is an instance of the correct class.
+  - Ensures the receiver (`this`) is an instance of the correct class.
   - Checks the minimum number of arguments.
 
 - `is_instance(JSObject *obj)`:
@@ -279,7 +279,8 @@ StarlingMonkey provides macros and helper functions to simplify native class imp
     }
     ```
 
-> [!NOTE] Registering the Class with StarlingMonkey Engine
+> [!NOTE]
+> Registering the Class with StarlingMonkey Engine
 >
 > When you use `add_builtin` in your CMakeLists.txt file, it automatically adds your builtin to the
 > `builtins.incl`file, which is then processed to ensure your `install` function is
