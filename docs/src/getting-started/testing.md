@@ -20,22 +20,7 @@ Alternatively, the integration test server can be directly run with `wasmtime se
 wasmtime serve -S common cmake-build-debug/test-server.wasm
 ```
 
-Then visit http://0.0.0.0:8080/timers, or any test name and filter of the form `[testName]/[filter]`
-
-5. Using the runtime with other JS applications
-
-The build directory contains a shell script `componentize.sh` that can be used to create components
-from JS applications. `componentize.sh` takes a single argument, the path to the JS application, and
-creates a component with a name of the form `[input-file-name].wasm` in the current working
-directory.
-
-For example, the following command is equivalent to the `cmake` invocation from step 5, and will
-create the component `cmake-build-release/smoke.wasm`:
-
-```console
-cd cmake-build-release
-./componentize.sh ../tests/smoke.js
-```
+Then visit `http://0.0.0.0:8080/timers`, or any test name and filter of the form `[testName]/[filter]`
 
 ## Web Platform Tests
 
