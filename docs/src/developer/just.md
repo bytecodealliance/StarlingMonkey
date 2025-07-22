@@ -79,18 +79,21 @@ This command configures CMake to use `mybuilddir` as the build directory and set
 
 ## Starting the WPT Server
 
-You can also start a Web Platform Tests (WPT) server with:
+After running `just wpt-setup` as described above, you can also start a Web Platform Tests (WPT) server with:
 
 ```console
 just wpt-server
 ```
 
-After starting the server, individual tests can be run by sending a request with the test name to
-the server instance. For example:
+After starting the server, tests can be run interactively with a basic web interface running at http://127.0.0.1:7879/. Tests can be filtered by providing prefixes or exact names of subsets or specific tests.
+
+Some examples:
+ - Running all of StarlingMonkey's WPT tests: http://127.0.0.1:7879/
+ - Running all console tests: http://127.0.0.1:7879/console
+ - Running a specific test: http://127.0.0.1:7879/console/console-log-symbol.any.js
 
 ```console
 curl http://127.0.0.1:7676/console/console-log-symbol.any.js
-
 ```
 
 [just-install]: https://github.com/casey/just?tab=readme-ov-file#installation

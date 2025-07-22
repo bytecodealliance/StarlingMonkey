@@ -41,23 +41,16 @@ WebAssembly core module. Then, that module is turned into a
 [WebAssembly Component](https://component-model.bytecodealliance.org/) using the `componentize.sh`
 script.
 
-The following command will build the `starling-raw.wasm` runtime module in the `cmake-build-release`
+The following command will build the runtime, creating the files `starling-raw.wasm` and `starling.wasm` in the `cmake-build-release`
 directory:
 
 ```console
 # Use cmake-build-debug for the debug build
 # Change the value for `--parallel` to match the number of CPU cores in your system
-cmake --build cmake-build-release --parallel 8
+cmake --build cmake-build-release --parallel 8 --target starling
 ```
 
-Then, the `starling-raw.wasm` module can be turned into a component with the following command:
-
-```console
-cd cmake-build-release
-./componentize.sh -o starling.wasm
-```
-
-The resulting runtime can be used to load and evaluate JS code dynamically:
+The `starling.wasm` component can be used to load and evaluate JS code dynamically:
 
 ```console
 wasmtime -S http starling.wasm -e "console.log('hello world')"
@@ -65,11 +58,12 @@ wasmtime -S http starling.wasm -e "console.log('hello world')"
 wasmtime -S http --dir . starling.wasm index.js
 ```
 
-Alternatively, a JS file can be provided during componentization:
+Alternatively, the `componentize.js` script also provided in the build directory lets us create a component from a JS file:
 
 ```console
 cd cmake-build-release
-./componentize.sh index.js -o starling.wasm
+./componentize.sh index.js
+wasmtime -S http --dir . index.wasm
 ```
 
 This way, the JS file will be loaded during componentization, and the top-level code will be
