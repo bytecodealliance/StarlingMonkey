@@ -88,9 +88,9 @@ just wpt-server
 After starting the server, tests can be run interactively with a basic web interface running at http://127.0.0.1:7879/. Tests can be filtered by providing prefixes or exact names of subsets or specific tests.
 
 Some examples:
- - Running all of StarlingMonkey's WPT tests: http://127.0.0.1:7879/
- - Running all console tests: http://127.0.0.1:7879/console
- - Running a specific test: http://127.0.0.1:7879/console/console-log-symbol.any.js
+ - Running all of StarlingMonkey's WPT tests: `http://127.0.0.1:7879/`
+ - Running all console tests: `http://127.0.0.1:7879/console`
+ - Running a specific test: `http://127.0.0.1:7879/console/console-log-symbol.any.js`
 
 ```console
 curl http://127.0.0.1:7676/console/console-log-symbol.any.js
