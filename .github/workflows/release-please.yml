@@ -1,0 +1,68 @@
+name: release-please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@a02a34c4d625f9be7cb89156071d8567266a2445 #v4.2.0
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: simple
+
+  build-and-upload:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install Just
+        uses: taiki-e/install-action@just
+
+      - name: Install Rust 1.80.0
+        run: |
+          rustup toolchain install 1.80.0
+          rustup target add wasm32-wasip1 --toolchain 1.80.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 #v4.4.0
+        with:
+          node-version: 'lts/*'
+
+      - name: Build All Variants
+        run: |
+          just mode=release builddir=build-release build
+          just mode=relwithdebinfo builddir=build-debug build
+          just mode=release builddir=build-weval build starling-ics.wevalcache -DUSE_WASM_OPT:BOOL=OFF -DWEVAL:BOOL=ON
+
+      - name: Prepare Artifacts
+        run: |
+          mkdir -p release-artifacts
+
+          cp build-release/starling-raw.wasm release-artifacts/starlingmonkey.wasm
+          cp build-weval/starling-raw.wasm release-artifacts/starlingmonkey-weval.wasm
+          cp build-debug/starling-raw.wasm release-artifacts/starlingmonkey-debug.wasm
+          cp build-release/preview1-adapter.wasm release-artifacts
+          cp build-weval/starling-ics.wevalcache release-artifacts
+
+          echo "Release artifacts:"
+          ls -la release-artifacts/
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 #2.3.2
+        with:
+          tag_name: ${{ needs.release-please.outputs.tag_name }}
+          files: release-artifacts/*

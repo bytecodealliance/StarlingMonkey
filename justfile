@@ -17,7 +17,7 @@ default:
     @just --list
 
 # Build specified target or all otherwise
-build target="all" flags="":
+build target="all" *flags:
     #!/usr/bin/env bash
     set -euo pipefail
     echo 'Setting build directory to {{ builddir }}, build type {{ mode }}'
@@ -30,7 +30,7 @@ build target="all" flags="":
     fi
 
     # Build target
-    cmake --build {{ builddir }} --parallel {{ ncpus }} {{ if target == "" { target } else { "--target " + target } }}
+    cmake --build {{ builddir }} --parallel {{ ncpus }} {{ if target == "" { "" } else { "--target " + target } }}
 
 # Run clean target
 clean:
