@@ -31,6 +31,7 @@ for the `SRC` argument.
 
 ### Rooting
 
+> [!IMPORTANT]
 > SpiderMonkey has a moving GC, it is very important that it knows about each and every pointer to a
 > GC thing in the system. SpiderMonkey's rooting API tries to make this task as simple as possible.
 
