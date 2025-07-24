@@ -1,4 +1,4 @@
-set(WEVAL_VERSION v0.3.2)
+set(WEVAL_VERSION v0.3.4)
 
 set(WEVAL_URL https://github.com/bytecodealliance/weval/releases/download/${WEVAL_VERSION}/weval-${WEVAL_VERSION}-${HOST_ARCH}-${HOST_OS}.tar.xz)
 CPMAddPackage(NAME weval URL ${WEVAL_URL} DOWNLOAD_ONLY TRUE)
