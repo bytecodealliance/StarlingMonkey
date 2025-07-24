@@ -7,6 +7,8 @@
 #include "json-web-key.h"
 #include "openssl/evp.h"
 #include <openssl/md5.h>
+#include <openssl/pem.h>
+#include <openssl/ec.h>
 
 namespace builtins {
 namespace web {
