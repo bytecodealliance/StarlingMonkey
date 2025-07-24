@@ -5,14 +5,13 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
-
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -27,16 +26,21 @@ jobs:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        rust-version: ['1.80.0']
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Install Just
         uses: taiki-e/install-action@just
 
-      - name: Install Rust 1.80.0
+      - name: Install Rust ${{ matrix.rust-version }}
         run: |
-          rustup toolchain install 1.80.0
-          rustup target add wasm32-wasip1 --toolchain 1.80.0
+          rustup toolchain install ${{ matrix.rust-version }}
+          rustup target add wasm32-wasip1 --toolchain ${{ matrix.rust-version }}
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 #v4.4.0
         with:
@@ -52,9 +56,9 @@ jobs:
         run: |
           mkdir -p release-artifacts
 
-          cp build-release/starling-raw.wasm release-artifacts/starlingmonkey.wasm
-          cp build-weval/starling-raw.wasm release-artifacts/starlingmonkey-weval.wasm
-          cp build-debug/starling-raw.wasm release-artifacts/starlingmonkey-debug.wasm
+          cp build-release/starling-raw.wasm release-artifacts/starling.wasm
+          cp build-weval/starling-raw.wasm release-artifacts/starling-weval.wasm
+          cp build-debug/starling-raw.wasm release-artifacts/starling-debug.wasm
           cp build-release/preview1-adapter.wasm release-artifacts
           cp build-weval/starling-ics.wevalcache release-artifacts
 
