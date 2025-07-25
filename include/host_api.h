@@ -325,6 +325,9 @@ class HttpIncomingResponse;
 class HttpHeaders;
 
 class FutureHttpIncomingResponse final : public Pollable {
+private:
+  PollableHandle pollable_handle_ = INVALID_POLLABLE_HANDLE;
+
 public:
   FutureHttpIncomingResponse() = delete;
   explicit FutureHttpIncomingResponse(std::unique_ptr<HandleState> handle);

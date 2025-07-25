@@ -1,0 +1,8 @@
+{
+  "Signals are not stored in the cache API": {
+    "status": "FAIL"
+  },
+  "Signals are not stored in the cache API, even if they're already aborted": {
+    "status": "FAIL"
+  }
+}
