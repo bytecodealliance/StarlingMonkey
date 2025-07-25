@@ -210,9 +210,7 @@ bool abort_fetch(JSContext *cx, HandleObject promise, HandleObject request, Hand
   // 2. If request's body is non-null and is readable, then cancel request's body with error.
   if (request && RequestOrResponse::has_body(request)) {
     RootedObject body(cx, RequestOrResponse::body_stream(request));
-    MOZ_ASSERT(body);
-
-    if (IsReadableStream(body) && !ReadableStreamCancel(cx, body, error)) {
+    if (body && IsReadableStream(body) && !ReadableStreamCancel(cx, body, error)) {
       return false;
     }
   }
@@ -226,12 +224,9 @@ bool abort_fetch(JSContext *cx, HandleObject promise, HandleObject request, Hand
   // (Implicit)
 
   // 5. If response's body is non-null and is readable, then error response's body with error.
-  // TODO: implement this
   if (response && RequestOrResponse::has_body(response)) {
     RootedObject body(cx, RequestOrResponse::body_stream(response));
-    MOZ_ASSERT(body);
-
-    if (IsReadableStream(body) && !ReadableStreamError(cx, body, error)) {
+    if (body && IsReadableStream(body) && !ReadableStreamError(cx, body, error)) {
       return false;
     }
   }

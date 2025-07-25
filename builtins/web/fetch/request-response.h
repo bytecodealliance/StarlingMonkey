@@ -5,9 +5,6 @@
 #include "headers.h"
 #include "host_api.h"
 
-#include "js/Stream.h"
-#include "../abort/abort-signal.h"
-
 namespace builtins {
 namespace web {
 namespace fetch {

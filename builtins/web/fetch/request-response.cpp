@@ -2727,6 +2727,29 @@ JSObject *Response::create_incoming(JSContext *cx, host_api::HttpIncomingRespons
   return self;
 }
 
+struct ResponseAborter : abort::AbortAlgorithm {
+  Heap<JSObject *> promise;
+  Heap<JSObject *> response;
+  Heap<JSObject *> signal;
+
+  ResponseAborter(HandleObject promise, HandleObject response, HandleObject signal)
+      : promise(promise), response(response), signal(signal) {}
+
+  bool run(JSContext *cx) override {
+    RootedObject promise_obj(cx, promise);
+    RootedObject response_obj(cx, response);
+    RootedValue error(cx, AbortSignal::reason(signal));
+
+    return abort_fetch(cx, promise_obj, nullptr, response_obj, error);
+  }
+
+  void trace(JSTracer *trc) override {
+    TraceEdge(trc, &promise, "ResponseAborter promise");
+    TraceEdge(trc, &response, "ResponseAborter response");
+    TraceEdge(trc, &signal, "ResponseAborter signal");
+  }
+};
+
 ResponseFutureTask::ResponseFutureTask(const HandleObject request, host_api::FutureHttpIncomingResponse *future)
       : request_(request), future_(future) {
     auto res = future->subscribe();
@@ -2757,6 +2780,12 @@ bool ResponseFutureTask::run(api::Engine *engine) {
   RootedObject response_obj(cx, Response::create_incoming(cx, response));
   if (!response_obj) {
     return false;
+  }
+
+  RootedObject signal(cx, Request::signal(request));
+  if (AbortSignal::is_instance(signal)) {
+    auto algorithm = js::MakeUnique<ResponseAborter>(response_promise, response_obj, signal);
+    AbortSignal::add_algorithm(signal, std::move(algorithm));
   }
 
   RequestOrResponse::set_url(response_obj, RequestOrResponse::url(request));

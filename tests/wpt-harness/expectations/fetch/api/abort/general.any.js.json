@@ -87,21 +87,75 @@
     "status": "FAIL"
   },
   "response.arrayBuffer() rejects if already aborted": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "response.blob() rejects if already aborted": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "response.bytes() rejects if already aborted": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "response.formData() rejects if already aborted": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "response.json() rejects if already aborted": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "response.text() rejects if already aborted": {
+    "status": "FAIL"
+  },
+  "Call text() twice on aborted response": {
+    "status": "FAIL"
+  },
+  "Already aborted signal does not make request": {
     "status": "PASS"
+  },
+  "Already aborted signal can be used for many fetches": {
+    "status": "PASS"
+  },
+  "Signal can be used to abort other fetches, even if another fetch succeeded before aborting": {
+    "status": "PASS"
+  },
+  "Underlying connection is closed when aborting after receiving response": {
+    "status": "FAIL"
+  },
+  "Underlying connection is closed when aborting after receiving response - no-cors": {
+    "status": "FAIL"
+  },
+  "Fetch aborted & connection closed when aborted after calling response.arrayBuffer()": {
+    "status": "FAIL"
+  },
+  "Fetch aborted & connection closed when aborted after calling response.blob()": {
+    "status": "FAIL"
+  },
+  "Fetch aborted & connection closed when aborted after calling response.bytes()": {
+    "status": "FAIL"
+  },
+  "Fetch aborted & connection closed when aborted after calling response.formData()": {
+    "status": "FAIL"
+  },
+  "Fetch aborted & connection closed when aborted after calling response.json()": {
+    "status": "FAIL"
+  },
+  "Fetch aborted & connection closed when aborted after calling response.text()": {
+    "status": "FAIL"
+  },
+  "Stream errors once aborted. Underlying connection closed.": {
+    "status": "FAIL"
+  },
+  "Stream errors once aborted, after reading. Underlying connection closed.": {
+    "status": "FAIL"
+  },
+  "Stream will not error if body is empty. It's closed with an empty queue before it errors.": {
+    "status": "FAIL"
+  },
+  "Readable stream synchronously cancels with AbortError if aborted before reading": {
+    "status": "PASS"
+  },
+  "Signal state is cloned": {
+    "status": "PASS"
+  },
+  "Clone aborts with original controller": {
+    "status": "FAIL"
   }
 }
