@@ -160,7 +160,7 @@ export const handler = serveTest(async (t) => {
 
     let error;
     try {
-      await fetch('https://http-me.glitch.me/wait=5000', { signal });
+      await fetch('https://http-me.fastly.dev/wait=5000', { signal });
     } catch (err) {
       error = err;
     } finally {
