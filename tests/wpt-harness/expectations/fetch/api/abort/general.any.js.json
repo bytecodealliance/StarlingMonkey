@@ -87,25 +87,25 @@
     "status": "FAIL"
   },
   "response.arrayBuffer() rejects if already aborted": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.blob() rejects if already aborted": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.bytes() rejects if already aborted": {
     "status": "FAIL"
   },
   "response.formData() rejects if already aborted": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.json() rejects if already aborted": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.text() rejects if already aborted": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Call text() twice on aborted response": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Already aborted signal does not make request": {
     "status": "PASS"

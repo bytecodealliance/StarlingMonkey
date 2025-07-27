@@ -230,6 +230,8 @@ bool abort_fetch(JSContext *cx, HandleObject promise, HandleObject request, Hand
       return false;
     }
   }
+
+  Response::set_aborted(response, error);
   return true;
 }
 

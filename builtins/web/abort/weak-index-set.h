@@ -7,9 +7,6 @@
 
 // Default GC policy_ for `js::GCVector<T>` is _appropriate for weak references_:
 // it invokes `GCPolicy<T>::traceWeak` to drop unreachable elements automatically.
-//
-// TODO: Consider using `js::GCHashMap` and track insertion order separetely for
-// O(1) insert/remove.
 using WeakVec = JS::GCVector<JS::Heap<JSObject*>, 8, js::SystemAllocPolicy>;
 
 class WeakIndexSet {

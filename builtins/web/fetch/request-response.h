@@ -38,6 +38,8 @@ public:
   static host_api::HttpIncomingBody *incoming_body_handle(JSObject *obj);
   static host_api::HttpOutgoingBody *outgoing_body_handle(JSObject *obj);
   static JSObject *body_stream(JSObject *obj);
+  static JSObject *body_all_promise(JSObject *obj);
+  static JSObject *take_body_all_promise(JSObject *obj);
   static JSObject *body_source(JSContext *cx, JS::HandleObject obj);
   static bool body_used(JSObject *obj);
   static bool mark_body_used(JSContext *cx, JS::HandleObject obj);
@@ -135,6 +137,7 @@ public:
   enum class Slots {
     Request = static_cast<int>(RequestOrResponse::Slots::RequestOrResponse),
     BodyStream = static_cast<int>(RequestOrResponse::Slots::BodyStream),
+    BodyAllPromise = static_cast<int>(RequestOrResponse::Slots::BodyAllPromise),
     HasBody = static_cast<int>(RequestOrResponse::Slots::HasBody),
     BodyUsed = static_cast<int>(RequestOrResponse::Slots::BodyUsed),
     Headers = static_cast<int>(RequestOrResponse::Slots::Headers),
@@ -191,6 +194,7 @@ public:
   enum class Slots {
     Response = static_cast<int>(RequestOrResponse::Slots::RequestOrResponse),
     BodyStream = static_cast<int>(RequestOrResponse::Slots::BodyStream),
+    BodyAllPromise = static_cast<int>(RequestOrResponse::Slots::BodyAllPromise),
     HasBody = static_cast<int>(RequestOrResponse::Slots::HasBody),
     BodyUsed = static_cast<int>(RequestOrResponse::Slots::BodyUsed),
     Headers = static_cast<int>(RequestOrResponse::Slots::Headers),
@@ -198,6 +202,7 @@ public:
     StatusMessage,
     Redirected,
     Type,
+    Aborted,
     Count,
   };
 
@@ -223,8 +228,10 @@ public:
 
   static host_api::HttpResponse *maybe_response_handle(JSObject *obj);
   static Type type(JSObject *obj);
+  static Value aborted(JSObject *obj);
   static uint16_t status(JSObject *obj);
   static JSString *status_message(JSObject *obj);
+  static void set_aborted(JSObject *obj, HandleValue reason);
   static void set_type(JSObject *obj, Type type);
   static void set_status(JSObject *obj, uint16_t status);
   static void set_status_message_from_code(JSContext *cx, JSObject *obj, uint16_t code);

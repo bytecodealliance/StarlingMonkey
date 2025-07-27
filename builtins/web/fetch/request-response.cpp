@@ -223,6 +223,18 @@ JSObject *RequestOrResponse::body_stream(JSObject *obj) {
   return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::BodyStream)).toObjectOrNull();
 }
 
+JSObject *RequestOrResponse::body_all_promise(JSObject *obj) {
+  MOZ_ASSERT(is_instance(obj));
+  return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::BodyAllPromise)).toObjectOrNull();
+}
+
+JSObject *RequestOrResponse::take_body_all_promise(JSObject *obj) {
+  MOZ_ASSERT(is_instance(obj));
+  auto promise = body_all_promise(obj);
+  JS::SetReservedSlot(obj, static_cast<uint32_t>(Slots::BodyAllPromise), JS::NullValue());
+  return promise;
+}
+
 JSObject *RequestOrResponse::body_source(JSContext *cx, JS::HandleObject obj) {
   MOZ_ASSERT(has_body(obj));
   JS::RootedObject stream(cx, body_stream(obj));
@@ -583,9 +595,7 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
 template <RequestOrResponse::BodyReadResult result_type>
 bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::UniqueChars buf,
                                    size_t len) {
-  JS::RootedObject result_promise(
-      cx, &JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise)).toObject());
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise), JS::UndefinedValue());
+  JS::RootedObject result_promise(cx, take_body_all_promise(self));
   JS::RootedValue result(cx);
 
   if constexpr (result_type == RequestOrResponse::BodyReadResult::ArrayBuffer) {
@@ -788,11 +798,7 @@ bool RequestOrResponse::content_stream_read_then_handler(JSContext *cx, JS::Hand
   // If it is not a UInt8Array -- reject with a TypeError
   if (!val.isObject() || !JS_IsUint8Array(&val.toObject())) {
     api::throw_error(cx, FetchErrors::InvalidStreamChunk);
-    JS::RootedObject result_promise(cx);
-    result_promise =
-        &JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise)).toObject();
-    JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise), JS::UndefinedValue());
-
+    JS::RootedObject result_promise(cx, take_body_all_promise(self));
     return RejectPromiseWithPendingError(cx, result_promise);
   }
 
@@ -840,11 +846,7 @@ bool RequestOrResponse::content_stream_read_catch_handler(JSContext *cx, JS::Han
   JS::RootedValue error(cx, JS::ReadableStreamGetStoredError(cx, stream));
   JS_ClearPendingException(cx);
   JS_SetPendingException(cx, error, JS::ExceptionStackBehavior::DoNotCapture);
-  JS::RootedObject result_promise(cx);
-  result_promise =
-      &JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise)).toObject();
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise), JS::UndefinedValue());
-
+  JS::RootedObject result_promise(cx, take_body_all_promise(self));
   return RejectPromiseWithPendingError(cx, result_promise);
 }
 
@@ -860,10 +862,7 @@ bool RequestOrResponse::consume_content_stream_for_bodyAll(JSContext *cx, JS::Ha
   MOZ_ASSERT(JS::IsReadableStream(stream));
   if (RequestOrResponse::body_unusable(cx, stream)) {
     api::throw_error(cx, FetchErrors::BodyStreamUnusable);
-    JS::RootedObject result_promise(cx);
-    result_promise =
-        &JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise)).toObject();
-    JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise), JS::UndefinedValue());
+    JS::RootedObject result_promise(cx, take_body_all_promise(self));
     return RejectPromiseWithPendingError(cx, result_promise);
   }
   JS::Rooted<JSObject *> unwrappedReader(
@@ -1503,6 +1502,7 @@ void Request::init_slots(JSObject *requestInstance) {
                       JS::PrivateValue(nullptr));
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::Headers), JS::NullValue());
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::BodyStream), JS::NullValue());
+  JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::BodyAllPromise), JS::NullValue());
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::Signal), JS::NullValue());
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::HasBody), JS::FalseValue());
   JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::BodyUsed), JS::FalseValue());
@@ -1992,6 +1992,16 @@ JSString *Response::status_message(JSObject *obj) {
   return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::StatusMessage)).toString();
 }
 
+void Response::set_aborted(JSObject *obj, HandleValue reason) {
+  MOZ_ASSERT(is_instance(obj));
+  JS::SetReservedSlot(obj, static_cast<uint32_t>(Slots::Aborted), reason);
+}
+
+Value Response::aborted(JSObject *obj) {
+  MOZ_ASSERT(is_instance(obj));
+  return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::Aborted));
+}
+
 // TODO(jake): Remove this when the reason phrase host-call is implemented
 void Response::set_status_message_from_code(JSContext *cx, JSObject *obj, uint16_t code) {
   auto phrase = "";
@@ -2266,7 +2276,23 @@ bool Response::headers_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 template <RequestOrResponse::BodyReadResult result_type>
 bool Response::bodyAll(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
-  return RequestOrResponse::bodyAll<result_type>(cx, args, self);
+
+  RootedValue maybe_aborted(cx, Response::aborted(self));
+  if (maybe_aborted.isUndefined()) {
+    return RequestOrResponse::bodyAll<result_type>(cx, args, self);
+  }
+
+  RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
+  if (!promise) {
+    return false;
+  }
+
+  if (!JS::RejectPromise(cx, promise, maybe_aborted)) {
+    return false;
+  }
+
+  args.rval().setObject(*promise);
+  return true;
 }
 
 bool Response::body_get(JSContext *cx, unsigned argc, JS::Value *vp) {
@@ -2697,10 +2723,12 @@ JSObject *Response::init_slots(HandleObject response) {
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Response), JS::PrivateValue(nullptr));
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Headers), JS::NullValue());
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::BodyStream), JS::NullValue());
+  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::BodyAllPromise), JS::NullValue());
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::HasBody), JS::FalseValue());
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::BodyUsed), JS::FalseValue());
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Redirected), JS::FalseValue());
   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Type), JS::Int32Value(Type::Default));
+  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Aborted), JS::UndefinedValue());
 
   return response;
 }
