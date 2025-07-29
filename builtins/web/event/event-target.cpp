@@ -105,7 +105,7 @@ bool default_passive_value() {
 
 namespace JS {
 
-template <typename T> struct JS::GCPolicy<RefPtr<T>> {
+template <typename T> struct GCPolicy<RefPtr<T>> {
   static void trace(JSTracer *trc, RefPtr<T> *tp, const char *name) {
     if (T *target = tp->get()) {
       GCPolicy<T>::trace(trc, target, name);

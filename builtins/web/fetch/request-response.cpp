@@ -85,7 +85,7 @@ public:
     auto body = RequestOrResponse::incoming_body_handle(owner);
 
     auto read_res = body->read(HANDLE_READ_CHUNK_SIZE);
-    if (auto *err = read_res.to_err()) {
+    if (read_res.to_err()) {
       auto receiver = Request::is_instance(owner) ? "request" : "response";
       api::throw_error(cx, FetchErrors::IncomingBodyStreamError, receiver);
       return error_stream_controller_with_pending_exception(cx, stream);

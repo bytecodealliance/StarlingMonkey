@@ -33,7 +33,6 @@ include("wizer")
 include("weval")
 include("wasmtime")
 
-include("fmt")
 include("spidermonkey")
 include("openssl")
 include("${HOST_API}/host_api.cmake")
