@@ -658,7 +658,7 @@ JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
   }
 
   auto res = host_api::Random::get_bytes(12);
-  if (auto *err = res.to_err()) {
+  if (res.to_err()) {
     return nullptr;
   }
 

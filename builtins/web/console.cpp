@@ -468,7 +468,7 @@ static bool console_out(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 // https://console.spec.whatwg.org/#assert
 // assert(condition, ...data)
-static bool assert(JSContext *cx, unsigned argc, JS::Value *vp) {
+static bool assert_(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::CallArgs args = CallArgsFromVp(argc, vp);
   args.rval().setUndefined();
   auto condition = args.get(0).toBoolean();
@@ -811,7 +811,7 @@ static bool trace(JSContext *cx, unsigned argc, JS::Value *vp) {
 }
 
 const JSFunctionSpec Console::methods[] = {
-    JS_FN("assert", assert, 0, JSPROP_ENUMERATE),
+    JS_FN("assert", assert_, 0, JSPROP_ENUMERATE),
     JS_FN("clear", no_op, 0, JSPROP_ENUMERATE),
     JS_FN("count", count, 0, JSPROP_ENUMERATE),
     JS_FN("countReset", countReset, 0, JSPROP_ENUMERATE),

@@ -41,4 +41,7 @@ target_sources(spidermonkey PRIVATE ${SM_OBJS} ${CMAKE_CURRENT_BINARY_DIR}/null.
 target_include_directories(spidermonkey PUBLIC ${SM_INCLUDE_DIR})
 target_link_libraries(spidermonkey PUBLIC ${SM_SOURCE_DIR}/lib/libjs_static.a)
 
-add_compile_definitions("MOZ_JS_STREAMS")
+# SpiderMonkey's builds include a header that defines some configuration options that need to be set
+# to ensure e.g. object layout is identical to the one used in the build.
+# We include this header in all compilations.
+add_compile_options(-include ${SM_INCLUDE_DIR}/js-confdefs.h)

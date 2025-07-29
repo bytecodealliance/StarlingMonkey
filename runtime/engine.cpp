@@ -256,7 +256,8 @@ bool create_content_global(JSContext * cx) {
   JS::RealmOptions options;
   options.creationOptions().setStreamsEnabled(true);
 
-  JS::DisableIncrementalGC(cx);
+  // TODO: restore
+  // JS::DisableIncrementalGC(cx);
   // JS_SetGCParameter(cx, JSGC_MAX_EMPTY_CHUNK_COUNT, 1);
 
   RootedObject global(

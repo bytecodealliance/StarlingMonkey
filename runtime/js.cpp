@@ -109,7 +109,8 @@ extern "C" bool exports_wasi_cli_run_run() {
  * command line.
  */
 extern "C" bool init_from_environment() {
-  __wasm_call_ctors();
+  // TODO: check why this is happening automatically now
+  // __wasm_call_ctors();
 
   auto config_parser = starling::ConfigParser();
   config_parser.apply_env();

@@ -36,7 +36,7 @@ add_builtin(
         builtins/web/form-data/form-data-parser.cpp
     DEPENDENCIES
         multipart
-        fmt)
+)
 
 add_builtin(
     builtins::web::dom_exception
@@ -96,7 +96,7 @@ add_builtin(
         builtins/web/fetch/headers.cpp
         builtins/web/fetch/request-response.cpp
     DEPENDENCIES
-        fmt)
+)
 
 add_builtin(
     builtins::web::fetch::fetch_event
@@ -118,6 +118,5 @@ add_builtin(
         builtins/web/crypto/uuid.cpp
     DEPENDENCIES
         OpenSSL::Crypto
-        fmt
     INCLUDE_DIRS
         runtime)

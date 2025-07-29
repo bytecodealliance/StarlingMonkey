@@ -643,12 +643,12 @@ wasi_http_types_method_t http_method_to_host(string_view method_str) {
   auto method = method_str.begin();
   for (uint8_t i = 0; i < WASI_HTTP_TYPES_METHOD_OTHER; i++) {
     auto name = http_method_names[i];
-    if (strcasecmp(method, name) == 0) {
+    if (strcasecmp(&*method, name) == 0) {
       return wasi_http_types_method_t{i};
     }
   }
 
-  auto val = bindings_string_t{reinterpret_cast<uint8_t *>(const_cast<char *>(method)),
+  auto val = bindings_string_t{reinterpret_cast<uint8_t *>(const_cast<char *>(&*method)),
                                method_str.length()};
   return wasi_http_types_method_t{WASI_HTTP_TYPES_METHOD_OTHER, {val}};
 }
