@@ -1,8 +1,6 @@
 #include "uuid.h"
 #include "host_api.h"
 
-#include <fmt/core.h>
-
 namespace builtins {
 namespace web {
 namespace crypto {

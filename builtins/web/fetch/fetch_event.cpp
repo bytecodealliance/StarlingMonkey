@@ -132,7 +132,7 @@ bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
   bool is_head = !is_get && method_str == "HEAD";
 
   if (!is_get) {
-    JS::RootedString method(cx, JS_NewStringCopyN(cx, method_str.cbegin(), method_str.length()));
+    JS::RootedString method(cx, JS_NewStringCopyN(cx, &*method_str.cbegin(), method_str.length()));
     if (!method) {
       return false;
     }
