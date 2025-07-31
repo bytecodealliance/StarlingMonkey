@@ -32,6 +32,7 @@ include("binaryen")
 include("wizer")
 include("weval")
 include("wasmtime")
+include("cbindgen")
 
 include("spidermonkey")
 include("openssl")
