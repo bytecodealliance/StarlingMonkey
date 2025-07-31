@@ -24,16 +24,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build: [release, debug, weval]
+        build: [release, debug]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install Rust 1.80.0
+    - name: Install Rust 1.88.0
       run: |
-        rustup toolchain install 1.80.0
-        rustup target add wasm32-wasip1 --toolchain 1.80.0
+        rustup toolchain install 1.88.0
+        rustup target add wasm32-wasip1 --toolchain 1.88.0
+
+    - name: Cache SpiderMonkey tarball
+      uses: actions/cache@v4
+      id: sm-cache
+      with:
+        path: |
+          spidermonkey-dist
+        key: spidermonkey-cache-${{ matrix.build }}-${{ hashFiles('cmake/spidermonkey.cmake') }}
+
+    - name: Set env var to use cached SpiderMonkey tarball
+      if: steps.sm-cache.outputs.cache-hit == 'true'
+      run: |
+        tree spidermonkey-dist
+        echo "SPIDERMONKEY_BINARIES=$(pwd)/spidermonkey-dist" >> $GITHUB_ENV
 
     - uses: actions/setup-node@v2
       with:
@@ -64,3 +78,21 @@ jobs:
     - name: StarlingMonkey E2E, Integration, and WPT Tests
       run: |
         CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-${{ matrix.build }} -j$(nproc) --verbose
+
+    - name: Set up cacheable SpiderMonkey artifacts
+      if: steps.sm-cache.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p spidermonkey-dist
+        cp -a cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/libspidermonkey.a spidermonkey-dist/
+        cp -aL cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/include spidermonkey-dist/
+        tree spidermonkey-dist
+
+      # Upload tarball as an artifact of the github action run, so the output
+      # can be inspected for pull requests.
+    - name: Upload SpiderMonkey tarball
+      uses: actions/upload-artifact@v4
+      if: (github.event_name != 'push' || (github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v')))
+        && steps.sm-cache.outputs.cache-hit != 'true'
+      with:
+        name: spidermonkey-${{ matrix.build }}
+        path: spidermonkey-dist/*
