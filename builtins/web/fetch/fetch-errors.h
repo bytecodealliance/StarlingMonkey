@@ -23,6 +23,7 @@ DEF_ERR(HeadersCloningFailed, JSEXN_ERR, "Failed to clone headers", 0)
 DEF_ERR(HeadersImmutable, JSEXN_TYPEERR, "{0}: Headers are immutable", 1)
 DEF_ERR(InvalidFormDataHeader, JSEXN_TYPEERR, "Invalid header for FormData body type", 0)
 DEF_ERR(InvalidFormData, JSEXN_TYPEERR, "FormData parsing failed", 0)
+DEF_ERR(InvalidSignal, JSEXN_TYPEERR, "Invalid AbortSignal provided", 0)
 };     // namespace FetchErrors
 
 #endif // FETCH_ERRORS_H
