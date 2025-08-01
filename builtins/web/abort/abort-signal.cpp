@@ -15,7 +15,7 @@ using event::EventTarget;
 const JSFunctionSpec AbortSignal::static_methods[] = {
     JS_FN("abort", abort, 1, JSPROP_ENUMERATE),
     JS_FN("timeout", timeout, 1, JSPROP_ENUMERATE),
-    JS_FN("any", timeout, 1, JSPROP_ENUMERATE),
+    JS_FN("any", any, 1, JSPROP_ENUMERATE),
     JS_FS_END,
 };
 
@@ -96,12 +96,14 @@ bool AbortSignal::timeout(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+// https://dom.spec.whatwg.org/#dom-abortsignal-abort
 bool AbortSignal::abort(JSContext *cx, unsigned argc, JS::Value *vp) {
   CallArgs args = JS::CallArgsFromVp(argc, vp);
   if (!args.requireAtLeast(cx, "abort", 1)) {
     return false;
   }
 
+  // The abort() method steps are inlined in the AbortSignal::create_with_reason method.
   RootedObject self(cx, create_with_reason(cx, args.get(0)));
   if (!self) {
     return false;
@@ -111,12 +113,14 @@ bool AbortSignal::abort(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+// https://dom.spec.whatwg.org/#dom-abortsignal-any
 bool AbortSignal::any(JSContext *cx, unsigned argc, JS::Value *vp) {
   CallArgs args = JS::CallArgsFromVp(argc, vp);
   if (!args.requireAtLeast(cx, "any", 1)) {
     return false;
   }
 
+  // The any() method steps are inlined in the AbortSignal::create_with_signals method.
   RootedObject self(cx, create_with_signals(cx, args));
   if (!self) {
     return false;
@@ -130,6 +134,8 @@ bool AbortSignal::any(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool AbortSignal::throwIfAborted(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
 
+   // Steps: Throw this's abort reason, if this's AbortController has signaled
+   // to abort; otherwise, does nothing.
   if (is_aborted(self)) {
     RootedValue reason(cx, JS::GetReservedSlot(self, Slots::Reason));
     JS_SetPendingException(cx, reason);
@@ -138,6 +144,7 @@ bool AbortSignal::throwIfAborted(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+// Handler that is called when the AbortSignal timeout occurs
 bool AbortSignal::on_timeout(JSContext *cx, unsigned argc, JS::Value *vp) {
   CallArgs args = JS::CallArgsFromVp(argc, vp);
   if (!args.requireAtLeast(cx, "on_timeout", 2)) {
@@ -271,6 +278,8 @@ bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {
   return true;
 }
 
+
+// Set signal's abort reason to reason if it is given; otherwise to a new "AbortError" DOMException.
 bool AbortSignal::set_reason(JSContext *cx, HandleObject self, HandleValue reason) {
   if (!reason.isUndefined()) {
     SetReservedSlot(self, Slots::Reason, reason);
@@ -314,6 +323,9 @@ JSObject *AbortSignal::create(JSContext *cx) {
 };
 
 // https://dom.spec.whatwg.org/#dom-abortsignal-abort
+//
+// Returns an AbortSignal instance whose abort reason is set to reason if not undefined;
+// otherwise to an "AbortError" DOMException.
 JSObject *AbortSignal::create_with_reason(JSContext *cx, HandleValue reason) {
   // 1. Let signal be a new AbortSignal object.
   RootedObject self(cx, create(cx));
@@ -331,6 +343,9 @@ JSObject *AbortSignal::create_with_reason(JSContext *cx, HandleValue reason) {
 }
 
 // https://dom.spec.whatwg.org/#dom-abortsignal-timeout
+//
+// Returns an AbortSignal instance which will be aborted in milliseconds milliseconds.
+// Its abort reason will be set to a "TimeoutError" DOMException.
 JSObject *AbortSignal::create_with_timeout(JSContext *cx, HandleValue timeout) {
   // 1. Let signal be a new AbortSignal object.
   RootedObject self(cx, create(cx));
@@ -377,6 +392,9 @@ JSObject *AbortSignal::create_with_timeout(JSContext *cx, HandleValue timeout) {
 }
 
 // https://dom.spec.whatwg.org/#dom-abortsignal-any
+//
+// Returns an AbortSignal instance which will be aborted once any of signals is aborted.
+// Its abort reason will be set to whichever one of signals caused it to be aborted.
 JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signals) {
   // Method steps are to return the result of creating a dependent abort signal from signals using
   // AbortSignal and the current realm. https://dom.spec.whatwg.org/#create-a-dependent-abort-signal
