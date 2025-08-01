@@ -33,6 +33,18 @@ jobs:
         rustup toolchain install 1.88.0
         rustup target add wasm32-wasip1 --toolchain 1.88.0
 
+    - name: Cache SpiderMonkey tarball
+      uses: actions/cache@v4
+      id: sm-cache
+      with:
+        path: |
+          spidermonkey-dist
+        key: cache-${{ matrix.build }}-${{ hashFiles('cmake/spidermonkey.cmake') }}
+
+    - name: Set env var to use cached SpiderMonkey tarball
+      if: steps.sm-cache.outputs.cache-hit == 'true'
+      run: echo "SPIDERMONKEY_BINARIES=spidermonkey-dist" >> $GITHUB_ENV
+
     - uses: actions/setup-node@v2
       with:
         node-version: 'lts/*'
@@ -59,3 +71,10 @@ jobs:
       env:
         CTEST_OUTPUT_ON_FAILURE: 1
       run: ctest --test-dir cmake-build-${{ matrix.build }} --verbose --no-tests=error
+
+    - name: Set up cacheable SpiderMonkey artifacts
+      if: steps.sm-cache.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p spidermonkey-dist
+        ln -s cmake-build-${{ matrix.build }}/spidermonkey/dist/libspidermonkey.a spidermonkey-dist/
+        ln -s cmake-build-${{ matrix.build }}/spidermonkey/dist/include spidermonkey-dist/
