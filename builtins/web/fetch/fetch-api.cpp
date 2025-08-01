@@ -200,8 +200,8 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HandleObject response_p
     Response::set_status_message_from_code(cx, response_obj, 200);
 
     // 3. Set response's body to bodyWithType's body.
-    // 4. Set response's header list to (`Content-Length`, serializedFullLength), (`Content-Type`,
-    // type). 3 and 4 done at the end.
+    // 4. Set response's header list to (`Content-Length`, serializedFullLength), (`Content-Type`, type).
+    // 3 and 4 done at the end.
     // 14. Otherwise:
   } else {
     // 1. Set response's range-requested flag.
