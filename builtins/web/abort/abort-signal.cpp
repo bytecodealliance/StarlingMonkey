@@ -278,7 +278,6 @@ bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {
   return true;
 }
 
-
 // Set signal's abort reason to reason if it is given; otherwise to a new "AbortError" DOMException.
 bool AbortSignal::set_reason(JSContext *cx, HandleObject self, HandleValue reason) {
   if (!reason.isUndefined()) {
