@@ -49,6 +49,7 @@ bool AbortSignal::reason_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+// https://dom.spec.whatwg.org/#dom-abortsignal-onabort
 bool AbortSignal::onabort_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
 
@@ -56,6 +57,7 @@ bool AbortSignal::onabort_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+// https://dom.spec.whatwg.org/#dom-abortsignal-onabort
 bool AbortSignal::onabort_set(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1);
 
@@ -81,6 +83,7 @@ bool AbortSignal::onabort_set(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+// https://dom.spec.whatwg.org/#dom-abortsignal-timeout
 bool AbortSignal::timeout(JSContext *cx, unsigned argc, JS::Value *vp) {
   CallArgs args = JS::CallArgsFromVp(argc, vp);
   if (!args.requireAtLeast(cx, "timeout", 1)) {
