@@ -1764,9 +1764,15 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
   }
 
   // 26.  If `init["signal"]` exists, then set `signal` to it.
-  if (AbortSignal::is_instance(signal_val)) {
-    signal_obj = signal_val.toObjectOrNull();
+  if (!signal_val.isUndefined()) {
+    if (AbortSignal::is_instance(signal_val)) {
+      signal_obj = signal_val.toObjectOrNull();
+    } else {
+      api::throw_error(cx, FetchErrors::InvalidSignal);
+      return false;
+    }
   }
+
   // 27. If init["priority"] exists, then:
   // (Prority NYI)
 
