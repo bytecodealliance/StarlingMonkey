@@ -156,6 +156,6 @@
     "status": "PASS"
   },
   "Clone aborts with original controller": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }

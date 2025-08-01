@@ -488,7 +488,7 @@ void AbortSignal::trace(JSTracer *trc, JSObject *self) {
 bool AbortSignal::init_class(JSContext *cx, JS::HandleObject global) {
   EventTarget::register_subclass(&class_);
 
-  if (!init_class_impl(cx, global)) {
+  if (!init_class_impl(cx, global, EventTarget::proto_obj)) {
     return false;
   }
 

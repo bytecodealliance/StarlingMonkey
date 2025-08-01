@@ -57,7 +57,7 @@
   "encoding/textencoder-utf16-surrogates.any.js",
   "encoding/unsupported-encodings.any.js",
   "fetch/api/abort/cache.https.any.js",
-  "SKIP fetch/api/abort/general.any.js",
+  "SLOW fetch/api/abort/general.any.js",
   "fetch/api/abort/request.any.js",
   "fetch/api/basic/accept-header.any.js",
   "fetch/api/basic/conditional-get.any.js",
