@@ -22,44 +22,11 @@ jobs:
   test:
     name: Test
     strategy:
-      fail-fast: false
-      matrix:
-        build: [release, debug]
-        os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Install Rust 1.88.0
-      run: |
-        rustup toolchain install 1.88.0
-        rustup target add wasm32-wasip1 --toolchain 1.88.0
-
-    - uses: actions/setup-node@v2
-      with:
-        node-version: 'lts/*'
-
-    - name: Build StarlingMonkey
-      run: |
-        cmake -S . -B cmake-build-${{ matrix.build }}\
-          -DCMAKE_BUILD_TYPE=${{ (matrix.build == 'release' || matrix.build == 'weval') && 'Release' || 'Debug' }}\
-          ${{matrix.build == 'weval' && '-DUSE_WASM_OPT=OFF -DWEVAL=ON' || ''}}
-        cmake --build cmake-build-${{ matrix.build }} --target all integration-test-server
-
-    - name: StarlingMonkey E2E & Integration Tests
-      run: |
-        CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-${{ matrix.build }} -j4
-
-  wpt:
-    name: Web Platform Tests
-    strategy:
       matrix:
         build: [release, debug]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-      with:
-        submodules: recursive
 
     - name: Install Rust 1.88.0
       run: |
@@ -70,10 +37,11 @@ jobs:
       with:
         node-version: 'lts/*'
 
-    - name: Build StarlingMonkey WPT
+    - name: Build StarlingMonkey Test Runtimes
       if: matrix.build != 'weval'
       run: |
         cmake -S . -B cmake-build-${{ matrix.build }} -DENABLE_WPT:BOOL=ON -DCMAKE_BUILD_TYPE=${{ matrix.build == 'release' && 'Release' || 'Debug' }}
+        cmake --build cmake-build-${{ matrix.build }} --target integration-test-server
         cmake --build cmake-build-${{ matrix.build }} --target wpt-runtime
 
     #- name: Build StarlingMonkey WPT Weval
@@ -87,7 +55,7 @@ jobs:
       run: |
         cat deps/wpt-hosts | sudo tee -a /etc/hosts
 
-    - name: StarlingMonkey WPT Test
+    - name: StarlingMonkey E2E,  Integration Tests, and WPT Tests
       env:
         CTEST_OUTPUT_ON_FAILURE: 1
-      run: ctest -R wpt --test-dir cmake-build-${{ matrix.build }} --verbose --no-tests=error
+      run: ctest --test-dir cmake-build-${{ matrix.build }} --verbose --no-tests=error
