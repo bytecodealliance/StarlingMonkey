@@ -43,7 +43,9 @@ jobs:
 
     - name: Set env var to use cached SpiderMonkey tarball
       if: steps.sm-cache.outputs.cache-hit == 'true'
-      run: echo "SPIDERMONKEY_BINARIES=spidermonkey-dist" >> $GITHUB_ENV
+      run: |
+        tree spidermonkey-dist
+        echo "SPIDERMONKEY_BINARIES=spidermonkey-dist" >> $GITHUB_ENV
 
     - uses: actions/setup-node@v2
       with:
