@@ -28,5 +28,5 @@
 /tests/e2e/*/*.log
 /tests/integration/*/*.wasm
 /tests/integration/*/*.log
-/deps/.spidermonkey-clone.lock
-/deps/spidermonkey-source
+/deps/*.lock
+/deps/*-source
