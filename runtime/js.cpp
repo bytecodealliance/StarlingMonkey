@@ -89,8 +89,6 @@ extern "C" void __wasm_call_ctors();
  *    load the file `./index.js` and run it as the top-level module script.
  */
 extern "C" bool exports_wasi_cli_run_run() {
-  __wasm_call_ctors();
-
   auto arg_strings = host_api::environment_get_arguments();
   std::vector<std::string_view> args;
   for (auto& arg : arg_strings) args.push_back(arg);
@@ -109,8 +107,6 @@ extern "C" bool exports_wasi_cli_run_run() {
  * command line.
  */
 extern "C" bool init_from_environment() {
-  __wasm_call_ctors();
-
   auto config_parser = starling::ConfigParser();
   config_parser.apply_env();
   ENGINE = new api::Engine(config_parser.take());

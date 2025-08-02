@@ -160,7 +160,7 @@ std::optional<std::tuple<size_t, size_t>> extract_range(std::string_view range_q
 
   auto to_size = [](std::string_view s) -> std::optional<size_t> {
     size_t v;
-    auto [ptr, ec] = std::from_chars(s.begin(), s.end(), v);
+    auto [ptr, ec] = std::from_chars(&*s.begin(), &*s.end(), v);
     return ec == std::errc() ? std::optional<size_t>(v) : std::nullopt;
   };
 
