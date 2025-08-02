@@ -133,6 +133,7 @@ mk_add_options AUTOCLOBBER=1
         string(APPEND MOZCONFIG_CONTENT "ac_add_options --enable-debug\n")
     else()
         string(APPEND MOZCONFIG_CONTENT "ac_add_options --disable-debug\n")
+        string(APPEND MOZCONFIG_CONTENT "ac_add_options --enable-lto=thin\n")
     endif()
 
     # Weval-specific configuration
