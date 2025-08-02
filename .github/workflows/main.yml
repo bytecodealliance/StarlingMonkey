@@ -72,12 +72,11 @@ jobs:
         CTEST_OUTPUT_ON_FAILURE: 1
       run: ctest --test-dir cmake-build-${{ matrix.build }} --verbose --no-tests=error
 
-    - name: Set up cacheable SpiderMonkey artifacts
+    - name: Show cacheable SpiderMonkey artifacts
       if: steps.sm-cache.outputs.cache-hit != 'true'
       run: |
-        mkdir -p spidermonkey-dist
-        ln -s cmake-build-${{ matrix.build }}/spidermonkey/dist/libspidermonkey.a spidermonkey-dist/
-        ln -s cmake-build-${{ matrix.build }}/spidermonkey/dist/include spidermonkey-dist/
+        ls -l cmake-build-${{ matrix.build }}/spidermonkey/dist/libspidermonkey.a
+        tree cmake-build-${{ matrix.build }}/spidermonkey/dist/include
 
     # Upload tarball as an artifact of the github action run, so the output
     # can be inspected for pull requests.
@@ -87,4 +86,6 @@ jobs:
           && steps.sm-cache.outputs.cache-hit != 'true'
       with:
         name: spidermonkey-${{ matrix.build }}
-        path: spidermonkey-dist/*
+        path: |
+          cmake-build-${{ matrix.build }}/spidermonkey/dist/libspidermonkey.a
+          cmake-build-${{ matrix.build }}/spidermonkey/dist/include
