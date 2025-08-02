@@ -78,3 +78,13 @@ jobs:
         mkdir -p spidermonkey-dist
         ln -s cmake-build-${{ matrix.build }}/spidermonkey/dist/libspidermonkey.a spidermonkey-dist/
         ln -s cmake-build-${{ matrix.build }}/spidermonkey/dist/include spidermonkey-dist/
+
+    # Upload tarball as an artifact of the github action run, so the output
+    # can be inspected for pull requests.
+    - name: Upload SpiderMonkey tarball
+      uses: actions/upload-artifact@v4
+      if: github.event_name != 'push' || (github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v'))
+          && steps.sm-cache.outputs.cache-hit != 'true'
+      with:
+        name: spidermonkey-${{ matrix.build }}
+        path: spidermonkey-dist/*
