@@ -39,7 +39,7 @@ jobs:
       with:
         path: |
           spidermonkey-dist
-        key: cache-${{ matrix.build }}-${{ hashFiles('cmake/spidermonkey.cmake') }}
+        key: spidermonkey-cache-${{ matrix.build }}-${{ hashFiles('cmake/spidermonkey.cmake') }}
 
     - name: Set env var to use cached SpiderMonkey tarball
       if: steps.sm-cache.outputs.cache-hit == 'true'
@@ -76,8 +76,8 @@ jobs:
       if: steps.sm-cache.outputs.cache-hit != 'true'
       run: |
         mkdir -p spidermonkey-dist
-        ln -s cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/libspidermonkey.a spidermonkey-dist/
-        ln -s cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/include spidermonkey-dist/
+        cp -a cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/libspidermonkey.a spidermonkey-dist/
+        cp -a cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/include spidermonkey-dist/
         tree spidermonkey-dist
 
       # Upload tarball as an artifact of the github action run, so the output
