@@ -1,5 +1,7 @@
 set(SM_TAG FIREFOX_140_0_4_RELEASE_STARLING)
 
+include("manage-git-source")
+
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(SM_BUILD_TYPE debug)
 else()
@@ -53,92 +55,13 @@ else()
     # Clone SpiderMonkey source using git directly for shallow clone
     # Use deps folder in project root for shared access across build directories
     set(SM_SOURCE_DIR ${CMAKE_SOURCE_DIR}/deps/spidermonkey-source)
-    set(SM_LOCK_FILE ${CMAKE_SOURCE_DIR}/deps/.spidermonkey-clone.lock)
 
-    # Use file locking to prevent concurrent clone operations
-    file(LOCK ${SM_LOCK_FILE})
-
-    # Check if source directory already exists and has the correct tag
-    set(NEED_CLONE TRUE)
-    set(NEED_CHECKOUT FALSE)
-
-    if(EXISTS ${SM_SOURCE_DIR}/.git)
-        # Check current tag
-        execute_process(
-            COMMAND git -C ${SM_SOURCE_DIR} describe --tags --exact-match HEAD
-            OUTPUT_VARIABLE CURRENT_TAG
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            ERROR_QUIET
-            RESULT_VARIABLE TAG_CHECK_RESULT
-        )
-
-        if(TAG_CHECK_RESULT EQUAL 0 AND CURRENT_TAG STREQUAL ${SM_TAG})
-            set(NEED_CLONE FALSE)
-            message(STATUS "SpiderMonkey source already at correct tag ${SM_TAG}")
-        else()
-            # Repository exists but wrong tag - fetch and checkout instead of re-cloning
-            set(NEED_CLONE FALSE)
-            set(NEED_CHECKOUT TRUE)
-            message(STATUS "SpiderMonkey source not at correct tag, checking out ${SM_TAG}")
-        endif()
-    endif()
-
-    if(NEED_CLONE)
-        message(STATUS "Cloning SpiderMonkey source at tag ${SM_TAG}")
-        # Remove existing directory if it exists but isn't a git repo
-        if(EXISTS ${SM_SOURCE_DIR})
-            file(REMOVE_RECURSE ${SM_SOURCE_DIR})
-        endif()
-
-        # Perform shallow clone of specific tag
-        execute_process(
-            COMMAND git clone --depth 1 --branch ${SM_TAG}
-                    https://github.com/bytecodealliance/firefox.git
-                    ${SM_SOURCE_DIR}
-            RESULT_VARIABLE CLONE_RESULT
-            ERROR_VARIABLE CLONE_ERROR
-        )
-
-        if(NOT CLONE_RESULT EQUAL 0)
-            message(FATAL_ERROR "Failed to clone SpiderMonkey source: ${CLONE_ERROR}")
-        endif()
-    elseif(NEED_CHECKOUT)
-        # Check if the tag already exists locally
-        execute_process(
-            COMMAND git -C ${SM_SOURCE_DIR} rev-parse --verify "refs/tags/${SM_TAG}"
-            OUTPUT_QUIET
-            ERROR_QUIET
-            RESULT_VARIABLE TAG_EXISTS_RESULT
-        )
-
-        if(NOT TAG_EXISTS_RESULT EQUAL 0)
-            # Tag doesn't exist locally, fetch it
-            message(STATUS "Fetching tag ${SM_TAG}")
-            execute_process(
-                COMMAND git -C ${SM_SOURCE_DIR} fetch --depth 1 origin tag ${SM_TAG}
-                RESULT_VARIABLE FETCH_RESULT
-                ERROR_VARIABLE FETCH_ERROR
-            )
-
-            if(NOT FETCH_RESULT EQUAL 0)
-                message(FATAL_ERROR "Failed to fetch tag ${SM_TAG}: ${FETCH_ERROR}")
-            endif()
-        endif()
-
-        # Checkout the tag (whether it was already local or just fetched)
-        execute_process(
-            COMMAND git -C ${SM_SOURCE_DIR} checkout ${SM_TAG}
-            RESULT_VARIABLE CHECKOUT_RESULT
-            ERROR_VARIABLE CHECKOUT_ERROR
-        )
-
-        if(NOT CHECKOUT_RESULT EQUAL 0)
-            message(FATAL_ERROR "Failed to checkout tag ${SM_TAG}: ${CHECKOUT_ERROR}")
-        endif()
-    endif()
-
-    # Release the lock
-    file(LOCK ${SM_LOCK_FILE} RELEASE)
+    manage_git_source(
+        NAME spidermonkey
+        REPO_URL https://github.com/bytecodealliance/firefox.git
+        TAG ${SM_TAG}
+        SOURCE_DIR ${SM_SOURCE_DIR}
+    )
 
     # Each build configuration gets its own object directory
     set(SM_OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/spidermonkey-obj)
