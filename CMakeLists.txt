@@ -20,6 +20,10 @@ else()
 endif()
 message(STATUS "Using host API: ${HOST_API}")
 
+# Ensure that the CPM cache is created outside the build dir, even if no location is specified by the developer.
+if(NOT DEFINED ENV{CPM_SOURCE_CACHE} AND NOT DEFINED CPM_SOURCE_CACHE)
+    set(CPM_SOURCE_CACHE ${CMAKE_CURRENT_SOURCE_DIR}/deps/cpm_cache)
+endif()
 include("CPM")
 include("toolchain")
 
