@@ -79,7 +79,7 @@ jobs:
       run: |
         mkdir -p spidermonkey-dist
         cp -a cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/libspidermonkey.a spidermonkey-dist/
-        cp -a cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/include spidermonkey-dist/
+        cp -aL cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/include spidermonkey-dist/
         tree spidermonkey-dist
 
       # Upload tarball as an artifact of the github action run, so the output
