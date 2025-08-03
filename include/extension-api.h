@@ -65,6 +65,13 @@ struct EngineConfig {
    */
   bool debugging = false;
 
+  /**
+   * Whether to enable Web Platform Test mode. Specifically, this means installing a
+   * few global properties required to make WPT work, that wouldn't be made available
+   * to content.
+   */
+  bool wpt_mode = false;
+
   EngineConfig() = default;
 };
 
@@ -82,6 +89,7 @@ public:
   HandleObject global();
   EngineState state();
   bool debugging_enabled();
+  bool wpt_mode();
 
   void finish_pre_initialization();
 

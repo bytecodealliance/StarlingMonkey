@@ -50,10 +50,7 @@ target_include_directories(extension_api INTERFACE include deps/include runtime)
 
 include("builtins")
 
-option(ENABLE_WPT "Enable WPT harness support" OFF)
-if (ENABLE_WPT)
-    include("tests/wpt-harness/wpt.cmake")
-endif()
+include("tests/wpt-harness/wpt.cmake")
 
 set(SOURCES
     runtime/js.cpp
