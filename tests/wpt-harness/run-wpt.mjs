@@ -358,11 +358,11 @@ async function startWasmtime(runtime, addr, logLevel) {
     });
   }
 
-  // give wasmtime 20 seconds to become available
-  const WASMTIME_READY_TIMEOUT = 20000;
+  // give wasmtime 60 seconds to become available
+  const WASMTIME_READY_TIMEOUT = 60000;
   return await Promise.race([
     wasmtimeReady(wasmtime, config),
-    timeout(WASMTIME_READY_TIMEOUT, "Wasmtime failed to start"),
+    timeout(WASMTIME_READY_TIMEOUT, `Wasmtime start timeout after ${WASMTIME_READY_TIMEOUT}ms`),
   ]);
 }
 
