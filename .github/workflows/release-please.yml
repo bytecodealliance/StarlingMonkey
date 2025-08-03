@@ -5,13 +5,14 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      issues: write
-      pull-requests: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -56,9 +57,17 @@ jobs:
         run: |
           mkdir -p release-artifacts
 
-          cp build-release/starling-raw.wasm release-artifacts/starling.wasm
-          cp build-weval/starling-raw.wasm release-artifacts/starling-weval.wasm
-          cp build-debug/starling-raw.wasm release-artifacts/starling-debug.wasm
+          # Core-module versions of the runtime
+          cp build-release/starling-raw.wasm release-artifacts/starling-raw.wasm
+          cp build-weval/starling-raw.wasm release-artifacts/starling-raw-weval.wasm
+          cp build-debug/starling-raw.wasm release-artifacts/starling-raw-debug.wasm
+
+          # Component-versions of the runtime
+          cp build-release/starling.wasm release-artifacts/starling.wasm
+          cp build-weval/starling.wasm release-artifacts/starling-weval.wasm
+          cp build-debug/starling.wasm release-artifacts/starling-debug.wasm
+
+          # Supporting artifacts
           cp build-release/preview1-adapter.wasm release-artifacts
           cp build-weval/starling-ics.wevalcache release-artifacts
 
