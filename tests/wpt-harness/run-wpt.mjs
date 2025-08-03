@@ -312,8 +312,10 @@ async function timeout(millis, message) {
 
 async function wasmtimeReady(wasmtime, config) {
   // Wait until Wasmtime has fully initialized and extract host from output.
+  let output = "";
   for await(const [chunk] of on(wasmtime.stderr, "data")) {
-    let result = chunk.match(/Serving HTTP on (.+)/);
+    output += chunk;
+    let result = output.match(/Serving HTTP on (http:\/\/.+\/)/);
     if (result) {
       return { process: wasmtime, host: result[1], ...config };
     }
@@ -333,6 +335,9 @@ async function startWasmtime(runtime, addr, logLevel) {
   let backtrace = "";
   let backtrace_re = /Error \{\s+context: "error while executing at wasm backtrace:(.+?)",\s+source: (.+?)/s;
   wasmtime.stderr.on("data", data => {
+    if (logLevel >= LogLevel.VeryVerbose) {
+      console.log(`wasmtime stderr: ${stripTrailingNewline(data)}`);
+    }
     if (backtrace.length > 0 || data.includes("error while executing at wasm backtrace:")) {
       backtrace += data;
       let match = backtrace.match(backtrace_re);
