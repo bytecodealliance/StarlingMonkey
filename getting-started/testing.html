@@ -234,7 +234,7 @@
 <pre><code class="language-console">cmake --build cmake-build-debug --target integration-test-server
 </code></pre>
 <p>Then tests can be run with <code>ctest</code> directly via:</p>
-<pre><code class="language-console">ctest --test-dir cmake-build-debug -j8 --output-on-failure
+<pre><code class="language-console">ctest --test-dir cmake-build-debug -j$(nproc) --output-on-failure
 </code></pre>
 <p>Alternatively, the integration test server can be directly run with <code>wasmtime serve</code> via:</p>
 <pre><code class="language-console">wasmtime serve -S common cmake-build-debug/test-server.wasm
@@ -242,10 +242,9 @@
 <p>Then visit <code>http://0.0.0.0:8080/timers</code>, or any test name and filter of the form <code>[testName]/[filter]</code></p>
 <h2 id="web-platform-tests"><a class="header" href="#web-platform-tests">Web Platform Tests</a></h2>
 <p>To run the <a href="https://web-platform-tests.org/">Web Platform Tests</a> suite, the WPT runner requires
-<code>Node.js</code> above v18.0 to be installed, and during build configuration the option <code>ENABLE_WPT:BOOL=ON</code>
-must be set.</p>
-<pre><code class="language-console">cmake -S . -B cmake-build-debug -DENABLE_WPT:BOOL=ON -DCMAKE_BUILD_TYPE=Debug
-cmake --build cmake-build-debug --parallel 8 --target wpt-runtime
+<code>Node.js</code> above v18.0 to be installed, and the list of hosts in <code>deps/wpt-hosts</code> needs to be added to <code>etc/hosts</code>.</p>
+<pre><code class="language-console">cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
+cmake --build cmake-build-debug --parallel $(nproc) --target wpt-runtime
 cat deps/wpt-hosts | sudo tee -a /etc/hosts # Required to resolve test server hostnames
 cd cmake-build-debug
 ctest -R wpt --verbose # Note: some of the tests run fairly slowly in debug builds, so be patient
