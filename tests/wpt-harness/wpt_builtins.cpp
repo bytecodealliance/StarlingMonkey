@@ -56,6 +56,10 @@ JS_PS_END};
 namespace wpt_support {
 
 bool install(api::Engine* engine) {
+  if (!engine->wpt_mode()) {
+    return true;
+  }
+
   if (!JS_DefineFunction(engine->cx(), engine->global(), "evalScript", evalScript, 1, 0)) {
     return false;
   }
