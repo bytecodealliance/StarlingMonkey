@@ -25,8 +25,9 @@ if (DEFINED ENV{SPIDERMONKEY_BINARIES})
     message(STATUS "Using pre-built SpiderMonkey artifacts from local directory ${SM_LIB_DIR}")
 else()
     set(SM_URL https://github.com/bytecodealliance/starlingmonkey/releases/download/libspidermonkey_${SM_TAG}/spidermonkey-static-${SM_BUILD_TYPE}.tar.gz)
+    message(STATUS "Checking for pre-built SpiderMonkey artifacts at ${SM_URL}")
     execute_process(
-            COMMAND curl -s -o /dev/null -w "%{http_code}" ${SM_URL}
+            COMMAND curl -sIL -o /dev/null -w "%{http_code}" ${SM_URL}
             RESULT_VARIABLE CURL_RESULT
             OUTPUT_VARIABLE HTTP_STATUS
     )

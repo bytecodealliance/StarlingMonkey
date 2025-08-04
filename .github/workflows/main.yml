@@ -26,28 +26,44 @@ jobs:
       matrix:
         build: [release, debug]
         os: [ubuntu-latest]
+    outputs:
+      SM_TAG_EXISTS: ${{ steps.check-sm-release.outputs.SM_TAG_EXISTS }}
+      SM_TAG: ${{ steps.check-sm-release.outputs.SM_TAG }}
+      SM_CACHE_KEY_debug: ${{ steps.check-sm-release.outputs.SM_CACHE_KEY_debug }}
+      SM_CACHE_KEY_release: ${{ steps.check-sm-release.outputs.SM_CACHE_KEY_release }}
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install Rust 1.88.0
+    - name: Check if SpiderMonkey Release Exists
+      id: check-sm-release
       run: |
-        rustup toolchain install 1.88.0
-        rustup target add wasm32-wasip1 --toolchain 1.88.0
+        SM_TAG="libspidermonkey_$(awk '/^set\(SM_TAG/ {gsub(/set\(SM_TAG |\)/, ""); print}' cmake/spidermonkey.cmake)"
+        echo "SM_TAG=${SM_TAG}" >> "$GITHUB_OUTPUT"
+        if gh release view "${SM_TAG}" >/dev/null 2>&1; then
+          echo "Found existing SpiderMonkey release tag: ${SM_TAG}"
+          echo "SM_TAG_EXISTS=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "SM_TAG_EXISTS=false" >> "$GITHUB_OUTPUT"
+          echo "SM_CACHE_KEY_${{ matrix.build }}=spidermonkey-cache-${{ matrix.build }}-${{ hashFiles('cmake/spidermonkey.cmake') }}" >> "$GITHUB_OUTPUT"
+        fi
+      env:
+        GH_TOKEN: ${{ github.token }}
 
     - name: Cache SpiderMonkey tarball
+      if: steps.check-sm-release.outputs.SM_TAG_EXISTS == 'false'
       uses: actions/cache@v4
       id: sm-cache
       with:
         path: |
-          spidermonkey-dist
+          spidermonkey-dist-${{ matrix.build }}
         key: spidermonkey-cache-${{ matrix.build }}-${{ hashFiles('cmake/spidermonkey.cmake') }}
 
     - name: Set env var to use cached SpiderMonkey tarball
-      if: steps.sm-cache.outputs.cache-hit == 'true'
+      if: steps.check-sm-release.outputs.SM_TAG_EXISTS == 'false' && steps.sm-cache.outputs.cache-hit == 'true'
       run: |
-        tree spidermonkey-dist
-        echo "SPIDERMONKEY_BINARIES=$(pwd)/spidermonkey-dist" >> $GITHUB_ENV
+        tree spidermonkey-dist-${{ matrix.build }}
+        echo "SPIDERMONKEY_BINARIES=$(pwd)/spidermonkey-dist-${{ matrix.build }}" >> $GITHUB_ENV
 
     - uses: actions/setup-node@v2
       with:
@@ -80,19 +96,61 @@ jobs:
         CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-${{ matrix.build }} -j$(nproc) --verbose
 
     - name: Set up cacheable SpiderMonkey artifacts
-      if: steps.sm-cache.outputs.cache-hit != 'true'
+      if: steps.check-sm-release.outputs.SM_TAG_EXISTS == 'false' && steps.sm-cache.outputs.cache-hit != 'true'
       run: |
-        mkdir -p spidermonkey-dist
-        cp -a cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/libspidermonkey.a spidermonkey-dist/
-        cp -aL cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/include spidermonkey-dist/
-        tree spidermonkey-dist
+        mkdir -p spidermonkey-dist-${{ matrix.build }}
+        cp -a cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/libspidermonkey.a spidermonkey-dist-${{ matrix.build }}/
+        cp -aL cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/include spidermonkey-dist-${{ matrix.build }}/
+        tree spidermonkey-dist-${{ matrix.build }}
 
       # Upload tarball as an artifact of the github action run, so the output
       # can be inspected for pull requests.
     - name: Upload SpiderMonkey tarball
       uses: actions/upload-artifact@v4
       if: (github.event_name != 'push' || (github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v')))
-        && steps.sm-cache.outputs.cache-hit != 'true'
+        && steps.check-sm-release.outputs.SM_TAG_EXISTS == 'false' && steps.sm-cache.outputs.cache-hit != 'true'
       with:
         name: spidermonkey-${{ matrix.build }}
-        path: spidermonkey-dist/*
+        path: spidermonkey-dist-${{ matrix.build }}/*
+
+  release-spidermonkey:
+    needs: test
+    if: needs.test.outputs.SM_TAG_EXISTS == 'false' && (github.event_name == 'push' && 
+          (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Restore SpiderMonkey Debug Cache
+      uses: actions/cache/restore@v4
+      id: sm-cache-debug
+      with:
+        path: |
+          spidermonkey-dist-debug
+        key: ${{ needs.test.outputs.SM_CACHE_KEY_debug }}
+        fail-on-cache-miss: true
+    - name: Restore SpiderMonkey Release Cache
+      uses: actions/cache/restore@v4
+      id: sm-cache-release
+      with:
+        path: |
+          spidermonkey-dist-release
+        key: ${{ needs.test.outputs.SM_CACHE_KEY_release }}
+        fail-on-cache-miss: true
+
+    - name: Create SpiderMonkey Tar Balls
+      run: |
+        mkdir -p release-artifacts
+        tar -a -cf release-artifacts/spidermonkey-static-debug.tar.gz spidermonkey-dist-debug/*
+        tar -a -cf release-artifacts/spidermonkey-static-release.tar.gz spidermonkey-dist-release/*
+        tree release-artifacts
+
+    - name: Do the Release
+      uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 #2.3.2
+      with:
+        body: |
+          This release contains pre-built SpiderMonkey artifacts to be used by the StarlingMonkey
+          build system. It's not meant for general public consumption and doesn't come with any
+          stability or availability guarantees.
+        tag_name: ${{ needs.test.outputs.SM_TAG }}
+        files: release-artifacts/*
