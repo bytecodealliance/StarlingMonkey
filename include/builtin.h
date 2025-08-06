@@ -47,6 +47,7 @@ using JS::NullHandleValue;
 using JS::UndefinedHandleValue;
 
 using JS::PersistentRooted;
+using HeapValue = JS::Heap<Value>;
 
 std::optional<std::span<uint8_t>> value_to_buffer(JSContext *cx, HandleValue val,
                                                   const char *val_desc);
@@ -281,11 +282,16 @@ public:
     return true;
   }
 
-  static bool init_class_impl(JSContext *cx, const HandleObject global,
-                              const HandleObject parent_proto = nullptr) {
-    proto_obj.init(cx, JS_InitClass(cx, global, &class_, parent_proto, Impl::class_name,
-                                    Impl::constructor, Impl::ctor_length, Impl::properties,
-                                    Impl::methods, Impl::static_properties, Impl::static_methods));
+static bool init_class_impl(JSContext *cx, const HandleObject global,
+                           std::optional<const HandleObject> maybe_parent_proto = std::nullopt) {
+  MOZ_RELEASE_ASSERT(!maybe_parent_proto || maybe_parent_proto.value() != nullptr,
+    "Trying to register a subclass before the parent class is initialized. "
+    "Make sure to add the parent class builtin before the subclass.");
+
+  RootedObject parent_proto(cx, maybe_parent_proto.value_or(nullptr));
+  proto_obj.init(cx, JS_InitClass(cx, global, &class_, parent_proto, Impl::class_name,
+                                  Impl::constructor, Impl::ctor_length, Impl::properties,
+                                  Impl::methods, Impl::static_properties, Impl::static_methods));
 
     return proto_obj != nullptr;
   }

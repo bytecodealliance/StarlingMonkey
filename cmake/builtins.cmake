@@ -29,6 +29,12 @@ add_builtin(
         builtins/web/event/global-event-target.cpp)
 
 add_builtin(
+    builtins::web::abort
+    SRC
+        builtins/web/abort/abort-signal.cpp
+        builtins/web/abort/abort-controller.cpp)
+
+add_builtin(
     builtins::web::form_data
     SRC
         builtins/web/form-data/form-data.cpp

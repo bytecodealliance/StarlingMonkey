@@ -277,6 +277,19 @@ bool Event::init(JSContext *cx, HandleObject self, HandleValue type, HandleValue
   return true;
 }
 
+JSObject *Event::create(JSContext *cx, HandleValue type, HandleValue init) {
+  RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
+  if (!self) {
+    return nullptr;
+  }
+
+  if (!Event::init(cx, self, type, init)) {
+    return nullptr;
+  }
+
+  return self;
+}
+
 // https://dom.spec.whatwg.org/#interface-event
 bool Event::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("Event", 1);
