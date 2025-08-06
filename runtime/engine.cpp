@@ -690,8 +690,11 @@ bool Engine::debug_logging_enabled() { return ::debug_logging_enabled(); }
 
 bool Engine::has_pending_async_tasks() { return core::EventLoop::has_pending_async_tasks(); }
 
-void Engine::queue_async_task(AsyncTask *task) { core::EventLoop::queue_async_task(task); }
-bool Engine::cancel_async_task(AsyncTask *task) {
+void Engine::queue_async_task(RefPtr<AsyncTask> task) {
+  core::EventLoop::queue_async_task(task);
+}
+
+bool Engine::cancel_async_task(RefPtr<AsyncTask> task) {
   return core::EventLoop::cancel_async_task(this, task);
 }
 

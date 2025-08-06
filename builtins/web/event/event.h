@@ -106,6 +106,8 @@ public:
     Count
   };
 
+  static JSObject*create(JSContext *cx, HandleValue type, HandleValue init);
+
   static bool init(JSContext *cx, HandleObject self, HandleValue type, HandleValue init);
   static bool init_class(JSContext *cx, HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);

@@ -14,12 +14,12 @@ size_t poll_handles(vector<WASIHandle<host_api::Pollable>::Borrowed> handles) {
   return ready_index;
 }
 
-size_t api::AsyncTask::select(std::vector<AsyncTask *> &tasks) {
+size_t api::AsyncTask::select(std::vector<RefPtr<AsyncTask>> &tasks) {
   auto count = tasks.size();
   std::vector<WASIHandle<host_api::Pollable>::Borrowed> handles;
 
   for (size_t idx = 0; idx < count; ++idx) {
-    auto *task = tasks.at(idx);
+    auto task = tasks.at(idx);
     auto id = task->id();
 
     if (id == IMMEDIATE_TASK_HANDLE) {
@@ -838,12 +838,18 @@ Result<optional<HttpIncomingResponse *>> FutureHttpIncomingResponse::maybe_respo
 }
 
 Result<PollableHandle> FutureHttpIncomingResponse::subscribe() {
-  Borrow<FutureHttpIncomingResponse> borrow(handle_state_.get());
-  auto pollable = wasi_http_types_method_future_incoming_response_subscribe(borrow);
-  return Result<PollableHandle>::ok(pollable.__handle);
+  if (pollable_handle_ == INVALID_POLLABLE_HANDLE) {
+    Borrow<FutureHttpIncomingResponse> borrow(handle_state_.get());
+    auto pollable = wasi_http_types_method_future_incoming_response_subscribe(borrow);
+    pollable_handle_ = pollable.__handle;
+  }
+  return Result<PollableHandle>::ok(pollable_handle_);
 }
 void FutureHttpIncomingResponse::unsubscribe() {
-  // TODO: implement
+  if (pollable_handle_ != INVALID_POLLABLE_HANDLE) {
+    wasi_io_poll_pollable_drop_own(own_pollable_t{pollable_handle_});
+    pollable_handle_ = INVALID_POLLABLE_HANDLE;
+  }
 }
 
 HttpHeadersReadOnly::HttpHeadersReadOnly() { handle_state_ = nullptr; }
