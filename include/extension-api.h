@@ -26,18 +26,18 @@ using JS::PersistentRootedVector;
 
 using std::optional;
 
+namespace api {
+
 typedef int32_t PollableHandle;
 constexpr PollableHandle INVALID_POLLABLE_HANDLE = -1;
 constexpr PollableHandle IMMEDIATE_TASK_HANDLE = -2;
 
-namespace api {
-
 class AsyncTask;
 
 struct EngineConfig {
-  mozilla::Maybe<std::string> content_script_path = mozilla::Nothing();
-  mozilla::Maybe<std::string> content_script = mozilla::Nothing();
-  mozilla::Maybe<std::string> path_prefix = mozilla::Nothing();
+  std::string content_script_path;
+  std::string content_script;
+  std::string path_prefix;
   bool module_mode = true;
 
   /**
@@ -47,7 +47,7 @@ struct EngineConfig {
    * available to content. It can be used to set up the environment for the content
    * script, e.g. by registering builtin modules or adding global properties.
    */
-  mozilla::Maybe<std::string> initializer_script_path = mozilla::Nothing();
+  std::string initializer_script_path;
 
   /**
    * Whether to evaluate the top-level script in pre-initialization mode or not.
@@ -83,10 +83,32 @@ class Engine {
 
 public:
   explicit Engine(std::unique_ptr<EngineConfig> config);
+
+  /**
+   * Returns the `Engine` associated with the `JSContext` instance.
+   *
+   * Currently, StarlingMonkey uses exactly one `Engine` and one `JSContext`. Since that might
+   * change in the future, it's heavily recommended to not store either in static globals.
+   *
+   * @return The `Engine` associated with the `JSContext` instance
+   */
+  // TODO: change to static Engine& from_context(JSContext *cx);
   static Engine *get(JSContext *cx);
 
+  static Engine& from_context(JSContext *cx) {
+    return *get(cx);
+  }
+
+  /**
+   * Returns the `JSContext` associated with the `Engine` instance.
+   *
+   * Currently, StarlingMonkey uses exactly one `Engine` and one `JSContext`. Since that might
+   * change in the future, it's heavily recommended to not store either in static globals.
+   *
+   * @return The JSContext associated with the `Engine` instance
+   */
   JSContext *cx();
-  HandleObject global();
+  JS::HandleObject global();
   EngineState state();
   bool debugging_enabled();
   bool wpt_mode();
@@ -105,7 +127,7 @@ public:
    *
    * Once loaded, the instance is cached and reused as a singleton.
    */
-  bool define_builtin_module(const char *id, HandleValue builtin);
+  bool define_builtin_module(const char *id, JS::HandleValue builtin);
 
   /**
    * Treat the top-level script as a module or classic JS script.
@@ -166,7 +188,7 @@ public:
    * Get the JS value associated with the top-level script execution -
    * the last expression for a script, or the module namespace for a module.
    */
-  HandleValue script_value();
+  JS::HandleValue script_value();
 
   bool has_pending_async_tasks();
   void queue_async_task(AsyncTask *task);
@@ -182,13 +204,13 @@ public:
 
   bool dump_value(JS::Value val, FILE *fp = stdout);
   bool print_stack(FILE *fp);
-  void dump_error(HandleValue error, FILE *fp = stderr);
+  void dump_error(JS::HandleValue error, FILE *fp = stderr);
   void dump_pending_exception(const char *description = "", FILE *fp = stderr);
-  void dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp = stderr);
+  void dump_promise_rejection(JS::HandleValue reason, JS::HandleObject promise, FILE *fp = stderr);
 };
 
 
-typedef bool (*TaskCompletionCallback)(JSContext* cx, HandleObject receiver);
+typedef bool (*TaskCompletionCallback)(JSContext* cx, JS::HandleObject receiver);
 
 class AsyncTask {
 protected:
@@ -218,5 +240,37 @@ public:
 };
 
 } // namespace api
+
+namespace rust_bindgen_details {
+
+/**
+ * <div rustbindgen="true" replaces="std::optional">
+ */
+template<typename T> class simple_optional {
+  T* ptr;
+};
+
+/**
+ * <div rustbindgen="true" replaces="std::unique_ptr">
+ */
+template<typename T> class simple_unique_ptr {
+  T* ptr;
+};
+
+/**
+ * <div rustbindgen="true" replaces="std::vector">
+ */
+template<typename T> class simple_vector {
+  T* ptr;
+};
+
+/**
+ * <div rustbindgen="true" replaces="mozilla::Maybe">
+ */
+template<typename T> class simple_maybe {
+  T* ptr;
+};
+
+}
 
 #endif // EXTENSION_API_H

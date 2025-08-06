@@ -18,8 +18,6 @@ using blob::Blob;
 using fetch::Headers;
 using host_api::HostString;
 
-static api::Engine *ENGINE;
-
 enum class FetchScheme {
   About,
   Blob,
@@ -107,7 +105,8 @@ bool fetch_https(JSContext *cx, HandleObject request_obj, HostString method, Hos
   // If the request body is streamed, we need to wait for streaming to complete
   // before marking the request as pending.
   if (!streaming) {
-    ENGINE->queue_async_task(new ResponseFutureTask(request_obj, pending_handle));
+    api::Engine::from_context(cx)
+      .queue_async_task(new ResponseFutureTask(request_obj, pending_handle));
   }
 
   SetReservedSlot(request_obj, static_cast<uint32_t>(Request::Slots::ResponsePromise),
@@ -345,8 +344,6 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
 const JSFunctionSpec methods[] = {JS_FN("fetch", fetch, 2, JSPROP_ENUMERATE), JS_FS_END};
 
 bool install(api::Engine *engine) {
-  ENGINE = engine;
-
   if (!JS_DefineFunctions(engine->cx(), engine->global(), methods))
     return false;
   if (!request_response::install(engine)) {

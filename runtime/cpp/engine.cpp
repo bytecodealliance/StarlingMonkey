@@ -256,7 +256,8 @@ bool create_content_global(JSContext * cx) {
   JS::RealmOptions options;
   options.creationOptions().setStreamsEnabled(true);
 
-  JS::DisableIncrementalGC(cx);
+  // TODO: restore
+  // JS::DisableIncrementalGC(cx);
   // JS_SetGCParameter(cx, JSGC_MAX_EMPTY_CHUNK_COUNT, 1);
 
   RootedObject global(
@@ -343,7 +344,7 @@ bool init_js(const EngineConfig& config) {
   // generating bytecode for functions.
   // https://searchfox.org/mozilla-central/rev/5b2d2863bd315f232a3f769f76e0eb16cdca7cb0/js/public/CompileOptions.h#571-574
   opts->setForceFullParse();
-  scriptLoader = new ScriptLoader(ENGINE, opts, config.path_prefix);
+  scriptLoader = new ScriptLoader(ENGINE, opts, mozilla::Some<string_view>(config.path_prefix));
 
   // TODO: restore in a way that doesn't cause a dependency on the Performance builtin in the core runtime.
   //   builtins::Performance::timeOrigin.emplace(
@@ -461,7 +462,7 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
   }
 #endif
 
-  if (config_->initializer_script_path) {
+  if (!config_->initializer_script_path.empty()) {
     if (!run_initialization_script()) {
       abort("running initialization script");
     }
@@ -470,7 +471,7 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
   TRACE("Module mode: " << config_->module_mode);
   scriptLoader->enable_module_mode(config_->module_mode);
 
-  mozilla::Maybe<std::string_view> content_script_path = config_->content_script_path;
+  auto content_script_path = config_->content_script_path;
 
   if (config_->pre_initialize) {
     state_ = EngineState::ScriptPreInitializing;
@@ -482,23 +483,23 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
     content_debugger::maybe_init_debugger(this, false);
     if (auto replacement_script_path = content_debugger::replacement_script_path()) {
       TRACE("Using replacement script path received from debugger: " << *replacement_script_path);
-      content_script_path = replacement_script_path;
+      content_script_path = *replacement_script_path.ptr();
     }
   }
 
-  if (content_script_path) {
-    TRACE("Evaluating initial script from file " << content_script_path.value());
+  if (!content_script_path.empty()) {
+    TRACE("Evaluating initial script from file " << content_script_path);
     RootedValue result(cx());
-    if (!eval_toplevel(content_script_path.value().data(), &result)) {
+    if (!eval_toplevel(content_script_path.c_str(), &result)) {
       abort("evaluating top-level script");
     }
   }
 
-  if (config_->content_script) {
+  if (!config_->content_script.empty()) {
     TRACE("Evaluating initial inline script");
     JS::SourceText<mozilla::Utf8Unit> source;
     std::string path = "<eval>";
-    const std::string& script = config_->content_script.value();
+    const std::string& script = config_->content_script;
     RootedValue result(cx());
     if (!source.init(cx(), script.c_str(), script.size(), JS::SourceOwnership::Borrowed)
         || !eval_toplevel(source, path.data(), &result)) {
@@ -563,7 +564,7 @@ bool Engine::run_initialization_script() {
 
   JSAutoRealm ar(cx, INIT_SCRIPT_GLOBAL);
 
-  auto path = config_->initializer_script_path.value();
+  auto& path = config_->initializer_script_path;
   TRACE("Running initialization script from file " << path);
   JS::SourceText<mozilla::Utf8Unit> source;
   if (!scriptLoader->load_resolved_script(CONTEXT, path.c_str(), path.c_str(), source)) {

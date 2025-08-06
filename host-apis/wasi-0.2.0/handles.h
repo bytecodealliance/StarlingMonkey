@@ -217,7 +217,7 @@ class IncomingBodyHandle final : public WASIHandle<host_api::HttpIncomingBody> {
 
 public:
   explicit IncomingBodyHandle(HandleOps<host_api::HttpIncomingBody>::owned handle)
-      : WASIHandle(handle), pollable_handle_(INVALID_POLLABLE_HANDLE) {
+      : WASIHandle(handle), pollable_handle_(api::INVALID_POLLABLE_HANDLE) {
     HandleOps<InputStream>::owned stream{};
     if (!wasi_http_types_method_incoming_body_stream(borrow(), &stream)) {
       MOZ_ASSERT_UNREACHABLE("Getting a body's stream should never fail");
@@ -238,7 +238,7 @@ class OutgoingBodyHandle final : public WASIHandle<host_api::HttpOutgoingBody> {
 
 public:
   explicit OutgoingBodyHandle(HandleOps<host_api::HttpOutgoingBody>::owned handle)
-      : WASIHandle(handle), pollable_handle_(INVALID_POLLABLE_HANDLE) {
+      : WASIHandle(handle), pollable_handle_(api::INVALID_POLLABLE_HANDLE) {
     HandleOps<OutputStream>::owned stream{};
     if (!wasi_http_types_method_outgoing_body_write(borrow(), &stream)) {
       MOZ_ASSERT_UNREACHABLE("Getting a body's stream should never fail");

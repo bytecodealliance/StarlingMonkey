@@ -1,0 +1,21 @@
+[package]
+name = "spidermonkey-rs"
+description = "Rust bindings to the Mozilla SpiderMonkey JavaScript engine."
+authors.workspace = true
+version.workspace = true
+repository.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[features]
+debugmozjs = ['jsapi-rs/debugmozjs']
+jitspew = ['jsapi-rs/jitspew']
+profilemozjs = ['jsapi-rs/profilemozjs']
+streams = ['jsapi-rs/streams']
+
+[dependencies]
+jsapi-rs.workspace = true
+libc.workspace = true
+lazy_static = "1"
+log = "0.4"
+num-traits = "0.2"

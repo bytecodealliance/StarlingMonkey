@@ -600,7 +600,7 @@ Result<Void> HttpOutgoingBody::close() {
     }
   }
 
-  if (state->pollable_handle_ != INVALID_POLLABLE_HANDLE) {
+  if (state->pollable_handle_ != api::INVALID_POLLABLE_HANDLE) {
     wasi_io_poll_pollable_drop_own(own_pollable_t{state->pollable_handle_});
   }
   wasi_io_streams_output_stream_drop_own({state->stream_handle_});
@@ -615,7 +615,7 @@ Result<Void> HttpOutgoingBody::close() {
 }
 Result<PollableHandle> HttpOutgoingBody::subscribe() {
   auto state = static_cast<OutgoingBodyHandle *>(handle_state_.get());
-  if (state->pollable_handle_ == INVALID_POLLABLE_HANDLE) {
+  if (state->pollable_handle_ == api::INVALID_POLLABLE_HANDLE) {
     Borrow<OutputStream> borrow(state->stream_handle_);
     state->pollable_handle_ = wasi_io_streams_method_output_stream_subscribe(borrow).__handle;
   }
@@ -624,11 +624,11 @@ Result<PollableHandle> HttpOutgoingBody::subscribe() {
 
 void HttpOutgoingBody::unsubscribe() {
   auto state = static_cast<OutgoingBodyHandle *>(handle_state_.get());
-  if (state->pollable_handle_ == INVALID_POLLABLE_HANDLE) {
+  if (state->pollable_handle_ == api::INVALID_POLLABLE_HANDLE) {
     return;
   }
   wasi_io_poll_pollable_drop_own(own_pollable_t{state->pollable_handle_});
-  state->pollable_handle_ = INVALID_POLLABLE_HANDLE;
+  state->pollable_handle_ = api::INVALID_POLLABLE_HANDLE;
 }
 
 static const char *http_method_names[9] = {"GET",     "HEAD",    "POST",  "PUT",  "DELETE",
@@ -643,12 +643,12 @@ wasi_http_types_method_t http_method_to_host(string_view method_str) {
   auto method = method_str.begin();
   for (uint8_t i = 0; i < WASI_HTTP_TYPES_METHOD_OTHER; i++) {
     auto name = http_method_names[i];
-    if (strcasecmp(method, name) == 0) {
+    if (strcasecmp(&*method, name) == 0) {
       return wasi_http_types_method_t{i};
     }
   }
 
-  auto val = bindings_string_t{reinterpret_cast<uint8_t *>(const_cast<char *>(method)),
+  auto val = bindings_string_t{reinterpret_cast<uint8_t *>(const_cast<char *>(&*method)),
                                method_str.length()};
   return wasi_http_types_method_t{WASI_HTTP_TYPES_METHOD_OTHER, {val}};
 }
@@ -806,11 +806,11 @@ Result<PollableHandle> HttpIncomingBody::subscribe() {
 }
 void HttpIncomingBody::unsubscribe() {
   auto state = static_cast<IncomingBodyHandle *>(handle_state_.get());
-  if (state->pollable_handle_ == INVALID_POLLABLE_HANDLE) {
+  if (state->pollable_handle_ == api::INVALID_POLLABLE_HANDLE) {
     return;
   }
   wasi_io_poll_pollable_drop_own(own_pollable_t{state->pollable_handle_});
-  state->pollable_handle_ = INVALID_POLLABLE_HANDLE;
+  state->pollable_handle_ = api::INVALID_POLLABLE_HANDLE;
 }
 
 FutureHttpIncomingResponse::FutureHttpIncomingResponse(std::unique_ptr<HandleState> state) {

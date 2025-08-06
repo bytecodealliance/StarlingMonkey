@@ -52,8 +52,6 @@ using form_data::MultipartFormData;
 
 using namespace std::literals;
 
-static api::Engine *ENGINE;
-
 bool error_stream_controller_with_pending_exception(JSContext *cx, HandleObject stream) {
   RootedValue exn(cx);
   if (!JS_GetPendingException(cx, &exn))
@@ -88,7 +86,7 @@ public:
     auto body = RequestOrResponse::incoming_body_handle(owner);
 
     auto read_res = body->read(HANDLE_READ_CHUNK_SIZE);
-    if (auto *err = read_res.to_err()) {
+    if (read_res.to_err()) {
       auto receiver = Request::is_instance(owner) ? "request" : "response";
       api::throw_error(cx, FetchErrors::IncomingBodyStreamError, receiver);
       return error_stream_controller_with_pending_exception(cx, stream);
@@ -528,7 +526,8 @@ bool finish_outgoing_body_streaming(JSContext *cx, HandleObject body_owner) {
             .toPrivate());
     SetReservedSlot(body_owner, static_cast<uint32_t>(Request::Slots::PendingResponseHandle),
                     PrivateValue(nullptr));
-    ENGINE->queue_async_task(new ResponseFutureTask(body_owner, pending_handle));
+    api::Engine::from_context(cx)
+      .queue_async_task(new ResponseFutureTask(body_owner, pending_handle));
   }
 
   return true;
@@ -538,9 +537,10 @@ bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::Ha
   api::TaskCompletionCallback callback, HandleObject callback_receiver) {
   MOZ_ASSERT(!body_used(source));
   MOZ_ASSERT(self != source);
+  auto& engine = api::Engine::from_context(cx);
   host_api::HttpIncomingBody *source_body = incoming_body_handle(source);
   host_api::HttpOutgoingBody *dest_body = outgoing_body_handle(self);
-  auto res = dest_body->append(ENGINE, source_body, callback, callback_receiver);
+  auto res = dest_body->append(&engine, source_body, callback, callback_receiver);
   if (auto *err = res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
@@ -1008,7 +1008,7 @@ bool do_body_source_pull(JSContext *cx, HandleObject source, HandleObject body_o
     return true;
   }
 
-  ENGINE->queue_async_task(new BodyFutureTask(source));
+  api::Engine::from_context(cx).queue_async_task(new BodyFutureTask(source));
   return true;
 }
 
@@ -1118,7 +1118,7 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
     // Uint8Array?
     fprintf(stderr, "Error: read operation on body ReadableStream didn't respond with a "
                     "Uint8Array. Received value: ");
-    ENGINE->dump_value(val, stderr);
+    api::Engine::from_context(cx).dump_value(val, stderr);
     return false;
   }
 
@@ -1160,7 +1160,7 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
     bytes = host_api::HostBytes(unique_ptr<uint8_t[]>(ptr), length);
   }
 
-  auto res = body->write_all(ENGINE, std::move(bytes),
+  auto res = body->write_all(&api::Engine::from_context(cx), std::move(bytes),
     write_all_finish_callback, then_handler);
   if (auto *err = res.to_err()) {
     HANDLE_ERROR(cx, *err);
@@ -1179,7 +1179,7 @@ bool reader_for_outgoing_body_catch_handler(JSContext *cx, JS::HandleObject body
   // stream errored during the streaming send. Not much we can do, but at least
   // close the stream, and warn.
   fprintf(stderr, "Warning: body ReadableStream closed during body streaming. Exception: ");
-  ENGINE->dump_value(args.get(0), stderr);
+  api::Engine::from_context(cx).dump_value(args.get(0), stderr);
 
   return finish_outgoing_body_streaming(cx, body_owner);
 }
@@ -1198,7 +1198,8 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
   if (is_incoming(body_owner)) {
     auto *source_body = incoming_body_handle(body_owner);
     auto *dest_body = destination->body().unwrap();
-    auto res = dest_body->append(ENGINE, source_body, finish_outgoing_body_streaming, nullptr);
+    auto& engine = api::Engine::from_context(cx);
+    auto res = dest_body->append(&engine, source_body, finish_outgoing_body_streaming, nullptr);
     if (auto *err = res.to_err()) {
       HANDLE_ERROR(cx, *err);
       return false;
@@ -2687,8 +2688,6 @@ JSObject *Response::create_incoming(JSContext *cx, host_api::HttpIncomingRespons
 namespace request_response {
 
 bool install(api::Engine *engine) {
-  ENGINE = engine;
-
   if (!Request::init_class(engine->cx(), engine->global()))
     return false;
   if (!Response::init_class(engine->cx(), engine->global()))

@@ -20,6 +20,7 @@
 #include "jsapi.h"
 #pragma clang diagnostic pop
 
+using api::PollableHandle;
 using std::optional;
 using std::string_view;
 using std::tuple;

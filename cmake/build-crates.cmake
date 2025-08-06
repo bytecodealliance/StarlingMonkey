@@ -15,15 +15,39 @@ set(RUST_STATICLIB_RS "${CMAKE_CURRENT_BINARY_DIR}/rust-staticlib.rs" CACHE INTE
 set(RUST_STATICLIB_TOML "${CMAKE_CURRENT_BINARY_DIR}/Cargo.toml" CACHE INTERNAL "Path to the Rust staticlibs bundler Cargo.toml file" FORCE)
 set(RUST_STATICLIB_LOCK "${CMAKE_CURRENT_BINARY_DIR}/Cargo.lock" CACHE INTERNAL "Path to the Rust staticlibs bundler Cargo.toml file" FORCE)
 
+# Add the debugmozjs feature for debug builds.
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(DEBUGMOZJS_FEATURE "\"debugmozjs\"")
+endif()
+
 configure_file("runtime/crates/staticlib-template/rust-staticlib.rs.in" "${RUST_STATICLIB_RS}" COPYONLY)
 configure_file("runtime/crates/staticlib-template/Cargo.toml.in" "${RUST_STATICLIB_TOML}")
 configure_file("runtime/crates/staticlib-template/Cargo.lock" "${RUST_STATICLIB_LOCK}" COPYONLY)
+
+corrosion_import_crate(
+        MANIFEST_PATH ${CMAKE_CURRENT_SOURCE_DIR}/runtime/crates/Cargo.toml
+        CRATES "generate-bindings"
+)
+corrosion_set_env_vars(generate_bindings
+        SYSROOT=${WASI_SDK_PREFIX}/share/wasi-sysroot
+        CXXFLAGS="${CMAKE_CXX_FLAGS}"
+        BIN_DIR=${CMAKE_CURRENT_BINARY_DIR}
+        SM_HEADERS=${SM_INCLUDE_DIR}
+        RUST_LOG=bindgen
+)
 
 corrosion_import_crate(
         MANIFEST_PATH ${RUST_STATICLIB_TOML}
         CRATES "rust-staticlib"
         NO_LINKER_OVERRIDE
 )
+
+add_dependencies("cargo-prebuild_rust_staticlib" cargo-build_generate_bindings)
+
+add_library(rust-glue STATIC ${CMAKE_CURRENT_SOURCE_DIR}/runtime/crates/jsapi-rs/cpp/jsglue.cpp)
+target_include_directories(rust-glue PRIVATE ${SM_INCLUDE_DIR})
+add_dependencies(rust_staticlib rust-glue)
+target_link_libraries(rust-glue PRIVATE spidermonkey)
 
 # Add a Rust library to the staticlib bundle.
 function(add_rust_lib name path)
@@ -34,15 +58,11 @@ function(add_rust_lib name path)
     file(APPEND $CACHE{RUST_STATICLIB_RS} "pub use ${name};\n")
 endfunction()
 
-# These two crates are needed by SpiderMonkey:
-add_rust_lib(rust-encoding "${CMAKE_CURRENT_SOURCE_DIR}/crates/rust-encoding")
-add_rust_lib(rust-hooks "${CMAKE_CURRENT_SOURCE_DIR}/crates/rust-hooks")
-
 # The rust-hooks crate needs a supporting CPP file
 add_library(rust-hooks-wrappers STATIC "${CMAKE_CURRENT_SOURCE_DIR}/crates/rust-hooks/src/wrappers.cpp")
 target_link_libraries(rust-hooks-wrappers PRIVATE spidermonkey)
 add_library(rust-crates STATIC ${CMAKE_CURRENT_BINARY_DIR}/null.cpp)
-target_link_libraries(rust-crates PRIVATE rust_staticlib rust-hooks-wrappers)
+target_link_libraries(rust-crates PRIVATE rust_staticlib rust-glue rust-hooks-wrappers)
 
 # Add crates as needed here:
 add_rust_lib(rust-url "${CMAKE_CURRENT_SOURCE_DIR}/crates/rust-url")

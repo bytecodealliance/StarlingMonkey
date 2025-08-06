@@ -20,6 +20,10 @@ else()
 endif()
 message(STATUS "Using host API: ${HOST_API}")
 
+# Ensure that the CPM cache is created outside the build dir, even if no location is specified by the developer.
+if(NOT DEFINED ENV{CPM_SOURCE_CACHE})
+    set(ENV{CPM_SOURCE_CACHE} ${CMAKE_CURRENT_SOURCE_DIR}/deps/cpm_cache)
+endif()
 include("CPM")
 include("toolchain")
 
@@ -32,8 +36,8 @@ include("binaryen")
 include("wizer")
 include("weval")
 include("wasmtime")
+include("cbindgen")
 
-include("fmt")
 include("spidermonkey")
 include("openssl")
 include("${HOST_API}/host_api.cmake")
@@ -41,27 +45,27 @@ include("build-crates")
 
 option(ENABLE_JS_DEBUGGER "Enable support for debugging content via a socket connection" ON)
 
-add_library(extension_api INTERFACE include/extension-api.h runtime/encode.h runtime/decode.h)
+add_library(extension_api INTERFACE include/extension-api.h runtime/cpp/encode.h runtime/cpp/decode.h)
 if (ENABLE_JS_DEBUGGER)
     target_compile_definitions(extension_api INTERFACE ENABLE_JS_DEBUGGER)
 endif()
 target_link_libraries(extension_api INTERFACE rust-url spidermonkey)
-target_include_directories(extension_api INTERFACE include deps/include runtime)
+target_include_directories(extension_api INTERFACE include deps/include runtime/cpp)
 
 include("builtins")
 
 include("tests/wpt-harness/wpt.cmake")
 
 set(SOURCES
-    runtime/js.cpp
-    runtime/allocator.cpp
-    runtime/encode.cpp
-    runtime/decode.cpp
-    runtime/engine.cpp
-    runtime/event_loop.cpp
-    runtime/builtin.cpp
-    runtime/script_loader.cpp
-    runtime/debugger.cpp
+    runtime/cpp/js.cpp
+    runtime/cpp/allocator.cpp
+    runtime/cpp/encode.cpp
+    runtime/cpp/decode.cpp
+    runtime/cpp/engine.cpp
+    runtime/cpp/event_loop.cpp
+    runtime/cpp/builtin.cpp
+    runtime/cpp/script_loader.cpp
+    runtime/cpp/debugger.cpp
 )
 
 add_executable(starling-raw.wasm ${SOURCES})

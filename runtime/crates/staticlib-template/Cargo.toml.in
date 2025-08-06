@@ -19,4 +19,6 @@ lto = true
 panic = 'abort'
 
 [dependencies]
+spidermonkey-rs = { path = "${CMAKE_CURRENT_SOURCE_DIR}/runtime/crates/spidermonkey-rs", features = [${DEBUGMOZJS_FEATURE}] }
+starlingmonkey-rs = { path = "${CMAKE_CURRENT_SOURCE_DIR}/runtime/crates/starlingmonkey-rs" }
 # Dependencies appended by the CMake build system below here:

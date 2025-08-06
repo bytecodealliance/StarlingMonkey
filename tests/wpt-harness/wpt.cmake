@@ -1,7 +1,10 @@
+set(WPT_TAG "epochs/daily/2024-10-02_01H")
+
 enable_testing()
 
 include("wasmtime")
 include("weval")
+include("manage-git-source")
 
 if(WEVAL)
     set(COMPONENTIZE_FLAGS "--aot")
@@ -12,13 +15,15 @@ endif()
 if(DEFINED ENV{WPT_ROOT})
     set(WPT_ROOT $ENV{WPT_ROOT})
 else()
-    CPMAddPackage(
-      NAME wpt-suite
-      GITHUB_REPOSITORY web-platform-tests/wpt
-      GIT_TAG 04d2e6c42ddce90925d73a076f6cfdd5786e8e54
-      DOWNLOAD_ONLY TRUE
+    # Use deps folder in project root for shared access across build directories
+    set(WPT_ROOT ${CMAKE_SOURCE_DIR}/deps/wpt-source)
+
+    manage_git_source(
+        NAME wpt
+        REPO_URL https://github.com/web-platform-tests/wpt.git
+        TAG ${WPT_TAG}
+        SOURCE_DIR ${WPT_ROOT}
     )
-    set(WPT_ROOT ${CPM_PACKAGE_wpt-suite_SOURCE_DIR})
 endif()
 
 add_builtin(wpt_support
