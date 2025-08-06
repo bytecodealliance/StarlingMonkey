@@ -152,17 +152,25 @@ class ComponentRuntimeInstance {
       return;
     }
 
+    const debuggerEnvs = [
+      config.componentRuntime.envOption,
+      `STARLINGMONKEY_CONFIG="${config.jsRuntimeOptions.join(" ")}"`,
+      config.componentRuntime.envOption,
+      `DEBUGGER_PORT=${this.serverPort()}`
+    ];
+
     const componentRuntimeArgs = Array.from(config.componentRuntime.options).map(opt => {
       return opt
         .replace("${workspaceFolder}", workspaceFolder)
         .replace("${component}", component);
     });
-    componentRuntimeArgs.push(config.componentRuntime.envOption);
-    componentRuntimeArgs.push(
-      `STARLINGMONKEY_CONFIG="${config.jsRuntimeOptions.join(" ")}"`
-    );
-    componentRuntimeArgs.push(config.componentRuntime.envOption);
-    componentRuntimeArgs.push(`DEBUGGER_PORT=${this.serverPort()}`);
+
+    const debuggerEnvsIndex = componentRuntimeArgs.indexOf("${debuggerEnvs}");
+    if (debuggerEnvsIndex >= 0) {
+      componentRuntimeArgs.splice(debuggerEnvsIndex, 1, ...debuggerEnvs);
+    } else {
+      componentRuntimeArgs.push(...debuggerEnvs);
+    }
 
     console.debug(
       `${config.componentRuntime.executable} ${componentRuntimeArgs.join(" ")}`

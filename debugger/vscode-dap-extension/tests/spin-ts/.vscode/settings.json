@@ -6,6 +6,7 @@
                 "up",
                 "-f",
                 "${workspaceFolder}",
+                "${debuggerEnvs}"
             ],
         }
     }
