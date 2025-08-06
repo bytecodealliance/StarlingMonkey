@@ -537,7 +537,7 @@ bool RequestOrResponse::append_body(JSContext *cx, JS::HandleObject self, JS::Ha
   api::TaskCompletionCallback callback, HandleObject callback_receiver) {
   MOZ_ASSERT(!body_used(source));
   MOZ_ASSERT(self != source);
-  auto engine = api::Engine::from_context(cx);
+  auto& engine = api::Engine::from_context(cx);
   host_api::HttpIncomingBody *source_body = incoming_body_handle(source);
   host_api::HttpOutgoingBody *dest_body = outgoing_body_handle(self);
   auto res = dest_body->append(&engine, source_body, callback, callback_receiver);
@@ -1160,7 +1160,7 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
     bytes = host_api::HostBytes(unique_ptr<uint8_t[]>(ptr), length);
   }
 
-  auto res = body->write_all(ENGINE, std::move(bytes),
+  auto res = body->write_all(&api::Engine::from_context(cx), std::move(bytes),
     write_all_finish_callback, then_handler);
   if (auto *err = res.to_err()) {
     HANDLE_ERROR(cx, *err);
@@ -1198,7 +1198,7 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
   if (is_incoming(body_owner)) {
     auto *source_body = incoming_body_handle(body_owner);
     auto *dest_body = destination->body().unwrap();
-    auto engine = api::Engine::from_context(cx);
+    auto& engine = api::Engine::from_context(cx);
     auto res = dest_body->append(&engine, source_body, finish_outgoing_body_streaming, nullptr);
     if (auto *err = res.to_err()) {
       HANDLE_ERROR(cx, *err);

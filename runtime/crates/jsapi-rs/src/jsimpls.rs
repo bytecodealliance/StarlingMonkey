@@ -177,7 +177,7 @@ impl JS::AutoGCRooter {
         #[allow(non_snake_case)]
         let autoGCRooters: *mut _ = {
             let rooting_cx = cx as *mut JS::RootingContext;
-            &mut (*rooting_cx).autoGCRooters_[self.kind_ as usize]
+            &mut (*rooting_cx).autoGCRooters_.0[self.kind_ as usize]
         };
         self.stackTop = autoGCRooters as *mut *mut _;
         self.down = *autoGCRooters as *mut _;
@@ -394,7 +394,7 @@ impl<T> JS::Rooted<T> {
     {
         let kind = T::rootKind() as usize;
         let rooting_cx = Self::get_rooting_context(cx);
-        &mut (*rooting_cx).stackRoots_[kind] as *mut _ as *mut _
+        &mut (*rooting_cx).stackRoots_.0[kind] as *mut _ as *mut _
     }
 
     pub unsafe fn add_to_root_stack(&mut self, cx: *mut JSContext)

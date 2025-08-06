@@ -61,6 +61,8 @@ namespace jsglue {
 
 bool JS_Init() { return ::JS_Init(); }
 
+bool InitSelfHostedCode(JSContext* cx) { return JS::InitSelfHostedCode(cx); }
+
 JS::RealmOptions* JS_NewRealmOptions() {
   auto* result = new JS::RealmOptions;
   return result;
@@ -85,25 +87,21 @@ JS::CallArgs JS_CallArgsFromVp(unsigned argc, JS::Value* vp) {
 }
 
 void JS_StackCapture_AllFrames(JS::StackCapture* capture) {
-  JS::StackCapture all = JS::StackCapture(JS::AllFrames());
   // Since Rust can't provide a meaningful initial value for the
   // pointer, it is uninitialized memory. This means we must
   // overwrite its value, rather than perform an assignment
   // which could invoke a destructor on uninitialized memory.
-  mozilla::PodAssign(capture, &all);
+  *capture = JS::StackCapture(JS::AllFrames());
 }
 
 void JS_StackCapture_MaxFrames(uint32_t max, JS::StackCapture* capture) {
-  JS::StackCapture maxFrames = JS::StackCapture(JS::MaxFrames(max));
-  mozilla::PodAssign(capture, &maxFrames);
+  *capture = JS::StackCapture(JS::MaxFrames(max));
 }
 
 void JS_StackCapture_FirstSubsumedFrame(JSContext* cx,
                                         bool ignoreSelfHostedFrames,
                                         JS::StackCapture* capture) {
-  JS::StackCapture subsumed =
-      JS::StackCapture(JS::FirstSubsumedFrame(cx, ignoreSelfHostedFrames));
-  mozilla::PodAssign(capture, &subsumed);
+  *capture = JS::StackCapture(JS::FirstSubsumedFrame(cx, ignoreSelfHostedFrames));
 }
 
 size_t GetLinearStringLength(JSLinearString* s) {
@@ -302,7 +300,6 @@ typedef size_t (*GetSize)(JSObject* obj);
 WantToMeasure gWantToMeasure = nullptr;
 
 struct JobQueueTraps {
-  JSObject* (*getIncumbentGlobal)(const void* queue, JSContext* cx);
   bool (*enqueuePromiseJob)(const void* queue, JSContext* cx,
                             JS::HandleObject promise, JS::HandleObject job,
                             JS::HandleObject allocationSite,
@@ -310,40 +307,42 @@ struct JobQueueTraps {
   bool (*empty)(const void* queue);
 };
 
-class RustJobQueue : public JS::JobQueue {
-  JobQueueTraps mTraps;
-  const void* mQueue;
-
- public:
-  RustJobQueue(const JobQueueTraps& aTraps, const void* aQueue)
-      : mTraps(aTraps), mQueue(aQueue) {}
-
-   JSObject *getIncumbentGlobal(JSContext *cx) override {
-    return mTraps.getIncumbentGlobal(mQueue, cx);
-  }
-
-   bool enqueuePromiseJob(JSContext *cx, JS::HandleObject promise, JS::HandleObject job,
-                          JS::HandleObject allocationSite,
-                          JS::HandleObject incumbentGlobal) override {
-    return mTraps.enqueuePromiseJob(mQueue, cx, promise, job, allocationSite,
-                                    incumbentGlobal);
-  }
-
-  bool empty() const override { return mTraps.empty(mQueue); }
-
-  void runJobs(JSContext *cx) override {
-    MOZ_ASSERT(false, "runJobs should not be invoked");
-  }
-
- private:
-  js::UniquePtr<SavedJobQueue> saveJobQueue(JSContext *cx) override {
-     MOZ_ASSERT(false, "saveJobQueue should not be invoked");
-     return nullptr;
-   }
-
- public:
-   bool isDrainingStopped() const override;
-};
+// TODO: restore
+//
+// class RustJobQueue : public JS::JobQueue {
+//   JobQueueTraps mTraps;
+//   const void* mQueue;
+//
+//  public:
+//   RustJobQueue(const JobQueueTraps& aTraps, const void* aQueue)
+//       : mTraps(aTraps), mQueue(aQueue) {}
+//
+//    bool enqueuePromiseJob(JSContext *cx, JS::HandleObject promise, JS::HandleObject job,
+//                           JS::HandleObject allocationSite,
+//                           JS::HandleObject incumbentGlobal) override {
+//     return mTraps.enqueuePromiseJob(mQueue, cx, promise, job, allocationSite,
+//                                     incumbentGlobal);
+//   }
+//   // virtual bool getHostDefinedData(JSContext* cx,
+//   //                                 JS::MutableHandle<JSObject*> data) override {
+//   //   MOZ_ASSERT_UNREACHABLE("Not implemented");
+//   // }
+//
+//   bool empty() const override { return mTraps.empty(mQueue); }
+//
+//   void runJobs(JSContext *cx) override {
+//     MOZ_ASSERT(false, "runJobs should not be invoked");
+//   }
+//
+//  private:
+//   js::UniquePtr<SavedJobQueue> saveJobQueue(JSContext *cx) override {
+//      MOZ_ASSERT(false, "saveJobQueue should not be invoked");
+//      return nullptr;
+//    }
+//
+//  public:
+//    bool isDrainingStopped() const override;
+// };
 
 struct ReadableStreamUnderlyingSourceTraps {
   void (*requestData)(const void* source, JSContext* cx, JS::HandleObject stream,
@@ -1306,9 +1305,10 @@ JSString* JS_ForgetStringLinearness(JSLinearString* str) {
   return JS_FORGET_STRING_LINEARNESS(str);
 }
 
-JS::JobQueue* CreateJobQueue(const JobQueueTraps* aTraps, const void* aQueue) {
-  return new RustJobQueue(*aTraps, aQueue);
-}
+// TODO: restore
+// JS::JobQueue* CreateJobQueue(const JobQueueTraps* aTraps, const void* aQueue) {
+//   return new RustJobQueue(*aTraps, aQueue);
+// }
 
 void DeleteJobQueue(JS::JobQueue* queue) { delete queue; }
 
@@ -1333,7 +1333,8 @@ void DeleteJSExternalStringCallbacks(JSExternalStringCallbacks* callbacks) {
 
 void DispatchableRun(JSContext* cx, JS::Dispatchable* ptr,
                      JS::Dispatchable::MaybeShuttingDown mb) {
-  ptr->run(cx, mb);
+  js::UniquePtr<JS::Dispatchable> uniquePtr(ptr);
+  JS::Dispatchable::Run(cx, std::move(uniquePtr), mb);
 }
 
 bool StreamConsumerConsumeChunk(JS::StreamConsumer* sc, const uint8_t* begin,
@@ -1357,7 +1358,7 @@ bool DescribeScriptedCaller(JSContext* cx, char* buffer, size_t buflen,
                             uint32_t* line, uint32_t* col) {
   JS::AutoFilename filename;
   JS::ColumnNumberOneOrigin column;
-  if (!JS::DescribeScriptedCaller(cx, &filename, line, &column)) {
+  if (!JS::DescribeScriptedCaller(&filename, cx, line, &column)) {
     return false;
   }
   *col = column.oneOriginValue() - 1;
@@ -1395,5 +1396,35 @@ void FinishOffThreadStencil(
 #endif
 
 }  // extern "C"
+
+/**
+ * <div rustbindgen="true" replaces="std::optional">
+ */
+template<typename T> class simple_optional {
+  T* ptr;
+};
+
+/**
+ * <div rustbindgen="true" replaces="std::unique_ptr">
+ */
+template<typename T> class simple_unique_ptr {
+  T* ptr;
+};
+
+/**
+ * <div rustbindgen="true" replaces="std::vector">
+ */
+template<typename T> class simple_vector {
+  T* ptr;
+};
+//
+// /**
+//  * <div rustbindgen="true" replaces="mozilla::Maybe">
+//  */
+// template<typename T> class simple_maybe {
+//   T* ptr;
+// // public:
+// //   using ValueType = T;
+// };
 
 }

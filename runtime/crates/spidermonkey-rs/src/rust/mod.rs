@@ -22,11 +22,14 @@ use lazy_static::lazy_static;
 use log::{debug, warn};
 
 use jsapi_rs::jsapi::js::detail::{IsWindowSlow, ToWindowProxyIfWindowSlow};
-use jsapi_rs::jsapi::js::frontend::CompilationStencil;
 use jsapi_rs::jsapi::JS::Realm;
 use jsapi_rs::jsapi::JS::shadow::Object;
 use jsapi_rs::jsapi::js::StackFormat;
-use jsapi_rs::jsapi::jsglue::{AppendToRootedObjectVector, CreateRootedIdVector, CreateRootedObjectVector, DeleteCompileOptions, DeleteRootedObjectVector, DescribeScriptedCaller, DestroyRootedIdVector, GetIdVectorAddress, GetObjectVectorAddress, NewCompileOptions, SliceRootedIdVector};
+use jsapi_rs::jsapi::jsglue::{AppendToRootedObjectVector, CreateRootedIdVector,
+                              CreateRootedObjectVector, DeleteCompileOptions,
+                              DeleteRootedObjectVector, DescribeScriptedCaller,
+                              DestroyRootedIdVector, GetIdVectorAddress, GetObjectVectorAddress,
+                              InitSelfHostedCode, NewCompileOptions, SliceRootedIdVector};
 use jsapi_rs::jsapi::JSString;
 pub use jsapi_rs::jsgc::{GCMethods, IntoHandle, IntoMutableHandle};
 
@@ -39,7 +42,7 @@ pub use crate::gc::Traceable as Trace;
 use crate::jsval::ObjectValue;
 use crate::panic::maybe_resume_unwind;
 use crate::raw;
-use crate::raw::{already_AddRefed, jsid};
+use crate::raw::jsid;
 use crate::raw::{
     JS_SetGCParameter, JS_SetNativeStackQuota, JS_WrapObject, JS_WrapValue, JSAutoRealm,
 };
@@ -50,7 +53,7 @@ use crate::raw::{JS_DefineFunctions, JS_DefineProperties, JS_DestroyContext, JS_
 use crate::raw::{JS_EnumerateStandardClasses, JS_GetRuntime, JS_GlobalObjectTraceHook};
 use crate::raw::{JS_MayResolveStandardClass, JS_NewContext, JS_ResolveStandardClass};
 use crate::raw::JS::{BuildStackString, CaptureCurrentStack};
-use crate::raw::JS::{Evaluate2, StencilRelease};
+use crate::raw::JS::Evaluate2;
 use crate::raw::JS::{PersistentRootedObjectVector, ReadOnlyCompileOptions, RootingContext};
 use crate::raw::JS::{SetWarningReporter, SourceText};
 use crate::raw::js::{ToBooleanSlow, ToInt32Slow, ToInt64Slow, ToNumberSlow, ToStringSlow,
@@ -58,7 +61,6 @@ use crate::raw::js::{ToBooleanSlow, ToInt32Slow, ToInt64Slow, ToNumberSlow, ToSt
 use crate::raw::js::{ToUint32Slow, ToUint64Slow};
 use crate::raw::JS::HandleObjectVector as RawHandleObjectVector;
 use crate::raw::JS::HandleValue as RawHandleValue;
-use crate::raw::JS::InitSelfHostedCode;
 use crate::raw::JS::MutableHandleIdVector as RawMutableHandleIdVector;
 use crate::raw::JS::PersistentRootedIdVector;
 use crate::raw::JS::shadow::BaseShape;
@@ -135,7 +137,6 @@ impl DerefMut for RealmOptions {
 }
 
 impl Default for RealmOptions {
-
     fn default() -> RealmOptions {
         RealmOptions(unsafe { JS_NewRealmOptions() })
     }
@@ -358,10 +359,7 @@ impl Runtime {
             context.set(js_context);
         });
 
-        #[cfg(target_pointer_width = "64")]
-        InitSelfHostedCode(js_context, [0u64; 2], None);
-        #[cfg(target_pointer_width = "32")]
-        InitSelfHostedCode(js_context, [0u32; 2], None);
+        InitSelfHostedCode(js_context);
 
         SetWarningReporter(js_context, Some(report_warning));
 
@@ -485,48 +483,6 @@ impl Drop for CompileOptionsWrapper {
         unsafe { DeleteCompileOptions(self.ptr) }
     }
 }
-
-pub struct Stencil {
-    inner: already_AddRefed<CompilationStencil>,
-}
-
-/*unsafe impl Send for Stencil {}
-unsafe impl Sync for Stencil {}*/
-
-impl Drop for Stencil {
-    fn drop(&mut self) {
-        unsafe {
-            StencilRelease(self.inner.mRawPtr);
-        }
-    }
-}
-
-impl Deref for Stencil {
-    type Target = *mut CompilationStencil;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner.mRawPtr
-    }
-}
-
-impl Stencil {
-    pub fn is_null(&self) -> bool {
-        self.inner.mRawPtr.is_null()
-    }
-}
-
-// pub unsafe fn FinishOffThreadStencil(
-//     cx: *mut JSContext,
-//     token: *mut OffThreadToken,
-//     storage: *mut InstantiationStorage,
-// ) -> Stencil {
-//     let mut stencil = already_AddRefed {
-//         mRawPtr: std::ptr::null_mut(),
-//         _phantom_0: PhantomData,
-//     };
-//     crate::glue::FinishOffThreadStencil(cx, token, storage, &mut stencil);
-//     return Stencil { inner: stencil };
-// }
 
 // ___________________________________________________________________________
 // Fast inline converters
@@ -959,8 +915,10 @@ impl<'a> CapturedJSStack<'a> {
             Some(count) => JS_StackCapture_MaxFrames(count, stack_capture.as_mut_ptr()),
         };
         let ref mut stack_capture = stack_capture.assume_init();
+        rooted!(in(cx) let mut start_after = ptr::null_mut::<JSObject>());
 
-        if !CaptureCurrentStack(cx, guard.handle_mut().raw(), stack_capture) {
+        if !CaptureCurrentStack(cx, guard.handle_mut().raw(), stack_capture,
+                                start_after.handle_mut().into()) {
             None
         } else {
             Some(CapturedJSStack { cx, stack: guard })
@@ -1015,77 +973,82 @@ mod jsapi_wrapped {
         // @inner (input args) <> (argument accumulator) <> (invocation accumulator) <> unparsed tokens
         // when `unparsed tokens == \eps`, accumulator contains the final result
 
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: Handle<$gentype:ty>, $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: Handle<$gentype> , ) <> ($($acc,)* $arg.into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: *const Handle<$gentype:ty>, $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* if $arg.is_null() { std::ptr::null() } else { &(*$arg).into() },) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: MutableHandle<$gentype:ty>, $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: &mut MutableHandle<$gentype> , )  <> ($($acc,)* (*$arg).into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: Handle<$gentype:ty>, $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: Handle, $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: Handle , )  <> ($($acc,)* $arg.into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: MutableHandle<$gentype:ty>, $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: MutableHandle, $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: &mut MutableHandle , )  <> ($($acc,)* (*$arg).into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: Handle, $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: HandleFunction , $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: HandleFunction , ) <> ($($acc,)* $arg.into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: MutableHandle, $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: HandleId , $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: HandleId , ) <> ($($acc,)* $arg.into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: HandleFunction , $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: HandleObject , $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: HandleObject , ) <> ($($acc,)* $arg.into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: HandleId , $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: HandleScript , $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: HandleScript , ) <> ($($acc,)* $arg.into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: HandleObject , $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: HandleString , $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: HandleString , ) <> ($($acc,)* $arg.into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: HandleScript , $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: HandleSymbol , $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: HandleSymbol , ) <> ($($acc,)* $arg.into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: HandleString , $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: HandleValue , $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: HandleValue , ) <> ($($acc,)* $arg.into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: HandleSymbol , $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: MutableHandleFunction , $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: &mut MutableHandleFunction , ) <> ($($acc,)* (*$arg).into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: HandleValue , $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: MutableHandleId , $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: &mut MutableHandleId , ) <> ($($acc,)* (*$arg).into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: MutableHandleFunction , $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: MutableHandleObject , $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: &mut MutableHandleObject , ) <> ($($acc,)* (*$arg).into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: MutableHandleId , $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: MutableHandleScript , $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: &mut MutableHandleScript , ) <> ($($acc,)* (*$arg).into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: MutableHandleObject , $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: MutableHandleString , $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: &mut MutableHandleString , ) <> ($($acc,)* (*$arg).into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: MutableHandleScript , $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: MutableHandleSymbol , $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: &mut MutableHandleSymbol , ) <> ($($acc,)* (*$arg).into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: MutableHandleString , $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <> ($($acc:expr,)*) <> $arg:ident: MutableHandleValue , $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: &mut MutableHandleValue , ) <> ($($acc,)* (*$arg).into(),) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: MutableHandleSymbol , $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner $saved:tt <> ($($declargs:tt)*) <>  ($($acc:expr,)*) <> $arg:ident: $type:ty, $($rest:tt)*) => {
-            wrap!(@inner $saved <> ($($declargs)* $arg: $type,) <> ($($acc,)* $arg,) <> $($rest)*);
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: MutableHandleValue , $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg.into(),) <> $($rest)*);
         };
-        (@inner ($module:tt: $func_name:ident ($($args:tt)*) -> $outtype:ty) <> ($($declargs:tt)*) <> ($($argexprs:expr,)*) <> ) => {
+        (@inner $saved:tt <> ($($acc:expr,)*) <> $arg:ident: $type:ty, $($rest:tt)*) => {
+            wrap!(@inner $saved <> ($($acc,)* $arg,) <> $($rest)*);
+        };
+        (@inner ($module:tt: $func_name:ident ($($args:tt)*) -> $outtype:ty) <> ($($argexprs:expr,)*) <> ) => {
             #[inline]
-            pub unsafe fn $func_name($($declargs)*) -> $outtype {
+            pub unsafe fn $func_name($($args)*) -> $outtype {
                 $module::$func_name($($argexprs),*)
             }
         };
         ($module:tt: pub fn $func_name:ident($($args:tt)*) -> $outtype:ty) => {
-            wrap!(@inner ($module: $func_name ($($args)*) -> $outtype) <> () <> () <> $($args)* ,);
+            wrap!(@inner ($module: $func_name ($($args)*) -> $outtype) <> () <> $($args)* ,);
         };
         ($module:tt: pub fn $func_name:ident($($args:tt)*)) => {
             wrap!($module: pub fn $func_name($($args)*) -> ());
         }
     }
 
+    #[cfg_attr(feature = "debugmozjs", path = "jsapi_wrappers_debug.rs")]
+    #[cfg_attr(not(feature = "debugmozjs"), path = "jsapi_wrappers_release.rs")]
     pub mod jsapi_wrappers;
 }
 pub mod wrapped {

@@ -20,7 +20,7 @@ class StreamTask final : public api::AsyncTask {
 
 public:
   explicit StreamTask(const HandleObject reader) : reader_(reader) {
-    handle_ = IMMEDIATE_TASK_HANDLE;
+    handle_ = api::IMMEDIATE_TASK_HANDLE;
   }
 
   [[nodiscard]] bool run(api::Engine *engine) override {
@@ -78,7 +78,7 @@ public:
   }
 
   [[nodiscard]] bool cancel(api::Engine *engine) override {
-    handle_ = INVALID_POLLABLE_HANDLE;
+    handle_ = api::INVALID_POLLABLE_HANDLE;
     return true;
   }
 

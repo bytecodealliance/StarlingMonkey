@@ -4,6 +4,7 @@
 
 use std::{env, str};
 use std::process::Command;
+use std::fs;
 
 use bindgen::{Builder, EnumVariation, Formatter};
 
@@ -17,19 +18,207 @@ fn main() {
 }
 
 fn generate_wrappers() {
-    let script = "generate-bindings/src/generate_wrappers.sh";
-    println!("cargo::rerun-if-changed=../{script}");
-    Command::new(script)
-        .current_dir("..")
+    let mode = if build_debug_bindings() {
+        "debug"
+    } else {
+        "release"
+    };
+
+    let input_file = "jsapi";
+    let input_path = format!("../jsapi-rs/src/{}/bindings_{}.rs", input_file, mode);
+    let output_path = format!("../spidermonkey-rs/src/rust/jsapi_wrapped/{}_wrappers_{}.rs", input_file, mode);
+
+    // Format the content with rustfmt and get the result
+    let formatted_content = format_rust_code(&input_path);
+
+    // Apply the wrapper generation pipeline
+    let processed_functions = process_bindings_content(&formatted_content);
+
+    // Generate the final wrapper file content
+    let content = generate_wrapper_file_content(&processed_functions);
+    // Write the final content to the output file
+    fs::write(&output_path, content)
+        .unwrap_or_else(|_| panic!("Failed to write to {}", output_path));
+}
+
+fn format_rust_code(input_file: &str) -> String {
+    let output = Command::new("rustfmt")
+        .arg(input_file)
+        .arg("--config")
+        .arg("max_width=1000")
+        .arg("--emit=stdout")
         .output()
-        .expect("Generating wrappers failed");
+        .expect("Failed to run rustfmt");
+
+    if !output.status.success() {
+        panic!("rustfmt failed: {}", String::from_utf8_lossy(&output.stderr));
+    }
+    
+    String::from_utf8(output.stdout)
+        .expect("Failed to convert rustfmt output to string")
+}
+
+fn process_bindings_content(content: &str) -> Vec<String> {
+    BindingsProcessor::new(content)
+        .filter_initial_patterns()
+        .join_multiline_constructs()
+        .remove_empty_braces()
+        .normalize_pub_keywords()
+        .remove_semicolons()
+        .filter_function_declarations()
+        .apply_namespace_transforms()
+        .filter_unwanted_return_types()
+        .collect_results()
+}
+
+struct BindingsProcessor {
+    content: String,
+}
+
+impl BindingsProcessor {
+    fn new(content: &str) -> Self {
+        Self {
+            content: content.to_string(),
+        }
+    }
+
+    fn filter_initial_patterns(mut self) -> Self {
+        let lines: Vec<&str> = self.content
+            .lines()
+            .filter(|line| !line.contains("link_name"))
+            .filter(|line| !line.contains("\"]"))
+            .filter(|line| !line.contains("/**"))
+            .collect();
+
+        self.content = lines.join("\n");
+        self
+    }
+
+    fn join_multiline_constructs(mut self) -> Self {
+        self.content = self.content
+            .replace(",\n ", ", ")     // Join function parameters
+            .replace(":\n ", ": ")     // Join type annotations
+            .replace("\n ->", " ->");  // Join return type arrows
+        self
+    }
+
+    fn remove_empty_braces(mut self) -> Self {
+        let lines: Vec<String> = self.content
+            .lines()
+            .map(|line| line.trim())
+            .filter(|line| *line != "}")
+            .map(|line| line.to_string())
+            .collect();
+
+        self.content = lines.join("\n");
+        self
+    }
+
+    fn normalize_pub_keywords(mut self) -> Self {
+        let lines: Vec<String> = self.content
+            .lines()
+            .map(|line| {
+                if let Some(pub_pos) = line.find("pub") {
+                    let before_pub = &line[..pub_pos];
+                    if before_pub.trim().is_empty() {
+                        format!("pub{}", &line[pub_pos + 3..])
+                    } else {
+                        line.to_string()
+                    }
+                } else {
+                    line.to_string()
+                }
+            })
+            .collect();
+
+        self.content = lines.join("\n");
+        self
+    }
+
+    fn remove_semicolons(mut self) -> Self {
+        self.content = self.content
+            .replace(";\n", "\n")
+            .replace(";", "");
+        self
+    }
+
+    fn filter_function_declarations(mut self) -> Self {
+        let lines: Vec<String> = self.content
+            .lines()
+            .map(|line| line.trim())
+            .filter(|line| self.is_wanted_function(line))
+            .map(|line| line.to_string())
+            .collect();
+
+        self.content = lines.join("\n");
+        self
+    }
+
+    fn is_wanted_function(&self, line: &str) -> bool {
+        line.contains("pub fn")
+            && line.contains("Handle")
+            && !line.contains("roxyHandler")
+            && !line.split_whitespace().any(|word| word == "IdVector") // Word boundary match
+            && !line.contains("pub fn Unbox")
+            && !line.contains("CopyAsyncStack")
+    }
+
+    fn apply_namespace_transforms(mut self) -> Self {
+        self.content = self.content
+            .replace("root::", "raw::")
+            .replace("Handle<*mut JSObject>", "HandleObject");
+        self
+    }
+
+    fn filter_unwanted_return_types(mut self) -> Self {
+        let lines: Vec<String> = self.content
+            .lines()
+            .filter(|line| !line.contains("> HandleObject"))
+            .filter(|line| !line.contains("MutableHandleObjectVector"))
+            .map(|line| line.to_string())
+            .collect();
+
+        self.content = lines.join("\n");
+        self
+    }
+
+    fn collect_results(self) -> Vec<String> {
+        self.content
+            .lines()
+            .map(|line| line.trim())
+            .filter(|line| !line.is_empty())
+            .map(|line| line.to_string())
+            .collect()
+    }
+}
+
+fn generate_wrapper_file_content(functions: &[String]) -> String {
+    let mut output = String::from(
+        r#"mod raw {
+  #[allow(unused_imports)]
+  pub use crate::raw::*;
+  pub use crate::raw::JS::*;
+  pub use crate::raw::JS::dbg::*;
+  pub use crate::raw::JS::detail::*;
+  pub use crate::raw::js::*;
+  pub use crate::raw::jsglue::*;
+}
+
+"#
+    );
+
+    for function in functions {
+        output.push_str(&format!("wrap!(raw: {});\n", function));
+    }
+
+    output
 }
 
 fn generate_bindings(config: &impl BindgenConfig, build_dir: &str) {
     let in_file = config.in_file();
 
     let mut builder = bindgen::builder()
-        .rust_target(bindgen::RustTarget::Stable_1_73)
+        .rust_target(bindgen::RustTarget::stable(88, 0).unwrap())
         .header(in_file)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         // We're using the `rustified enum` feature because it provides the best
@@ -37,7 +226,6 @@ fn generate_bindings(config: &impl BindgenConfig, build_dir: &str) {
         // aren't in the enum, so the safety concerns of this feature don't apply.
         .default_enum_style(EnumVariation::Rust { non_exhaustive: false, })
         .derive_partialeq(true)
-        .impl_partialeq(true)
         .derive_debug(true)
         .merge_extern_blocks(true)
         .wrap_static_fns(true)
@@ -54,7 +242,7 @@ fn generate_bindings(config: &impl BindgenConfig, build_dir: &str) {
         .clang_arg("-x")
         .clang_arg("c++")
         .clang_arg("-fvisibility=default")
-        .clang_arg("--target=wasm32-wasi")
+        .clang_arg("--target=wasm32-wasip1")
         .emit_diagnostics()
         ;
 
@@ -115,6 +303,13 @@ fn generate_bindings(config: &impl BindgenConfig, build_dir: &str) {
     }
 
     builder = config.apply_additional(builder);
+
+    // This should ideally be added by bindgen itself, but until then, adding it as a raw line
+    // at the top level happens to work.
+    builder = builder.raw_line("#[allow(
+    unnecessary_transmutes,
+    reason = \"https://github.com/rust-lang/rust-bindgen/issues/3241\"
+)]");
 
     let out = format!("{build_dir}/{}", config.out_file());
 
@@ -221,8 +416,6 @@ trait BindgenConfig {
         Self::BLOCKLIST_TYPES
     }
 
-    const RAW_LINES: &'static [&'static str];
-
     /// Definitions for types that were blacklisted
     const MODULE_RAW_LINES: &'static [(&'static str, &'static str)];
     fn module_raw_lines(&self) -> &'static [(&'static str, &'static str)] {
@@ -303,6 +496,7 @@ impl BindgenConfig for JSAPIBindgenConfig {
         "JSITER_.*",
         "JSPROP_.*",
         "js::Proxy.*",
+        "std::unique_ptr",
     ];
 
     const BLOCKLIST_ITEMS: &'static [&'static str] = &[
@@ -314,6 +508,7 @@ impl BindgenConfig for JSAPIBindgenConfig {
         // We provide our own definition because SM's use of templates
         // is more than bindgen can cope with.
         "JS::Rooted",
+        "JS::RootedTuple",
         // We don't need them and bindgen doesn't like them.
         "JS::HandleVector",
         "JS::MutableHandleVector",
@@ -323,7 +518,56 @@ impl BindgenConfig for JSAPIBindgenConfig {
         "JS::DescribeScriptedCaller",
         // Bindgen generates a bad enum for `HashTable_RebuildStatus`.
         // We don't need any of these, so just block them all.
-        "mozilla::detail::HashTable_.*",
+        "JS::.*Stencil.*",
+        "JS::.*Delazifications.*",
+        "mozilla::Maybe::.*",
+    ];
+
+    const BLOCKLIST_FUNCTIONS: &'static [&'static str] = &[
+        "JS::CopyAsyncStack",
+        "JS::CreateError",
+        "JS::DecodeMultiStencilsOffThread",
+        "JS::DecodeStencilOffThread",
+        "JS::DescribeScriptedCaller",
+        "JS::EncodeStencil",
+        "JS::FinishDecodeMultiStencilsOffThread",
+        "JS::FinishIncrementalEncoding",
+        "JS::FromPropertyDescriptor",
+        "JS::GetExceptionCause",
+        "JS::GetModulePrivate",
+        "JS::GetOptimizedEncodingBuildId",
+        "JS::GetPromiseResult",
+        "JS::GetRegExpFlags",
+        "JS::GetScriptPrivate",
+        "JS::GetScriptTranscodingBuildId",
+        "JS::GetScriptedCallerPrivate",
+        "JS::MaybeGetScriptPrivate",
+        "JS::NewArrayBufferWithContents",
+        "JS::NewExternalArrayBuffer",
+        "JS::SimpleStringToBigInt",
+        "JS::DeflateStringToUTF8Buffer",
+        "JS::InitSelfHostedCode",
+        "JS::ArrayBuffer_getData",
+        "JS::ArrayBufferView_getData",
+        "JS::StringIsASCII",
+        "JS::dbg::FireOnGarbageCollectionHook",
+        "JS_EncodeStringToUTF8BufferPartial",
+        "JS_GetEmptyStringValue",
+        "JS_GetErrorType",
+        "JS_GetOwnPropertyDescriptorById",
+        "JS_GetOwnPropertyDescriptor",
+        "JS_GetOwnUCPropertyDescriptor",
+        "JS_GetPropertyDescriptorById",
+        "JS_GetPropertyDescriptor",
+        "JS_GetReservedSlot",
+        "JS_GetUCPropertyDescriptor",
+        "JS_NewLatin1String",
+        "JS_NewUCStringDontDeflate",
+        "JS_NewUCString",
+        "JS_PCToLineNumber",
+        "js::AppendUnique",
+        "js::SetPropertyIgnoringNamedGetter",
+        "mozilla::detail::StreamPayload*",
     ];
 
     const OPAQUE_TYPES: &'static [&'static str] = &[
@@ -334,14 +578,11 @@ impl BindgenConfig for JSAPIBindgenConfig {
         "mozilla::BufferList",
         "mozilla::UniquePtr.*",
         "mozilla::Variant",
+        "mozilla::Maybe",
         "mozilla::Hash.*",
         "mozilla::detail::Hash.*",
         "RefPtr_Proxy.*",
         "std::.*",
-    ];
-
-    const RAW_LINES: &'static [&'static str] = &[
-        "pub use root::*;"
     ];
 
     /// Definitions for types that were blocklisted
@@ -370,9 +611,6 @@ struct StarlingBindgenConfig;
 impl BindgenConfig for StarlingBindgenConfig {
     const ALLOWLIST_ITEMS: &'static [&'static str] = &[
         "api::.*",
-        "std::unique_ptr",
-        "std::optional",
-        "std::string",
     ];
 
     const BLOCKLIST_ITEMS: &'static [&'static str] = &[
@@ -386,8 +624,9 @@ impl BindgenConfig for StarlingBindgenConfig {
         "api::AsyncTask_select",
     ];
 
-    const RAW_LINES: &'static [&'static str] = &[
-        "pub use root::*;",
+    const OPAQUE_TYPES: &'static [&'static str] = &[
+        "api::Engine",
+        "std::unique_ptr",
     ];
 
     const MODULE_RAW_LINES: &'static [(&'static str, &'static str)] = &[

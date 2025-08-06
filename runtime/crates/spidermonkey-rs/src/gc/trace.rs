@@ -33,7 +33,7 @@ use crate::raw::jsglue::{
     CallBigIntTracer, CallFunctionTracer, CallIdTracer, CallObjectTracer, CallScriptTracer,
     CallStringTracer, CallSymbolTracer, CallValueTracer,
 };
-use crate::rust::{Runtime, Stencil};
+use crate::rust::Runtime;
 use crate::typedarray::{TypedArray, TypedArrayElement};
 
 /// Types that can be traced.
@@ -430,7 +430,6 @@ impl_traceable_simple!(Range<u64>);
 impl_traceable_simple!(JoinHandle<()>);
 impl_traceable_simple!(*mut JobQueue);
 impl_traceable_simple!(Runtime);
-impl_traceable_simple!(Stencil);
 
 unsafe impl<'a> Traceable for &'a str {
     #[inline]

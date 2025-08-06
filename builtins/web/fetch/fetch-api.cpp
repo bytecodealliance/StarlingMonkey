@@ -18,8 +18,6 @@ using blob::Blob;
 using fetch::Headers;
 using host_api::HostString;
 
-static api::Engine *ENGINE;
-
 enum class FetchScheme {
   About,
   Blob,

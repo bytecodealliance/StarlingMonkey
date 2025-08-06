@@ -47,6 +47,7 @@ add_dependencies("cargo-prebuild_rust_staticlib" cargo-build_generate_bindings)
 add_library(rust-glue STATIC ${CMAKE_CURRENT_SOURCE_DIR}/runtime/crates/jsapi-rs/cpp/jsglue.cpp)
 target_include_directories(rust-glue PRIVATE ${SM_INCLUDE_DIR})
 add_dependencies(rust_staticlib rust-glue)
+target_link_libraries(rust-glue PRIVATE spidermonkey)
 
 # Add a Rust library to the staticlib bundle.
 function(add_rust_lib name path)
@@ -61,7 +62,7 @@ endfunction()
 add_library(rust-hooks-wrappers STATIC "${CMAKE_CURRENT_SOURCE_DIR}/crates/rust-hooks/src/wrappers.cpp")
 target_link_libraries(rust-hooks-wrappers PRIVATE spidermonkey)
 add_library(rust-crates STATIC ${CMAKE_CURRENT_BINARY_DIR}/null.cpp)
-target_link_libraries(rust-crates PRIVATE rust_staticlib rust-hooks-wrappers)
+target_link_libraries(rust-crates PRIVATE rust_staticlib rust-glue rust-hooks-wrappers)
 
 # Add crates as needed here:
 add_rust_lib(rust-url "${CMAKE_CURRENT_SOURCE_DIR}/crates/rust-url")

@@ -17,7 +17,7 @@ class TCPSocketHandle final : public WASIHandle<host_api::TCPSocket> {
 
 public:
   explicit TCPSocketHandle(HandleOps<host_api::TCPSocket>::owned handle)
-      : WASIHandle(handle), pollable_handle_(INVALID_POLLABLE_HANDLE) {
+      : WASIHandle(handle), pollable_handle_(api::INVALID_POLLABLE_HANDLE) {
     network_ = wasi_sockets_instance_network_instance_network();
   }
 
@@ -29,7 +29,7 @@ public:
     return wasi_sockets_tcp_borrow_network_t(network_.__handle);
   }
   PollableHandle pollable_handle() {
-    if (pollable_handle_ == INVALID_POLLABLE_HANDLE) {
+    if (pollable_handle_ == api::INVALID_POLLABLE_HANDLE) {
       pollable_handle_ = wasi_sockets_tcp_method_tcp_socket_subscribe(borrow()).__handle;
     }
     return pollable_handle_;
@@ -95,7 +95,7 @@ void TCPSocket::close() {
     WASI_SOCKETS_TCP_SHUTDOWN_TYPE_BOTH, &err);
   wasi_io_streams_output_stream_drop_own(state->output_);
   wasi_io_streams_input_stream_drop_own(state->input_);
-  if (state->pollable_handle_ != INVALID_POLLABLE_HANDLE) {
+  if (state->pollable_handle_ != api::INVALID_POLLABLE_HANDLE) {
     wasi_io_poll_pollable_drop_own(own_pollable_t{state->pollable_handle_});
   }
   wasi_sockets_tcp_tcp_socket_drop_own(state->take());

@@ -11,4 +11,4 @@ edition.workspace = true
 
 [dependencies]
 spidermonkey-rs.workspace = true
-wit-bindgen = "0.29.0"
+wit-bindgen = "0.43.0"

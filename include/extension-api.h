@@ -35,9 +35,9 @@ constexpr PollableHandle IMMEDIATE_TASK_HANDLE = -2;
 class AsyncTask;
 
 struct EngineConfig {
-  mozilla::Maybe<std::string> content_script_path = mozilla::Nothing();
-  mozilla::Maybe<std::string> content_script = mozilla::Nothing();
-  mozilla::Maybe<std::string> path_prefix = mozilla::Nothing();
+  std::string content_script_path;
+  std::string content_script;
+  std::string path_prefix;
   bool module_mode = true;
 
   /**
@@ -47,7 +47,7 @@ struct EngineConfig {
    * available to content. It can be used to set up the environment for the content
    * script, e.g. by registering builtin modules or adding global properties.
    */
-  mozilla::Maybe<std::string> initializer_script_path = mozilla::Nothing();
+  std::string initializer_script_path;
 
   /**
    * Whether to evaluate the top-level script in pre-initialization mode or not.
@@ -94,6 +94,10 @@ public:
    */
   // TODO: change to static Engine& from_context(JSContext *cx);
   static Engine *get(JSContext *cx);
+
+  static Engine& from_context(JSContext *cx) {
+    return *get(cx);
+  }
 
   /**
    * Returns the `JSContext` associated with the `Engine` instance.
@@ -236,5 +240,37 @@ public:
 };
 
 } // namespace api
+
+namespace rust_bindgen_details {
+
+/**
+ * <div rustbindgen="true" replaces="std::optional">
+ */
+template<typename T> class simple_optional {
+  T* ptr;
+};
+
+/**
+ * <div rustbindgen="true" replaces="std::unique_ptr">
+ */
+template<typename T> class simple_unique_ptr {
+  T* ptr;
+};
+
+/**
+ * <div rustbindgen="true" replaces="std::vector">
+ */
+template<typename T> class simple_vector {
+  T* ptr;
+};
+
+/**
+ * <div rustbindgen="true" replaces="mozilla::Maybe">
+ */
+template<typename T> class simple_maybe {
+  T* ptr;
+};
+
+}
 
 #endif // EXTENSION_API_H

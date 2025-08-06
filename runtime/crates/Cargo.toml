@@ -4,7 +4,6 @@ repository = "https://github.com/bytecodealliance/starlingmonkey"
 license = "MPL-2.0"
 authors = ["The StarlingMonkey project contributors", "The Servo Project Developers"]
 edition = "2021"
-resolver = "2"
 
 [workspace]
 members = [
@@ -20,12 +19,12 @@ jsapi-rs = { path = "jsapi-rs" }
 starlingmonkey-rs = { path = "starlingmonkey-rs" }
 spidermonkey-rs = { path = "spidermonkey-rs" }
 
-bindgen = { version = "0.69", default-features = false, features = [
+bindgen = { version = "0.72", default-features = false, features = [
     "runtime",
     "prettyplease",
     "experimental",
 ] }
-libc = "0.2"
+libc = "1.0.0-alpha.1"
 
 [profile.release]
 lto = true
