@@ -51,7 +51,6 @@ jobs:
         run: |
           just mode=release builddir=build-release build
           just mode=relwithdebinfo builddir=build-debug build
-          just mode=release builddir=build-weval build starling-ics.wevalcache -DUSE_WASM_OPT:BOOL=OFF -DWEVAL:BOOL=ON
 
       - name: Prepare Artifacts
         run: |
@@ -59,17 +58,14 @@ jobs:
 
           # Core-module versions of the runtime
           cp build-release/starling-raw.wasm release-artifacts/starling-raw.wasm
-          cp build-weval/starling-raw.wasm release-artifacts/starling-raw-weval.wasm
           cp build-debug/starling-raw.wasm release-artifacts/starling-raw-debug.wasm
 
           # Component-versions of the runtime
           cp build-release/starling.wasm release-artifacts/starling.wasm
-          cp build-weval/starling.wasm release-artifacts/starling-weval.wasm
           cp build-debug/starling.wasm release-artifacts/starling-debug.wasm
 
           # Supporting artifacts
           cp build-release/preview1-adapter.wasm release-artifacts
-          cp build-weval/starling-ics.wevalcache release-artifacts
 
           echo "Release artifacts:"
           ls -la release-artifacts/
