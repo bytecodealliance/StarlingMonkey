@@ -1,0 +1,12 @@
+{
+    "name": "main2",
+    "version": "0.0.1",
+    "scripts": {
+        "compile": "mkdirp out && tsc && componentize-js --wit world.wit -o out/main2.wasm --runtime-args \"--enable-script-debugging\" dist/main2.js"
+    },
+    "devDependencies": {
+        "mkdirp": "^3.0.1",
+        "ts-loader": "^9.4.1",
+        "typescript": "^4.8.4"
+    }
+}
