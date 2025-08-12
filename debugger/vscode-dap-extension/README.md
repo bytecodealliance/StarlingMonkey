@@ -72,5 +72,3 @@ Use the `tests` directory (and add to it!).  Build commands:
 **`js` workspace:** `componentize-js --wit world.wit -o main.wasm --runtime-args "--enable-script-debugging" main.js`
 
 **`ts` workspace:** `npm run compile`
-
-**`spin-ts` workspace:** `spin build`
