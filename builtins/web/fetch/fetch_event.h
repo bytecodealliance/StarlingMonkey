@@ -58,6 +58,7 @@ public:
                                     host_api::HttpIncomingRequest *req);
 
   static bool respondWithError(JSContext *cx, JS::HandleObject self);
+  static bool respondWithErrorString(JSContext *cx, JS::HandleObject self, std::string_view body_text);
   static bool is_active(JSObject *self);
 
   static State state(JSObject *self);
