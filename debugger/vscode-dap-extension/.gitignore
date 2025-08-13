@@ -1,0 +1,9 @@
+out
+dist
+node_modules
+.vscode-test/
+npm-debug.log
+*.vsix
+.DS_Store
+sampleWorkspace/out
+sampleWorkspace/main.wasm
