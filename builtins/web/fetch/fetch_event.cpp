@@ -337,6 +337,40 @@ bool FetchEvent::respondWithError(JSContext *cx, JS::HandleObject self) {
   return send_response(response, self, FetchEvent::State::respondedWithError);
 }
 
+  /**
+   * @brief Responds with an error that contains some text for the HTTP response body
+   *
+   * @param cx The Javascript context
+   * @param self A handle to the `FetchEvent` object
+   * @param body_text The text to send as the body
+   *
+   * @return True if the response was sent successfully
+   * @throws None directly, but surfaces errors to JS via `HANDLE_ERROR`
+   */
+  bool FetchEvent::respondWithErrorString(JSContext *cx, JS::HandleObject self, std::string_view body_text) {
+  MOZ_RELEASE_ASSERT(state(self) == State::unhandled || state(self) == State::waitToRespond);
+
+  auto headers = std::make_unique<host_api::HttpHeaders>();
+  auto header_set_res = headers->set("content-type", "text/plain");
+  if (auto *err = header_set_res.to_err()) {
+    HANDLE_ERROR(cx, *err);
+    return false;
+  }
+
+  auto *response = host_api::HttpOutgoingResponse::make(500, std::move(headers));
+
+  auto body_res = response->body();
+  if (auto *err = body_res.to_err()) {
+    HANDLE_ERROR(cx, *err);
+    return false;
+  }
+
+  auto body = std::move(body_res.unwrap());
+  body->write(reinterpret_cast<const uint8_t*>(body_text.data()), body_text.length());
+
+  return send_response(response, self, FetchEvent::State::respondedWithError);
+}
+
 // Steps in this function refer to the spec at
 // https://w3c.github.io/ServiceWorker/#wait-until-method
 bool FetchEvent::waitUntil(JSContext *cx, unsigned argc, JS::Value *vp) {
@@ -468,6 +502,8 @@ static void dispatch_fetch_event(HandleObject event, double *total_compute) {
   EventTarget::dispatch_event(ENGINE->cx(), event_target, event_val, &rval);
 }
 
+constexpr const char DEFAULT_NO_HANDLER_ERROR_MSG[] = "ERROR: no fetch-event handler triggered, was one registered?";
+
 bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
 #ifdef DEBUG
   fprintf(stderr, "Warning: Using a DEBUG build. Expect things to be SLOW.\n");
@@ -504,7 +540,9 @@ bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
   }
 
   if (!FetchEvent::response_started(fetch_event)) {
-    FetchEvent::respondWithError(ENGINE->cx(), fetch_event);
+    // If at this point no fetch event handler has run, we can
+    // send a specific error indicating that there is likely no handler registered
+    FetchEvent::respondWithErrorString(ENGINE->cx(), fetch_event, std::string_view(DEFAULT_NO_HANDLER_ERROR_MSG));
     return true;
   }
 
