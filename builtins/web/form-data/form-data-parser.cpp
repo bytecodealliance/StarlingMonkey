@@ -53,7 +53,6 @@ namespace builtins::web::form_data {
 
 using file::File;
 using form_data::FormData;
-using form_data::FormDataEntry;
 using jsmultipart::RetCode;
 
 class MultipartParser : public FormDataParser {

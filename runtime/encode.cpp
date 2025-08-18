@@ -8,7 +8,6 @@
 
 namespace core {
 
-using host_api::HostBytes;
 using host_api::HostString;
 
 HostString encode(JSContext *cx, JS::HandleString str) {

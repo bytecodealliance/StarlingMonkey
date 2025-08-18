@@ -127,7 +127,6 @@ std::string convert_line_endings_to_native(std::string_view s) {
 namespace builtins::web::blob {
 
 using js::Vector;
-using file::File;
 using streams::BufReader;
 using streams::NativeStreamSource;
 

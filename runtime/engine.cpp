@@ -58,9 +58,7 @@ static bool dump_mem_stats(JSContext *cx) {
 }
 
 
-using std::chrono::duration_cast;
 using std::chrono::microseconds;
-using std::chrono::system_clock;
 
 using JS::Value;
 

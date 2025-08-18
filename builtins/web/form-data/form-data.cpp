@@ -13,7 +13,6 @@
 
 namespace {
 
-using builtins::web::form_data::FormData;
 using builtins::web::form_data::FormDataEntry;
 
 } // namespace
