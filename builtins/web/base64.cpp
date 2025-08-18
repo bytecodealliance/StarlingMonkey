@@ -57,7 +57,7 @@ JS::Result<std::string> valueToJSByteString(JSContext *cx, JS::Handle<JS::Value>
   return byteString;
 }
 
-JS::Result<std::string> stringToJSByteString(JSContext *cx, std::string v) {
+JS::Result<std::string> stringToJSByteString(JSContext *cx, const std::string& v) {
   JS::RootedValue s(cx);
   s.setString(JS_NewStringCopyN(cx, v.c_str(), v.length()));
   return valueToJSByteString(cx, s);

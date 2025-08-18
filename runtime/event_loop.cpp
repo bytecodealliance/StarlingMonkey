@@ -23,12 +23,12 @@ static PersistentRooted<TaskQueue> queue;
 
 namespace core {
 
-void EventLoop::queue_async_task(RefPtr<api::AsyncTask> task) {
+void EventLoop::queue_async_task(const RefPtr<api::AsyncTask>& task) {
   MOZ_ASSERT(task);
   queue.get().tasks.emplace_back(task);
 }
 
-bool EventLoop::cancel_async_task(api::Engine *engine, RefPtr<api::AsyncTask> task) {
+bool EventLoop::cancel_async_task(api::Engine *engine, const RefPtr<api::AsyncTask>& task) {
   const auto tasks = &queue.get().tasks;
   for (auto it = tasks->begin(); it != tasks->end(); ++it) {
     if (*it == task) {

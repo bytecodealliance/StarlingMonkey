@@ -45,7 +45,7 @@ CryptoKeyUsages::CryptoKeyUsages(bool encrypt, bool decrypt, bool sign, bool ver
   }
 };
 
-CryptoKeyUsages CryptoKeyUsages::from(std::vector<std::string> key_usages) {
+CryptoKeyUsages CryptoKeyUsages::from(const std::vector<std::string>& key_usages) {
   uint8_t mask = 0;
   for (const auto &usage : key_usages) {
     if (usage == "encrypt") {

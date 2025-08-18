@@ -123,6 +123,7 @@ size_t BufReader::position(JSObject *self) {
 
 void BufReader::set_position(JSObject *self, size_t pos) {
   MOZ_ASSERT(is_instance(self));
+  // NOLINTNEXTLINE(performance-no-int-to-ptr): we use a private slot to store the position, not a pointer.
   JS::SetReservedSlot(self, Slots::Position, JS::PrivateValue(reinterpret_cast<void *>(pos)));
 }
 

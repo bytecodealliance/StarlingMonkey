@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <utility>
 
 #include "builtin.h"
 #include "extension-api.h"
@@ -16,7 +17,7 @@ api::Engine *engine;
 
 api::Engine* initialize(std::vector<std::string_view> args) {
   auto config_parser = starling::ConfigParser();
-  config_parser.apply_env()->apply_args(args);
+  config_parser.apply_env()->apply_args(std::move(args));
   return new api::Engine(config_parser.take());
 }
 
@@ -87,6 +88,7 @@ WIZER_INIT(wizen);
 extern "C" bool exports_wasi_cli_run_run() {
   auto arg_strings = host_api::environment_get_arguments();
   std::vector<std::string_view> args;
+  args.reserve(arg_strings.size());
   for (auto& arg : arg_strings) args.push_back(arg);
 
   auto config_parser = starling::ConfigParser();

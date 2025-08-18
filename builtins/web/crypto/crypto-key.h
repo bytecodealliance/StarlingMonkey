@@ -36,7 +36,7 @@ public:
   CryptoKeyUsages(uint8_t mask);
   CryptoKeyUsages(bool encrypt, bool decrypt, bool sign, bool verify, bool derive_key,
                   bool derive_bits, bool wrap_key, bool unwrap_key);
-  static CryptoKeyUsages from(std::vector<std::string> key_usages);
+  static CryptoKeyUsages from(const std::vector<std::string>& key_usages);
   static JS::Result<CryptoKeyUsages> from(JSContext *cx, JS::HandleValue key_usages);
 
   uint8_t toInt() { return this->mask; };

@@ -20,7 +20,7 @@
 #include <cassert>
 #include <chrono>
 #include <cstdlib>
-#include <iostream>
+#include <utility>
 
 #ifdef MEM_STATS
 #include <string>
@@ -53,9 +53,10 @@ static bool dump_mem_stats(JSContext *cx) {
 
 #define TRACE(...)                                                                                 \
   if (config_->verbose) {                                                                          \
-    std::cout << "trace(" << __func__ << ":" << __LINE__ << "): " << __VA_ARGS__ << std::endl;     \
+    fmt::print("trace({}:{}): {}\n", __func__, __LINE__, fmt::format(__VA_ARGS__));                \
     fflush(stdout);                                                                                \
-  }
+}
+
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
@@ -468,7 +469,7 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
     }
   }
 
-  TRACE("Module mode: " << config_->module_mode);
+  TRACE("Module mode: ", config_->module_mode);
   scriptLoader->enable_module_mode(config_->module_mode);
 
   mozilla::Maybe<std::string_view> content_script_path = config_->content_script_path;
@@ -482,13 +483,13 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
     // resumed wizer snapshot.
     content_debugger::maybe_init_debugger(this, false);
     if (auto replacement_script_path = content_debugger::replacement_script_path()) {
-      TRACE("Using replacement script path received from debugger: " << *replacement_script_path);
+      TRACE("Using replacement script path received from debugger: ", *replacement_script_path);
       content_script_path = replacement_script_path;
     }
   }
 
   if (content_script_path) {
-    TRACE("Evaluating initial script from file " << content_script_path.value());
+    TRACE("Evaluating initial script from file ", content_script_path.value());
     RootedValue result(cx());
     if (!eval_toplevel(content_script_path.value().data(), &result)) {
       abort("evaluating top-level script");
@@ -537,7 +538,7 @@ void Engine::abort(const char *reason) {
 }
 
 bool Engine::define_builtin_module(const char* id, HandleValue builtin) {
-  TRACE("Defining builtin module '" << id << "'");
+  TRACE("Defining builtin module '", id, "'");
   return scriptLoader->define_builtin_module(id, builtin);
 }
 
@@ -565,7 +566,7 @@ bool Engine::run_initialization_script() {
   JSAutoRealm ar(cx, INIT_SCRIPT_GLOBAL);
 
   auto path = config_->initializer_script_path.value();
-  TRACE("Running initialization script from file " << path);
+  TRACE("Running initialization script from file ", path);
   JS::SourceText<mozilla::Utf8Unit> source;
   if (!scriptLoader->load_resolved_script(CONTEXT, path.c_str(), path.c_str(), source)) {
     return false;
@@ -690,11 +691,11 @@ bool Engine::debug_logging_enabled() { return ::debug_logging_enabled(); }
 
 bool Engine::has_pending_async_tasks() { return core::EventLoop::has_pending_async_tasks(); }
 
-void Engine::queue_async_task(RefPtr<AsyncTask> task) {
+void Engine::queue_async_task(const RefPtr<AsyncTask>& task) {
   core::EventLoop::queue_async_task(task);
 }
 
-bool Engine::cancel_async_task(RefPtr<AsyncTask> task) {
+bool Engine::cancel_async_task(const RefPtr<AsyncTask>& task) {
   return core::EventLoop::cancel_async_task(this, task);
 }
 

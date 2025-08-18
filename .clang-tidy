@@ -3,6 +3,7 @@ Checks: >
   clang-diagnostic-*,
   cppcoreguidelines-*,
   modernize-*,
+  performance-*,
   -clang-analyzer-optin.core.EnumCastOutOfRange,
   -cppcoreguidelines-avoid-do-while,
   -cppcoreguidelines-avoid-c-arrays,

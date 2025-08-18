@@ -170,8 +170,8 @@ public:
   HandleValue script_value();
 
   bool has_pending_async_tasks();
-  void queue_async_task(RefPtr<AsyncTask> task);
-  bool cancel_async_task(RefPtr<AsyncTask> task);
+  void queue_async_task(const RefPtr<AsyncTask>& task);
+  bool cancel_async_task(const RefPtr<AsyncTask>& task);
 
   bool has_unhandled_promise_rejections();
   void report_unhandled_promise_rejections();

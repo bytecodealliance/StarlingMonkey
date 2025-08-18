@@ -772,7 +772,7 @@ JSObject *CryptoAlgorithmHMAC_Sign_Verify::sign(JSContext *cx, JS::HandleObject 
     return nullptr;
   }
   auto sig = std::move(result.value().first);
-  auto size = std::move(result.value().second);
+  auto size = result.value().second;
 
   // 2. Return a new ArrayBuffer object, associated with the relevant global object of this [HTML], and containing the bytes of mac.
   JS::RootedObject array_buffer(cx);
@@ -804,7 +804,7 @@ JS::Result<bool> CryptoAlgorithmHMAC_Sign_Verify::verify(JSContext *cx, JS::Hand
     return JS::Result<bool>(JS::Error());
   }
   auto sig = std::move(result.value().first);
-  auto size = std::move(result.value().second);
+  auto size = result.value().second;
 
 
   // 2. Return true if mac is equal to signature and false otherwise.
@@ -838,7 +838,7 @@ JSObject *CryptoAlgorithmECDSA_Sign_Verify::sign(JSContext *cx, JS::HandleObject
     return nullptr;
   }
 
-  auto digest = digestOption.value();
+  const auto& digest = digestOption.value();
 
   // 4. Let d be the ECDSA private key associated with key.
   EVP_PKEY *pkey = CryptoKey::key(key);
@@ -939,7 +939,7 @@ JS::Result<bool> CryptoAlgorithmECDSA_Sign_Verify::verify(JSContext *cx, JS::Han
     DOMException::raise(cx, "OperationError", "OperationError");
     return JS::Result<bool>(JS::Error());
   }
-  auto digest = digestOption.value();
+  const auto& digest = digestOption.value();
 
   // 4. Let Q be the ECDSA public key associated with key.
   // 5. Let params be the EC domain parameters associated with key.
@@ -1114,7 +1114,7 @@ JS::Result<bool> CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify::verify(JSContext 
     return JS::Result<bool>(JS::Error());
   }
 
-  auto digest = digestOption.value();
+  const auto& digest = digestOption.value();
 
   EvpPkeyCtxPtr ctx(EVP_PKEY_CTX_new(CryptoKey::key(key), nullptr));
   if (!ctx) {

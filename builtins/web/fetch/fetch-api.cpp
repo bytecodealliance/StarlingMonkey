@@ -36,7 +36,7 @@ enum class FetchScheme : uint8_t {
 struct Terminator : AbortAlgorithm {
   mozilla::WeakPtr<ResponseFutureTask> task;
 
-  Terminator(mozilla::WeakPtr<ResponseFutureTask> task) : task(std::move(task)) {}
+  Terminator(const mozilla::WeakPtr<ResponseFutureTask>& task) : task(task) {}
 
   bool run(JSContext *cx) override {
     if (auto t = task.get()) {

@@ -155,7 +155,7 @@ public:
   JsonWebKey RSAPublicKey(std::string kty, std::vector<std::string> key_ops,
                           std::optional<bool> ext, std::optional<std::string> n,
                           std::optional<std::string> e) {
-    return {kty, key_ops, ext, n, e};
+    return {std::move(kty), std::move(key_ops), ext, std::move(n), std::move(e)};
   }
 
   JsonWebKey(std::string kty, std::vector<std::string> key_ops, std::optional<bool> ext,
@@ -166,7 +166,7 @@ public:
   JsonWebKey RSAPrivateKey(std::string kty, std::vector<std::string> key_ops,
                            std::optional<bool> ext, std::optional<std::string> n,
                            std::optional<std::string> e, std::optional<std::string> d) {
-    return {kty, key_ops, ext, n, e, d};
+    return {std::move(kty), std::move(key_ops), ext, std::move(n), std::move(e), std::move(d)};
   }
   JsonWebKey(std::string kty, std::vector<std::string> key_ops, std::optional<bool> ext,
              std::optional<std::string> n, std::optional<std::string> e,
@@ -181,7 +181,7 @@ public:
       std::optional<std::string> n, std::optional<std::string> e, std::optional<std::string> d,
       std::optional<std::string> p, std::optional<std::string> q, std::optional<std::string> dp,
       std::optional<std::string> dq, std::optional<std::string> qi) {
-    return {kty, key_ops, ext, n, e, d, p, q, dp, dq, qi};
+    return {std::move(kty), std::move(key_ops), ext, std::move(n), std::move(e), std::move(d), std::move(p), std::move(q), std::move(dp), std::move(dq), std::move(qi)};
   }
 
   JsonWebKey(std::string kty, std::optional<std::string> use, std::vector<std::string> key_ops,

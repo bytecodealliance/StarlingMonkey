@@ -32,8 +32,8 @@ CryptoKeyRSAComponents::CryptoKeyRSAComponents(std::string_view modulus, std::st
 
 std::unique_ptr<CryptoKeyRSAComponents> CryptoKeyRSAComponents::createPrivateWithAdditionalData(
     std::string_view modulus, std::string_view exponent, std::string_view privateExponent,
-    std::optional<PrimeInfo> firstPrimeInfo, std::optional<PrimeInfo> secondPrimeInfo,
-    std::vector<PrimeInfo> otherPrimeInfos) {
+    const std::optional<PrimeInfo>& firstPrimeInfo, const std::optional<PrimeInfo>& secondPrimeInfo,
+    const std::vector<PrimeInfo>& otherPrimeInfos) {
   return std::make_unique<CryptoKeyRSAComponents>(modulus, exponent, privateExponent,
                                                   firstPrimeInfo, secondPrimeInfo, otherPrimeInfos);
 }

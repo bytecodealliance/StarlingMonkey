@@ -68,7 +68,7 @@ bool Crypto::random_uuid(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  auto uuid = maybe_uuid.value();
+  const auto& uuid = maybe_uuid.value();
   MOZ_ASSERT(uuid.size() == 36);
 
   JS::RootedString str(cx, JS_NewStringCopyN(cx, uuid.data(), uuid.size()));
