@@ -7,6 +7,8 @@
 
 #include "../event/event.h"
 
+#include <optional>
+
 namespace builtins::web::fetch::fetch_event {
 
 class FetchEvent final : public BuiltinNoConstructor<FetchEvent> {
@@ -57,8 +59,19 @@ public:
   static bool init_incoming_request(JSContext *cx, JS::HandleObject self,
                                     host_api::HttpIncomingRequest *req);
 
-  static bool respondWithError(JSContext *cx, JS::HandleObject self);
-  static bool respondWithErrorString(JSContext *cx, JS::HandleObject self, std::string_view body_text);
+  /**
+   * @brief Responds with an error that contains some text for the HTTP response body
+   *
+   * @param cx The Javascript context
+   * @param self A handle to the `FetchEvent` object
+   * @param body_text optional text to send as the body
+   *
+   * @return True if the response was sent successfully
+   * @throws None directly, but surfaces errors to JS via `HANDLE_ERROR`
+   */
+  static bool respondWithError(JSContext *cx, 
+                               JS::HandleObject self, 
+                               std::optional<std::string_view> body_text = std::nullopt);
   static bool is_active(JSObject *self);
 
   static State state(JSObject *self);
