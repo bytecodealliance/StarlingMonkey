@@ -729,7 +729,7 @@ bool Headers::set(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!value_chars.ptr)
     return false;
 
-  bool is_valid;
+  bool is_valid = false;
   if (!validate_guard(cx, self, name_chars, "Headers.append", &is_valid))
     return false;
 
@@ -832,7 +832,7 @@ bool Headers::append(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!value_chars)
     return false;
 
-  bool is_valid;
+  bool is_valid = false;
   if (!validate_guard(cx, self, name_chars, "Headers.append", &is_valid)) {
     return false;
   }
@@ -912,7 +912,7 @@ bool Headers::delete_(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!name_chars)
     return false;
 
-  bool is_valid;
+  bool is_valid = false;
   if (!validate_guard(cx, self, name_chars, "Headers.delete", &is_valid))
     return false;
 
@@ -970,7 +970,7 @@ bool Headers::delete_(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool Headers::append_valid_header(JSContext *cx, JS::HandleObject self,
                                   host_api::HostString valid_key, JS::HandleValue value,
                                   const char *fun_name) {
-  bool is_valid;
+  bool is_valid = false;
   if (!validate_guard(cx, self, valid_key, "Headers constructor", &is_valid)) {
     return false;
   }

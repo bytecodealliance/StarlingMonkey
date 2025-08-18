@@ -287,8 +287,8 @@ void RequestOrResponse::set_url(JSObject *obj, JS::Value url) {
  */
 bool RequestOrResponse::body_unusable(JSContext *cx, JS::HandleObject body) {
   MOZ_ASSERT(JS::IsReadableStream(body));
-  bool disturbed;
-  bool locked;
+  bool disturbed = false;
+  bool locked = false;
   MOZ_RELEASE_ASSERT(JS::ReadableStreamIsDisturbed(cx, body, &disturbed) &&
                      JS::ReadableStreamIsLocked(cx, body, &locked));
   return disturbed || locked;
@@ -396,7 +396,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
         return false;
       }
 
-      bool is_shared;
+      bool is_shared = false;
       JS::AutoCheckCannotGC noGC(cx);
       auto temp_buf = JS_GetArrayBufferViewData(body_obj, &is_shared, noGC);
       memcpy(buf, temp_buf, length);
@@ -447,7 +447,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
       return false;
     }
 
-    mozilla::DebugOnly<bool> disturbed;
+    mozilla::DebugOnly<bool> disturbed{};
     MOZ_ASSERT(ReadableStreamIsDisturbed(cx, body_stream, &disturbed));
     MOZ_ASSERT(!disturbed);
 
@@ -575,7 +575,7 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
     Headers::HeadersGuard guard = is_incoming(obj)            ? Headers::HeadersGuard::Immutable
                                   : Request::is_instance(obj) ? Headers::HeadersGuard::Request
                                                               : Headers::HeadersGuard::Response;
-    host_api::HttpHeadersReadOnly *handle;
+    host_api::HttpHeadersReadOnly *handle = nullptr;
     if (is_incoming(obj) && (handle = maybe_headers_handle(obj))) {
       headers = Headers::create(cx, handle, guard);
     } else {
@@ -680,7 +680,7 @@ bool RequestOrResponse::content_stream_read_then_handler(JSContext *cx, JS::Hand
   MOZ_ASSERT(extra.isObject());
   JS::RootedObject catch_handler(cx, &extra.toObject());
 #ifdef DEBUG
-  bool foundContents;
+  bool foundContents = false;
   if (!JS_HasElement(cx, catch_handler, 1, &foundContents)) {
     return false;
   }
@@ -696,7 +696,7 @@ bool RequestOrResponse::content_stream_read_then_handler(JSContext *cx, JS::Hand
     return false;
   }
 #ifdef DEBUG
-  bool contentsIsArray;
+  bool contentsIsArray = false;
   if (!JS::IsArrayObject(cx, contents, &contentsIsArray)) {
     return false;
   }
@@ -715,7 +715,7 @@ bool RequestOrResponse::content_stream_read_then_handler(JSContext *cx, JS::Hand
   JS::RootedValue done_val(cx);
   JS::RootedValue value(cx);
 #ifdef DEBUG
-  bool hasValue;
+  bool hasValue = false;
   if (!JS_HasProperty(cx, chunk_obj, "value", &hasValue)) {
     return false;
   }
@@ -725,7 +725,7 @@ bool RequestOrResponse::content_stream_read_then_handler(JSContext *cx, JS::Hand
     return false;
   }
 #ifdef DEBUG
-  bool hasDone;
+  bool hasDone = false;
   if (!JS_HasProperty(cx, chunk_obj, "done", &hasDone)) {
     return false;
   }
@@ -738,7 +738,7 @@ bool RequestOrResponse::content_stream_read_then_handler(JSContext *cx, JS::Hand
   if (done_val.toBoolean()) {
     // We finished reading the stream
     // Now we need to iterate/reduce `contents` JS Array into UniqueChars
-    uint32_t contentsLength;
+    uint32_t contentsLength = 0;
     if (!JS::GetArrayLength(cx, contents, &contentsLength)) {
       return false;
     }
@@ -768,7 +768,7 @@ bool RequestOrResponse::content_stream_read_then_handler(JSContext *cx, JS::Hand
         return false;
       }
       JSObject *array = &val.toObject();
-      bool is_shared;
+      bool is_shared = false;
       size_t length = JS_GetTypedArrayByteLength(array);
       JS::AutoCheckCannotGC nogc(cx);
       auto bytes = reinterpret_cast<char *>(JS_GetUint8ArrayData(array, &is_shared, nogc));
@@ -803,7 +803,7 @@ bool RequestOrResponse::content_stream_read_then_handler(JSContext *cx, JS::Hand
   }
 
   {
-    uint32_t contentsLength;
+    uint32_t contentsLength = 0;
     if (!JS::GetArrayLength(cx, contents, &contentsLength)) {
       return false;
     }
@@ -837,7 +837,7 @@ bool RequestOrResponse::content_stream_read_catch_handler(JSContext *cx, JS::Han
   }
   MOZ_ASSERT(JS::IsReadableStream(stream));
 #ifdef DEBUG
-  bool isError;
+  bool isError = false;
   if (!JS::ReadableStreamIsErrored(cx, stream, &isError)) {
     return false;
   }
@@ -1139,7 +1139,7 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
       return false;
     }
     {
-      bool is_shared;
+      bool is_shared = false;
       JS::AutoCheckCannotGC nogc(cx);
       auto data = JS_GetUint8ArrayData(array, &is_shared, nogc);
       MOZ_ASSERT(data);
@@ -1148,7 +1148,7 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
     }
     bytes = host_api::HostBytes(std::move(ptr), length);
   } else {
-    bool is_shared;
+    bool is_shared = false;
     RootedObject buffer(cx, JS_GetArrayBufferViewBuffer(cx, array, &is_shared));
     MOZ_ASSERT(!is_shared);
     auto ptr = static_cast<uint8_t *>(StealArrayBufferContents(cx, buffer));
@@ -1969,6 +1969,7 @@ static_assert((int)Response::Slots::Response == (int)Request::Slots::Request);
 host_api::HttpResponse *Response::maybe_response_handle(JSObject *obj) {
   auto base = RequestOrResponse::maybe_handle(obj);
   MOZ_ASSERT_IF(base, base->is_response());
+  // NOLINTNEXTLINE: dynamic_cast requires RTTI, which we don't use.
   return static_cast<host_api::HttpResponse *>(base);
 }
 
@@ -2341,7 +2342,7 @@ bool Response::redirect(JSContext *cx, unsigned argc, Value *vp) {
   // 3. If status is not a redirect status, then throw a RangeError.
   // A redirect status is a status that is 301, 302, 303, 307, or 308.
   auto statusVal = args.get(1);
-  uint16_t status;
+  uint16_t status = 0;
   if (statusVal.isUndefined()) {
     status = 302;
   } else {

@@ -351,7 +351,7 @@ bool Blob::text(JSContext *cx, HandleObject self, MutableHandleValue rval) {
     return false;
   }
 
-  bool had_replacements;
+  bool had_replacements = false;
   auto dst_data = reinterpret_cast<uint16_t *>(dst.get());
 
   jsencoding::decoder_decode_to_utf16(decoder.get(), src->begin(), &src_len, dst_data, &dst_len,
@@ -477,7 +477,7 @@ bool Blob::init_blob_parts(JSContext *cx, HandleObject self, HandleValue value) 
     // if the object is an iterable, walk over its elements...
     JS::Rooted<JS::Value> item(cx);
     while (true) {
-      bool done;
+      bool done = false;
 
       if (!it.next(&item, &done)) {
         return false;
@@ -509,7 +509,7 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
   // - `type`: the MIME type of the data that will be stored into the blob,
   // - `endings`: how to interpret newline characters (\n) within the contents.
   JS::RootedObject opts(cx, init_val.toObjectOrNull());
-  bool has_endings, has_type;
+  bool has_endings = false, has_type = false;
 
   if (!JS_HasProperty(cx, opts, "endings", &has_endings) ||
       !JS_HasProperty(cx, opts, "type", &has_type)) {
@@ -523,7 +523,7 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
 
   if (has_endings) {
     JS::RootedValue endings_val(cx);
-    bool is_transparent, is_native;
+    bool is_transparent = false, is_native = false;
     if (!JS_GetProperty(cx, opts, "endings", &endings_val)) {
       return false;
     }

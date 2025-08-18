@@ -51,9 +51,8 @@ JSObject *NativeStreamSource::stream(JSObject *self) {
  */
 JSObject *NativeStreamSource::get_controller_source(JSContext *cx, JS::HandleObject controller) {
   JS::RootedValue source(cx);
-  bool success __attribute__((unused));
-  success = JS::ReadableStreamControllerGetUnderlyingSource(cx, controller, &source);
-  MOZ_ASSERT(success);
+  auto success = JS::ReadableStreamControllerGetUnderlyingSource(cx, controller, &source);
+  MOZ_RELEASE_ASSERT(success);
   return source.isObject() ? &source.toObject() : nullptr;
 }
 
@@ -86,7 +85,7 @@ JSObject *NativeStreamSource::piped_to_transform_stream(JSObject *self) {
 bool NativeStreamSource::lock_stream(JSContext *cx, JS::HandleObject stream) {
   MOZ_ASSERT(JS::IsReadableStream(stream));
 
-  bool locked;
+  bool locked = false;
   JS::ReadableStreamIsLocked(cx, stream, &locked);
   if (locked) {
     return api::throw_error(cx, StreamErrors::StreamAlreadyLocked);

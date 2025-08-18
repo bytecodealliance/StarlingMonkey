@@ -1,13 +1,29 @@
 Checks: >
-  -clang-analyzer-optin.core.EnumCastOutOfRange,  # Disable enum cast range checker due to false positives in SpiderMonkey MOZ_ASSERT macro
   clang-analyzer-*,
-  # clang-diagnostic-*,
-  # cppcoreguidelines-*,
-  # modernize-*,
-  # performance-*,
-  # readability-*,
-  # -modernize-use-trailing-return-type,
-  # -readability-identifier-length
+  clang-diagnostic-*,
+  cppcoreguidelines-*,
+  -clang-analyzer-optin.core.EnumCastOutOfRange,
+  -cppcoreguidelines-avoid-do-while,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-type-const-cast,
+  -cppcoreguidelines-no-malloc,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-narrowing-conversions,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-cstyle-cast,
+  -cppcoreguidelines-special-member-functions,
+  -cppcoreguidelines-init-variables,
+  -cppcoreguidelines-macro-usage,
+  -cppcoreguidelines-interfaces-global-init,
+  -cppcoreguidelines-use-default-member-init,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-pro-type-static-cast-downcast,
 
 # Treat all warnings as errors
 WarningsAsErrors: '*'

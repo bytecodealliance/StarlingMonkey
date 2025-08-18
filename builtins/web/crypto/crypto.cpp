@@ -43,7 +43,7 @@ bool Crypto::get_random_values(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   JS::AutoCheckCannotGC noGC(cx);
-  bool is_shared;
+  bool is_shared = false;
   auto *buffer = static_cast<uint8_t *>(JS_GetArrayBufferViewData(typed_array, &is_shared, noGC));
 
   auto res = host_api::Random::get_bytes(byte_length);

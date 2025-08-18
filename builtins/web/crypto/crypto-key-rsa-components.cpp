@@ -10,8 +10,8 @@ CryptoKeyRSAComponents::createPublic(std::string_view modulus, std::string_view 
 
 CryptoKeyRSAComponents::CryptoKeyRSAComponents(std::string_view modulus, std::string_view exponent,
                                                std::string_view privateExponent)
-    : type(Type::Private), modulus(modulus), exponent(exponent), privateExponent(privateExponent),
-      hasAdditionalPrivateKeyParameters(false) {}
+    : type(Type::Private), modulus(modulus), exponent(exponent), privateExponent(privateExponent)
+      {}
 
 std::unique_ptr<CryptoKeyRSAComponents>
 CryptoKeyRSAComponents::createPrivate(std::string_view modulus, std::string_view exponent,

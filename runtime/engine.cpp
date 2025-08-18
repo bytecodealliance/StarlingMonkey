@@ -135,7 +135,7 @@ void print_cause(JSContext *cx, HandleValue error, FILE *fp) {
 
       fprintf(stderr, "Caused by: ");
 
-      bool has_stack;
+      bool has_stack = false;
       dump_error(cx, cause_val, &has_stack, fp);
     }
   }
@@ -174,7 +174,7 @@ void dump_error(JSContext *cx, HandleValue error, bool *has_stack, FILE *fp) {
 }
 
 void dump_promise_rejection(JSContext *cx, HandleValue reason, HandleObject promise, FILE *fp) {
-  bool has_stack;
+  bool has_stack = false;
   dump_error(cx, reason, &has_stack, fp);
 
   // If the rejection reason isn't an `Error` object, we can't get an exception
@@ -365,7 +365,7 @@ static bool report_unhandled_promise_rejections(JSContext *cx) {
   RootedValue promise_val(cx);
   RootedObject promise(cx);
   while (true) {
-    bool done;
+    bool done = false;
     if (!it.next(&promise_val, &done))
       return false;
 
@@ -677,7 +677,7 @@ void Engine::dump_pending_exception(const char *description, FILE *fp) {
 }
 
 void Engine::dump_error(JS::HandleValue err, FILE *fp) {
-  bool has_stack;
+  bool has_stack = false;
   ::dump_error(CONTEXT, err, &has_stack, fp);
   fflush(fp);
 }

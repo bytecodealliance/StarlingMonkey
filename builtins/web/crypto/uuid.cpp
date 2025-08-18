@@ -62,7 +62,7 @@ struct UUID {
 //                                   specified in this document
 //                                   that uses SHA-1 hashing.
 std::optional<std::string> random_uuid_v4(JSContext *cx) {
-  UUID id;
+  UUID id{};
 
   {
     auto res = host_api::Random::get_bytes(sizeof(id));

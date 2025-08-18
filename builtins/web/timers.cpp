@@ -44,8 +44,8 @@ class TimerTask final : public api::AsyncTask {
 public:
   explicit TimerTask(const int64_t delay_ns, const bool repeat, HandleObject callback,
                      JS::HandleValueVector args)
-      : delay_(delay_ns), repeat_(repeat), callback_(callback) {
-    deadline_ = host_api::MonotonicClock::now() + delay_ns;
+      : timer_id_(TIMERS_MAP->next_timer_id++), delay_(delay_ns), deadline_(host_api::MonotonicClock::now() + delay_ns), repeat_(repeat), callback_(callback) {
+    
 
     arguments_.reserve(args.length());
     for (auto &arg : args) {
@@ -53,7 +53,7 @@ public:
     }
 
     handle_ = host_api::MonotonicClock::subscribe(deadline_, true);
-    timer_id_ = TIMERS_MAP->next_timer_id++;
+    
     TIMERS_MAP->timers_.emplace(timer_id_, this);
   }
 

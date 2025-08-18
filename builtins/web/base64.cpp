@@ -22,7 +22,7 @@ JS::Result<std::string> valueToJSByteString(JSContext *cx, JS::Handle<JS::Value>
 
   // Conversion from JavaScript string to ByteString is only valid if all
   // characters < 256. This is always the case for Latin1 strings.
-  size_t length;
+  size_t length = 0;
   UniqueChars result = nullptr;
   if (!JS::StringHasLatin1Chars(s)) {
     JS::AutoCheckCannotGC nogc(cx);
@@ -128,7 +128,7 @@ bool base64CharacterToValue(char character, uint8_t *value, const uint8_t *decod
 
 inline JS::Result<mozilla::Ok> base64Decode4to3(std::string_view input, std::string &output,
                                                 const uint8_t *decodeTable) {
-  uint8_t w, x, y, z;
+  uint8_t w = 0, x = 0, y = 0, z = 0;
   // 8.1 Find the code point pointed to by position in the second column of
   // Table 1: The Base 64 Alphabet of RFC 4648. Let n be the number given in the
   // first cell of the same row. [RFC4648]
@@ -150,7 +150,7 @@ inline JS::Result<mozilla::Ok> base64Decode4to3(std::string_view input, std::str
 
 inline JS::Result<mozilla::Ok> base64Decode3to2(std::string_view input, std::string &output,
                                                 const uint8_t *decodeTable) {
-  uint8_t w, x, y;
+  uint8_t w = 0, x = 0, y = 0;
   // 8.1 Find the code point pointed to by position in the second column of
   // Table 1: The Base 64 Alphabet of RFC 4648. Let n be the number given in the
   // first cell of the same row. [RFC4648]
@@ -172,7 +172,7 @@ inline JS::Result<mozilla::Ok> base64Decode3to2(std::string_view input, std::str
 
 inline JS::Result<mozilla::Ok> base64Decode2to1(std::string_view input, std::string &output,
                                                 const uint8_t *decodeTable) {
-  uint8_t w, x;
+  uint8_t w = 0, x = 0;
   // 8.1 Find the code point pointed to by position in the second column of
   // Table 1: The Base 64 Alphabet of RFC 4648. Let n be the number given in the
   // first cell of the same row. [RFC4648]
@@ -326,7 +326,7 @@ bool atob(JSContext *cx, unsigned argc, Value *vp) {
 inline uint8_t CharTo8Bit(char character) { return uint8_t(character); }
 inline void base64Encode3to4(std::string_view data, std::string &output, const char *encodeTable) {
   uint32_t b32 = 0;
-  int i, j = 18;
+  int i = 0, j = 18;
 
   for (i = 0; i < 3; ++i) {
     b32 <<= 8;

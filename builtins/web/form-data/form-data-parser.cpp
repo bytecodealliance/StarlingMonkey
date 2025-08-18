@@ -62,7 +62,7 @@ class MultipartParser : public FormDataParser {
 public:
   MultipartParser(std::string_view boundary) : boundary_(boundary) {}
 
-  virtual JSObject *parse(JSContext *cx, std::string_view body) override;
+  JSObject *parse(JSContext *cx, std::string_view body) override;
 };
 
 JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
@@ -79,7 +79,7 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
   auto data = reinterpret_cast<const uint8_t *>(body.data());
 
   jsmultipart::Slice input{data, body.size()};
-  jsmultipart::Entry entry;
+  jsmultipart::Entry entry{};
 
   auto encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
       reinterpret_cast<uint8_t *>(const_cast<char *>("UTF-8")), 5));
@@ -133,7 +133,7 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
           return nullptr;
         }
 
-        bool ignore;
+        bool ignore = false;
         auto dst = reinterpret_cast<uint16_t *>(data.get());
         auto src = entry.value.data;
 
@@ -219,7 +219,7 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
 }
 
 class UrlParser : public FormDataParser {
-  virtual JSObject *parse(JSContext *cx, std::string_view body) override;
+  JSObject *parse(JSContext *cx, std::string_view body) override;
 };
 
 JSObject *UrlParser::parse(JSContext *cx, std::string_view body) {

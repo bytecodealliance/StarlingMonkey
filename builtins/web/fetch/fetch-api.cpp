@@ -106,7 +106,7 @@ bool fetch_https(JSContext *cx, HandleObject request_obj, HandleObject response_
     request->body();
   }
 
-  host_api::FutureHttpIncomingResponse *pending_handle;
+  host_api::FutureHttpIncomingResponse *pending_handle = nullptr;
   {
     auto res = request->send();
     if (auto *err = res.to_err()) {

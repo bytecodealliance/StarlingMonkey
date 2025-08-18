@@ -175,12 +175,12 @@ using EntryList = JS::GCVector<FormDataEntry, 0, js::SystemAllocPolicy>;
 
 struct StreamContext {
   StreamContext(const EntryList *entries, std::span<uint8_t> outbuf)
-      : entries(entries), outbuf(outbuf), read(0), done(false) {}
+      : entries(entries), outbuf(outbuf) {}
   const EntryList *entries;
 
   std::span<uint8_t> outbuf;
-  size_t read;
-  bool done;
+  size_t read{0};
+  bool done{false};
 
   size_t remaining() {
     MOZ_ASSERT(outbuf.size() >= read);
@@ -231,13 +231,13 @@ struct StreamContext {
 class MultipartFormDataImpl {
   enum class State : int { Start, EntryHeader, EntryBody, EntryFooter, Close, Done };
 
-  State state_;
+  State state_{State::Start};
   std::string boundary_;
   std::string remainder_;
   std::string_view remainder_view_;
 
-  size_t chunk_idx_;
-  size_t file_leftovers_;
+  size_t chunk_idx_{0};
+  size_t file_leftovers_{0};
 
   bool is_draining() { return (file_leftovers_ || remainder_.size()); };
 
@@ -252,7 +252,7 @@ class MultipartFormDataImpl {
 
 public:
   MultipartFormDataImpl(std::string boundary)
-      : state_(State::Start), boundary_(std::move(boundary)), chunk_idx_(0), file_leftovers_(0) {}
+      :  boundary_(std::move(boundary)) {}
 
   mozilla::Result<size_t, OutOfMemory> query_length(JSContext* cx, const EntryList *entries);
   std::string boundary() {  return boundary_; };

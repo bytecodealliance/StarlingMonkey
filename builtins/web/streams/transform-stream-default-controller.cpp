@@ -8,6 +8,8 @@
 #include "js/Stream.h"
 
 #include "transform-stream-default-controller.h"
+
+#include <math.h>
 #include "transform-stream.h"
 
 #include "stream-errors.h"
@@ -53,8 +55,8 @@ bool TransformStreamDefaultController::desiredSize_get(JSContext *cx, unsigned a
   // 1.  Let readableController be [this].[stream].[readable].[controller].
   JSObject *stream = TransformStreamDefaultController::stream(self);
   JSObject *readable = TransformStream::readable(stream);
-  double value;
-  bool has_value;
+  double value = NAN;
+  bool has_value = false;
   if (!JS::ReadableStreamGetDesiredSize(cx, readable, &has_value, &value)) {
     return false;
   }

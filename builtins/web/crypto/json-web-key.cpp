@@ -26,7 +26,7 @@ namespace crypto {
 namespace {
 JS::Result<std::optional<std::string>>
 extractStringPropertyFromObject(JSContext *cx, JS::HandleObject object, std::string_view property) {
-  bool has_property;
+  bool has_property = false;
   if (!JS_HasProperty(cx, object, property.data(), &has_property)) {
     return JS::Result<std::optional<std::string>>(JS::Error());
   }
@@ -175,7 +175,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
   //   boolean ext;
   std::optional<bool> ext = std::nullopt;
   {
-    bool has_ext;
+    bool has_ext = false;
     if (!JS_HasProperty(cx, object, "ext", &has_ext)) {
       return nullptr;
     }
@@ -190,7 +190,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
   //   sequence<DOMString> key_ops;
   std::vector<std::string> key_ops;
   {
-    bool has_key_ops;
+    bool has_key_ops = false;
     if (!JS_HasProperty(cx, object, "key_ops", &has_key_ops)) {
       return nullptr;
     }
@@ -199,7 +199,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
       if (!JS_GetProperty(cx, object, "key_ops", &key_ops_val)) {
         return nullptr;
       }
-      bool key_ops_is_array;
+      bool key_ops_is_array = false;
       if (!JS::IsArrayObject(cx, key_ops_val, &key_ops_is_array)) {
         return nullptr;
       }
@@ -210,7 +210,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
           "DataError");
         return nullptr;
       }
-      uint32_t length;
+      uint32_t length = 0;
       JS::RootedObject key_ops_array(cx, &key_ops_val.toObject());
       if (!JS::GetArrayLength(cx, key_ops_array, &length)) {
         return nullptr;
@@ -267,7 +267,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
 
   std::vector<RsaOtherPrimesInfo> oth;
   {
-    bool has_oth;
+    bool has_oth = false;
     if (!JS_HasProperty(cx, object, "oth", &has_oth)) {
       return nullptr;
     }
@@ -276,7 +276,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
       if (!JS_GetProperty(cx, object, "oth", &oth_val)) {
         return nullptr;
       }
-      bool oth_is_array;
+      bool oth_is_array = false;
       if (!JS::IsArrayObject(cx, oth_val, &oth_is_array)) {
         return nullptr;
       }
@@ -287,7 +287,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
           "DataError");
         return nullptr;
       }
-      uint32_t length;
+      uint32_t length = 0;
       JS::RootedObject oth_array(cx, &oth_val.toObject());
       if (!JS::GetArrayLength(cx, oth_array, &length)) {
         return nullptr;

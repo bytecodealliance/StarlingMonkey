@@ -708,7 +708,7 @@ DEF_ERR(InvalidURLError, JSEXN_TYPEERR, "URL constructor: {0} is not a valid URL
 
 JSObject *URL::create(JSContext *cx, JS::HandleObject self, jsurl::SpecString url_str,
                       const jsurl::JSUrl *base) {
-  jsurl::JSUrl *url;
+  jsurl::JSUrl *url = nullptr;
   if (base) {
     url = jsurl::new_jsurl_with_base(&url_str, base);
   } else {

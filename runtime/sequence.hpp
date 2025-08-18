@@ -41,7 +41,7 @@ bool maybe_consume_sequence_or_record(JSContext *cx, JS::HandleValue initv, JS::
     JS::RootedValue entry(cx);
 
     while (true) {
-      bool done;
+      bool done = false;
       if (!it.next(&entry, &done))
         return false;
 
@@ -59,7 +59,7 @@ bool maybe_consume_sequence_or_record(JSContext *cx, JS::HandleValue initv, JS::
         return api::throw_error(cx, api::Errors::InvalidSequence, ctor_name, alt_text);
 
       {
-        bool done;
+        bool done = false;
 
         // Extract key.
         if (!entr_iter.next(&key, &done))

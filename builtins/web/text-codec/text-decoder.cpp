@@ -61,7 +61,7 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
       JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Decoder)).toPrivate());
   MOZ_ASSERT(decoder);
 
-  uint32_t result;
+  uint32_t result = 0;
   size_t srcLen = src->size();
   size_t destLen = jsencoding::decoder_max_utf16_buffer_length(decoder, srcLen);
   std::unique_ptr<uint16_t[]> dest(new uint16_t[destLen + 1]);
@@ -76,7 +76,7 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
       return api::throw_error(cx, TextCodecErrors::DecodingFailed);
     }
   } else {
-    bool hadReplacements;
+    bool hadReplacements = false;
     result = jsencoding::decoder_decode_to_utf16(decoder, src_ptr, &srcLen, dest.get(),
                                                  &destLen, !stream, &hadReplacements);
   }
@@ -197,7 +197,7 @@ bool TextDecoder::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   // 1. Remove any leading and trailing ASCII whitespace from label.
   // 2. If label is an ASCII case-insensitive match for any of the labels listed in the table
   // below, then return the corresponding encoding; otherwise return failure. JS-Compute-Runtime:
-  jsencoding::Encoding *encoding;
+  jsencoding::Encoding *encoding = nullptr;
   if (label_value.isUndefined()) {
     encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
         reinterpret_cast<uint8_t *>(const_cast<char *>("UTF-8")), 5));
@@ -234,7 +234,7 @@ bool TextDecoder::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     }
   }
   JS::RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  jsencoding::Decoder *decoder;
+  jsencoding::Decoder *decoder = nullptr;
   if (ignoreBOM) {
     decoder = jsencoding::encoding_new_decoder_without_bom_handling(encoding);
   } else {

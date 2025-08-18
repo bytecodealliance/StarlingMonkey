@@ -33,7 +33,7 @@ static uint64_t mono_clock_offset = 0;
 // This overrides wasi-libc's weakly linked implementation of clock_gettime to ensure that
 // monotonic clocks really are monotonic, even across resumptions of wizer snapshots.
 int clock_gettime(clockid_t clock, timespec * ts) {
-  __wasi_clockid_t clock_id;
+  __wasi_clockid_t clock_id = 0;
   if (clock == CLOCK_REALTIME) {
     clock_id = __WASI_CLOCKID_REALTIME;
   } else if (clock == CLOCK_MONOTONIC) {
@@ -41,7 +41,7 @@ int clock_gettime(clockid_t clock, timespec * ts) {
   } else {
     return EINVAL;
   }
-  __wasi_timestamp_t t;
+  __wasi_timestamp_t t = 0;
   auto errno = __wasi_clock_time_get(clock_id, 1, &t);
   if (errno != 0) {
     return EINVAL;
@@ -65,7 +65,7 @@ void wizen() {
   ENGINE->finish_pre_initialization();
 
   // Ensure that the monotonic clock is always increasing, even across multiple resumptions.
-  __wasi_timestamp_t t;
+  __wasi_timestamp_t t = 0;
   MOZ_RELEASE_ASSERT(!__wasi_clock_time_get(__WASI_CLOCKID_MONOTONIC, 1, &t));
   if (mono_clock_offset < t) {
     mono_clock_offset = t;

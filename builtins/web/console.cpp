@@ -82,7 +82,7 @@ JS::Result<mozilla::Ok> MapToSource(JSContext *cx, std::string &sourceOut, JS::H
   JS::RootedValue value_val(cx);
   bool firstValue = true;
   while (true) {
-    bool done;
+    bool done = false;
     if (!it.next(&entry_val, &done)) {
       return JS::Result<mozilla::Ok>(JS::Error());
     }
@@ -130,7 +130,7 @@ JS::Result<mozilla::Ok> SetToSource(JSContext *cx, std::string &sourceOut, JS::H
   JS::RootedValue entry_val(cx);
   bool firstValue = true;
   while (true) {
-    bool done;
+    bool done = false;
     if (!it.next(&entry_val, &done)) {
       return JS::Result<mozilla::Ok>(JS::Error());
     }
@@ -152,7 +152,7 @@ JS::Result<mozilla::Ok> SetToSource(JSContext *cx, std::string &sourceOut, JS::H
 JS::Result<mozilla::Ok> ArrayToSource(JSContext *cx, std::string &sourceOut, JS::HandleObject obj,
                                       JS::MutableHandleObjectVector visitedObjects) {
   sourceOut += "[";
-  uint32_t len;
+  uint32_t len = 0;
   if (!JS::GetArrayLength(cx, obj, &len)) {
     return JS::Result<mozilla::Ok>(JS::Error());
   }
@@ -203,7 +203,7 @@ JS::Result<mozilla::Ok> ObjectToSource(JSContext *cx, std::string &sourceOut, JS
 
     // Skip logging non-own function or getter and setter keys
     if (getter_setter || (value.isObject() && JS_ObjectIsFunction(&value.toObject()))) {
-      bool own_prop;
+      bool own_prop = false;
       if (!JS_HasOwnPropertyById(cx, obj, id, &own_prop)) {
         return JS::Result<mozilla::Ok>(JS::Error());
       }

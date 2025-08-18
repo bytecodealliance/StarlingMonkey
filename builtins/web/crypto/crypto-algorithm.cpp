@@ -108,7 +108,7 @@ const EVP_MD *createDigestAlgorithm(JSContext *cx, JS::HandleObject key) {
 // the SHA algorithms that we support.
 std::optional<std::vector<uint8_t>> rawDigest(JSContext *cx, std::span<uint8_t> data,
                                               const EVP_MD *algorithm, size_t buffer_size) {
-  unsigned int size;
+  unsigned int size = 0;
   std::vector<uint8_t> buf(buffer_size, 0);
   if (!EVP_Digest(data.data(), data.size(), buf.data(), &size, algorithm, NULL)) {
     // 2. If performing the operation results in an error, then throw an OperationError.
@@ -122,7 +122,7 @@ std::optional<std::vector<uint8_t>> rawDigest(JSContext *cx, std::span<uint8_t> 
 // the SHA algorithms that we support.
 JSObject *digest(JSContext *cx, std::span<uint8_t> data, const EVP_MD *algorithm,
                  size_t buffer_size) {
-  unsigned int size;
+  unsigned int size = 0;
   mozilla::UniquePtr<uint8_t[], JS::FreePolicy> buf{
       static_cast<uint8_t *>(JS_malloc(cx, buffer_size))};
   if (!buf) {
@@ -885,7 +885,7 @@ JSObject *CryptoAlgorithmECDSA_Sign_Verify::sign(JSContext *cx, JS::HandleObject
   //         Convert s to an octet string of length n and append this sequence of bytes to result.
   // Otherwise, the namedCurve attribute of the [[algorithm]] internal slot of key is a value specified in an applicable specification:
   //     Perform the ECDSA signature steps specified in that specification, passing in M, params and d and resulting in result.
-  const BIGNUM *r_raw, *s_raw;
+  const BIGNUM *r_raw = nullptr, *s_raw = nullptr;
   ECDSA_SIG_get0(sig.get(), &r_raw, &s_raw);
   size_t coord_size = num_bits_to_bytes(curveSize(cx, key).unwrap());
 
@@ -1067,7 +1067,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify::sign(JSContext *cx, JS::
     return nullptr;
   }
 
-  size_t signature_length;
+  size_t signature_length = 0;
   if (EVP_PKEY_sign(ctx.get(), nullptr, &signature_length, digest->data(), digest->size()) <= 0) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return nullptr;
@@ -1205,8 +1205,8 @@ std::unique_ptr<CryptoAlgorithmHMAC_Import> CryptoAlgorithmHMAC_Import::fromPara
   if (hashIdentifier.isErr()) {
     return nullptr;
   }
-  bool found;
-  unsigned long length;
+  bool found = false;
+  unsigned long length = 0;
   if (!JS_HasProperty(cx, parameters, "length", &found)) {
     return nullptr;
   }
@@ -1689,7 +1689,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
         return nullptr;
       }
 
-      size_t coordSize;
+      size_t coordSize = 0;
       switch (actualCurve) {
       case NamedCurve::P256:
         coordSize = 32;

@@ -99,7 +99,7 @@ bool File::init(JSContext *cx, HandleObject self, HandleValue fileBits, HandleVa
   //  3. If the `lastModified` member is provided, let d be set to the lastModified dictionary
   //  member. If it is not provided, set d to the current date and time represented as the number of
   //  milliseconds since the Unix Epoch.
-  int64_t lastModified;
+  int64_t lastModified = 0;
   if (!read_last_modified(cx, opts, &lastModified)) {
     return false;
   }

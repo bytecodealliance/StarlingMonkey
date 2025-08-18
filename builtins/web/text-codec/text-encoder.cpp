@@ -74,8 +74,8 @@ bool TextEncoder::encodeInto(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
   JS::RootedObject destination(cx, &destination_value.toObject());
 
-  uint8_t *data;
-  bool is_shared;
+  uint8_t *data = nullptr;
+  bool is_shared = false;
   size_t len = 0;
   // JS_GetObjectAsUint8Array returns nullptr without throwing if the object is not
   // a Uint8Array, so we don't need to do explicit checks before calling it.
@@ -88,8 +88,8 @@ bool TextEncoder::encodeInto(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!maybe) {
     return false;
   }
-  size_t read;
-  size_t written;
+  size_t read = 0;
+  size_t written = 0;
   std::tie(read, written) = *maybe;
 
   MOZ_ASSERT(written <= len);

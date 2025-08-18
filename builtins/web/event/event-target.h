@@ -22,10 +22,10 @@ struct EventListener : public js::RefCounted<EventListener> {
 
   std::string type;
 
-  bool passive;
-  bool capture;
-  bool once;
-  bool removed;
+  bool passive{};
+  bool capture{};
+  bool once{};
+  bool removed{};
 
   // Define equality: only callback, type, and capture matter.
   bool operator==(const EventListener &other) const {

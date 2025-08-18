@@ -14,11 +14,11 @@ namespace builtins {
 namespace web {
 namespace crypto {
 
-CryptoKeyUsages::CryptoKeyUsages(uint8_t mask) { this->mask = mask; };
+CryptoKeyUsages::CryptoKeyUsages(uint8_t mask) : mask(mask) { };
 CryptoKeyUsages::CryptoKeyUsages(bool encrypt, bool decrypt, bool sign, bool verify,
                                  bool derive_key, bool derive_bits, bool wrap_key,
-                                 bool unwrap_key) {
-  this->mask = 0;
+                                 bool unwrap_key)  {
+  
   if (encrypt) {
     this->mask |= encrypt_flag;
   }
@@ -70,7 +70,7 @@ CryptoKeyUsages CryptoKeyUsages::from(std::vector<std::string> key_usages) {
 }
 
 JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue key_usages) {
-  bool key_usages_is_array;
+  bool key_usages_is_array = false;
   if (!JS::IsArrayObject(cx, key_usages, &key_usages_is_array)) {
     return JS::Result<CryptoKeyUsages>(JS::Error());
   }
@@ -84,7 +84,7 @@ JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue
   }
 
   JS::RootedObject array(cx, &key_usages.toObject());
-  uint32_t key_usages_length;
+  uint32_t key_usages_length = 0;
   if (!JS::GetArrayLength(cx, array, &key_usages_length)) {
     return JS::Result<CryptoKeyUsages>(JS::Error());
   }
@@ -845,7 +845,7 @@ JS::Result<bool> CryptoKey::is_algorithm(JSContext *cx, JS::HandleObject self,
   if (!chars) {
     return JS::Result<bool>(JS::Error());
   }
-  bool match;
+  bool match = false;
   if (!JS_StringEqualsAscii(cx, JS::ToString(cx, name_val), algorithmName(algorithm), &match)) {
     return JS::Result<bool>(JS::Error());
   }

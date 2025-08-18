@@ -35,7 +35,7 @@ bool dbg_set_content_path(JSContext *cx, unsigned argc, Value *vp) {
 
 bool print_location(JSContext *cx, FILE *fp = stdout) {
   JS::AutoFilename filename;
-  uint32_t lineno;
+  uint32_t lineno = 0;
   JS::ColumnNumberOneOrigin column;
   if (!DescribeScriptedCaller(&filename, cx, &lineno, &column)) {
     return false;
@@ -99,7 +99,7 @@ bool TCPSocket::send(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 bool TCPSocket::receive(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1);
-  int32_t chunk_size;
+  int32_t chunk_size = 0;
   if (!ToInt32(cx, args[0], &chunk_size)) {
     return false;
   }
@@ -134,7 +134,7 @@ host_api::HostString read_message(JSContext *cx, host_api::TCPSocket *socket) {
     return nullptr;
   }
 
-  char *end;
+  char *end = nullptr;
   uint16_t message_length = std::strtoul(chunk.begin(), &end, 10);
   if (end == chunk.begin() || *end != '\n') {
     return nullptr;
@@ -175,7 +175,7 @@ bool initialize_debugger(JSContext *cx, uint16_t port, bool content_already_init
     return true;
   }
 
-  char *end;
+  char *end = nullptr;
   uint16_t session_port = std::strtoul(response.begin(), &end, 10);
   if (session_port < 1024 || session_port > 65535) {
     printf("Invalid debugging session port '%*s' received, continuing without debugging ...\n",

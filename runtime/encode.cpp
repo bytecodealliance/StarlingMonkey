@@ -37,7 +37,7 @@ HostString encode_byte_string(JSContext *cx, JS::HandleValue val) {
   if (!str) {
     return HostString{};
   }
-  size_t length;
+  size_t length = 0;
   if (!JS::StringHasLatin1Chars(str)) {
     bool foundBadChar = false;
     {

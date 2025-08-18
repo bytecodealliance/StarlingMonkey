@@ -129,7 +129,7 @@ bool inflate_chunk(JSContext *cx, JS::HandleObject self, JS::HandleValue chunk, 
       }
 
       {
-        bool is_shared;
+        bool is_shared = false;
         JS::AutoCheckCannotGC nogc;
         uint8_t *out_buffer = JS_GetUint8ArrayData(out_obj, &is_shared, nogc);
         memcpy(out_buffer, buffer, bytes);

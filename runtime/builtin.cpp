@@ -29,8 +29,8 @@ std::optional<std::span<uint8_t>> value_to_buffer(JSContext *cx, JS::HandleValue
   }
 
   JS::RootedObject input(cx, &val.toObject());
-  uint8_t *data;
-  bool is_shared;
+  uint8_t *data = nullptr;
+  bool is_shared = false;
   size_t len = 0;
 
   if (JS_IsArrayBufferViewObject(input)) {

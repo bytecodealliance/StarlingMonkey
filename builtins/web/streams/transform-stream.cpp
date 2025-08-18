@@ -65,7 +65,7 @@ bool pipeTo(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool pipeThrough(JSContext *cx, JS::HandleObject source_readable, JS::HandleObject target_writable,
                  JS::HandleValue options) {
   // 1. If ! IsReadableStreamLocked(this) is true, throw a TypeError exception.
-  bool locked;
+  bool locked = false;
   if (!JS::ReadableStreamIsLocked(cx, source_readable, &locked)) {
     return false;
   }
@@ -452,7 +452,7 @@ bool TransformStream::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 
     // 3.  If transformerDict["readableType"] [exists], throw a `[RangeError]`
     // exception.
-    bool found;
+    bool found = false;
     if (!JS_HasProperty(cx, transformerDict, "readableType", &found)) {
       return false;
     }
@@ -694,7 +694,7 @@ bool TransformStream::default_sink_close_algo_then_handler(JSContext *cx, JS::Ha
                                                            JS::CallArgs args) {
   // 5.1.1.  If readable.[state] is "`errored`", throw readable.[storedError].
   JS::RootedObject readable(cx, &extra.toObject());
-  bool is_errored;
+  bool is_errored = false;
   if (!JS::ReadableStreamIsErrored(cx, readable, &is_errored)) {
     return false;
   }
