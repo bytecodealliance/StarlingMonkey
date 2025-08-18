@@ -335,7 +335,7 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto headers = std::make_unique<host_api::HttpHeaders>();
   if (body_text) {
     auto header_set_res = headers->set("content-type", "text/plain");
-    if (auto *err = header_set_res.to_err()) {
+    if (const auto *err = header_set_res.to_err()) {
       HANDLE_ERROR(cx, *err);
       return false;
     }
@@ -350,7 +350,7 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   if (body_text) {
-    auto body = std::move(body_res.unwrap());
+    auto *body = body_res.unwrap();
     body->write(reinterpret_cast<const uint8_t*>(body_text->data()), body_text->length());
   }
 

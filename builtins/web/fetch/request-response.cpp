@@ -2461,7 +2461,7 @@ bool Response::json(JSContext *cx, unsigned argc, JS::Value *vp) {
       return api::throw_error(cx, FetchErrors::NonBodyResponseWithBody, status_str.c_str());
     }
 
-    if (!statusText_val.isUndefined() && !(statusText = JS::ToString(cx, statusText_val))) {
+    if (!statusText_val.isUndefined() && ((statusText = JS::ToString(cx, statusText_val)) == nullptr)) {
       return false;
     }
 
@@ -2472,20 +2472,20 @@ bool Response::json(JSContext *cx, unsigned argc, JS::Value *vp) {
 
    // 3. Create the Response JS object first
   JS::RootedObject response_obj(cx, Response::create(cx));
-  if (!response_obj) {
+  if (response_obj == nullptr) {
     return false;
   }
 
   // Convert JSON string to a proper body value
   JS::RootedString json_string(cx, JS_NewUCStringCopyN(cx, json_callback.output.c_str(), json_callback.output.length()));
-  if (!json_string) {
+  if (json_string == nullptr) {
     return false;
   }
   JS::RootedValue body_val(cx, JS::StringValue(json_string));
 
   // Create init object with headers that include content-type
   JS::RootedObject init_obj(cx, JS_NewPlainObject(cx));
-  if (!init_obj) {
+  if (init_obj == nullptr) {
     return false;
   }
 
@@ -2506,7 +2506,7 @@ bool Response::json(JSContext *cx, unsigned argc, JS::Value *vp) {
   } else {
     headers_obj = Headers::create(cx, Headers::HeadersGuard::Response);
   }
-  if (!headers_obj) {
+  if (headers_obj == nullptr) {
     return false;
   }
 
