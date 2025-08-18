@@ -2,21 +2,26 @@
 #include "encode.h"
 
 #include <cstdio>
-#include <iostream>
 #include <js/CompilationAndEvaluation.h>
 #include <js/MapAndSet.h>
 #include <js/Value.h>
 #include <jsfriendapi.h>
 #include <sys/stat.h>
 
+namespace {
+
 static api::Engine* ENGINE;
 static ScriptLoader* SCRIPT_LOADER;
+static bool MODULE_MODE = true;
+static std::string BASE_PATH;
+
 JS::PersistentRootedObject moduleRegistry;
 JS::PersistentRootedObject builtinModules;
-static bool MODULE_MODE = true;
-static char* BASE_PATH = nullptr;
-mozilla::Maybe<std::string> PATH_PREFIX = mozilla::Nothing();
 JS::CompileOptions *COMPILE_OPTS;
+
+mozilla::Maybe<std::string> PATH_PREFIX = mozilla::Nothing();
+
+} // namespace
 
 using host_api::HostString;
 
@@ -40,64 +45,64 @@ public:
       success = !fclose(file);
     }
     file = nullptr;
+    // Clang analyzer complains about the stream leaking when stream is stdin, stdout, or stderr.
+    // NOLINTNEXTLINE(clang-analyzer-unix.Stream)
     return success;
   }
 };
 
 // strip off the given prefix when possible for nicer debugging stacks
-static const char* strip_prefix(const char* resolved_path,
+static std::string strip_prefix(std::string_view resolved_path,
                                 mozilla::Maybe<std::string> path_prefix) {
   if (!path_prefix) {
-    return strdup(resolved_path);
+    return std::string(resolved_path);
   }
-  auto& base = *path_prefix;
-  if (strncmp(resolved_path, base.data(), base.length()) != 0) {
-    return strdup(resolved_path);
+
+  const auto& base = *path_prefix;
+  if (resolved_path.rfind(base, 0) != 0) {
+    return std::string(resolved_path);
   }
-  size_t path_len = strlen(resolved_path);
-  char* buf(js_pod_malloc<char>(path_len - base.length() + 1));
-  strncpy(buf, &resolved_path[base.length()], path_len - base.length() + 1);
-  return buf;
+
+  return std::string(resolved_path.substr(base.size()));
 }
 
 struct stat s;
 
-static const char* resolve_extension(const char* resolved_path) {
-  if (stat(resolved_path, &s) == 0) {
+
+static std::string resolve_extension(std::string resolved_path) {
+  if (stat(resolved_path.c_str(), &s) == 0) {
     return resolved_path;
   }
-  size_t len = strlen(resolved_path);
-  if (strncmp(resolved_path + len - 3, ".js", 3) == 0) {
+
+  if (resolved_path.size() >= 3 &&
+      resolved_path.compare(resolved_path.size() - 3, 3, ".js") == 0) {
     return resolved_path;
   }
-  char* resolved_path_ext = new char[len + 4];
-  strncpy(resolved_path_ext, resolved_path, len);
-  strncpy(resolved_path_ext + len, ".js", 4);
-  MOZ_ASSERT(strlen(resolved_path_ext) == len + 3);
-  if (stat(resolved_path_ext, &s) == 0) {
-    delete[] resolved_path;
-    return resolved_path_ext;
+
+  std::string with_ext = resolved_path + ".js";
+  if (stat(with_ext.c_str(), &s) == 0) {
+    return with_ext;
   }
-  delete[] resolved_path_ext;
   return resolved_path;
 }
 
-static const char* resolve_path(const char* path, const char* base, size_t base_len) {
-  MOZ_ASSERT(base);
+static std::string resolve_path(std::string_view path, std::string_view base) {
+  size_t base_len = base.size();
   while (base_len > 0 && base[base_len - 1] != '/') {
     base_len--;
   }
-  size_t path_len = strlen(path);
+  size_t path_len = path.size();
 
   // create the maximum buffer size as a working buffer
-  char* resolved_path = new char[base_len + path_len + 1];
+  std::string resolved_path;
+  resolved_path.reserve(base_len + path_len + 1);
 
   // copy the base in if used
   size_t resolved_len = base_len;
-  if (path[0] == '/') {
+  if (!path.empty() && path[0] == '/') {
     resolved_len = 0;
   } else {
-    strncpy(resolved_path, base, base_len);
+    resolved_path.assign(base.substr(0, base_len));
   }
 
   // Iterate through each segment of the path, copying each segment into the resolved path,
@@ -122,25 +127,26 @@ static const char* resolve_path(const char* path, const char* base, size_t base_
       path_cur_idx++;
       path_from_idx = path_cur_idx;
       if (resolved_len > 0 && resolved_path[resolved_len - 1] == '/') {
-        resolved_len --;
+        resolved_len--;
       }
       while (resolved_len > 0 && resolved_path[resolved_len - 1] != '/') {
         resolved_len--;
       }
+      // Resize string to match resolved_len
+      resolved_path.resize(resolved_len);
       continue;
     }
     // normal segment to copy (with the trailing / if not the last segment)
-    if (path[path_cur_idx] == '/')
+    if (path_cur_idx < path_len && path[path_cur_idx] == '/')
       path_cur_idx++;
-    strncpy(resolved_path + resolved_len, path + path_from_idx, path_cur_idx - path_from_idx);
+
+    // Copy segment equivalent to: strncpy(resolved_path + resolved_len, path + path_from_idx, path_cur_idx - path_from_idx);
+    resolved_path.append(path.substr(path_from_idx, path_cur_idx - path_from_idx));
     resolved_len += path_cur_idx - path_from_idx;
     path_from_idx = path_cur_idx;
   }
 
-  // finalize the buffer
-  resolved_path[resolved_len] = '\0';
-  MOZ_ASSERT(strlen(resolved_path) == resolved_len);
-  return resolve_extension(resolved_path);
+  return resolve_extension(std::move(resolved_path));
 }
 
 static JSObject* get_module(JSContext* cx, JS::SourceText<mozilla::Utf8Unit> &source,
@@ -178,11 +184,12 @@ static JSObject* get_module(JSContext* cx, JS::SourceText<mozilla::Utf8Unit> &so
 static JSObject* get_module(JSContext* cx, const char* specifier, const char* resolved_path,
                             const JS::CompileOptions &opts) {
   RootedString resolved_path_str(cx, JS_NewStringCopyZ(cx, resolved_path));
+
   if (!resolved_path_str) {
     return nullptr;
   }
-  RootedValue resolved_path_val(cx, StringValue(resolved_path_str));
 
+  RootedValue resolved_path_val(cx, StringValue(resolved_path_str));
   RootedValue module_val(cx);
   if (!JS::MapGet(cx, moduleRegistry, resolved_path_val, &module_val)) {
     return nullptr;
@@ -327,11 +334,12 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
   }
 
   HostString str = core::encode(cx, parent_path_val);
-  const char* resolved_path = resolve_path(path.get(), str.ptr.get(), str.len);
+  auto resolved_path = resolve_path(path.get(), str.ptr.get());
 
   JS::CompileOptions opts(cx, *COMPILE_OPTS);
-  opts.setFileAndLine(strip_prefix(resolved_path, PATH_PREFIX), 1);
-  return get_module(cx, path.get(), resolved_path, opts);
+  auto stripped = strip_prefix(resolved_path, PATH_PREFIX);
+  opts.setFileAndLine(stripped.c_str(), 1);
+  return get_module(cx, path.get(), resolved_path.c_str(), opts);
 }
 
 bool module_metadata_hook(JSContext* cx, HandleValue referencingPrivate, HandleObject metaObject) {
@@ -379,7 +387,7 @@ bool ScriptLoader::define_builtin_module(const char* id, HandleValue builtin) {
   }
   RootedValue module_val(cx);
   RootedValue id_val(cx, StringValue(id_str));
-  bool already_exists;
+  bool already_exists = false;
   if (!MapHas(cx, builtinModules, id_val, &already_exists)) {
     return false;
   }
@@ -432,26 +440,21 @@ bool ScriptLoader::load_resolved_script(JSContext *cx, const char *specifier,
 
 bool ScriptLoader::load_script(JSContext *cx, const char *script_path,
                                JS::SourceText<mozilla::Utf8Unit> &script) {
-  const char *resolved_path;
-  if (!BASE_PATH) {
-    auto last_slash = strrchr(script_path, '/');
-    size_t base_len;
-    if (last_slash) {
-      last_slash++;
-      base_len = last_slash - script_path;
-      BASE_PATH = new char[base_len + 1];
-      MOZ_ASSERT(BASE_PATH);
-      strncpy(BASE_PATH, script_path, base_len);
-      BASE_PATH[base_len] = '\0';
-    } else {
-      BASE_PATH = strdup("./");
-    }
-    resolved_path = script_path;
-  } else {
-    resolved_path = resolve_path(script_path, BASE_PATH, strlen(BASE_PATH));
-  }
 
-  return load_resolved_script(cx, script_path, resolved_path, script);
+  std::string path(script_path);
+  std::string resolved;
+  if (BASE_PATH.empty()) {
+    auto pos = path.find_last_of('/');
+    if (pos != std::string::npos) {
+      BASE_PATH = path.substr(0, pos + 1);
+    } else {
+      BASE_PATH = "./";
+    }
+    resolved = path;
+  } else {
+    resolved = resolve_path(path, BASE_PATH);
+  }
+  return load_resolved_script(cx, script_path, resolved.c_str(), script);
 }
 
 bool ScriptLoader::eval_top_level_script(const char *path, JS::SourceText<mozilla::Utf8Unit> &source,
@@ -459,7 +462,9 @@ bool ScriptLoader::eval_top_level_script(const char *path, JS::SourceText<mozill
   JSContext *cx = ENGINE->cx();
 
   JS::CompileOptions opts(cx, *COMPILE_OPTS);
-  opts.setFileAndLine(strip_prefix(path, PATH_PREFIX), 1);
+  auto stripped = strip_prefix(path, PATH_PREFIX);
+  opts.setFileAndLine(stripped.c_str(), 1);
+
   JS::RootedScript script(cx);
   RootedObject module(cx);
   if (MODULE_MODE) {
