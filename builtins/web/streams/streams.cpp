@@ -8,9 +8,9 @@
 #include "transform-stream-default-controller.h"
 #include "transform-stream.h"
 
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 
 bool install(api::Engine *engine) {
   if (!NativeStreamSource::init_class(engine->cx(), engine->global()))
@@ -30,6 +30,6 @@ bool install(api::Engine *engine) {
   return true;
 }
 
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+

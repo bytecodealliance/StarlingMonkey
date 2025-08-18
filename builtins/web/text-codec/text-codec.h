@@ -3,12 +3,12 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace text_codec {
+
+
+namespace builtins::web::text_codec {
 bool install(api::Engine *engine);
 }
-} // namespace web
-} // namespace builtins
+
+
 
 #endif

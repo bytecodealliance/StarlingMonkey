@@ -2,9 +2,9 @@
 #include "text-decoder.h"
 #include "text-encoder.h"
 
-namespace builtins {
-namespace web {
-namespace text_codec {
+
+
+namespace builtins::web::text_codec {
 
 bool install(api::Engine *engine) {
   if (!TextEncoder::init_class(engine->cx(), engine->global()))
@@ -14,6 +14,6 @@ bool install(api::Engine *engine) {
   return true;
 }
 
-} // namespace text_codec
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::text_codec
+
+

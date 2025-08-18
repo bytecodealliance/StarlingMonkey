@@ -18,9 +18,9 @@ using builtins::web::form_data::FormDataEntry;
 
 } // namespace
 
-namespace builtins {
-namespace web {
-namespace form_data {
+
+
+namespace builtins::web::form_data {
 
 using blob::Blob;
 using file::File;
@@ -258,7 +258,7 @@ bool FormData::append(JSContext *cx, HandleObject self, std::string_view name, H
     filename_val = filename;
   }
 
-  HandleValueArray arr = HandleValueArray(value);
+  auto arr = HandleValueArray(value);
   RootedObject file_bits(cx, NewArrayObject(cx, arr));
   if (!file_bits) {
     return false;
@@ -487,6 +487,6 @@ bool install(api::Engine *engine) {
   return true;
 }
 
-} // namespace form_data
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::form_data
+
+

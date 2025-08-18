@@ -25,9 +25,9 @@ bool read_last_modified(JSContext *cx, HandleValue initv, int64_t *last_modified
 
 } // namespace
 
-namespace builtins {
-namespace web {
-namespace file {
+
+
+namespace builtins::web::file {
 
 using blob::Blob;
 
@@ -159,6 +159,6 @@ bool File::init_class(JSContext *cx, JS::HandleObject global) {
 
 bool install(api::Engine *engine) { return File::init_class(engine->cx(), engine->global()); }
 
-} // namespace file
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::file
+
+

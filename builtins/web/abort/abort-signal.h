@@ -6,9 +6,9 @@
 
 #include "../event/event-target.h"
 
-namespace builtins {
-namespace web {
-namespace abort {
+
+
+namespace builtins::web::abort {
 
 struct AbortAlgorithm {
   bool virtual run(JSContext *cx) = 0;
@@ -81,8 +81,8 @@ public:
   static void trace(JSTracer *trc, JSObject *self);
 };
 
-} // namespace abort
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::abort
+
+
 
 #endif // BUILTINS_WEB_ABORT_SIGNAL_H_

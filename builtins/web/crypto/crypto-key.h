@@ -7,9 +7,9 @@
 #include "crypto-key-rsa-components.h"
 #include "openssl/evp.h"
 
-namespace builtins {
-namespace web {
-namespace crypto {
+
+
+namespace builtins::web::crypto {
 enum class CryptoAlgorithmIdentifier : uint8_t;
 class CryptoAlgorithmRSASSA_PKCS1_v1_5_Import;
 class CryptoAlgorithmHMAC_Import;
@@ -139,7 +139,7 @@ public:
                                        CryptoAlgorithmIdentifier algorithm);
 };
 
-} // namespace crypto
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::crypto
+
+
 #endif

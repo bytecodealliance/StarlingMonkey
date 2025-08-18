@@ -4,9 +4,9 @@
 #include "builtin.h"
 #include "rust-url.h"
 
-namespace builtins {
-namespace web {
-namespace url {
+
+
+namespace builtins::web::url {
 
 class URLSearchParamsIterator : public BuiltinNoConstructor<URLSearchParamsIterator> {
 public:
@@ -141,8 +141,8 @@ public:
 
 bool install(api::Engine *engine);
 
-} // namespace url
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::url
+
+
 
 #endif

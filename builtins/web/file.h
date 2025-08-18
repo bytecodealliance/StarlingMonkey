@@ -4,9 +4,9 @@
 #include "blob.h"
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace file {
+
+
+namespace builtins::web::file {
 class File : public BuiltinImpl<File> {
   static bool name_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool lastModified_get(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -33,8 +33,8 @@ public:
 
 bool install(api::Engine *engine);
 
-} // namespace file
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::file
+
+
 
 #endif // BUILTINS_WEB_FILE_H

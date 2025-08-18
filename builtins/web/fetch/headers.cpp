@@ -473,7 +473,7 @@ static bool switch_mode(JSContext *cx, HandleObject self, const Headers::Mode mo
     MOZ_ASSERT(static_cast<Headers::HeadersList *>(
                    JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersList))
                        .toPrivate()) == nullptr);
-    Headers::HeadersList *list = new Headers::HeadersList();
+    auto *list = new Headers::HeadersList();
     SetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersList), PrivateValue(list));
     MOZ_ASSERT(static_cast<std::vector<size_t> *>(
                    JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersSortList))
@@ -535,14 +535,14 @@ bool prepare_for_entries_modification(JSContext *cx, JS::HandleObject self) {
 } // namespace
 
 Headers::HeadersList *Headers::headers_list(JSObject *self) {
-  Headers::HeadersList *list = static_cast<Headers::HeadersList *>(
+  auto *list = static_cast<Headers::HeadersList *>(
       JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersList)).toPrivate());
   MOZ_ASSERT(list);
   return list;
 }
 
 Headers::HeadersSortList *Headers::headers_sort_list(JSObject *self) {
-  Headers::HeadersSortList *list = static_cast<Headers::HeadersSortList *>(
+  auto *list = static_cast<Headers::HeadersSortList *>(
       JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersSortList)).toPrivate());
   MOZ_ASSERT(list);
   return list;
@@ -1048,13 +1048,13 @@ bool Headers::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 }
 
 void Headers::finalize(JS::GCContext *gcx, JSObject *self) {
-  HeadersList *list = static_cast<HeadersList *>(
+  auto *list = static_cast<HeadersList *>(
       JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersList)).toPrivate());
   if (list != nullptr) {
     list->clear();
     free(list);
   }
-  HeadersSortList *sort_list = static_cast<HeadersSortList *>(
+  auto *sort_list = static_cast<HeadersSortList *>(
       JS::GetReservedSlot(self, static_cast<size_t>(Slots::HeadersSortList)).toPrivate());
   if (sort_list != nullptr) {
     sort_list->clear();
@@ -1217,7 +1217,7 @@ bool HeadersIterator::next(JSContext *cx, unsigned argc, Value *vp) {
 
   size_t index = JS::GetReservedSlot(self, Slots::Cursor).toInt32();
   size_t len = list->size();
-  uint8_t type = static_cast<uint8_t>(JS::GetReservedSlot(self, Slots::Type).toInt32());
+  auto type = static_cast<uint8_t>(JS::GetReservedSlot(self, Slots::Type).toInt32());
 
   JS::RootedObject result(cx, JS_NewPlainObject(cx));
   if (!result)
@@ -1239,7 +1239,7 @@ bool HeadersIterator::next(JSContext *cx, unsigned argc, Value *vp) {
   if (type != ITER_TYPE_VALUES) {
     const host_api::HostString *key = &std::get<0>(*Headers::get_index(cx, headers, index));
     size_t len = key->len;
-    JS::Latin1Char *chars = reinterpret_cast<JS::Latin1Char *>(malloc(len));
+    auto *chars = reinterpret_cast<JS::Latin1Char *>(malloc(len));
     for (int i = 0; i < len; ++i) {
       const unsigned char ch = key->ptr[i];
       // headers should already be validated by here

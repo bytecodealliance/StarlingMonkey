@@ -4,9 +4,9 @@
 #include "builtin.h"
 #include "crypto-algorithm.h"
 
-namespace builtins {
-namespace web {
-namespace crypto {
+
+
+namespace builtins::web::crypto {
 
 enum class Operations : uint8_t {
   Encrypt,
@@ -41,7 +41,7 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
 };
 
-} // namespace crypto
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::crypto
+
+
 #endif

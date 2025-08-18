@@ -6,9 +6,9 @@
 #include "js/AllocPolicy.h"
 #include "js/Vector.h"
 
-namespace builtins {
-namespace web {
-namespace blob {
+
+
+namespace builtins::web::blob {
 
 class Blob : public BuiltinImpl<Blob, FinalizableClassPolicy> {
   static bool arrayBuffer(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -63,8 +63,8 @@ public:
 
 bool install(api::Engine *engine);
 
-} // namespace blob
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::blob
+
+
 
 #endif // BUILTINS_WEB_URL_H

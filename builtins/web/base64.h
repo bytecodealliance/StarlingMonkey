@@ -3,9 +3,9 @@
 
 #include "extension-api.h"
 
-namespace builtins {
-namespace web {
-namespace base64 {
+
+
+namespace builtins::web::base64 {
 
 bool install(api::Engine *engine);
 
@@ -20,8 +20,8 @@ JS::Result<std::string> forgivingBase64Decode(std::string_view data, const uint8
 JS::Result<std::string> valueToJSByteString(JSContext *cx, HandleValue v);
 JS::Result<std::string> stringToJSByteString(JSContext *cx, std::string v);
 
-} // namespace base64
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::base64
+
+
 
 #endif

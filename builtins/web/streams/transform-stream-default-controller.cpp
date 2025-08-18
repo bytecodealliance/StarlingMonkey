@@ -9,7 +9,7 @@
 
 #include "transform-stream-default-controller.h"
 
-#include <math.h>
+#include <cmath>
 #include "transform-stream.h"
 
 #include "stream-errors.h"
@@ -22,9 +22,9 @@
  */
 // A JS class to use as the underlying sink for native writable streams, used
 // for TransformStream.
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 JSObject *TransformStreamDefaultController::stream(JSObject *controller) {
   MOZ_ASSERT(is_instance(controller));
   return &JS::GetReservedSlot(controller, Slots::Stream).toObject();
@@ -468,6 +468,6 @@ void TransformStreamDefaultController::ClearAlgorithms(JSObject *controller) {
   JS::SetReservedSlot(controller, Slots::FlushAlgorithm, JS::PrivateValue(nullptr));
   JS::SetReservedSlot(controller, Slots::FlushInput, JS::UndefinedValue());
 }
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+

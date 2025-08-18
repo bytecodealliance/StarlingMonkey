@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 class NativeStreamSource : public BuiltinNoConstructor<NativeStreamSource> {
 private:
 public:
@@ -27,12 +27,8 @@ public:
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
-  typedef bool PullAlgorithmImplementation(JSContext *cx, JS::CallArgs args,
-                                           JS::HandleObject stream, JS::HandleObject owner,
-                                           JS::HandleObject controller);
-  typedef bool CancelAlgorithmImplementation(JSContext *cx, JS::CallArgs args,
-                                             JS::HandleObject stream, JS::HandleObject owner,
-                                             JS::HandleValue reason);
+  using PullAlgorithmImplementation = bool (JSContext *, JS::CallArgs, JS::HandleObject, JS::HandleObject, JS::HandleObject);
+  using CancelAlgorithmImplementation = bool (JSContext *, JS::CallArgs, JS::HandleObject, JS::HandleObject, JS::HandleValue);
   static JSObject *owner(JSObject *self);
   static JSObject *stream(JSObject *self);
   static JS::Value startPromise(JSObject *self);
@@ -61,7 +57,7 @@ public:
                           PullAlgorithmImplementation *pull, CancelAlgorithmImplementation *cancel,
                           JS::HandleFunction size = nullptr, double highWaterMark = 0.0);
 };
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+
 #endif

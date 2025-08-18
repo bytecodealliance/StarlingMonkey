@@ -39,8 +39,7 @@ to_bytes_expand(JSContext *cx, const BIGNUM *bignum, size_t minimumBufferSize) {
     std::fill_n(bytes.get(), paddingLength, padding);
   }
   BN_bn2bin(bignum, bytes.get() + paddingLength);
-  return std::pair<mozilla::UniquePtr<uint8_t[], JS::FreePolicy>, size_t>(std::move(bytes),
-                                                                          bufferSize);
+  return { std::move(bytes), bufferSize };
 }
 
 const EVP_MD *createDigestAlgorithm(JSContext *cx, CryptoAlgorithmIdentifier hashIdentifier) {
@@ -110,7 +109,7 @@ std::optional<std::vector<uint8_t>> rawDigest(JSContext *cx, std::span<uint8_t> 
                                               const EVP_MD *algorithm, size_t buffer_size) {
   unsigned int size = 0;
   std::vector<uint8_t> buf(buffer_size, 0);
-  if (!EVP_Digest(data.data(), data.size(), buf.data(), &size, algorithm, NULL)) {
+  if (!EVP_Digest(data.data(), data.size(), buf.data(), &size, algorithm, nullptr)) {
     // 2. If performing the operation results in an error, then throw an OperationError.
     DOMException::raise(cx, "SubtleCrypto.digest: failed to create digest", "OperationError");
     return std::nullopt;
@@ -129,7 +128,7 @@ JSObject *digest(JSContext *cx, std::span<uint8_t> data, const EVP_MD *algorithm
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
-  if (!EVP_Digest(data.data(), data.size(), buf.get(), &size, algorithm, NULL)) {
+  if (!EVP_Digest(data.data(), data.size(), buf.get(), &size, algorithm, nullptr)) {
     // 2. If performing the operation results in an error, then throw an OperationError.
     DOMException::raise(cx, "SubtleCrypto.digest: failed to create digest", "OperationError");
     return nullptr;

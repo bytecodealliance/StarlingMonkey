@@ -4,9 +4,9 @@
 
 #include "text-codec-errors.h"
 
-namespace builtins {
-namespace web {
-namespace text_codec {
+
+
+namespace builtins::web::text_codec {
 
 bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
@@ -266,6 +266,6 @@ void TextDecoder::finalize(JS::GCContext *gcx, JSObject *self) {
   }
 }
 
-} // namespace text_codec
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::text_codec
+
+

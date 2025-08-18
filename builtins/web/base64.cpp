@@ -4,9 +4,9 @@
 
 DEF_ERR(InvalidCharacterError, JSEXN_RANGEERR, "String contains an invalid character", 0)
 
-namespace builtins {
-namespace web {
-namespace base64 {
+
+
+namespace builtins::web::base64 {
 
 JS::Result<std::string> valueToJSByteString(JSContext *cx, JS::Handle<JS::Value> v) {
   JS::RootedString s(cx);
@@ -430,6 +430,6 @@ bool install(api::Engine *engine) {
   return JS_DefineFunctions(engine->cx(), engine->global(), methods);
 }
 
-} // namespace base64
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::base64
+
+

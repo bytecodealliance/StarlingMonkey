@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace form_data {
+
+
+namespace builtins::web::form_data {
 
 struct FormDataEntry {
   FormDataEntry(std::string_view name, HandleValue value) : name(name), value(value) {}
@@ -80,8 +80,8 @@ public:
 
 bool install(api::Engine *engine);
 
-} // namespace form_data
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::form_data
+
+
 
 #endif // BUILTINS_WEB_FORM_FDATA_H

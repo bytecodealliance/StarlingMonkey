@@ -43,9 +43,9 @@ bool read_event_init(JSContext *cx, HandleValue initv,
 
 } // namespace
 
-namespace builtins {
-namespace web {
-namespace event {
+
+
+namespace builtins::web::event {
 
 const JSFunctionSpec Event::static_methods[] = {
     JS_FS_END,
@@ -256,7 +256,7 @@ bool Event::init(JSContext *cx, HandleObject self, HandleValue type, HandleValue
   // To initialize an event, with type, bubbles, and cancelable, run these steps:
   // - Set event's initialized flag.
   // - Unset event's stop propagation flag, stop immediate propagation flag, and canceled flag.
-  uint32_t flags = static_cast<uint32_t>(EventFlag::Initialized);
+  auto flags = static_cast<uint32_t>(EventFlag::Initialized);
   set_event_flag(&flags, EventFlag::Bubbles, bubbles);
   set_event_flag(&flags, EventFlag::Composed, composed);
   set_event_flag(&flags, EventFlag::Cancelable, cancelable);
@@ -352,6 +352,6 @@ bool install(api::Engine *engine) {
   return true;
 }
 
-} // namespace event
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::event
+
+

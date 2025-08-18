@@ -4,9 +4,9 @@
 #include "builtin.h"
 #include "form-data.h"
 
-namespace builtins {
-namespace web {
-namespace form_data {
+
+
+namespace builtins::web::form_data {
 
 class FormDataParser {
 public:
@@ -16,8 +16,8 @@ public:
   static std::unique_ptr<FormDataParser> create(std::string_view content_type);
 };
 
-} // namespace form_data
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::form_data
+
+
 
 #endif // BUILTINS_WEB_FORM_DATA_PARSER_

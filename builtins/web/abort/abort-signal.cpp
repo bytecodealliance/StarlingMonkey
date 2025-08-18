@@ -5,9 +5,9 @@
 #include "../event/event.h"
 #include "../timers.h"
 
-namespace builtins {
-namespace web {
-namespace abort {
+
+
+namespace builtins::web::abort {
 
 using event::Event;
 using event::EventTarget;
@@ -515,6 +515,6 @@ bool install(api::Engine *engine) {
 
 JSString *AbortSignal::abort_type_atom = nullptr;
 
-} // namespace abort
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::abort
+
+

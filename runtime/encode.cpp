@@ -66,7 +66,7 @@ HostString encode_byte_string(JSContext *cx, JS::HandleValue val) {
   char *buf = static_cast<char *>(js_malloc(length));
   if (!JS_EncodeStringToBuffer(cx, str, buf, length))
     MOZ_ASSERT_UNREACHABLE();
-  return HostString(JS::UniqueChars(buf), length);
+  return {JS::UniqueChars(buf), length};
 }
 
 jsurl::SpecString encode_spec_string(JSContext *cx, JS::HandleValue val) {

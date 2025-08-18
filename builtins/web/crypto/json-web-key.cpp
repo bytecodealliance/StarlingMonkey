@@ -19,9 +19,9 @@
 
 #include <fmt/format.h>
 
-namespace builtins {
-namespace web {
-namespace crypto {
+
+
+namespace builtins::web::crypto {
 
 namespace {
 JS::Result<std::optional<std::string>>
@@ -364,6 +364,6 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
   return std::make_unique<JsonWebKey>(kty, use, key_ops, alg, ext, crv, x, y, n, e, d, p, q, dp, dq,
                                       qi, oth, k);
 }
-} // namespace crypto
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::crypto
+
+

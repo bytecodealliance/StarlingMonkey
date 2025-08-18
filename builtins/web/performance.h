@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace performance {
+
+
+namespace builtins::web::performance {
 
 class Performance : public BuiltinNoConstructor<Performance> {
 public:
@@ -27,8 +27,8 @@ public:
 
 bool install(api::Engine *engine);
 
-} // namespace performance
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::performance
+
+
 
 #endif

@@ -13,9 +13,9 @@
 #include "transform-stream-default-controller.h"
 #include "transform-stream.h"
 
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 
 namespace {
 
@@ -245,7 +245,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
 
   // The remainder of the function deals with setting up the deflate state used
   // for compressing chunks.
-  z_stream *zstream = (z_stream *)JS_malloc(cx, sizeof(z_stream));
+  auto *zstream = (z_stream *)JS_malloc(cx, sizeof(z_stream));
   if (!zstream) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
@@ -254,7 +254,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   memset(zstream, 0, sizeof(z_stream));
   JS::SetReservedSlot(stream, CompressionStream::Slots::State, JS::PrivateValue(zstream));
 
-  uint8_t *buffer = (uint8_t *)JS_malloc(cx, BUFFER_SIZE);
+  auto *buffer = (uint8_t *)JS_malloc(cx, BUFFER_SIZE);
   if (!buffer) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
@@ -336,6 +336,6 @@ bool CompressionStream::init_class(JSContext *cx, JS::HandleObject global) {
   return true;
 }
 
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+

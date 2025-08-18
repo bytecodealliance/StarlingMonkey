@@ -59,7 +59,7 @@ static std::string strip_prefix(std::string_view resolved_path,
   }
 
   const auto& base = *path_prefix;
-  if (resolved_path.rfind(base, 0) != 0) {
+  if (!resolved_path.starts_with(base)) {
     return std::string(resolved_path);
   }
 

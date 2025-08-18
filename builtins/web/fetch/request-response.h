@@ -5,9 +5,9 @@
 #include "headers.h"
 #include "host_api.h"
 
-namespace builtins {
-namespace web {
-namespace fetch {
+
+
+namespace builtins::web::fetch {
 
 namespace request_response {
 
@@ -252,8 +252,8 @@ public:
   void trace(JSTracer *trc) override { TraceEdge(trc, &request_, "Request for response future"); }
 };
 
-} // namespace fetch
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::fetch
+
+
 
 #endif

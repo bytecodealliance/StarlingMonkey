@@ -4,9 +4,9 @@
 #include "builtin.h"
 #include "host_api.h"
 
-namespace builtins {
-namespace web {
-namespace fetch {
+
+
+namespace builtins::web::fetch {
 
 class Headers final : public BuiltinImpl<Headers, FinalizableClassPolicy> {
   static bool append(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -177,8 +177,8 @@ public:
   static JSObject *create(JSContext *cx, JS::HandleObject headers, uint8_t iter_type);
 };
 
-} // namespace fetch
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::fetch
+
+
 
 #endif

@@ -1,9 +1,9 @@
 #include "abort-controller.h"
 #include "abort-signal.h"
 
-namespace builtins {
-namespace web {
-namespace abort {
+
+
+namespace builtins::web::abort {
 
 const JSFunctionSpec AbortController::static_methods[] = {
     JS_FS_END,
@@ -65,6 +65,6 @@ bool AbortController::init_class(JSContext *cx, JS::HandleObject global) {
   return init_class_impl(cx, global);
 }
 
-}  // namespace abort
-}  // namespace web
-}  // namespace builtins
+} // namespace builtins::web::abort
+
+

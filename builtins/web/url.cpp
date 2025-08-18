@@ -13,9 +13,9 @@
 #include "js/GCHashTable.h"
 #include "js/TypeDecls.h"
 
-namespace builtins {
-namespace web {
-namespace url {
+
+
+namespace builtins::web::url {
 
 using blob::Blob;
 using file::File;
@@ -499,7 +499,7 @@ const JSPropertySpec URL::properties[] = {
 struct UrlKey {
   std::string key_;
 
-  UrlKey() {}
+  UrlKey() = default;
   UrlKey(std::string key) : key_(std::move(key)) {}
 
   void trace(JSTracer *trc) {}
@@ -745,7 +745,7 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, JS::HandleValue url_
 }
 
 void URL::finalize(JS::GCContext *gcx, JSObject *self) {
-  jsurl::JSUrl *url =
+  auto *url =
       static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(self, Slots::Url).toPrivate());
   jsurl::free_jsurl(url);
 }
@@ -789,6 +789,6 @@ bool install(api::Engine *engine) {
   return true;
 }
 
-} // namespace url
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::url
+
+

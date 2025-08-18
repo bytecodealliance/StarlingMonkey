@@ -7,9 +7,9 @@
 #include "js/RefCounted.h"
 #include "mozilla/RefPtr.h"
 
-namespace builtins {
-namespace web {
-namespace event {
+
+
+namespace builtins::web::event {
 
 struct EventListener : public js::RefCounted<EventListener> {
   void trace(JSTracer *trc) {
@@ -80,8 +80,8 @@ public:
   static void trace(JSTracer *trc, JSObject *self);
 };
 
-} // namespace event
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::event
+
+
 
 #endif // BUILTINS_WEB_EVENT_TARGET_H_

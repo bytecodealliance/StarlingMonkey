@@ -162,9 +162,9 @@ std::string normalize_and_escape(std::string_view src) {
 
 }// namespace
 
-namespace builtins {
-namespace web {
-namespace form_data {
+
+
+namespace builtins::web::form_data {
 
 using blob::Blob;
 using file::File;
@@ -705,6 +705,6 @@ void MultipartFormData::finalize(JS::GCContext *gcx, JSObject *self) {
   }
 }
 
-} // namespace form_data
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::form_data
+
+

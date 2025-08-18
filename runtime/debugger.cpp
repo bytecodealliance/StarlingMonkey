@@ -206,7 +206,7 @@ bool initialize_debugger(JSContext *cx, uint16_t port, bool content_already_init
       .setNewCompartmentInSystemZone()
       .setInvisibleToDebugger(true);
 
-  static JSClass global_class = {"global", JSCLASS_GLOBAL_FLAGS, &JS::DefaultGlobalClassOps};
+  static JSClass global_class = {.name="global", .flags=JSCLASS_GLOBAL_FLAGS, .cOps=&JS::DefaultGlobalClassOps};
   RootedObject global(cx);
   global = JS_NewGlobalObject(cx, &global_class, nullptr, JS::DontFireOnNewGlobalHook, options);
   if (!global) {

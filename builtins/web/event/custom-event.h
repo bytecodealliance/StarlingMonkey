@@ -4,9 +4,9 @@
 #include "builtin.h"
 #include "event.h"
 
-namespace builtins {
-namespace web {
-namespace event {
+
+
+namespace builtins::web::event {
 
 class CustomEvent : public BuiltinImpl<CustomEvent> {
   static bool detail_get(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -29,8 +29,8 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
 };
 
-} // namespace event
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::event
+
+
 
 #endif // BUILTINS_WEB_CUSTOM_EVENT_H_

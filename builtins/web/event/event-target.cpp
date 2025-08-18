@@ -127,9 +127,9 @@ template <typename T> struct GCPolicy<RefPtr<T>> {
 
 } // namespace JS
 
-namespace builtins {
-namespace web {
-namespace event {
+
+
+namespace builtins::web::event {
 
 using EventFlag = Event::EventFlag;
 using dom_exception::DOMException;
@@ -641,6 +641,6 @@ bool EventTarget::init_class(JSContext *cx, JS::HandleObject global) {
   return init_class_impl(cx, global);
 }
 
-} // namespace event
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::event
+
+

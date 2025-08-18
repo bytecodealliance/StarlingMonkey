@@ -14,9 +14,9 @@
 
 // A JS class to use as the underlying source for native readable streams, used
 // for Request/Response bodies and TransformStream.
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 
 JSObject *NativeStreamSource::owner(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
@@ -182,6 +182,6 @@ JSObject *NativeStreamSource::create(JSContext *cx, JS::HandleObject owner, JS::
   JS::SetReservedSlot(source, Slots::Stream, JS::ObjectValue(*stream));
   return source;
 }
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+

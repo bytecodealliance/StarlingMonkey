@@ -11,9 +11,9 @@ constexpr size_t CHUNK_SIZE = 8192;
 
 } // namespace
 
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 
 class StreamTask final : public api::AsyncTask {
   Heap<JSObject *> reader_;
@@ -146,6 +146,6 @@ JSObject *BufReader::create(JSContext *cx, JS::HandleObject user, BufReader::Rea
   return self;
 }
 
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+

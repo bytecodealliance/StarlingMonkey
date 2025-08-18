@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace worker_location {
+
+
+namespace builtins::web::worker_location {
 
 class WorkerLocation : public BuiltinNoConstructor<WorkerLocation> {
 private:
@@ -26,8 +26,8 @@ public:
 
 bool install(api::Engine *engine);
 
-} // namespace worker_location
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::worker_location
+
+
 
 #endif

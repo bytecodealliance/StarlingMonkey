@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace form_data {
+
+
+namespace builtins::web::form_data {
 
 class OutOfMemory {};
 class MultipartFormDataImpl;
@@ -40,7 +40,7 @@ public:
 };
 
 } // namespace form_data_encoder
-} // namespace web
-} // namespace builtins
+
+
 
 #endif // BUILTINS_WEB_FORM_DATA_ENCODER_

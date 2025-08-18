@@ -4,9 +4,9 @@
 #include "dom-exception.h"
 #include "mozilla/Assertions.h"
 
-namespace builtins {
-namespace web {
-namespace structured_clone {
+
+
+namespace builtins::web::structured_clone {
 
 // Magic number used in structured cloning as a tag to identify a
 // URLSearchParam.
@@ -93,7 +93,7 @@ bool WriteStructuredClone(JSContext *cx, JSStructuredCloneWriter *w, JS::HandleO
   return true;
 }
 
-JSStructuredCloneCallbacks sc_callbacks = {ReadStructuredClone, WriteStructuredClone};
+JSStructuredCloneCallbacks sc_callbacks = {.read=ReadStructuredClone, .write=WriteStructuredClone};
 
 /**
  * The `structuredClone` global function
@@ -130,6 +130,6 @@ bool install(api::Engine *engine) {
   return JS_DefineFunctions(engine->cx(), engine->global(), methods);
 }
 
-} // namespace structured_clone
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::structured_clone
+
+

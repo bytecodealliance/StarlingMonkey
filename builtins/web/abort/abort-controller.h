@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace abort {
+
+
+namespace builtins::web::abort {
 
 class AbortController : public BuiltinImpl<AbortController> {
   static bool signal_get(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -28,9 +28,9 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
 };
 
-} // namespace abort
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::abort
+
+
 
 
 

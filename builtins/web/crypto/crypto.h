@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace crypto {
+
+
+namespace builtins::web::crypto {
 
 class Crypto : public BuiltinNoConstructor<Crypto> {
 private:
@@ -30,8 +30,8 @@ public:
 
 bool install(api::Engine *engine);
 
-} // namespace crypto
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::crypto
+
+
 
 #endif

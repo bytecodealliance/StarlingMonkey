@@ -122,9 +122,9 @@ std::string convert_line_endings_to_native(std::string_view s) {
 
 } // anonymous namespace
 
-namespace builtins {
-namespace web {
-namespace blob {
+
+
+namespace builtins::web::blob {
 
 using js::Vector;
 using file::File;
@@ -630,6 +630,6 @@ bool install(api::Engine *engine) {
   return Blob::init_class(engine->cx(), engine->global());
 }
 
-} // namespace blob
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::blob
+
+

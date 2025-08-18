@@ -10,9 +10,9 @@
 #include <openssl/err.h>
 #include <utility>
 
-namespace builtins {
-namespace web {
-namespace crypto {
+
+
+namespace builtins::web::crypto {
 
 CryptoKeyUsages::CryptoKeyUsages(uint8_t mask) : mask(mask) { };
 CryptoKeyUsages::CryptoKeyUsages(bool encrypt, bool decrypt, bool sign, bool verify,
@@ -66,7 +66,7 @@ CryptoKeyUsages CryptoKeyUsages::from(std::vector<std::string> key_usages) {
       mask |= unwrap_key_flag;
     }
   }
-  return CryptoKeyUsages(mask);
+  return {mask};
 }
 
 JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue key_usages) {
@@ -822,9 +822,9 @@ EVP_PKEY *CryptoKey::key(JSObject *self) {
 
 std::span<uint8_t> CryptoKey::hmacKeyData(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return std::span<uint8_t>(
+  return {
       static_cast<uint8_t *>(JS::GetReservedSlot(self, Slots::KeyData).toPrivate()),
-      JS::GetReservedSlot(self, Slots::KeyDataLength).toInt32());
+      static_cast<size_t>(JS::GetReservedSlot(self, Slots::KeyDataLength).toInt32())};
 }
 
 JS::Result<bool> CryptoKey::is_algorithm(JSContext *cx, JS::HandleObject self,
@@ -868,6 +868,6 @@ bool CryptoKey::canVerify(JS::HandleObject self) {
   return usage.canVerify();
 }
 
-} // namespace crypto
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::crypto
+
+

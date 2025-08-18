@@ -10,9 +10,9 @@
 #include <openssl/pem.h>
 #include <openssl/ec.h>
 
-namespace builtins {
-namespace web {
-namespace crypto {
+
+
+namespace builtins::web::crypto {
 
 // We are defining all the algorithms from
 // https://w3c.github.io/webcrypto/#issue-container-generatedID-15
@@ -49,7 +49,7 @@ class CryptoAlgorithm {
 public:
   virtual ~CryptoAlgorithm() = default;
 
-  virtual const char *name() const noexcept = 0;
+  [[nodiscard]] virtual const char *name() const noexcept = 0;
   virtual CryptoAlgorithmIdentifier identifier() = 0;
 };
 
@@ -74,8 +74,8 @@ public:
 
 class CryptoAlgorithmHMAC_Sign_Verify final : public CryptoAlgorithmSignVerify {
 public:
-  const char *name() const noexcept override { return "HMAC"; };
-  CryptoAlgorithmHMAC_Sign_Verify(){};
+  [[nodiscard]] const char *name() const noexcept override { return "HMAC"; };
+  CryptoAlgorithmHMAC_Sign_Verify()= default;
   CryptoAlgorithmIdentifier identifier() final { return CryptoAlgorithmIdentifier::HMAC; };
 
   JSObject *sign(JSContext *cx, JS::HandleObject key, std::span<uint8_t> data) override;
@@ -90,7 +90,7 @@ public:
   // The hash member describes the hash algorithm to use.
   CryptoAlgorithmIdentifier hashIdentifier;
 
-  const char *name() const noexcept override { return "ECDSA"; };
+  [[nodiscard]] const char *name() const noexcept override { return "ECDSA"; };
   CryptoAlgorithmECDSA_Sign_Verify(CryptoAlgorithmIdentifier hashIdentifier)
       : hashIdentifier{hashIdentifier} {};
 
@@ -111,7 +111,7 @@ public:
   // A named curve.
   NamedCurve namedCurve;
 
-  const char *name() const noexcept override { return "ECDSA"; };
+  [[nodiscard]] const char *name() const noexcept override { return "ECDSA"; };
   CryptoAlgorithmECDSA_Import(NamedCurve namedCurve) : namedCurve{namedCurve} {};
 
   // https://www.w3.org/TR/WebCryptoAPI/#EcKeyImportParams-dictionary
@@ -130,8 +130,8 @@ public:
 
 class CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify final : public CryptoAlgorithmSignVerify {
 public:
-  const char *name() const noexcept override { return "RSASSA-PKCS1-v1_5"; };
-  CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify(){};
+  [[nodiscard]] const char *name() const noexcept override { return "RSASSA-PKCS1-v1_5"; };
+  CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify()= default;
   CryptoAlgorithmIdentifier identifier() final {
     return CryptoAlgorithmIdentifier::RSASSA_PKCS1_v1_5;
   };
@@ -147,7 +147,7 @@ public:
   // The hash member describes the hash algorithm to use.
   CryptoAlgorithmIdentifier hashIdentifier;
 
-  const char *name() const noexcept override { return "RSASSA-PKCS1-v1_5"; };
+  [[nodiscard]] const char *name() const noexcept override { return "RSASSA-PKCS1-v1_5"; };
   CryptoAlgorithmRSASSA_PKCS1_v1_5_Import(CryptoAlgorithmIdentifier hashIdentifier)
       : hashIdentifier{hashIdentifier} {};
 
@@ -177,7 +177,7 @@ public:
   // hash algorithm defined in hashIdentifier.
   std::optional<size_t> length;
 
-  const char *name() const noexcept override { return "HMAC"; };
+  [[nodiscard]] const char *name() const noexcept override { return "HMAC"; };
 
   CryptoAlgorithmHMAC_Import(CryptoAlgorithmIdentifier hashIdentifier)
       : hashIdentifier{hashIdentifier} {};
@@ -207,40 +207,40 @@ public:
 
 class CryptoAlgorithmMD5 final : public CryptoAlgorithmDigest {
 public:
-  const char *name() const noexcept override { return "MD5"; };
+  [[nodiscard]] const char *name() const noexcept override { return "MD5"; };
   CryptoAlgorithmIdentifier identifier() override { return CryptoAlgorithmIdentifier::MD5; };
   JSObject *digest(JSContext *cx, std::span<uint8_t>) override;
 };
 
 class CryptoAlgorithmSHA1 final : public CryptoAlgorithmDigest {
 public:
-  const char *name() const noexcept override { return "SHA-1"; };
+  [[nodiscard]] const char *name() const noexcept override { return "SHA-1"; };
   CryptoAlgorithmIdentifier identifier() override { return CryptoAlgorithmIdentifier::SHA_1; };
   JSObject *digest(JSContext *cx, std::span<uint8_t>) override;
 };
 
 class CryptoAlgorithmSHA256 final : public CryptoAlgorithmDigest {
 public:
-  const char *name() const noexcept override { return "SHA-256"; };
+  [[nodiscard]] const char *name() const noexcept override { return "SHA-256"; };
   CryptoAlgorithmIdentifier identifier() override { return CryptoAlgorithmIdentifier::SHA_256; };
   JSObject *digest(JSContext *cx, std::span<uint8_t>) override;
 };
 
 class CryptoAlgorithmSHA384 final : public CryptoAlgorithmDigest {
 public:
-  const char *name() const noexcept override { return "SHA-384"; };
+  [[nodiscard]] const char *name() const noexcept override { return "SHA-384"; };
   CryptoAlgorithmIdentifier identifier() override { return CryptoAlgorithmIdentifier::SHA_384; };
   JSObject *digest(JSContext *cx, std::span<uint8_t>) override;
 };
 
 class CryptoAlgorithmSHA512 final : public CryptoAlgorithmDigest {
 public:
-  const char *name() const noexcept override { return "SHA-512"; };
+  [[nodiscard]] const char *name() const noexcept override { return "SHA-512"; };
   CryptoAlgorithmIdentifier identifier() override { return CryptoAlgorithmIdentifier::SHA_512; };
   JSObject *digest(JSContext *cx, std::span<uint8_t>) override;
 };
 
-} // namespace crypto
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::crypto
+
+
 #endif

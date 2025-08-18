@@ -6,9 +6,9 @@
  * `location`.
  * https://html.spec.whatwg.org/multipage/workers.html#worker-locations
  */
-namespace builtins {
-namespace web {
-namespace worker_location {
+
+
+namespace builtins::web::worker_location {
 
 JS::PersistentRooted<JSObject *> WorkerLocation::url;
 
@@ -83,6 +83,6 @@ bool install(api::Engine *engine) {
   return WorkerLocation::init_class(engine->cx(), engine->global());
 }
 
-} // namespace worker_location
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::worker_location
+
+

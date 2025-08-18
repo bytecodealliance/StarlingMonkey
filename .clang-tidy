@@ -2,6 +2,7 @@ Checks: >
   clang-analyzer-*,
   clang-diagnostic-*,
   cppcoreguidelines-*,
+  modernize-*,
   -clang-analyzer-optin.core.EnumCastOutOfRange,
   -cppcoreguidelines-avoid-do-while,
   -cppcoreguidelines-avoid-c-arrays,
@@ -24,6 +25,9 @@ Checks: >
   -cppcoreguidelines-use-default-member-init,
   -cppcoreguidelines-pro-bounds-constant-array-index,
   -cppcoreguidelines-pro-type-static-cast-downcast,
+  -modernize-use-trailing-return-type,
+  -modernize-avoid-c-arrays,
+  -modernize-use-ranges,
 
 # Treat all warnings as errors
 WarningsAsErrors: '*'

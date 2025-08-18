@@ -191,7 +191,7 @@ void dump_promise_rejection(JSContext *cx, HandleValue reason, HandleObject prom
 }
 
 /* The class of the global object. */
-static JSClass global_class = {"global", JSCLASS_GLOBAL_FLAGS, &JS::DefaultGlobalClassOps};
+static JSClass global_class = {.name="global", .flags=JSCLASS_GLOBAL_FLAGS, .cOps=&JS::DefaultGlobalClassOps};
 
 JS::PersistentRootedObject GLOBAL;
 JS::PersistentRootedObject INIT_SCRIPT_GLOBAL;
@@ -285,7 +285,7 @@ bool create_initializer_global(Engine *engine) {
       .setStreamsEnabled(true)
       .setExistingCompartment(engine->global());
 
-  static JSClass global_class = {"global", JSCLASS_GLOBAL_FLAGS, &JS::DefaultGlobalClassOps};
+  static JSClass global_class = {.name="global", .flags=JSCLASS_GLOBAL_FLAGS, .cOps=&JS::DefaultGlobalClassOps};
   RootedObject global(cx);
   global = JS_NewGlobalObject(cx, &global_class, nullptr, JS::DontFireOnNewGlobalHook, options);
   if (!global) {

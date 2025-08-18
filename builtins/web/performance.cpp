@@ -5,9 +5,9 @@ namespace {
 using FpMilliseconds = std::chrono::duration<float, std::chrono::milliseconds::period>;
 } // namespace
 
-namespace builtins {
-namespace web {
-namespace performance {
+
+
+namespace builtins::web::performance {
 
 std::optional<std::chrono::steady_clock::time_point> Performance::timeOrigin;
 
@@ -71,6 +71,6 @@ bool install(api::Engine *engine) {
   return true;
 }
 
-} // namespace performance
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::performance
+
+

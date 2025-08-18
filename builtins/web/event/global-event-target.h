@@ -3,16 +3,16 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace event {
+
+
+namespace builtins::web::event {
 
 JSObject *global_event_target();
 
 bool global_event_target_init(JSContext *cx, HandleObject global);
 
-} // namespace event
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::event
+
+
 
 #endif // BUILTINS_WEB_GLOBAL_EVENT_TARGET_H_

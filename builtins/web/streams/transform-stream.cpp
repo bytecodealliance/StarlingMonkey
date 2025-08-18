@@ -262,9 +262,9 @@ bool ExtractStrategy(JSContext *cx, JS::HandleValue strategy, double default_hwm
  * All algorithm names and steps refer to spec algorithms defined at
  * https://streams.spec.whatwg.org/#ts-class
  */
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 /**
  * The native object owning the sink underlying the TransformStream's readable
  * end.
@@ -1021,6 +1021,6 @@ JSObject *TransformStream::create_rs_proxy(JSContext *cx, JS::HandleObject input
 
   return readable(transform_stream);
 }
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+

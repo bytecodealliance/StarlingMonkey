@@ -1,9 +1,9 @@
 #include "uuid.h"
 #include "host_api.h"
 
-namespace builtins {
-namespace web {
-namespace crypto {
+
+
+namespace builtins::web::crypto {
 
 // FROM RFC 4122
 // The formal definition of the UUID string representation is
@@ -94,5 +94,5 @@ std::optional<std::string> random_uuid_v4(JSContext *cx) {
 }
 
 } // namespace uuid
-} // namespace web
-} // namespace builtins
+
+

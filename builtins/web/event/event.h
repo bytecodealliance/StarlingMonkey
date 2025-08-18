@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace event {
+
+
+namespace builtins::web::event {
 
 class Event : public BuiltinImpl<Event> {
   static bool type_get(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -115,8 +115,8 @@ public:
 
 bool install(api::Engine *engine);
 
-} // namespace event
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::event
+
+
 
 #endif // BUILTINS_WEB_EVENT_H_

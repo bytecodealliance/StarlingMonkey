@@ -47,9 +47,9 @@ JSObject *to_owned_buffer(JSContext *cx, jsmultipart::Slice src) {
 
 } // namespace
 
-namespace builtins {
-namespace web {
-namespace form_data {
+
+
+namespace builtins::web::form_data {
 
 using file::File;
 using form_data::FormData;
@@ -78,7 +78,7 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
   auto done = false;
   auto data = reinterpret_cast<const uint8_t *>(body.data());
 
-  jsmultipart::Slice input{data, body.size()};
+  jsmultipart::Slice input{.data=data, .len=body.size()};
   jsmultipart::Entry entry{};
 
   auto encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
@@ -275,8 +275,8 @@ JSObject *UrlParser::parse(JSContext *cx, std::string_view body) {
 
 std::unique_ptr<FormDataParser> FormDataParser::create(std::string_view content_type) {
   if (content_type.starts_with("multipart/form-data")) {
-    jsmultipart::Slice content_slice{(uint8_t *)(content_type.data()), content_type.size()};
-    jsmultipart::Slice boundary_slice{nullptr, 0};
+    jsmultipart::Slice content_slice{.data=(uint8_t *)(content_type.data()), .len=content_type.size()};
+    jsmultipart::Slice boundary_slice{.data=nullptr, .len=0};
 
     jsmultipart::boundary_from_content_type(&content_slice, &boundary_slice);
     if (boundary_slice.data == nullptr) {
@@ -294,6 +294,6 @@ std::unique_ptr<FormDataParser> FormDataParser::create(std::string_view content_
   return nullptr;
 }
 
-} // namespace form_data
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::form_data
+
+
