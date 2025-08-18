@@ -57,7 +57,7 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
       JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Fatal)).toBoolean();
   auto ignoreBOM =
       JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::IgnoreBOM)).toBoolean();
-  auto decoder = reinterpret_cast<jsencoding::Decoder *>(
+  auto *decoder = reinterpret_cast<jsencoding::Decoder *>(
       JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Decoder)).toPrivate());
   MOZ_ASSERT(decoder);
 
@@ -82,7 +82,7 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
   MOZ_ASSERT(result == 0);
 
-  auto encoding = reinterpret_cast<jsencoding::Encoding *>(
+  auto *encoding = reinterpret_cast<jsencoding::Encoding *>(
       JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Encoding)).toPrivate());
   MOZ_ASSERT(encoding);
   // If the internal streaming flag of the decoder object is not set,
@@ -97,7 +97,7 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   JS::RootedString str(cx,
                        JS_NewUCStringCopyN(cx, reinterpret_cast<char16_t *>(dest.get()), destLen));
-  if (!str) {
+  if (str == nullptr) {
     return api::throw_error(cx, TextCodecErrors::DecodingFailed);
   }
 
@@ -112,7 +112,7 @@ bool TextDecoder::encoding_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     return api::throw_error(cx, api::Errors::WrongReceiver, "encoding get", "TextDecoder");
   }
 
-  auto encoding = reinterpret_cast<jsencoding::Encoding *>(
+  auto *encoding = reinterpret_cast<jsencoding::Encoding *>(
       JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Encoding)).toPrivate());
   MOZ_ASSERT(encoding);
 
@@ -127,7 +127,7 @@ bool TextDecoder::encoding_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     name[i] = std::tolower(name[i]);
   }
   JS::RootedString str(cx, JS_NewStringCopyN(cx, reinterpret_cast<char *>(name.get()), length));
-  if (!str) {
+  if (str == nullptr) {
     JS_ReportOutOfMemory(cx);
     return false;
   }
@@ -209,7 +209,7 @@ bool TextDecoder::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
         reinterpret_cast<uint8_t *>(label_chars.begin()), label_chars.len));
   }
-  if (!encoding) {
+  if (encoding == nullptr) {
     return api::throw_error(cx, TextCodecErrors::InvalidEncoding);
   }
   bool fatal = false;
@@ -258,10 +258,10 @@ bool TextDecoder::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 void TextDecoder::finalize(JS::GCContext *gcx, JSObject *self) {
-  auto decoder = reinterpret_cast<jsencoding::Decoder *>(
+  auto *decoder = reinterpret_cast<jsencoding::Decoder *>(
       JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Decoder)).toPrivate());
 
-  if (decoder) {
+  if (decoder != nullptr) {
     jsencoding::decoder_free(decoder);
   }
 }

@@ -34,7 +34,7 @@ public:
     bool done = false;
 
     RootedObject buffer(cx, JS::NewArrayBuffer(cx, CHUNK_SIZE));
-    if (!buffer) {
+    if (buffer == nullptr) {
       return false;
     }
 
@@ -63,7 +63,7 @@ public:
     }
 
     RootedObject bytes_buffer(cx, JS_NewUint8ArrayWithBuffer(cx, buffer, 0, read_size));
-    if (!bytes_buffer) {
+    if (bytes_buffer == nullptr) {
       return false;
     }
 
@@ -129,13 +129,13 @@ void BufReader::set_position(JSObject *self, size_t pos) {
 
 JSObject *BufReader::create(JSContext *cx, JS::HandleObject user, BufReader::ReadFn *read) {
   JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (!self) {
+  if (self == nullptr) {
     return nullptr;
   }
 
   auto size = JS::UndefinedHandleValue;
   RootedObject stream(cx, NativeStreamSource::create(cx, self, size, pull, cancel));
-  if (!stream) {
+  if (stream == nullptr) {
     return nullptr;
   }
 

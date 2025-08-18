@@ -34,7 +34,7 @@ public:
   static size_t position(JSObject *self);
   static void set_position(JSObject *self, size_t pos);
 
-  static JSObject *create(JSContext *cx, HandleObject owner, ReadFn *read);
+  static JSObject *create(JSContext *cx, HandleObject user, ReadFn *read);
 };
 
 } // namespace builtins::web::streams

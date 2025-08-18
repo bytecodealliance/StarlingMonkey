@@ -46,12 +46,12 @@ public:
   static LineEndings line_endings(JSObject *self);
 
   static bool append_value(JSContext *cx, HandleObject self, HandleValue val);
-  static bool init_blob_parts(JSContext *cx, HandleObject self, HandleValue iterable);
-  static bool init_options(JSContext *cx, HandleObject self, HandleValue opts);
+  static bool init_blob_parts(JSContext *cx, HandleObject self, HandleValue value);
+  static bool init_options(JSContext *cx, HandleObject self, HandleValue initv);
   static bool init(JSContext *cx, HandleObject self, HandleValue blobParts, HandleValue opts);
 
   static JSObject *data_to_owned_array_buffer(JSContext *cx, HandleObject self);
-  static bool read_blob_slice(JSContext *cx, HandleObject self, std::span<uint8_t>,
+  static bool read_blob_slice(JSContext *cx, HandleObject self, std::span<uint8_t> /*buf*/,
                               size_t start, size_t *read, bool *done);
 
   static JSObject *create(JSContext *cx, UniqueChars data, size_t data_len, HandleString type);

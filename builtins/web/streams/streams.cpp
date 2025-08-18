@@ -13,20 +13,27 @@
 namespace builtins::web::streams {
 
 bool install(api::Engine *engine) {
-  if (!NativeStreamSource::init_class(engine->cx(), engine->global()))
+  if (!NativeStreamSource::init_class(engine->cx(), engine->global())) {
     return false;
-  if (!NativeStreamSink::init_class(engine->cx(), engine->global()))
+}
+  if (!NativeStreamSink::init_class(engine->cx(), engine->global())) {
     return false;
-  if (!TransformStreamDefaultController::init_class(engine->cx(), engine->global()))
+}
+  if (!TransformStreamDefaultController::init_class(engine->cx(), engine->global())) {
     return false;
-  if (!TransformStream::init_class(engine->cx(), engine->global()))
+}
+  if (!TransformStream::init_class(engine->cx(), engine->global())) {
     return false;
-  if (!CompressionStream::init_class(engine->cx(), engine->global()))
+}
+  if (!CompressionStream::init_class(engine->cx(), engine->global())) {
     return false;
-  if (!DecompressionStream::init_class(engine->cx(), engine->global()))
+}
+  if (!DecompressionStream::init_class(engine->cx(), engine->global())) {
     return false;
-  if (!BufReader::init_class(engine->cx(), engine->global()))
+}
+  if (!BufReader::init_class(engine->cx(), engine->global())) {
     return false;
+}
   return true;
 }
 

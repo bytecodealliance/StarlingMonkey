@@ -32,7 +32,7 @@ public:
 
   static const unsigned ctor_length = 0;
 
-  static JSObject *create(JSContext *cx, JS::HandleObject params, uint8_t type);
+  static JSObject *create(JSContext *cx, JS::HandleObject form, uint8_t type);
   static bool init_class(JSContext *cx, JS::HandleObject global);
 };
 
@@ -48,7 +48,7 @@ class FormData : public BuiltinImpl<FormData, TraceableClassPolicy> {
   static bool keys(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool values(JSContext *cx, unsigned argc, JS::Value *vp);
 
-  static bool append(JSContext *cx, HandleObject self, std::string_view key, HandleValue val,
+  static bool append(JSContext *cx, HandleObject self, std::string_view name, HandleValue val,
                      HandleValue filename);
 
   using EntryList = JS::GCVector<FormDataEntry, 0, js::SystemAllocPolicy>;

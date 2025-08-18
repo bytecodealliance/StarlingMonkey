@@ -13,16 +13,15 @@ class WeakIndexSet {
   WeakVec items_;
 
 public:
-  WeakIndexSet() : items_() {}
+  WeakIndexSet()  = default;
 
   bool insert(JSObject* obj) {
-    auto it = std::find_if(items_.begin(), items_.end(), [&obj](const auto &item) { return item == obj; });
+    auto *it = std::find_if(items_.begin(), items_.end(), [&obj](const auto &item) { return item == obj; });
 
     if (it == items_.end()) {
       return items_.append(obj);
-    } else {
-      return true;
     }
+    return true;
   }
 
   bool remove(JSObject* obj) {

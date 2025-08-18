@@ -72,7 +72,7 @@ bool WorkerLocation::init_class(JSContext *cx, JS::HandleObject global) {
   WorkerLocation::url.init(cx);
 
   JS::RootedObject location(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (!location) {
+  if (location == nullptr) {
     return false;
   }
 

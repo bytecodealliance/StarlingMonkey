@@ -39,7 +39,7 @@ struct Terminator : AbortAlgorithm {
   Terminator(const mozilla::WeakPtr<ResponseFutureTask>& task) : task(task) {}
 
   bool run(JSContext *cx) override {
-    if (auto t = task.get()) {
+    if (auto *t = task.get()) {
       return t->abort(ENGINE);
     }
     return true;
@@ -49,19 +49,19 @@ struct Terminator : AbortAlgorithm {
 std::optional<FetchScheme> scheme_from_url(const std::string_view &url) {
   if (url.starts_with("about:")) {
     return FetchScheme::About;
-  } else if (url.starts_with("blob:")) {
+  } if (url.starts_with("blob:")) {
     return FetchScheme::Blob;
-  } else if (url.starts_with("data:")) {
+  } if (url.starts_with("data:")) {
     return FetchScheme::Data;
-  } else if (url.starts_with("file:")) {
+  } if (url.starts_with("file:")) {
     return FetchScheme::File;
-  } else if (url.starts_with("http")) {
+  } if (url.starts_with("http")) {
     return FetchScheme::Http;
-  } else if (url.starts_with("https")) {
+  } if (url.starts_with("https")) {
     return FetchScheme::Https;
-  } else {
-    return std::nullopt;
   }
+
+  return std::nullopt;
 }
 
 // https://fetch.spec.whatwg.org/#concept-network-error
@@ -69,7 +69,7 @@ bool network_error(JSContext *cx, HandleObject response_promise, MutableHandleVa
   // A network error is a response whose type is "error", status is 0, status message is the empty
   // byte sequence, header list is « », body is null, and body info is a new response body info.
   RootedObject response_obj(cx, Response::create(cx));
-  if (!response_obj) {
+  if (response_obj == nullptr) {
     return false;
   }
 
@@ -92,7 +92,7 @@ bool fetch_https(JSContext *cx, HandleObject request_obj, HandleObject response_
     return false;
   }
 
-  auto request = host_api::HttpOutgoingRequest::make(method, std::move(url), std::move(headers));
+  auto *request = host_api::HttpOutgoingRequest::make(method, std::move(url), std::move(headers));
   MOZ_RELEASE_ASSERT(request);
   JS_SetReservedSlot(request_obj, static_cast<uint32_t>(Request::Slots::Request),
                      PrivateValue(request));
@@ -109,7 +109,7 @@ bool fetch_https(JSContext *cx, HandleObject request_obj, HandleObject response_
   host_api::FutureHttpIncomingResponse *pending_handle = nullptr;
   {
     auto res = request->send();
-    if (auto *err = res.to_err()) {
+    if (const auto *err = res.to_err()) {
       HANDLE_ERROR(cx, *err);
       return false;
     }
@@ -163,13 +163,13 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HandleObject response_p
   RootedObject blob(cx, url::URL::getObjectURL(url_key));
 
   // 8. If blob is not a Blob object, then return a network error.
-  if (!blob || !Blob::is_instance(blob)) {
+  if ((blob == nullptr) || !Blob::is_instance(blob)) {
     return network_error(cx, response_promise, rval);
   }
 
   // 9. Let response be a new response.
   RootedObject response_obj(cx, Response::create(cx));
-  if (!response_obj) {
+  if (response_obj == nullptr) {
     return false;
   }
 
@@ -180,7 +180,7 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HandleObject response_p
   RootedString type(cx, Blob::type(blob));
 
   JS::RootedObject req_headers(cx, RequestOrResponse::headers(cx, request_obj));
-  if (!req_headers) {
+  if (req_headers == nullptr) {
     return false;
   }
 
@@ -254,7 +254,7 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HandleObject response_p
     // (`Content-Type`, type), (`Content-Range`, contentRange).
 
     JS::RootedObject resp_headers(cx, RequestOrResponse::headers(cx, response_obj));
-    if (!resp_headers) {
+    if (resp_headers == nullptr) {
       return false;
     }
 
@@ -268,7 +268,7 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HandleObject response_p
   }
 
   JS::RootedObject resp_headers(cx, RequestOrResponse::headers(cx, response_obj));
-  if (!resp_headers) {
+  if (resp_headers == nullptr) {
     return false;
   }
 
@@ -282,7 +282,7 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HandleObject response_p
     return false;
   }
 
-  auto type_str = JS::GetStringLength(type) ? chars.ptr.get() : "";
+  const auto *type_str = (JS::GetStringLength(type) != 0U) ? chars.ptr.get() : "";
   if (!Headers::set_valid_if_undefined(cx, resp_headers, "Content-Type", type_str)) {
     return false;
   }
@@ -315,7 +315,7 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
 
   // 1. Let p be a new promise.
   RootedObject response_promise(cx, JS::NewPromiseObject(cx, nullptr));
-  if (!response_promise) {
+  if (response_promise == nullptr) {
     return false;
   }
 
@@ -324,7 +324,7 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
   // 2. Let requestObject be the result of invoking the initial value of Request as constructor
   // with input and init as arguments. If this throws an exception, reject p with it and return p.
   RootedObject request_obj(cx, Request::create(cx));
-  if (!request_obj) {
+  if (request_obj == nullptr) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
@@ -386,13 +386,15 @@ const JSFunctionSpec methods[] = {JS_FN("fetch", fetch, 2, JSPROP_ENUMERATE), JS
 bool install(api::Engine *engine) {
   ENGINE = engine;
 
-  if (!JS_DefineFunctions(engine->cx(), engine->global(), methods))
+  if (!JS_DefineFunctions(engine->cx(), engine->global(), methods)) {
     return false;
+}
   if (!request_response::install(engine)) {
     return false;
   }
-  if (!Headers::init_class(engine->cx(), engine->global()))
+  if (!Headers::init_class(engine->cx(), engine->global())) {
     return false;
+}
   return true;
 }
 

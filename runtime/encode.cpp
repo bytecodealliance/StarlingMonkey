@@ -25,7 +25,7 @@ HostString encode(JSContext *cx, JS::HandleString str) {
 
 HostString encode(JSContext *cx, JS::HandleValue val) {
   JS::RootedString str(cx, JS::ToString(cx, val));
-  if (!str) {
+  if (str == nullptr) {
     return HostString{};
   }
 
@@ -34,7 +34,7 @@ HostString encode(JSContext *cx, JS::HandleValue val) {
 
 HostString encode_byte_string(JSContext *cx, JS::HandleValue val) {
   JS::RootedString str(cx, JS::ToString(cx, val));
-  if (!str) {
+  if (str == nullptr) {
     return HostString{};
   }
   size_t length = 0;
@@ -43,7 +43,7 @@ HostString encode_byte_string(JSContext *cx, JS::HandleValue val) {
     {
       JS::AutoCheckCannotGC nogc;
       const char16_t* chars = JS_GetTwoByteStringCharsAndLength(cx, nogc, str, &length);
-      if (!chars) {
+      if (chars == nullptr) {
         foundBadChar = true;
       }
       else {
@@ -64,8 +64,9 @@ HostString encode_byte_string(JSContext *cx, JS::HandleValue val) {
   }
 
   char *buf = static_cast<char *>(js_malloc(length));
-  if (!JS_EncodeStringToBuffer(cx, str, buf, length))
+  if (!JS_EncodeStringToBuffer(cx, str, buf, length)) {
     MOZ_ASSERT_UNREACHABLE();
+}
   return {JS::UniqueChars(buf), length};
 }
 

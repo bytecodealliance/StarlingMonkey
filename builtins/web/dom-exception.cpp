@@ -165,16 +165,16 @@ JSObject *DOMException::create(JSContext *cx, std::string_view message, std::str
   if (!JS::Construct(cx, ctor, args, &instance)) {
     return nullptr;
   }
-  if (!instance) {
+  if (instance == nullptr) {
     return nullptr;
   }
-  auto message_str = JS_NewStringCopyN(cx, message.data(), message.size());
-  if (!message_str) {
+  auto *message_str = JS_NewStringCopyN(cx, message.data(), message.size());
+  if (message_str == nullptr) {
     return nullptr;
   }
   JS::SetReservedSlot(instance, Slots::Message, JS::StringValue(message_str));
-  auto name_str = JS_NewStringCopyN(cx, name.data(), name.size());
-  if (!name_str) {
+  auto *name_str = JS_NewStringCopyN(cx, name.data(), name.size());
+  if (name_str == nullptr) {
     return nullptr;
   }
   JS::SetReservedSlot(instance, Slots::Name, JS::StringValue(name_str));
@@ -195,12 +195,12 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("DOMException", 0);
 
   JS::RootedObject instance(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  if (!instance) {
+  if (instance == nullptr) {
     return false;
   }
   if (args.hasDefined(0)) {
-    auto message = JS::ToString(cx, args.get(0));
-    if (!message) {
+    auto *message = JS::ToString(cx, args.get(0));
+    if (message == nullptr) {
       return false;
     }
     JS::SetReservedSlot(instance, Slots::Message, JS::StringValue(message));
@@ -208,8 +208,8 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     JS::SetReservedSlot(instance, Slots::Message, JS_GetEmptyStringValue(cx));
   }
   if (args.hasDefined(1)) {
-    auto name = JS::ToString(cx, args.get(1));
-    if (!name) {
+    auto *name = JS::ToString(cx, args.get(1));
+    if (name == nullptr) {
       return false;
     }
     JS::SetReservedSlot(instance, Slots::Name, JS::StringValue(name));
@@ -223,7 +223,7 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 bool DOMException::init_class(JSContext *cx, JS::HandleObject global) {
   JS::RootedObject proto(cx, JS::GetRealmErrorPrototype(cx));
-  if (!proto) {
+  if (proto == nullptr) {
     return false;
   }
 

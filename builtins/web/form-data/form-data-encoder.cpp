@@ -182,7 +182,7 @@ struct StreamContext {
   size_t read{0};
   bool done{false};
 
-  size_t remaining() {
+  [[nodiscard]] size_t remaining() const {
     MOZ_ASSERT(outbuf.size() >= read);
     return outbuf.size() - read;
   }
@@ -239,7 +239,7 @@ class MultipartFormDataImpl {
   size_t chunk_idx_{0};
   size_t file_leftovers_{0};
 
-  bool is_draining() { return (file_leftovers_ || remainder_.size()); };
+  bool is_draining() { return ((file_leftovers_ != 0U) || (static_cast<unsigned int>(!remainder_.empty()) != 0U)); };
 
   template <typename I> void write_and_store_remainder(StreamContext &stream, I first, I last);
 
@@ -308,7 +308,7 @@ void MultipartFormDataImpl::maybe_drain_leftovers(JSContext *cx, StreamContext &
     MOZ_ASSERT(File::is_instance(entry.value));
 
     RootedObject obj(cx, &entry.value.toObject());
-    auto blob = Blob::blob(obj);
+    auto *blob = Blob::blob(obj);
     auto offset = blob->length() - file_leftovers_;
     file_leftovers_ -= stream.write(blob->begin() + offset, blob->end());
   }
@@ -386,7 +386,7 @@ bool MultipartFormDataImpl::handle_entry_header(JSContext *cx, StreamContext &st
       return false;
     }
 
-    auto tmp = type.size() ? std::string_view(type) : "application/octet-stream";
+    auto tmp = (type.size() != 0U) ? std::string_view(type) : "application/octet-stream";
     fmt::format_to(std::back_inserter(header), "; filename=\"{}\"\r\n", filename.value());
     fmt::format_to(std::back_inserter(header), "Content-Type: {}\r\n\r\n", tmp);
   }
@@ -417,7 +417,7 @@ bool MultipartFormDataImpl::handle_entry_body(JSContext *cx, StreamContext &stre
     MOZ_ASSERT(File::is_instance(entry.value));
     RootedObject obj(cx, &entry.value.toObject());
 
-    auto blob = Blob::blob(obj);
+    auto *blob = Blob::blob(obj);
     auto to_write = blob->length();
     auto written = stream.write(blob->begin(), blob->end());
     MOZ_ASSERT(written <= to_write);
@@ -585,8 +585,8 @@ bool MultipartFormData::read(JSContext *cx, HandleObject self, std::span<uint8_t
   bool finished = false;
   RootedObject obj(cx, form_data(self));
 
-  auto entries = FormData::entry_list(obj);
-  auto impl = as_impl(self);
+  auto *entries = FormData::entry_list(obj);
+  auto *impl = as_impl(self);
 
   // Try to fill the buffer
   while (total < buffer_size && !finished) {
@@ -609,7 +609,7 @@ bool MultipartFormData::read(JSContext *cx, HandleObject self, std::span<uint8_t
 
 std::string MultipartFormData::boundary(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  auto impl = as_impl(self);
+  auto *impl = as_impl(self);
   MOZ_ASSERT(impl);
 
   return impl->boundary();
@@ -629,15 +629,15 @@ JSObject *MultipartFormData::form_data(JSObject *self) {
 mozilla::Result<size_t, OutOfMemory> MultipartFormData::query_length(JSContext *cx, HandleObject self) {
   RootedObject obj(cx, form_data(self));
 
-  auto entries = FormData::entry_list(obj);
-  auto impl = as_impl(self);
+  auto *entries = FormData::entry_list(obj);
+  auto *impl = as_impl(self);
 
   return impl->query_length(cx, entries);
 }
 
 JSObject *MultipartFormData::encode_stream(JSContext *cx, HandleObject self) {
   RootedObject reader(cx, BufReader::create(cx, self, read));
-  if (!reader) {
+  if (reader == nullptr) {
     return nullptr;
   }
 
@@ -649,7 +649,7 @@ JSObject *MultipartFormData::encode_stream(JSContext *cx, HandleObject self) {
 
 JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
   JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (!self) {
+  if (self == nullptr) {
     return nullptr;
   }
 
@@ -658,7 +658,7 @@ JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
   }
 
   auto res = host_api::Random::get_bytes(12);
-  if (res.to_err()) {
+  if (res.to_err() != nullptr) {
     return nullptr;
   }
 
@@ -678,8 +678,8 @@ JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
   auto base64_str = base64::forgivingBase64Encode(bytes_str, base64::base64EncodeTable);
 
   auto boundary = fmt::format("--StarlingMonkeyFormBoundary{}", base64_str);
-  auto impl = new (std::nothrow) MultipartFormDataImpl(boundary);
-  if (!impl) {
+  auto *impl = new (std::nothrow) MultipartFormDataImpl(boundary);
+  if (impl == nullptr) {
     return nullptr;
   }
 
@@ -699,10 +699,10 @@ bool MultipartFormData::constructor(JSContext *cx, unsigned argc, JS::Value *vp)
 
 void MultipartFormData::finalize(JS::GCContext *gcx, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  auto impl = as_impl(self);
-  if (impl) {
+  auto *impl = as_impl(self);
+  
     delete impl;
-  }
+  
 }
 
 } // namespace builtins::web::form_data

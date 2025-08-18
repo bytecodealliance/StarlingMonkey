@@ -25,7 +25,7 @@ JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r,
                               const JS::CloneDataPolicy &cloneDataPolicy, uint32_t tag,
                               uint32_t len, void *closure) {
   void *bytes = JS_malloc(cx, len);
-  if (!bytes) {
+  if (bytes == nullptr) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -40,7 +40,7 @@ JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r,
                                          JS_NewObjectWithGivenProto(cx, &url::URLSearchParams::class_,
                                                                     url::URLSearchParams::proto_obj));
     RootedObject params_obj(cx, url::URLSearchParams::create(cx, urlSearchParamsInstance));
-    if (!params_obj) {
+    if (params_obj == nullptr) {
       return nullptr;
     }
 
@@ -81,7 +81,7 @@ bool WriteStructuredClone(JSContext *cx, JSStructuredCloneWriter *w, JS::HandleO
       return false;
     }
   } else if (blob::Blob::is_instance(obj)) {
-    auto data = blob::Blob::blob(obj);
+    auto *data = blob::Blob::blob(obj);
     if (!JS_WriteUint32Pair(w, SCTAG_DOM_BLOB, data->length()) ||
         !JS_WriteBytes(w, (void *)data->begin(), data->length())) {
       return false;

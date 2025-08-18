@@ -2,6 +2,7 @@
 
 #include "event_loop.h"
 
+#include <algorithm>
 #include <ctime>
 #include <host_api.h>
 #include <iostream>
@@ -16,7 +17,7 @@ namespace {
 
 class TimersMap {
 public:
-  std::map<int32_t, api::AsyncTask *> timers_ = {};
+  std::map<int32_t, api::AsyncTask *> timers_;
   int32_t next_timer_id = 1;
   void trace(JSTracer *trc) {
     for (auto &[id, timer] : timers_) {
@@ -48,7 +49,7 @@ public:
     
 
     arguments_.reserve(args.length());
-    for (auto &arg : args) {
+    for (const auto &arg : args) {
       arguments_.emplace_back(arg);
     }
 
@@ -131,13 +132,11 @@ namespace builtins::web::timers {
 template <bool repeat>
 bool set_timeout_or_interval(JSContext *cx, HandleObject handler, JS::HandleValueVector handle_args,
                              int32_t delay_ms, int32_t *timer_id) {
-  if (delay_ms < 0) {
-    delay_ms = 0;
-  }
+  delay_ms = std::max(delay_ms, 0);
 
   // Convert delay from milliseconds to nanoseconds, as that's what Timers operate on.
   const int64_t delay = static_cast<int64_t>(delay_ms) * 1000000;
-  const auto timer = js_new<TimerTask>(delay, repeat, handler, handle_args);
+  auto *const timer = js_new<TimerTask>(delay, repeat, handler, handle_args);
   ENGINE->queue_async_task(timer);
 
   *timer_id = timer->timer_id();

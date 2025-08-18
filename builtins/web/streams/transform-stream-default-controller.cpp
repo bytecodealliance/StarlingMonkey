@@ -139,8 +139,9 @@ JSObject *TransformStreamDefaultController::create(
     TransformStreamDefaultController::TransformAlgorithmImplementation *transformAlgo,
     TransformStreamDefaultController::FlushAlgorithmImplementation *flushAlgo) {
   JS::RootedObject controller(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (!controller)
+  if (controller == nullptr) {
     return nullptr;
+}
 
   // 1.  Assert: stream [implements] `[TransformStream]`.
   MOZ_ASSERT(TransformStream::is_instance(stream));
@@ -397,8 +398,9 @@ JSObject *TransformStreamDefaultController::SetUpFromTransformer(JSContext *cx,
   // controller, transformAlgorithm, flushAlgorithm).
   JS::RootedObject controller(cx);
   controller = SetUp(cx, stream, transform_algorithm_transformer, flush_algorithm_transformer);
-  if (!controller)
+  if (controller == nullptr) {
     return nullptr;
+}
 
   // Set the additional bits required to execute the transformer-based transform
   // and flush algorithms.
@@ -439,7 +441,7 @@ JSObject *TransformStreamDefaultController::PerformTransform(JSContext *cx,
   // controller.[transformAlgorithm], passing chunk.
   TransformAlgorithmImplementation *transformAlgo = transformAlgorithm(controller);
   JS::RootedObject transformPromise(cx, transformAlgo(cx, controller, chunk));
-  if (!transformPromise) {
+  if (transformPromise == nullptr) {
     return nullptr;
   }
 
@@ -447,7 +449,7 @@ JSObject *TransformStreamDefaultController::PerformTransform(JSContext *cx,
   // rejection steps given the argument r:
   JS::RootedObject catch_handler(cx);
   catch_handler = create_internal_method<transformPromise_catch_handler>(cx, controller);
-  if (!catch_handler) {
+  if (catch_handler == nullptr) {
     return nullptr;
   }
 

@@ -80,8 +80,9 @@ bool debug_logging_enabled() { return DEBUG_LOGGING; }
 
 JS::UniqueChars stringify_value(JSContext *cx, JS::HandleValue value) {
   JS::RootedString str(cx, JS_ValueToSource(cx, value));
-  if (!str)
+  if (str == nullptr) {
     return nullptr;
+}
 
   return JS_EncodeStringToUTF8(cx, str);
 }
@@ -114,8 +115,9 @@ bool print_stack(JSContext *cx, HandleObject stack, FILE *fp) {
 
 bool print_stack(JSContext *cx, FILE *fp) {
   RootedObject stackp(cx);
-  if (!JS::CaptureCurrentStack(cx, &stackp))
+  if (!JS::CaptureCurrentStack(cx, &stackp)) {
     return false;
+}
   return print_stack(cx, stackp, fp);
 }
 
@@ -149,7 +151,7 @@ void dump_error(JSContext *cx, HandleValue error, bool *has_stack, FILE *fp) {
   if (error.isObject()) {
     RootedObject err(cx, &error.toObject());
     JSErrorReport *report = JS_ErrorFromException(cx, err);
-    if (report) {
+    if (report != nullptr) {
       fprintf(stderr, "%s\n", report->message().c_str());
       reported = true;
     }
@@ -163,7 +165,7 @@ void dump_error(JSContext *cx, HandleValue error, bool *has_stack, FILE *fp) {
     dump_value(cx, error, stderr);
   }
 
-  if (stack) {
+  if (stack != nullptr) {
     *has_stack = true;
     fprintf(stderr, "Stack:\n");
     print_stack(cx, stack, stderr);
@@ -263,7 +265,7 @@ bool create_content_global(JSContext * cx) {
 
   RootedObject global(
       cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::FireOnNewGlobalHook, options));
-  if (!global) {
+  if (global == nullptr) {
     return false;
   }
 
@@ -279,7 +281,7 @@ bool create_content_global(JSContext * cx) {
 static bool define_builtin_module(JSContext *cx, unsigned argc, Value *vp);
 
 bool create_initializer_global(Engine *engine) {
-  auto cx = engine->cx();
+  auto *cx = engine->cx();
 
   JS::RealmOptions options;
   options.creationOptions()
@@ -289,15 +291,15 @@ bool create_initializer_global(Engine *engine) {
   static JSClass global_class = {.name="global", .flags=JSCLASS_GLOBAL_FLAGS, .cOps=&JS::DefaultGlobalClassOps};
   RootedObject global(cx);
   global = JS_NewGlobalObject(cx, &global_class, nullptr, JS::DontFireOnNewGlobalHook, options);
-  if (!global) {
+  if (global == nullptr) {
     return false;
   }
 
   JSAutoRealm ar(cx, global);
 
-  if (!JS_DefineFunction(cx, global, "defineBuiltinModule", ::define_builtin_module, 2, 0) ||
+  if ((JS_DefineFunction(cx, global, "defineBuiltinModule", ::define_builtin_module, 2, 0) == nullptr) ||
       !JS_DefineProperty(cx, global, "contentGlobal", ENGINE->global(), JSPROP_READONLY) ||
-      !JS_DefineFunction(cx, global, "print", content_debugger::dbg_print, 1, 0)) {
+      (JS_DefineFunction(cx, global, "print", content_debugger::dbg_print, 1, 0) == nullptr)) {
     return false;
   }
 
@@ -309,7 +311,7 @@ bool init_js(const EngineConfig& config) {
   JS_Init();
 
   JSContext *cx = JS_NewContext(JS::DefaultHeapMaxBytes);
-  if (!cx) {
+  if (cx == nullptr) {
     return false;
   }
   CONTEXT = cx;
@@ -335,11 +337,11 @@ bool init_js(const EngineConfig& config) {
 
   JS::SetPromiseRejectionTrackerCallback(cx, rejection_tracker);
   unhandledRejectedPromises.init(cx, JS::NewSetObject(cx));
-  if (!unhandledRejectedPromises) {
+  if (unhandledRejectedPromises == nullptr) {
     return false;
   }
 
-  auto opts = new JS::CompileOptions(cx);
+  auto *opts = new JS::CompileOptions(cx);
 
   // This ensures that we're eagerly loading the sript, and not lazily
   // generating bytecode for functions.
@@ -356,22 +358,26 @@ bool init_js(const EngineConfig& config) {
 
 static bool report_unhandled_promise_rejections(JSContext *cx) {
   RootedValue iterable(cx);
-  if (!JS::SetValues(cx, unhandledRejectedPromises, &iterable))
+  if (!JS::SetValues(cx, unhandledRejectedPromises, &iterable)) {
     return false;
+}
 
   JS::ForOfIterator it(cx);
-  if (!it.init(iterable))
+  if (!it.init(iterable)) {
     return false;
+}
 
   RootedValue promise_val(cx);
   RootedObject promise(cx);
   while (true) {
     bool done = false;
-    if (!it.next(&promise_val, &done))
+    if (!it.next(&promise_val, &done)) {
       return false;
+}
 
-    if (done)
+    if (done) {
       break;
+}
 
     promise = &promise_val.toObject();
     // Note: we unconditionally print these, since they almost always indicate
@@ -443,7 +449,7 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
 
   TRACE("StarlingMonkey engine initializing");
 
-  if (!init_js(*config_.get())) {
+  if (!init_js(*config_)) {
     abort("Initializing JS Engine");
   }
 
@@ -458,7 +464,7 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
   TRACE("Builtins installed");
 
 #ifdef DEBUG
-  if (!JS_DefineFunction(cx(), global(), "trap", trap, 1, 0)) {
+  if (JS_DefineFunction(cx(), global(), "trap", trap, 1, 0) == nullptr) {
     abort("installing trap function");
   }
 #endif
@@ -561,7 +567,7 @@ static bool define_builtin_module(JSContext *cx, unsigned argc, Value *vp) {
 }
 
 bool Engine::run_initialization_script() {
-  auto cx = this->cx();
+  auto *cx = this->cx();
 
   JSAutoRealm ar(cx, INIT_SCRIPT_GLOBAL);
 
@@ -571,11 +577,11 @@ bool Engine::run_initialization_script() {
   if (!scriptLoader->load_resolved_script(CONTEXT, path.c_str(), path.c_str(), source)) {
     return false;
   }
-  auto opts = new JS::CompileOptions(cx);
+  auto *opts = new JS::CompileOptions(cx);
   opts->setDiscardSource();
   opts->setFile(path.c_str());
   JS::RootedScript script(cx, Compile(cx, *opts, source));
-  if (!script) {
+  if (script == nullptr) {
     return false;
   }
   RootedValue result(cx);
@@ -663,11 +669,11 @@ bool Engine::run_event_loop() {
 }
 
 void Engine::incr_event_loop_interest() {
-  return core::EventLoop::incr_event_loop_interest();
+  core::EventLoop::incr_event_loop_interest();
 }
 
 void Engine::decr_event_loop_interest() {
-  return core::EventLoop::decr_event_loop_interest();
+  core::EventLoop::decr_event_loop_interest();
 }
 
 bool Engine::dump_value(JS::Value val, FILE *fp) { return ::dump_value(CONTEXT, val, fp); }

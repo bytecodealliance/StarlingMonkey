@@ -69,7 +69,7 @@ bool deflate_chunk(JSContext *cx, JS::HandleObject self, JS::HandleValue chunk, 
       return false;
     }
 
-    if (data->size() == 0) {
+    if (data->empty()) {
       return true;
     }
 
@@ -116,14 +116,14 @@ bool deflate_chunk(JSContext *cx, JS::HandleObject self, JS::HandleValue chunk, 
     zstream->avail_out = BUFFER_SIZE;
     zstream->next_out = buffer;
     int err = deflate(zstream, finished ? Z_FINISH : Z_NO_FLUSH);
-    if (!((finished && err == Z_STREAM_END) || err == Z_OK)) {
+    if ((!finished || err != Z_STREAM_END) && err != Z_OK) {
       return api::throw_error(cx, StreamErrors::CompressingChunkFailed);
     }
 
     size_t bytes = BUFFER_SIZE - zstream->avail_out;
-    if (bytes) {
+    if (bytes != 0U) {
       JS::RootedObject out_obj(cx, JS_NewUint8Array(cx, bytes));
-      if (!out_obj) {
+      if (out_obj == nullptr) {
         return false;
       }
 
@@ -236,7 +236,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   // _flushAlgorithm_ set to _flushAlgorithm_.
   JS::RootedObject transform(cx, TransformStream::create(cx, 1, nullptr, 0, nullptr, stream_val,
                                                          nullptr, transformAlgo, flushAlgo));
-  if (!transform) {
+  if (transform == nullptr) {
     return nullptr;
   }
 
@@ -246,7 +246,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   // The remainder of the function deals with setting up the deflate state used
   // for compressing chunks.
   auto *zstream = (z_stream *)JS_malloc(cx, sizeof(z_stream));
-  if (!zstream) {
+  if (zstream == nullptr) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -255,7 +255,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   JS::SetReservedSlot(stream, CompressionStream::Slots::State, JS::PrivateValue(zstream));
 
   auto *buffer = (uint8_t *)JS_malloc(cx, BUFFER_SIZE);
-  if (!buffer) {
+  if (buffer == nullptr) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -297,11 +297,11 @@ bool CompressionStream::constructor(JSContext *cx, unsigned argc, JS::Value *vp)
   }
 
   enum Format format;
-  if (!strcmp(format_chars.begin(), "deflate-raw")) {
+  if (strcmp(format_chars.begin(), "deflate-raw") == 0) {
     format = Format::DeflateRaw;
-  } else if (!strcmp(format_chars.begin(), "deflate")) {
+  } else if (strcmp(format_chars.begin(), "deflate") == 0) {
     format = Format::Deflate;
-  } else if (!strcmp(format_chars.begin(), "gzip")) {
+  } else if (strcmp(format_chars.begin(), "gzip") == 0) {
     format = Format::GZIP;
   } else {
     return api::throw_error(cx, StreamErrors::InvalidCompressionFormat, format_chars.begin());
@@ -310,7 +310,7 @@ bool CompressionStream::constructor(JSContext *cx, unsigned argc, JS::Value *vp)
   JS::RootedObject compressionStreamInstance(cx, JS_NewObjectForConstructor(cx, &class_, args));
   // Steps 2-6.
   JS::RootedObject stream(cx, create(cx, compressionStreamInstance, format));
-  if (!stream) {
+  if (stream == nullptr) {
     return false;
   }
 
@@ -324,13 +324,15 @@ bool CompressionStream::init_class(JSContext *cx, JS::HandleObject global) {
   }
 
   JSFunction *transformFun = JS_NewFunction(cx, transformAlgorithm, 1, 0, "CS Transform");
-  if (!transformFun)
+  if (transformFun == nullptr) {
     return false;
+}
   transformAlgo.init(cx, JS_GetFunctionObject(transformFun));
 
   JSFunction *flushFun = JS_NewFunction(cx, flushAlgorithm, 1, 0, "CS Flush");
-  if (!flushFun)
+  if (flushFun == nullptr) {
     return false;
+}
   flushAlgo.init(cx, JS_GetFunctionObject(flushFun));
 
   return true;

@@ -10,10 +10,10 @@
 
 namespace {
 
-static api::Engine* ENGINE;
-static ScriptLoader* SCRIPT_LOADER;
-static bool MODULE_MODE = true;
-static std::string BASE_PATH;
+api::Engine* ENGINE;
+ScriptLoader* SCRIPT_LOADER;
+bool MODULE_MODE = true;
+std::string BASE_PATH;
 
 JS::PersistentRootedObject moduleRegistry;
 JS::PersistentRootedObject builtinModules;
@@ -41,8 +41,8 @@ public:
   }
   bool release() {
     bool success = true;
-    if (file && file != stdin && file != stdout && file != stderr) {
-      success = !fclose(file);
+    if ((file != nullptr) && file != stdin && file != stdout && file != stderr) {
+      success = (fclose(file) == 0);
     }
     file = nullptr;
     // Clang analyzer complains about the stream leaking when stream is stdin, stdout, or stderr.
@@ -112,10 +112,12 @@ static std::string resolve_path(std::string_view path, std::string_view base) {
   while (path_cur_idx < path_len) {
     // read until the end or the next / to get the segment position
     // as the substring between path_from_idx and path_cur_idx
-    while (path_cur_idx < path_len && path[path_cur_idx] != '/')
+    while (path_cur_idx < path_len && path[path_cur_idx] != '/') {
       path_cur_idx++;
-    if (path_cur_idx == path_from_idx)
+}
+    if (path_cur_idx == path_from_idx) {
       break;
+}
     // . segment to skip
     if (path_cur_idx - path_from_idx == 1 && path[path_from_idx] == '.') {
       path_cur_idx++;
@@ -137,8 +139,9 @@ static std::string resolve_path(std::string_view path, std::string_view base) {
       continue;
     }
     // normal segment to copy (with the trailing / if not the last segment)
-    if (path_cur_idx < path_len && path[path_cur_idx] == '/')
+    if (path_cur_idx < path_len && path[path_cur_idx] == '/') {
       path_cur_idx++;
+}
 
     // Copy segment equivalent to: strncpy(resolved_path + resolved_len, path + path_from_idx, path_cur_idx - path_from_idx);
     resolved_path.append(path.substr(path_from_idx, path_cur_idx - path_from_idx));
@@ -152,18 +155,18 @@ static std::string resolve_path(std::string_view path, std::string_view base) {
 static JSObject* get_module(JSContext* cx, JS::SourceText<mozilla::Utf8Unit> &source,
                             const char* resolved_path, const JS::CompileOptions &opts) {
   RootedObject module(cx, JS::CompileModule(cx, opts, source));
-  if (!module) {
+  if (module == nullptr) {
     return nullptr;
   }
   RootedValue module_val(cx, ObjectValue(*module));
 
   RootedObject info(cx, JS_NewPlainObject(cx));
-  if (!info) {
+  if (info == nullptr) {
     return nullptr;
   }
 
   RootedString resolved_path_str(cx, JS_NewStringCopyZ(cx, resolved_path));
-  if (!resolved_path_str) {
+  if (resolved_path_str == nullptr) {
     return nullptr;
   }
   RootedValue resolved_path_val(cx, StringValue(resolved_path_str));
@@ -185,7 +188,7 @@ static JSObject* get_module(JSContext* cx, const char* specifier, const char* re
                             const JS::CompileOptions &opts) {
   RootedString resolved_path_str(cx, JS_NewStringCopyZ(cx, resolved_path));
 
-  if (!resolved_path_str) {
+  if (resolved_path_str == nullptr) {
     return nullptr;
   }
 
@@ -278,13 +281,13 @@ static JSObject* get_builtin_module(JSContext* cx, HandleValue id, HandleObject 
   }
 
   RootedObject module(cx, JS::CompileModule(cx, opts, source));
-  if (!module) {
+  if (module == nullptr) {
     return nullptr;
   }
   module_val.setObject(*module);
 
   RootedObject info(cx, JS_NewPlainObject(cx));
-  if (!info) {
+  if (info == nullptr) {
     return nullptr;
   }
 
@@ -304,7 +307,7 @@ static JSObject* get_builtin_module(JSContext* cx, HandleValue id, HandleObject 
 JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
                               HandleObject moduleRequest) {
   RootedString specifier(cx, GetModuleRequestSpecifier(cx, moduleRequest));
-  if (!specifier) {
+  if (specifier == nullptr) {
     return nullptr;
   }
 
@@ -382,7 +385,7 @@ ScriptLoader::ScriptLoader(api::Engine* engine, JS::CompileOptions *opts,
 bool ScriptLoader::define_builtin_module(const char* id, HandleValue builtin) {
   JSContext* cx = ENGINE->cx();
   RootedString id_str(cx, JS_NewStringCopyZ(cx, id));
-  if (!id_str) {
+  if (id_str == nullptr) {
     return false;
   }
   RootedValue module_val(cx);
@@ -408,7 +411,7 @@ bool ScriptLoader::load_resolved_script(JSContext *cx, const char *specifier,
                                         const char* resolved_path,
                                         JS::SourceText<mozilla::Utf8Unit> &script) {
   FILE *file = fopen(resolved_path, "r");
-  if (!file) {
+  if (file == nullptr) {
     return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError,
       specifier, resolved_path, std::strerror(errno));
   }
@@ -474,7 +477,7 @@ bool ScriptLoader::eval_top_level_script(const char *path, JS::SourceText<mozill
     // which is why this is scoped to just compilation.)
     JS::AutoDisableGenerationalGC noGGC(cx);
     module = get_module(cx, source, path, opts);
-    if (!module) {
+    if (module == nullptr) {
       return false;
     }
     if (!ModuleLink(cx, module)) {
@@ -484,7 +487,7 @@ bool ScriptLoader::eval_top_level_script(const char *path, JS::SourceText<mozill
     // See comment above about disabling GGC during compilation.
     JS::AutoDisableGenerationalGC noGGC(cx);
     script = JS::Compile(cx, opts, source);
-    if (!script) {
+    if (script == nullptr) {
       return false;
     }
   }

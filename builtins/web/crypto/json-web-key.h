@@ -152,7 +152,7 @@ public:
              std::optional<std::string> n, std::optional<std::string> e)
       : kty{std::move(kty)}, key_ops{std::move(key_ops)}, ext{ext}, n{std::move(n)}, e{std::move(e)} {}
 
-  JsonWebKey RSAPublicKey(std::string kty, std::vector<std::string> key_ops,
+  static JsonWebKey RSAPublicKey(std::string kty, std::vector<std::string> key_ops,
                           std::optional<bool> ext, std::optional<std::string> n,
                           std::optional<std::string> e) {
     return {std::move(kty), std::move(key_ops), ext, std::move(n), std::move(e)};
@@ -163,7 +163,7 @@ public:
              std::optional<std::string> d)
       : kty{std::move(kty)}, key_ops{std::move(key_ops)}, ext{ext}, d{std::move(d)}, n{std::move(n)}, e{std::move(e)} {}
 
-  JsonWebKey RSAPrivateKey(std::string kty, std::vector<std::string> key_ops,
+  static JsonWebKey RSAPrivateKey(std::string kty, std::vector<std::string> key_ops,
                            std::optional<bool> ext, std::optional<std::string> n,
                            std::optional<std::string> e, std::optional<std::string> d) {
     return {std::move(kty), std::move(key_ops), ext, std::move(n), std::move(e), std::move(d)};
@@ -176,7 +176,7 @@ public:
       : kty{std::move(kty)}, key_ops{std::move(key_ops)}, ext{ext}, d{std::move(d)}, n{std::move(n)}, e{std::move(e)}, p{std::move(p)}, q{std::move(q)}, dp{std::move(dp)}, dq{std::move(dq)}, qi{std::move(qi)} {
   }
 
-  JsonWebKey RSAPrivateKeyWithAdditionalPrimes(
+  static JsonWebKey RSAPrivateKeyWithAdditionalPrimes(
       std::string kty, std::vector<std::string> key_ops, std::optional<bool> ext,
       std::optional<std::string> n, std::optional<std::string> e, std::optional<std::string> d,
       std::optional<std::string> p, std::optional<std::string> q, std::optional<std::string> dp,

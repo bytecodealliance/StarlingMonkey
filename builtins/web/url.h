@@ -136,7 +136,7 @@ public:
 
   static bool init_class(JSContext *cx, JS::HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
-  static void finalize(JS::GCContext *gcx, JSObject *obj);
+  static void finalize(JS::GCContext *gcx, JSObject *self);
 };
 
 bool install(api::Engine *engine);

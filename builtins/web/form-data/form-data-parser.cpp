@@ -11,7 +11,7 @@
 namespace {
 
 JSString *to_owned_string(JSContext *cx, jsmultipart::Slice src) {
-  auto chars = reinterpret_cast<const char *>(src.data);
+  const auto *chars = reinterpret_cast<const char *>(src.data);
 
   std::string_view sv(chars, src.len);
   return core::decode(cx, sv);
@@ -28,7 +28,7 @@ JSObject *to_owned_buffer(JSContext *cx, jsmultipart::Slice src) {
 
   JS::RootedObject buffer(cx, JS::NewArrayBufferWithContents(
       cx, src.len, buf.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
-  if (!buffer) {
+  if (buffer == nullptr) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -37,7 +37,7 @@ JSObject *to_owned_buffer(JSContext *cx, jsmultipart::Slice src) {
   std::ignore = (buf.release());
 
   JS::RootedObject byte_array(cx, JS_NewUint8ArrayWithBuffer(cx, buffer, 0, src.len));
-  if (!byte_array) {
+  if (byte_array == nullptr) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -67,7 +67,7 @@ public:
 
 JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
   RootedObject formdata(cx, FormData::create(cx));
-  if (!formdata) {
+  if (formdata == nullptr) {
     return nullptr;
   }
 
@@ -76,12 +76,12 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
   }
 
   auto done = false;
-  auto data = reinterpret_cast<const uint8_t *>(body.data());
+  const auto *data = reinterpret_cast<const uint8_t *>(body.data());
 
   jsmultipart::Slice input{.data=data, .len=body.size()};
   jsmultipart::Entry entry{};
 
-  auto encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
+  auto *encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
       reinterpret_cast<uint8_t *>(const_cast<char *>("UTF-8")), 5));
 
   auto deleter1 = [&](auto *state) { jsmultipart::multipart_parser_free(state); };
@@ -134,13 +134,13 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
         }
 
         bool ignore = false;
-        auto dst = reinterpret_cast<uint16_t *>(data.get());
-        auto src = entry.value.data;
+        auto *dst = reinterpret_cast<uint16_t *>(data.get());
+        const auto *src = entry.value.data;
 
         jsencoding::decoder_decode_to_utf16(decoder.get(), src, &src_size, dst, &dst_size, false, &ignore);
 
         JS::RootedString value(cx, JS_NewUCString(cx, std::move(data), dst_size));
-        if (!value) {
+        if (value == nullptr) {
           return nullptr;
         }
 
@@ -157,26 +157,26 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
         // object must have the value of the `Content-Type` header of the part if the part
         // has such header, and `text/plain` otherwise.
         RootedObject filebits(cx, to_owned_buffer(cx, entry.value));
-        if (!filebits) {
+        if (filebits == nullptr) {
           return nullptr;
         }
 
         RootedString filename(cx, to_owned_string(cx, entry.filename));
-        if (!filename) {
+        if (filename == nullptr) {
           return nullptr;
         }
 
         RootedValue content_type_val(cx);
-        if (entry.content_type.data && entry.content_type.len) {
+        if ((entry.content_type.data != nullptr) && (entry.content_type.len != 0U)) {
           RootedString content_type(cx, to_owned_string(cx, entry.content_type));
-          if (!content_type) {
+          if (content_type == nullptr) {
             return nullptr;
           }
 
           content_type_val = JS::StringValue(content_type);
         } else {
           RootedString content_type(cx, JS_NewStringCopyN(cx, "text/plain", 10));
-          if (!content_type) {
+          if (content_type == nullptr) {
             return nullptr;
           }
 
@@ -184,7 +184,7 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
         }
 
         RootedObject opts(cx, JS_NewPlainObject(cx));
-        if (!opts) {
+        if (opts == nullptr) {
           return nullptr;
         }
 
@@ -197,7 +197,7 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
         RootedValue opts_val(cx, JS::ObjectValue(*opts));
 
         RootedObject file(cx, File::create(cx, filebits_val, filename_val, opts_val));
-        if (!file) {
+        if (file == nullptr) {
           return nullptr;
         }
 
@@ -224,7 +224,7 @@ class UrlParser : public FormDataParser {
 
 JSObject *UrlParser::parse(JSContext *cx, std::string_view body) {
   RootedObject formdata(cx, FormData::create(cx));
-  if (!formdata) {
+  if (formdata == nullptr) {
     return nullptr;
   }
 
@@ -254,7 +254,7 @@ JSObject *UrlParser::parse(JSContext *cx, std::string_view body) {
 
     auto val_chars = JS::UTF8Chars((char *)param.value.data, param.value.len);
     JS::RootedString val_str(cx, JS_NewStringCopyUTF8N(cx, val_chars));
-    if (!val_str) {
+    if (val_str == nullptr) {
       JS_ReportOutOfMemory(cx);
       return nullptr;
     }
@@ -285,9 +285,9 @@ std::unique_ptr<FormDataParser> FormDataParser::create(std::string_view content_
 
     std::string_view boundary((char *)boundary_slice.data, boundary_slice.len);
     return std::make_unique<MultipartParser>(boundary);
-  } else if (content_type.starts_with("application/x-www-form-urlencoded")) {
+  } if (content_type.starts_with("application/x-www-form-urlencoded")) {
     return std::make_unique<UrlParser>();
-  } else if (content_type.starts_with("text/plain")) {
+  } if (content_type.starts_with("text/plain")) {
     // TODO: add plain text content parser
   }
 

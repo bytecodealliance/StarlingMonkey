@@ -4,6 +4,7 @@ Checks: >
   cppcoreguidelines-*,
   modernize-*,
   performance-*,
+  readability-*,
   -clang-analyzer-optin.core.EnumCastOutOfRange,
   -cppcoreguidelines-avoid-do-while,
   -cppcoreguidelines-avoid-c-arrays,
@@ -29,6 +30,11 @@ Checks: >
   -modernize-use-trailing-return-type,
   -modernize-avoid-c-arrays,
   -modernize-use-ranges,
+  -readability-identifier-length,
+  -readability-static-accessed-through-instance,
+  -readability-function-cognitive-complexity,
+  -readability-magic-numbers,
+  -readability-simplify-boolean-expr,
 
 # Treat all warnings as errors
 WarningsAsErrors: '*'

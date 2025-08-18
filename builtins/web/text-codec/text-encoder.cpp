@@ -26,7 +26,7 @@ bool TextEncoder::encode(JSContext *cx, unsigned argc, JS::Value *vp) {
   // Default to empty string if no input is given.
   if (args.get(0).isUndefined()) {
     JS::RootedObject byte_array(cx, JS_NewUint8Array(cx, 0));
-    if (!byte_array) {
+    if (byte_array == nullptr) {
       return false;
     }
 
@@ -38,7 +38,7 @@ bool TextEncoder::encode(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedObject buffer(
       cx, JS::NewArrayBufferWithContents(cx, chars.len, chars.begin(),
                                          JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
-  if (!buffer) {
+  if (buffer == nullptr) {
     return false;
   }
 
@@ -46,7 +46,7 @@ bool TextEncoder::encode(JSContext *cx, unsigned argc, JS::Value *vp) {
   static_cast<void>(chars.ptr.release());
 
   JS::RootedObject byte_array(cx, JS_NewUint8ArrayWithBuffer(cx, buffer, 0, chars.len));
-  if (!byte_array) {
+  if (byte_array == nullptr) {
     return false;
   }
 
@@ -62,8 +62,8 @@ bool TextEncoder::encodeInto(JSContext *cx, unsigned argc, JS::Value *vp) {
     return api::throw_error(cx, api::Errors::WrongReceiver, "encodeInto", "TextEncoder");
   }
 
-  auto source = JS::ToString(cx, args.get(0));
-  if (!source) {
+  auto *source = JS::ToString(cx, args.get(0));
+  if (source == nullptr) {
     return false;
   }
   auto destination_value = args.get(1);
@@ -79,7 +79,7 @@ bool TextEncoder::encodeInto(JSContext *cx, unsigned argc, JS::Value *vp) {
   size_t len = 0;
   // JS_GetObjectAsUint8Array returns nullptr without throwing if the object is not
   // a Uint8Array, so we don't need to do explicit checks before calling it.
-  if (!JS_GetObjectAsUint8Array(destination, &len, &is_shared, &data)) {
+  if (JS_GetObjectAsUint8Array(destination, &len, &is_shared, &data) == nullptr) {
     return api::throw_error(cx, api::Errors::TypeError, "TextEncoder.encodeInto",
       "destination", "be a Uint8Array");
   }
@@ -95,7 +95,7 @@ bool TextEncoder::encodeInto(JSContext *cx, unsigned argc, JS::Value *vp) {
   MOZ_ASSERT(written <= len);
 
   JS::RootedObject obj(cx, JS_NewPlainObject(cx));
-  if (!obj) {
+  if (obj == nullptr) {
     return false;
   }
   JS::RootedValue read_value(cx, JS::NumberValue(read));
@@ -120,7 +120,7 @@ bool TextEncoder::encoding_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   JS::RootedString str(cx, JS_NewStringCopyN(cx, "utf-8", 5));
-  if (!str) {
+  if (str == nullptr) {
     return false;
   }
 
@@ -152,7 +152,7 @@ bool TextEncoder::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("TextEncoder", 0);
 
   JS::RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  if (!self) {
+  if (self == nullptr) {
     return false;
   }
 

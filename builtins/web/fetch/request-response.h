@@ -62,7 +62,7 @@ public:
    *
    * The handle is guaranteed to be uniquely owned by the caller.
    */
-  static unique_ptr<host_api::HttpHeaders> headers_handle_clone(JSContext *, HandleObject self);
+  static unique_ptr<host_api::HttpHeaders> headers_handle_clone(JSContext * /*cx*/, HandleObject self);
 
   /**
    * Returns the RequestOrResponse's Headers, reifying it if necessary.
@@ -143,10 +143,10 @@ public:
     Headers = static_cast<int>(RequestOrResponse::Slots::Headers),
     URL = static_cast<int>(RequestOrResponse::Slots::URL),
     Method = static_cast<int>(RequestOrResponse::Slots::Count),
-    ResponsePromise,
-    PendingResponseHandle,
-    Signal,
-    Count,
+    ResponsePromise = 8,
+    PendingResponseHandle = 9,
+    Signal = 10,
+    Count = 11,
   };
 
   static JSObject *response_promise(JSObject *obj);
@@ -199,11 +199,11 @@ public:
     BodyUsed = static_cast<int>(RequestOrResponse::Slots::BodyUsed),
     Headers = static_cast<int>(RequestOrResponse::Slots::Headers),
     Status = static_cast<int>(RequestOrResponse::Slots::Count),
-    StatusMessage,
-    Redirected,
-    Type,
-    Aborted,
-    Count,
+    StatusMessage = 8,
+    Redirected = 9,
+    Type = 10,
+    Aborted = 11,
+    Count = 12,
   };
 
   enum Type : uint8_t { Basic, Cors, Default, Error, Opaque, OpaqueRedirect };
@@ -242,7 +242,7 @@ class ResponseFutureTask final : public api::AsyncTask {
   host_api::FutureHttpIncomingResponse *future_;
 
 public:
-  explicit ResponseFutureTask(const HandleObject request,
+  explicit ResponseFutureTask(HandleObject request,
                               host_api::FutureHttpIncomingResponse *future);
 
   [[nodiscard]] bool run(api::Engine *engine) override;

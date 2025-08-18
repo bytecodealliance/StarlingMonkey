@@ -39,29 +39,29 @@ public:
   static CryptoKeyUsages from(const std::vector<std::string>& key_usages);
   static JS::Result<CryptoKeyUsages> from(JSContext *cx, JS::HandleValue key_usages);
 
-  uint8_t toInt() { return this->mask; };
+  [[nodiscard]] uint8_t toInt() const { return this->mask; };
 
-  bool isEmpty() { return this->mask == 0; };
-  bool isSuperSetOf(CryptoKeyUsages &other) { return this->mask & other.mask; };
+  [[nodiscard]] bool isEmpty() const { return this->mask == 0; };
+  bool isSuperSetOf(CryptoKeyUsages &other) const { return (this->mask & other.mask) != 0; };
 
-  bool canEncrypt() { return this->mask & encrypt_flag; };
-  bool canDecrypt() { return this->mask & decrypt_flag; };
-  bool canSign() { return this->mask & sign_flag; };
-  bool canVerify() { return this->mask & verify_flag; };
-  bool canDeriveKey() { return this->mask & derive_key_flag; };
-  bool canDeriveBits() { return this->mask & derive_bits_flag; };
-  bool canWrapKey() { return this->mask & wrap_key_flag; };
-  bool canUnwrapKey() { return this->mask & unwrap_key_flag; };
+  [[nodiscard]] bool canEncrypt() const { return (this->mask & encrypt_flag) != 0; };
+  [[nodiscard]] bool canDecrypt() const { return (this->mask & decrypt_flag) != 0; };
+  [[nodiscard]] bool canSign() const { return (this->mask & sign_flag) != 0; };
+  [[nodiscard]] bool canVerify() const { return (this->mask & verify_flag) != 0; };
+  [[nodiscard]] bool canDeriveKey() const { return (this->mask & derive_key_flag) != 0; };
+  [[nodiscard]] bool canDeriveBits() const { return (this->mask & derive_bits_flag) != 0; };
+  [[nodiscard]] bool canWrapKey() const { return (this->mask & wrap_key_flag) != 0; };
+  [[nodiscard]] bool canUnwrapKey() const { return (this->mask & unwrap_key_flag) != 0; };
 
-  bool canOnlyEncrypt() { return this->mask == encrypt_flag; };
-  bool canOnlyDecrypt() { return this->mask == decrypt_flag; };
-  bool canOnlySign() { return this->mask == sign_flag; };
-  bool canOnlyVerify() { return this->mask == verify_flag; };
-  bool canOnlySignOrVerify() { return this->mask & (sign_flag | verify_flag); };
-  bool canOnlyDeriveKey() { return this->mask == derive_key_flag; };
-  bool canOnlyDeriveBits() { return this->mask == derive_bits_flag; };
-  bool canOnlyWrapKey() { return this->mask == wrap_key_flag; };
-  bool canOnlyUnwrapKey() { return this->mask == unwrap_key_flag; };
+  [[nodiscard]] bool canOnlyEncrypt() const { return this->mask == encrypt_flag; };
+  [[nodiscard]] bool canOnlyDecrypt() const { return this->mask == decrypt_flag; };
+  [[nodiscard]] bool canOnlySign() const { return this->mask == sign_flag; };
+  [[nodiscard]] bool canOnlyVerify() const { return this->mask == verify_flag; };
+  [[nodiscard]] bool canOnlySignOrVerify() const { return (this->mask & (sign_flag | verify_flag)) != 0; };
+  [[nodiscard]] bool canOnlyDeriveKey() const { return this->mask == derive_key_flag; };
+  [[nodiscard]] bool canOnlyDeriveBits() const { return this->mask == derive_bits_flag; };
+  [[nodiscard]] bool canOnlyWrapKey() const { return this->mask == wrap_key_flag; };
+  [[nodiscard]] bool canOnlyUnwrapKey() const { return this->mask == unwrap_key_flag; };
 };
 
 class CryptoKey : public BuiltinNoConstructor<CryptoKey> {

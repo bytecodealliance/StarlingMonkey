@@ -142,7 +142,7 @@ bool Event::composedPath(JSContext *cx, unsigned argc, JS::Value *vp) {
   RootedObject tgt(cx, current_target(self));
   RootedObject paths(cx);
 
-  if (tgt) {
+  if (tgt != nullptr) {
     RootedValueArray<1> arr(cx);
     arr[0].setObject(*tgt);
     paths = JS::NewArrayObject(cx, arr);
@@ -150,7 +150,7 @@ bool Event::composedPath(JSContext *cx, unsigned argc, JS::Value *vp) {
     paths = JS::NewArrayObject(cx, 0);
   }
 
-  if (!paths) {
+  if (paths == nullptr) {
     return false;
   }
 
@@ -240,8 +240,8 @@ void Event::set_canceled(JSObject *self, bool val) {
 // https://dom.spec.whatwg.org/#inner-event-creation-steps
 bool Event::init(JSContext *cx, HandleObject self, HandleValue type, HandleValue init)
 {
-  auto type_str = JS::ToString(cx, type);
-  if (!type_str) {
+  auto *type_str = JS::ToString(cx, type);
+  if (type_str == nullptr) {
     return false;
   }
 
@@ -279,7 +279,7 @@ bool Event::init(JSContext *cx, HandleObject self, HandleValue type, HandleValue
 
 JSObject *Event::create(JSContext *cx, HandleValue type, HandleValue init) {
   RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (!self) {
+  if (self == nullptr) {
     return nullptr;
   }
 
@@ -295,7 +295,7 @@ bool Event::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("Event", 1);
 
   RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  if (!self) {
+  if (self == nullptr) {
     return false;
   }
 
@@ -324,11 +324,7 @@ bool Event::initEvent(JSContext *cx, unsigned argc, JS::Value *vp) {
   RootedValue type(cx, args.get(0));
   RootedValue init(cx, args.get(1));
 
-  if (!Event::init(cx, self, type, init)) {
-    return false;
-  }
-
-  return true;
+  return Event::init(cx, self, type, init);
 }
 
 bool Event::init_class(JSContext *cx, JS::HandleObject global) {

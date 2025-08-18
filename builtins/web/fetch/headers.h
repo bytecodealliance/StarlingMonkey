@@ -112,7 +112,7 @@ public:
   /// Get the header entry for a given index, ensuring that HeadersSortList is recomputed if
   /// necessary in the process.
   static std::tuple<host_api::HostString, host_api::HostString> *
-  get_index(JSContext *cx, JS::HandleObject self, size_t idx);
+  get_index(JSContext *cx, JS::HandleObject self, size_t index);
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -128,9 +128,9 @@ public:
   static JSObject *create(JSContext *cx, HandleValue init_headers, HeadersGuard guard);
   static JSObject *create(JSContext *cx, host_api::HttpHeadersReadOnly *handle, HeadersGuard guard);
 
-  static void finalize(JS::GCContext *gcx, JSObject *obj);
+  static void finalize(JS::GCContext *gcx, JSObject *self);
 
-  static bool init_entries(JSContext *cx, HandleObject self, HandleValue init_headers);
+  static bool init_entries(JSContext *cx, HandleObject self, HandleValue initv);
 
   /// Returns the headers list of entries, constructing it if necessary.
   /// Depending on the `Mode` the instance is in, this can be a cache or the canonical store for
@@ -151,7 +151,7 @@ public:
    *
    * The handle is guaranteed to be uniquely owned by the caller.
    */
-  static unique_ptr<host_api::HttpHeaders> handle_clone(JSContext *, HandleObject self);
+  static unique_ptr<host_api::HttpHeaders> handle_clone(JSContext * /*cx*/, HandleObject self);
 };
 
 class HeadersIterator final : public BuiltinNoConstructor<HeadersIterator> {

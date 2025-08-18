@@ -91,7 +91,7 @@ bool AbortSignal::timeout(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   RootedObject self(cx, create_with_timeout(cx, args.get(0)));
-  if (!self) {
+  if (self == nullptr) {
     return false;
   }
 
@@ -108,7 +108,7 @@ bool AbortSignal::abort(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // The abort() method steps are inlined in the AbortSignal::create_with_reason method.
   RootedObject self(cx, create_with_reason(cx, args.get(0)));
-  if (!self) {
+  if (self == nullptr) {
     return false;
   }
 
@@ -125,7 +125,7 @@ bool AbortSignal::any(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // The any() method steps are inlined in the AbortSignal::create_with_signals method.
   RootedObject self(cx, create_with_signals(cx, args));
-  if (!self) {
+  if (self == nullptr) {
     return false;
   }
 
@@ -195,7 +195,7 @@ bool AbortSignal::add_algorithm(JSObject *self, js::UniquePtr<AbortAlgorithm> al
   }
 
   // 2. Append algorithm to signal's abort algorithms.
-  auto algorithms = AbortSignal::algorithms(self);
+  auto *algorithms = AbortSignal::algorithms(self);
   return algorithms->append(std::move(algorithm));
 }
 
@@ -228,7 +228,7 @@ bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
   JS::RootedObjectVector dep_signals_to_abort(cx);
 
   // 4. For each dependentSignal of signal's dependent signals:
-  auto dep_signals = dependent_signals(self);
+  auto *dep_signals = dependent_signals(self);
   for (auto const &sig : dep_signals->items()) {
     RootedObject signal(cx, sig);
     // 1. If dependentSignal is not aborted:
@@ -259,9 +259,10 @@ bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
 bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {
   // To run the abort steps for an AbortSignal signal:
   // 1. For each algorithm of signal's abort algorithms: run algorithm.
-  auto algorithms = AbortSignal::algorithms(self);
+  auto *algorithms = AbortSignal::algorithms(self);
   for (auto &algorithm : *algorithms) {
-    if (!algorithm->run(cx)) return false;
+    if (!algorithm->run(cx)) { return false;
+}
   }
 
   // 2. Empty signals's abort algorithms.
@@ -274,11 +275,7 @@ bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {
   RootedObject event(cx, Event::create(cx, type_val, JS::NullHandleValue));
   RootedValue event_val(cx, JS::ObjectValue(*event));
 
-  if (!EventTarget::dispatch_event(cx, self, event_val, &res_val)) {
-    return false;
-  }
-
-  return true;
+  return EventTarget::dispatch_event(cx, self, event_val, &res_val);
 }
 
 // Set signal's abort reason to reason if it is given; otherwise to a new "AbortError" DOMException.
@@ -287,7 +284,7 @@ bool AbortSignal::set_reason(JSContext *cx, HandleObject self, HandleValue reaso
     SetReservedSlot(self, Slots::Reason, reason);
   } else {
     RootedObject exception(cx, dom_exception::DOMException::create(cx, "AbortError", "AbortError"));
-    if (!exception) {
+    if (exception == nullptr) {
       return false;
     }
 
@@ -300,7 +297,7 @@ bool AbortSignal::set_reason(JSContext *cx, HandleObject self, HandleValue reaso
 // https://dom.spec.whatwg.org/#interface-AbortSignal
 JSObject *AbortSignal::create(JSContext *cx) {
   RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (!self) {
+  if (self == nullptr) {
     return nullptr;
   }
 
@@ -331,7 +328,7 @@ JSObject *AbortSignal::create(JSContext *cx) {
 JSObject *AbortSignal::create_with_reason(JSContext *cx, HandleValue reason) {
   // 1. Let signal be a new AbortSignal object.
   RootedObject self(cx, create(cx));
-  if (!self) {
+  if (self == nullptr) {
     return nullptr;
   }
 
@@ -351,7 +348,7 @@ JSObject *AbortSignal::create_with_reason(JSContext *cx, HandleValue reason) {
 JSObject *AbortSignal::create_with_timeout(JSContext *cx, HandleValue timeout) {
   // 1. Let signal be a new AbortSignal object.
   RootedObject self(cx, create(cx));
-  if (!self) {
+  if (self == nullptr) {
     return nullptr;
   }
 
@@ -371,11 +368,11 @@ JSObject *AbortSignal::create_with_timeout(JSContext *cx, HandleValue timeout) {
   int32_t timer_id = 0;
 
   JS::RootedObject exception(cx, dom_exception::DOMException::create(cx, "TimeoutError", "TimeoutError"));
-  if (!exception) {
+  if (exception == nullptr) {
     return nullptr;
   }
   JS::RootedFunction on_timeout(cx, JS_NewFunction(cx, AbortSignal::on_timeout, 2, 0, nullptr));
-  if (!on_timeout) {
+  if (on_timeout == nullptr) {
     return nullptr;
   }
 
@@ -403,7 +400,7 @@ JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signa
 
   // 1. Let resultSignal be a new object implementing signalInterface using realm.
   RootedObject self(cx, create(cx));
-  if (!self) {
+  if (self == nullptr) {
     return nullptr;
   }
 
@@ -420,7 +417,7 @@ JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signa
 
   // 3. Set resultSignal's dependent to true.
   SetReservedSlot(self, Slots::Dependent, JS::TrueValue());
-  auto our_signals = source_signals(self);
+  auto *our_signals = source_signals(self);
 
   // 4. For each signal of signals:
   for (size_t i = 0; i < signals.length(); ++i) {
@@ -431,12 +428,12 @@ JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signa
       // 1. Append signal to resultSignal's source signals.
       our_signals->insert(signal);
       // 2. Append resultSignal to signal's dependent signals.
-      auto their_signals = dependent_signals(signal);
+      auto *their_signals = dependent_signals(signal);
       their_signals->insert(self);
     }
     // 2. Otherwise...
     else {
-      auto src_signals = source_signals(signal);
+      auto *src_signals = source_signals(signal);
       // for each sourceSignal of signal's source signals:
       for (auto const &source : src_signals->items()) {
         // 1. Assert: sourceSignal is not aborted and not dependent.
@@ -444,7 +441,7 @@ JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signa
         // 2. Append sourceSignal to resultSignal's source signals.
         our_signals->insert(source);
         // 3. Append resultSignal to sourceSignal's dependent signals.
-        auto their_signals = dependent_signals(source);
+        auto *their_signals = dependent_signals(source);
         their_signals->insert(self);
       };
     }
@@ -469,21 +466,21 @@ void AbortSignal::trace(JSTracer *trc, JSObject *self) {
 
   auto has_sources = !JS::GetReservedSlot(self, Slots::SourceSignals).isNullOrUndefined();
   if (has_sources) {
-    auto srcsig = source_signals(self);
+    auto *srcsig = source_signals(self);
     srcsig->trace(trc);
     srcsig->traceWeak(trc);
   }
 
   auto has_deps = !JS::GetReservedSlot(self, Slots::DependentSignals).isNullOrUndefined();
   if (has_deps) {
-    auto depsig = dependent_signals(self);
+    auto *depsig = dependent_signals(self);
     depsig->trace(trc);
     depsig->traceWeak(trc);
   }
 
   auto has_algorithms = !JS::GetReservedSlot(self, Slots::Algorithms).isNullOrUndefined();
   if (has_algorithms) {
-    auto algorithms = AbortSignal::algorithms(self);
+    auto *algorithms = AbortSignal::algorithms(self);
     algorithms->trace(trc);
   }
 }
@@ -495,7 +492,7 @@ bool AbortSignal::init_class(JSContext *cx, JS::HandleObject global) {
     return false;
   }
 
-  if (!(abort_type_atom = JS_AtomizeAndPinString(cx, "abort"))) {
+  if ((abort_type_atom = JS_AtomizeAndPinString(cx, "abort")) == nullptr) {
     return false;
   }
 

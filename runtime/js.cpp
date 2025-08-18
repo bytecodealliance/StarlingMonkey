@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -68,9 +69,7 @@ void wizen() {
   // Ensure that the monotonic clock is always increasing, even across multiple resumptions.
   __wasi_timestamp_t t = 0;
   MOZ_RELEASE_ASSERT(!__wasi_clock_time_get(__WASI_CLOCKID_MONOTONIC, 1, &t));
-  if (mono_clock_offset < t) {
-    mono_clock_offset = t;
-  }
+  mono_clock_offset = std::max(mono_clock_offset, t);
   __wasilibc_deinitialize_environ();
 }
 
@@ -89,7 +88,8 @@ extern "C" bool exports_wasi_cli_run_run() {
   auto arg_strings = host_api::environment_get_arguments();
   std::vector<std::string_view> args;
   args.reserve(arg_strings.size());
-  for (auto& arg : arg_strings) args.push_back(arg);
+  for (auto& arg : arg_strings) { args.push_back(arg);
+}
 
   auto config_parser = starling::ConfigParser();
   config_parser.apply_env()->apply_args(args);

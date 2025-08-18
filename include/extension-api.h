@@ -86,8 +86,8 @@ public:
   explicit Engine(std::unique_ptr<EngineConfig> config);
   static Engine *get(JSContext *cx);
 
-  JSContext *cx();
-  HandleObject global();
+  static JSContext *cx();
+  static HandleObject global();
   EngineState state();
   bool debugging_enabled();
   bool wpt_mode();
@@ -132,7 +132,7 @@ public:
   /**
    * Returns the global the initialization script runs in.
    */
-  HandleObject init_script_global();
+  static HandleObject init_script_global();
 
   /**
    * Run the async event loop as long as there's interest registered in keeping it running.
@@ -155,37 +155,37 @@ public:
   /**
    * Add an event loop interest to track
    */
-  void incr_event_loop_interest();
+  static void incr_event_loop_interest();
 
   /**
    * Remove an event loop interest to track
    * The last decrementer marks the event loop as complete to finish
    */
-  void decr_event_loop_interest();
+  static void decr_event_loop_interest();
 
   /**
    * Get the JS value associated with the top-level script execution -
    * the last expression for a script, or the module namespace for a module.
    */
-  HandleValue script_value();
+  static HandleValue script_value();
 
-  bool has_pending_async_tasks();
-  void queue_async_task(const RefPtr<AsyncTask>& task);
+  static bool has_pending_async_tasks();
+  static void queue_async_task(const RefPtr<AsyncTask>& task);
   bool cancel_async_task(const RefPtr<AsyncTask>& task);
 
-  bool has_unhandled_promise_rejections();
+  static bool has_unhandled_promise_rejections();
   void report_unhandled_promise_rejections();
-  void clear_unhandled_promise_rejections();
+  static void clear_unhandled_promise_rejections();
 
   void abort(const char *reason);
 
-  bool debug_logging_enabled();
+  static bool debug_logging_enabled();
 
-  bool dump_value(JS::Value val, FILE *fp = stdout);
-  bool print_stack(FILE *fp);
-  void dump_error(HandleValue error, FILE *fp = stderr);
-  void dump_pending_exception(const char *description = "", FILE *fp = stderr);
-  void dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp = stderr);
+  static bool dump_value(JS::Value val, FILE *fp = stdout);
+  static bool print_stack(FILE *fp);
+  static void dump_error(HandleValue error, FILE *fp = stderr);
+  static void dump_pending_exception(const char *description = "", FILE *fp = stderr);
+  static void dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp = stderr);
 };
 
 

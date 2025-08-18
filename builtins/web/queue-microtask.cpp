@@ -22,7 +22,7 @@ bool queueMicrotask(JSContext *cx, unsigned argc, Value *vp) {
   RootedObject callback(cx, &args[0].toObject());
 
   RootedObject promise(cx, JS::CallOriginalPromiseResolve(cx, JS::UndefinedHandleValue));
-  if (!promise) {
+  if (promise == nullptr) {
     return false;
   }
 

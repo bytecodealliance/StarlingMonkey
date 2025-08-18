@@ -24,13 +24,14 @@ using worker_location::WorkerLocation;
 bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
   JS::RootedObject params_obj(cx, &JS::GetReservedSlot(self, Slots::Params).toObject());
-  const auto params = URLSearchParams::get_params(params_obj);
+  auto *const params = URLSearchParams::get_params(params_obj);
   size_t index = JS::GetReservedSlot(self, Slots::Index).toInt32();
   uint8_t type = JS::GetReservedSlot(self, Slots::Type).toInt32();
 
   JS::RootedObject result(cx, JS_NewPlainObject(cx));
-  if (!result)
+  if (result == nullptr) {
     return false;
+}
 
   jsurl::JSSearchParam param{};
   jsurl::params_at(params, index, &param);
@@ -51,16 +52,18 @@ bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) 
   if (type != ITER_TYPE_VALUES) {
     auto chars = JS::UTF8Chars((char *)param.name.data, param.name.len);
     JS::RootedString str(cx, JS_NewStringCopyUTF8N(cx, chars));
-    if (!str)
+    if (str == nullptr) {
       return false;
+}
     key_val = JS::StringValue(str);
   }
 
   if (type != ITER_TYPE_KEYS) {
     auto chars = JS::UTF8Chars((char *)param.value.data, param.value.len);
     JS::RootedString str(cx, JS_NewStringCopyUTF8N(cx, chars));
-    if (!str)
+    if (str == nullptr) {
       return false;
+}
     val_val = JS::StringValue(str);
   }
 
@@ -69,8 +72,9 @@ bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) 
   switch (type) {
   case ITER_TYPE_ENTRIES: {
     JS::RootedObject pair(cx, JS::NewArrayObject(cx, 2));
-    if (!pair)
+    if (pair == nullptr) {
       return false;
+}
     JS_DefineElement(cx, pair, 0, key_val, JSPROP_ENUMERATE);
     JS_DefineElement(cx, pair, 1, val_val, JSPROP_ENUMERATE);
     result_val = JS::ObjectValue(*pair);
@@ -114,11 +118,13 @@ const JSPropertySpec URLSearchParamsIterator::properties[] = {
 
 bool URLSearchParamsIterator::init_class(JSContext *cx, JS::HandleObject global) {
   JS::RootedObject iterator_proto(cx, JS::GetRealmIteratorPrototype(cx));
-  if (!iterator_proto)
+  if (iterator_proto == nullptr) {
     return false;
+}
 
-  if (!init_class_impl(cx, global, iterator_proto))
+  if (!init_class_impl(cx, global, iterator_proto)) {
     return false;
+}
 
   // Delete both the `URLSearchParamsIterator` global property and the
   // `constructor` property on `URLSearchParamsIterator.prototype`. The latter
@@ -131,8 +137,9 @@ JSObject *URLSearchParamsIterator::create(JSContext *cx, JS::HandleObject params
   MOZ_RELEASE_ASSERT(type <= ITER_TYPE_VALUES);
 
   JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (!self)
+  if (self == nullptr) {
     return nullptr;
+}
 
   JS::SetReservedSlot(self, Slots::Params, JS::ObjectValue(*params));
   JS::SetReservedSlot(self, Slots::Type, JS::Int32Value(type));
@@ -181,11 +188,12 @@ jsurl::SpecString append_impl_validate(JSContext *cx, JS::HandleValue key, const
 }
 bool append_impl(JSContext *cx, JS::HandleObject self, jsurl::SpecString key, JS::HandleValue val,
                  const char *_) {
-  const auto params = URLSearchParams::get_params(self);
+  auto *const params = URLSearchParams::get_params(self);
 
   auto value = core::encode_spec_string(cx, val);
-  if (!value.data)
+  if (value.data == nullptr) {
     return false;
+}
 
   jsurl::params_append(params, key, value);
   return true;
@@ -199,8 +207,9 @@ jsurl::SpecSlice URLSearchParams::serialize(JSContext *cx, JS::HandleObject self
 bool URLSearchParams::append(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(2)
   auto value = append_impl_validate(cx, args[0], "append");
-  if (!append_impl(cx, self, value, args[1], "append"))
+  if (!append_impl(cx, self, value, args[1], "append")) {
     return false;
+}
 
   args.rval().setUndefined();
   return true;
@@ -213,12 +222,14 @@ bool URLSearchParams::delete_(JSContext *cx, unsigned argc, JS::Value *vp) {
       static_cast<jsurl::JSUrlSearchParams *>(JS::GetReservedSlot(self, Slots::Params).toPrivate());
 
   auto name = core::encode_spec_string(cx, args.get(0));
-  if (!name.data)
+  if (name.data == nullptr) {
     return false;
+}
 
   if (args.hasDefined(1)) {
     auto value = core::encode_spec_string(cx, args.get(1));
-    if (!value.data) return false;
+    if (value.data == nullptr) { return false;
+}
     jsurl::params_delete_kv(params, &name, &value);
   } else {
     jsurl::params_delete(params, &name);
@@ -234,12 +245,14 @@ bool URLSearchParams::has(JSContext *cx, unsigned argc, JS::Value *vp) {
       static_cast<jsurl::JSUrlSearchParams *>(JS::GetReservedSlot(self, Slots::Params).toPrivate());
 
   auto name = core::encode_spec_string(cx, args.get(0));
-  if (!name.data)
+  if (name.data == nullptr) {
     return false;
+}
 
   if (args.hasDefined(1)) {
     auto value = core::encode_spec_string(cx, args.get(1));
-    if (!value.data) return false;
+    if (value.data == nullptr) { return false;
+}
     args.rval().setBoolean(jsurl::params_has_kv(params, &name, &value));
   } else {
     args.rval().setBoolean(jsurl::params_has(params, &name));
@@ -250,22 +263,24 @@ bool URLSearchParams::has(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 bool URLSearchParams::get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1);
-  auto *params = static_cast<const jsurl::JSUrlSearchParams *>(
+  const auto *params = static_cast<const jsurl::JSUrlSearchParams *>(
       JS::GetReservedSlot(self, Slots::Params).toPrivate());
 
   auto name = core::encode_spec_string(cx, args.get(0));
-  if (!name.data)
+  if (name.data == nullptr) {
     return false;
+}
 
   const jsurl::SpecSlice slice = jsurl::params_get(params, &name);
-  if (!slice.data) {
+  if (slice.data == nullptr) {
     args.rval().setNull();
     return true;
   }
 
   JS::RootedString str(cx, JS_NewStringCopyUTF8N(cx, JS::UTF8Chars((char *)slice.data, slice.len)));
-  if (!str)
+  if (str == nullptr) {
     return false;
+}
   args.rval().setString(str);
   return true;
 }
@@ -273,30 +288,34 @@ bool URLSearchParams::get(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool URLSearchParams::getAll(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1);
 
-  auto *params = static_cast<const jsurl::JSUrlSearchParams *>(
+  const auto *params = static_cast<const jsurl::JSUrlSearchParams *>(
       JS::GetReservedSlot(self, Slots::Params).toPrivate());
 
   auto name = core::encode_spec_string(cx, args.get(0));
-  if (!name.data)
+  if (name.data == nullptr) {
     return false;
+}
 
   const jsurl::CVec<jsurl::SpecSlice> values = jsurl::params_get_all(params, &name);
 
   JS::RootedObject result(cx, JS::NewArrayObject(cx, values.len));
-  if (!result)
+  if (result == nullptr) {
     return false;
+}
 
   JS::RootedString str(cx);
   JS::RootedValue str_val(cx);
   for (size_t i = 0; i < values.len; i++) {
     const jsurl::SpecSlice value = values.ptr[i];
     str = JS_NewStringCopyUTF8N(cx, JS::UTF8Chars((char *)value.data, value.len));
-    if (!str)
+    if (str == nullptr) {
       return false;
+}
 
     str_val.setString(str);
-    if (!JS_SetElement(cx, result, i, str_val))
+    if (!JS_SetElement(cx, result, i, str_val)) {
       return false;
+}
   }
 
   args.rval().setObject(*result);
@@ -310,12 +329,14 @@ bool URLSearchParams::set(JSContext *cx, unsigned argc, JS::Value *vp) {
       static_cast<jsurl::JSUrlSearchParams *>(JS::GetReservedSlot(self, Slots::Params).toPrivate());
 
   auto name = core::encode_spec_string(cx, args[0]);
-  if (!name.data)
+  if (name.data == nullptr) {
     return false;
+}
 
   auto value = core::encode_spec_string(cx, args[1]);
-  if (!value.data)
+  if (value.data == nullptr) {
     return false;
+}
 
   jsurl::params_set(params, name, value);
   return true;
@@ -339,8 +360,9 @@ bool URLSearchParams::toString(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedString str(
       cx, JS_NewStringCopyUTF8N(
               cx, JS::UTF8Chars(reinterpret_cast<const char *>(slice.data), slice.len)));
-  if (!str)
+  if (str == nullptr) {
     return false;
+}
 
   args.rval().setString(str);
   return true;
@@ -353,20 +375,23 @@ bool URLSearchParams::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   JS::RootedObject urlSearchParamsInstance(cx, JS_NewObjectForConstructor(cx, &class_, args));
   JS::RootedObject self(cx, create(cx, urlSearchParamsInstance, args.get(0)));
-  if (!self)
+  if (self == nullptr) {
     return false;
+}
 
   args.rval().setObject(*self);
   return true;
 }
 
 bool URLSearchParams::init_class(JSContext *cx, JS::HandleObject global) {
-  if (!init_class_impl(cx, global))
+  if (!init_class_impl(cx, global)) {
     return false;
+}
 
   JS::RootedValue entries(cx);
-  if (!JS_GetProperty(cx, proto_obj, "entries", &entries))
+  if (!JS_GetProperty(cx, proto_obj, "entries", &entries)) {
     return false;
+}
 
   JS::SymbolCode code = JS::SymbolCode::iterator;
   JS::RootedId iteratorId(cx, JS::GetWellKnownSymbolKey(cx, code));
@@ -375,7 +400,7 @@ bool URLSearchParams::init_class(JSContext *cx, JS::HandleObject global) {
 
 JSObject *URLSearchParams::create(JSContext *cx, JS::HandleObject self,
                                   JS::HandleValue params_val) {
-  auto params = jsurl::new_params();
+  auto *params = jsurl::new_params();
   JS::SetReservedSlot(self, Slots::Params, JS::PrivateValue(params));
 
   bool consumed = false;
@@ -387,8 +412,9 @@ JSObject *URLSearchParams::create(JSContext *cx, JS::HandleObject self,
 
   if (!consumed) {
     auto init = core::encode_spec_string(cx, params_val);
-    if (!init.data)
+    if (init.data == nullptr) {
       return nullptr;
+}
 
     jsurl::params_init(params, &init);
   }
@@ -399,8 +425,9 @@ JSObject *URLSearchParams::create(JSContext *cx, JS::HandleObject self,
 JSObject *URLSearchParams::create(JSContext *cx, JS::HandleObject self, jsurl::JSUrl *url) {
 
   jsurl::JSUrlSearchParams *params = jsurl::url_search_params(url);
-  if (!params)
+  if (params == nullptr) {
     return nullptr;
+}
 
   JS::SetReservedSlot(self, Slots::Params, JS::PrivateValue(params));
   JS::SetReservedSlot(self, Slots::Url, JS::PrivateValue(url));
@@ -531,7 +558,7 @@ bool URL::createObjectURL(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   RootedObject obj(cx, &obj_val.toObject());
-  if (!obj) {
+  if (obj == nullptr) {
     return false;
   }
 
@@ -549,14 +576,14 @@ bool URL::createObjectURL(JSContext *cx, unsigned argc, JS::Value *vp) {
   // 5. Let serialized be the ASCII serialization of origin.
   // 6. If serialized is "null", set it to an implementation-defined value.
   RootedObject worker_location(cx, WorkerLocation::url.get());
-  if (worker_location) {
+  if (worker_location != nullptr) {
     RootedValue origin(cx);
     if (!JS_GetProperty(cx, worker_location, "origin", &origin)) {
       return false;
     }
 
     auto origin_str = RootedString(cx, JS::ToString(cx, origin));
-    if (!origin_str) {
+    if (origin_str == nullptr) {
       return false;
     }
 
@@ -577,7 +604,7 @@ bool URL::createObjectURL(JSContext *cx, unsigned argc, JS::Value *vp) {
   result.append(uuid);
 
   RootedString url(cx, JS_NewStringCopyN(cx, result.data(), result.size()));
-  if (!url) {
+  if (url == nullptr) {
     return false;
   }
 
@@ -644,8 +671,9 @@ jsurl::SpecString URL::origin(JSContext *cx, JS::HandleObject self) {
 bool URL::origin(JSContext *cx, JS::HandleObject self, JS::MutableHandleValue rval) {
   jsurl::SpecString slice = origin(cx, self);
   JS::RootedString str(cx, JS_NewStringCopyUTF8N(cx, JS::UTF8Chars((char *)slice.data, slice.len)));
-  if (!str)
+  if (str == nullptr) {
     return false;
+}
   rval.setString(str);
   return true;
 }
@@ -662,15 +690,17 @@ bool URL::searchParams_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (params_val.isNullOrUndefined()) {
     JS::RootedObject url_search_params_instance(
         cx, JS_NewObjectWithGivenProto(cx, &URLSearchParams::class_, URLSearchParams::proto_obj));
-    if (!url_search_params_instance)
+    if (url_search_params_instance == nullptr) {
       return false;
+}
 
     // The const-cast here is okay because we while normally callers of URL::url mustn't mutate
     // the returned object, URLSearchParams is intended to.
     params = URLSearchParams::create(cx, url_search_params_instance,
                                      const_cast<jsurl::JSUrl *>(url(self)));
-    if (!params)
+    if (params == nullptr) {
       return false;
+}
     JS::SetReservedSlot(self, Slots::Params, JS::ObjectValue(*params));
   } else {
     params = &params_val.toObject();
@@ -694,11 +724,13 @@ bool URL::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("URL", 1);
 
   JS::RootedObject urlInstance(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  if (!urlInstance)
+  if (urlInstance == nullptr) {
     return false;
+}
   JS::RootedObject self(cx, create(cx, urlInstance, args.get(0), args.get(1)));
-  if (!self)
+  if (self == nullptr) {
     return false;
+}
 
   args.rval().setObject(*self);
   return true;
@@ -709,13 +741,13 @@ DEF_ERR(InvalidURLError, JSEXN_TYPEERR, "URL constructor: {0} is not a valid URL
 JSObject *URL::create(JSContext *cx, JS::HandleObject self, jsurl::SpecString url_str,
                       const jsurl::JSUrl *base) {
   jsurl::JSUrl *url = nullptr;
-  if (base) {
+  if (base != nullptr) {
     url = jsurl::new_jsurl_with_base(&url_str, base);
   } else {
     url = jsurl::new_jsurl(&url_str);
   }
 
-  if (!url) {
+  if (url == nullptr) {
     api::throw_error(cx, InvalidURLError, (char *)url_str.data);
     return nullptr;
   }
@@ -728,8 +760,9 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, jsurl::SpecString ur
 JSObject *URL::create(JSContext *cx, JS::HandleObject self, JS::HandleValue url_val,
                       const jsurl::JSUrl *base) {
   auto str = core::encode_spec_string(cx, url_val);
-  if (!str.data)
+  if (str.data == nullptr) {
     return nullptr;
+}
 
   return create(cx, self, str, base);
 }
@@ -761,11 +794,12 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, JS::HandleValue url_
 
   if (!base_val.isUndefined()) {
     auto str = core::encode_spec_string(cx, base_val);
-    if (!str.data)
+    if (str.data == nullptr) {
       return nullptr;
+}
 
     base = jsurl::new_jsurl(&str);
-    if (!base) {
+    if (base == nullptr) {
       api::throw_error(cx, InvalidURLError, (char *)str.data);
       return nullptr;
     }
@@ -780,12 +814,15 @@ bool URL::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 bool install(api::Engine *engine) {
-  if (!URL::init_class(engine->cx(), engine->global()))
+  if (!URL::init_class(engine->cx(), engine->global())) {
     return false;
-  if (!URLSearchParams::init_class(engine->cx(), engine->global()))
+}
+  if (!URLSearchParams::init_class(engine->cx(), engine->global())) {
     return false;
-  if (!URLSearchParamsIterator::init_class(engine->cx(), engine->global()))
+}
+  if (!URLSearchParamsIterator::init_class(engine->cx(), engine->global())) {
     return false;
+}
   return true;
 }
 

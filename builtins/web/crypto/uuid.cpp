@@ -66,7 +66,7 @@ std::optional<std::string> random_uuid_v4(JSContext *cx) {
 
   {
     auto res = host_api::Random::get_bytes(sizeof(id));
-    if (auto *err = res.to_err()) {
+    if (const auto *err = res.to_err()) {
       HANDLE_ERROR(cx, *err);
       return std::nullopt;
     }

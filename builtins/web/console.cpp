@@ -291,9 +291,9 @@ JS::Result<mozilla::Ok> ToSource(JSContext *cx, std::string &sourceOut, JS::Hand
       sourceOut += "[";
       std::string source;
       JS::RootedFunction fun(cx, JS_ValueToFunction(cx, val));
-      if (fun) {
+      if (fun != nullptr) {
         JS::RootedString result(cx, JS_DecompileFunction(cx, fun));
-        if (!result) {
+        if (result == nullptr) {
           return JS::Result<mozilla::Ok>(JS::Error());
         }
         sourceOut += " ";
@@ -368,7 +368,7 @@ JS::Result<mozilla::Ok> ToSource(JSContext *cx, std::string &sourceOut, JS::Hand
         sourceOut += "WeakMap { <items unknown> }";
         return mozilla::Ok();
       }
-      auto cls = JS::GetClass(obj);
+      const auto *cls = JS::GetClass(obj);
       std::string className(cls->name);
       if (className == "WeakSet") {
         sourceOut += "WeakSet { <items unknown> }";
@@ -443,12 +443,12 @@ void builtin_impl_console_log(Console::LogType log_ty, const char *msg) {
 template <Console::LogType log_ty>
 static bool console_out(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::CallArgs args = CallArgsFromVp(argc, vp);
-  std::string fullLogLine = "";
+  std::string fullLogLine;
   auto length = args.length();
   JS::RootedObjectVector visitedObjects(cx);
   for (int i = 0; i < length; i++) {
     JS::HandleValue arg = args.get(i);
-    std::string source = "";
+    std::string source;
     auto result = ToSource(cx, source, arg, &visitedObjects);
     if (result.isErr()) {
       return false;
@@ -457,7 +457,7 @@ static bool console_out(JSContext *cx, unsigned argc, JS::Value *vp) {
     if (source[0] == '"' && source[source.length() - 1] == '"') {
       source = source.substr(1, source.length() - 2);
     }
-    if (fullLogLine.length()) {
+    if (!fullLogLine.empty()) {
       fullLogLine += " ";
       fullLogLine += source;
     } else {
@@ -498,7 +498,7 @@ static bool assert_(JSContext *cx, unsigned argc, JS::Value *vp) {
     JS::RootedObjectVector visitedObjects(cx);
     for (int i = 0; i < length; i++) {
       JS::HandleValue arg = args.get(i);
-      std::string source = "";
+      std::string source;
       auto result = ToSource(cx, source, arg, &visitedObjects);
       if (result.isErr()) {
         return false;
@@ -524,8 +524,8 @@ static bool assert_(JSContext *cx, unsigned argc, JS::Value *vp) {
 static bool count(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::CallArgs args = CallArgsFromVp(argc, vp);
   // 1. Let map be the associated count map.
-  std::string concat = "";
-  std::string label = "";
+  std::string concat;
+  std::string label;
   if (args.hasDefined(0)) {
     auto label_val = args.get(0);
     auto label_string = core::encode(cx, label_val);
@@ -658,13 +658,13 @@ static bool timeLog(JSContext *cx, unsigned argc, JS::Value *vp) {
   concat += std::to_string(duration);
   concat += "ms";
 
-  std::string data = "";
+  std::string data;
   if (args.length() > 1) {
     auto length = args.length();
     JS::RootedObjectVector visitedObjects(cx);
     for (int i = 1; i < length; i++) {
       JS::HandleValue arg = args.get(i);
-      std::string source = "";
+      std::string source;
       auto result = ToSource(cx, source, arg, &visitedObjects);
       if (result.isErr()) {
         return false;
@@ -673,7 +673,7 @@ static bool timeLog(JSContext *cx, unsigned argc, JS::Value *vp) {
       if (source[0] == '"' && source[source.length() - 1] == '"') {
         source = source.substr(1, source.length() - 2);
       }
-      if (data.length()) {
+      if (static_cast<unsigned int>(!data.empty()) != 0U) {
         data += " ";
         data += source;
       } else {
@@ -740,10 +740,10 @@ static bool timeEnd(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 static bool dir(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::CallArgs args = CallArgsFromVp(argc, vp);
-  std::string fullLogLine = "";
+  std::string fullLogLine;
   JS::RootedObjectVector visitedObjects(cx);
   JS::HandleValue arg = args.get(0);
-  std::string source = "";
+  std::string source;
   auto result = ToSource(cx, source, arg, &visitedObjects);
   if (result.isErr()) {
     return false;
@@ -752,7 +752,7 @@ static bool dir(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (source[0] == '"' && source[source.length() - 1] == '"') {
     source = source.substr(1, source.length() - 2);
   }
-  if (fullLogLine.length()) {
+  if (static_cast<unsigned int>(!fullLogLine.empty()) != 0U) {
     fullLogLine += " ";
     fullLogLine += source;
   } else {
@@ -771,10 +771,10 @@ static bool trace(JSContext *cx, unsigned argc, JS::Value *vp) {
   // representation of the callstack from where this function was called.
 
   JS::RootedObject stack(cx);
-  if (!CaptureCurrentStack(cx, &stack, JS::StackCapture(JS::MaxFrames(1u << 7)))) {
+  if (!CaptureCurrentStack(cx, &stack, JS::StackCapture(JS::MaxFrames(1U << 7)))) {
     return false;
   }
-  auto principals = JS::GetRealmPrincipals(JS::GetCurrentRealmOrNull(cx));
+  auto *principals = JS::GetRealmPrincipals(JS::GetCurrentRealmOrNull(cx));
   JS::RootedString str(cx);
   if (!BuildStackString(cx, principals, stack, &str)) {
     return false;
@@ -786,11 +786,11 @@ static bool trace(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // 2. Optionally, let formattedData be the result of Formatter(data), and
   // incorporate formattedData as a label for trace.
-  std::string fullLogLine = "";
+  std::string fullLogLine;
   JS::RootedObjectVector visitedObjects(cx);
   for (int i = 0; i < args.length(); i++) {
     JS::HandleValue arg = args.get(i);
-    std::string source = "";
+    std::string source;
     auto result = ToSource(cx, source, arg, &visitedObjects);
     if (result.isErr()) {
       return false;
@@ -799,7 +799,7 @@ static bool trace(JSContext *cx, unsigned argc, JS::Value *vp) {
     if (source[0] == '"' && source[source.length() - 1] == '"') {
       source = source.substr(1, source.length() - 2);
     }
-    if (fullLogLine.length()) {
+    if (static_cast<unsigned int>(!fullLogLine.empty()) != 0U) {
       fullLogLine += " ";
       fullLogLine += source;
     } else {
@@ -844,7 +844,7 @@ bool install(api::Engine *engine) {
   JS::RootedObject proto(engine->cx(), JS_NewPlainObject(engine->cx()));
   JS::RootedObject console(engine->cx(),
                            JS_NewObjectWithGivenProto(engine->cx(), &Console::class_, proto));
-  if (!console) {
+  if (console == nullptr) {
     return false;
   }
   if (!JS_DefineProperty(engine->cx(), engine->global(), "console", console, 0)) {

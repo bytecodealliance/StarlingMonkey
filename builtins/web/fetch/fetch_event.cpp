@@ -94,10 +94,12 @@ bool add_pending_promise(JSContext *cx, JS::HandleObject self, JS::HandleObject 
   } else {
     reject_handler = resolve_handler;
   }
-  if (!reject_handler)
+  if (reject_handler == nullptr) {
     return false;
-  if (!JS::AddPromiseReactions(cx, promise, resolve_handler, reject_handler))
+}
+  if (!JS::AddPromiseReactions(cx, promise, resolve_handler, reject_handler)) {
     return false;
+}
 
   inc_pending_promise_count(self);
   return true;
@@ -107,8 +109,9 @@ bool add_pending_promise(JSContext *cx, JS::HandleObject self, JS::HandleObject 
 
 JSObject *FetchEvent::prepare_downstream_request(JSContext *cx) {
   JS::RootedObject request(cx, Request::create(cx));
-  if (!request)
+  if (request == nullptr) {
     return nullptr;
+}
   Request::init_slots(request);
   return request;
 }
@@ -133,7 +136,7 @@ bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
 
   if (!is_get) {
     JS::RootedString method(cx, JS_NewStringCopyN(cx, &*method_str.cbegin(), method_str.length()));
-    if (!method) {
+    if (method == nullptr) {
       return false;
     }
 
@@ -151,7 +154,7 @@ bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
 
   auto uri_str = req->url();
   JS::RootedString url(cx, JS_NewStringCopyN(cx, uri_str.data(), uri_str.size()));
-  if (!url) {
+  if (url == nullptr) {
     return false;
   }
   JS::SetReservedSlot(request, static_cast<uint32_t>(Request::Slots::URL), JS::StringValue(url));
@@ -159,20 +162,16 @@ bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
   // Set the URL for `globalThis.location` to the client request's URL.
   JS::RootedObject url_instance(
       cx, JS_NewObjectWithGivenProto(cx, &url::URL::class_, url::URL::proto_obj));
-  if (!url_instance) {
+  if (url_instance == nullptr) {
     return false;
   }
 
-  auto uri_bytes = new uint8_t[uri_str.size() + 1];
+  auto *uri_bytes = new uint8_t[uri_str.size() + 1];
   std::copy(uri_str.begin(), uri_str.end(), uri_bytes);
   jsurl::SpecString spec(uri_bytes, uri_str.size(), uri_str.size());
 
   worker_location::WorkerLocation::url = url::URL::create(cx, url_instance, spec);
-  if (!worker_location::WorkerLocation::url) {
-    return false;
-  }
-
-  return true;
+  return worker_location::WorkerLocation::url != nullptr;
 }
 
 bool FetchEvent::request_get(JSContext *cx, unsigned argc, JS::Value *vp) {
@@ -191,7 +190,7 @@ bool send_response(host_api::HttpOutgoingResponse *response, JS::HandleObject se
   auto result = response->send();
   FetchEvent::set_state(self, new_state);
 
-  if (auto *err = result.to_err()) {
+  if (const auto *err = result.to_err()) {
     HANDLE_ERROR(ENGINE->cx(), *err);
     return false;
   }
@@ -209,8 +208,8 @@ bool start_response(JSContext *cx, JS::HandleObject response_obj) {
   host_api::HttpOutgoingResponse* response =
     host_api::HttpOutgoingResponse::make(status, std::move(headers));
 
-  auto existing_handle = Response::maybe_response_handle(response_obj);
-  if (existing_handle) {
+  auto *existing_handle = Response::maybe_response_handle(response_obj);
+  if (existing_handle != nullptr) {
     MOZ_ASSERT(existing_handle->is_incoming());
   } else {
     SetReservedSlot(response_obj, static_cast<uint32_t>(Response::Slots::Response),
@@ -245,8 +244,9 @@ bool response_promise_then_handler(JSContext *cx, JS::HandleObject event, JS::Ha
   if (!Response::is_instance(args.get(0))) {
     api::throw_error(cx, FetchErrors::InvalidRespondWithArg);
     JS::RootedObject rejection(cx, PromiseRejectedWithPendingError(cx));
-    if (!rejection)
+    if (rejection == nullptr) {
       return false;
+}
     args.rval().setObject(*rejection);
     return FetchEvent::respondWithError(cx, event);
   }
@@ -280,8 +280,9 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // Coercion of argument `r` to a Promise<Response>
   JS::RootedObject response_promise(cx, JS::CallOriginalPromiseResolve(cx, args.get(0)));
-  if (!response_promise)
+  if (response_promise == nullptr) {
     return false;
+}
 
   // Step 2
   if (!Event::has_flag(self, EventFlag::Dispatch)) {
@@ -306,17 +307,20 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedObject catch_handler(cx);
   JS::RootedValue extra(cx, JS::ObjectValue(*response_promise));
   catch_handler = create_internal_method<response_promise_catch_handler>(cx, self, extra);
-  if (!catch_handler)
+  if (catch_handler == nullptr) {
     return false;
+}
 
   // Step 10 (continued in `response_promise_then_handler` above)
   JS::RootedObject then_handler(cx);
   then_handler = create_internal_method<response_promise_then_handler>(cx, self);
-  if (!then_handler)
+  if (then_handler == nullptr) {
     return false;
+}
 
-  if (!JS::AddPromiseReactions(cx, response_promise, then_handler, catch_handler))
+  if (!JS::AddPromiseReactions(cx, response_promise, then_handler, catch_handler)) {
     return false;
+}
 
   args.rval().setUndefined();
   return true;
@@ -329,7 +333,7 @@ bool FetchEvent::respondWithError(JSContext *cx, JS::HandleObject self) {
   auto *response = host_api::HttpOutgoingResponse::make(500, std::move(headers));
 
   auto body_res = response->body();
-  if (auto *err = body_res.to_err()) {
+  if (const auto *err = body_res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
   }
@@ -343,8 +347,9 @@ bool FetchEvent::waitUntil(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
   JS::RootedObject promise(cx, JS::CallOriginalPromiseResolve(cx, args.get(0)));
-  if (!promise)
+  if (promise == nullptr) {
     return false;
+}
 
   // Step 2
   if (!is_active(self)) {
@@ -386,7 +391,7 @@ const JSPropertySpec FetchEvent::properties[] = {
 
 JSObject *FetchEvent::create(JSContext *cx) {
   JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (!self) {
+  if (self == nullptr) {
     return nullptr;
   }
 
@@ -397,12 +402,12 @@ JSObject *FetchEvent::create(JSContext *cx) {
   }
 
   JS::RootedObject request(cx, prepare_downstream_request(cx));
-  if (!request) {
+  if (request == nullptr) {
     return nullptr;
   }
 
   JS::RootedObject dec_count_handler(cx, create_internal_method<dec_pending_promise_count>(cx, self));
-  if (!dec_count_handler) {
+  if (dec_count_handler == nullptr) {
     return nullptr;
   }
 
@@ -445,7 +450,7 @@ void FetchEvent::set_state(JSObject *self, FetchEvent::State new_state) {
 
   if (current_state == State::responseStreaming &&
     (new_state == State::responseDone || new_state == State::respondedWithError)) {
-    if (STREAMING_BODY && STREAMING_BODY->valid()) {
+    if ((STREAMING_BODY != nullptr) && STREAMING_BODY->valid()) {
       STREAMING_BODY->close();
     }
     decrease_interest();
@@ -508,7 +513,7 @@ bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
     return true;
   }
 
-  if (STREAMING_BODY && STREAMING_BODY->valid()) {
+  if ((STREAMING_BODY != nullptr) && STREAMING_BODY->valid()) {
     STREAMING_BODY->close();
   }
 
@@ -528,7 +533,7 @@ bool FetchEvent::init_class(JSContext *cx, JS::HandleObject global) {
 bool install(api::Engine *engine) {
   ENGINE = engine;
 
-  if (!(fetch_type_atom = JS_AtomizeAndPinString(engine->cx(), "fetch"))) {
+  if ((fetch_type_atom = JS_AtomizeAndPinString(engine->cx(), "fetch")) == nullptr) {
     return false;
   }
 
@@ -536,7 +541,7 @@ bool install(api::Engine *engine) {
     return false;
   }
 
-  if (!FetchEvent::create(engine->cx())) {
+  if (FetchEvent::create(engine->cx()) == nullptr) {
     MOZ_RELEASE_ASSERT(false);
   }
 

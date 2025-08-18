@@ -96,8 +96,9 @@ bool NativeStreamSource::lock_stream(JSContext *cx, JS::HandleObject stream) {
 
   auto mode = JS::ReadableStreamReaderMode::Default;
   JS::RootedObject reader(cx, JS::ReadableStreamGetReader(cx, stream, mode));
-  if (!reader)
+  if (reader == nullptr) {
     return false;
+}
 
   JS::SetReservedSlot(self, Slots::InternalReader, JS::ObjectValue(*reader));
   return true;
@@ -163,7 +164,7 @@ JSObject *NativeStreamSource::create(JSContext *cx, JS::HandleObject owner, JS::
                                      PullAlgorithmImplementation *pull, CancelAlgorithmImplementation *cancel,
                                      JS::HandleFunction size, double highWaterMark) {
   JS::RootedObject source(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (!source) {
+  if (source == nullptr) {
     return nullptr;
   }
 
@@ -175,7 +176,7 @@ JSObject *NativeStreamSource::create(JSContext *cx, JS::HandleObject owner, JS::
   JS::SetReservedSlot(source, Slots::PipedToTransformStream, JS::NullValue());
 
   JS::RootedObject stream(cx, JS::NewReadableDefaultStreamObject(cx, source, size, highWaterMark));
-  if (!stream) {
+  if (stream == nullptr) {
     return nullptr;
   }
 

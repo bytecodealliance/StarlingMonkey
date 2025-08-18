@@ -7,10 +7,12 @@
 namespace builtins::web::text_codec {
 
 bool install(api::Engine *engine) {
-  if (!TextEncoder::init_class(engine->cx(), engine->global()))
+  if (!TextEncoder::init_class(engine->cx(), engine->global())) {
     return false;
-  if (!TextDecoder::init_class(engine->cx(), engine->global()))
+}
+  if (!TextDecoder::init_class(engine->cx(), engine->global())) {
     return false;
+}
   return true;
 }
 
