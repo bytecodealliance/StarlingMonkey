@@ -32,6 +32,8 @@ JSString *fetch_type_atom;
 JS::PersistentRootedObject INSTANCE;
 host_api::HttpOutgoingBody *STREAMING_BODY;
 
+constexpr const std::string_view DEFAULT_NO_HANDLER_ERROR_MSG = "ERROR: no fetch-event handler triggered, was one registered?";
+
 void inc_pending_promise_count(JSObject *self) {
   MOZ_ASSERT(FetchEvent::is_instance(self));
   auto count = JS::GetReservedSlot(self, FetchEvent::Slots::PendingPromiseCount).toInt32();
@@ -502,8 +504,6 @@ static void dispatch_fetch_event(HandleObject event, double *total_compute) {
   EventTarget::dispatch_event(ENGINE->cx(), event_target, event_val, &rval);
 }
 
-constexpr const char DEFAULT_NO_HANDLER_ERROR_MSG[] = "ERROR: no fetch-event handler triggered, was one registered?";
-
 bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
 #ifdef DEBUG
   fprintf(stderr, "Warning: Using a DEBUG build. Expect things to be SLOW.\n");
@@ -542,7 +542,7 @@ bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
   if (!FetchEvent::response_started(fetch_event)) {
     // If at this point no fetch event handler has run, we can
     // send a specific error indicating that there is likely no handler registered
-    FetchEvent::respondWithErrorString(ENGINE->cx(), fetch_event, std::string_view(DEFAULT_NO_HANDLER_ERROR_MSG));
+    FetchEvent::respondWithErrorString(ENGINE->cx(), fetch_event, DEFAULT_NO_HANDLER_ERROR_MSG);
     return true;
   }
 
