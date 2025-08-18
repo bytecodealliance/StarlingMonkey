@@ -23,6 +23,7 @@ add_custom_target(clang-tidy-fix
           -config-file=${CMAKE_SOURCE_DIR}/.clang-tidy
           -fix
           ${CMAKE_SOURCE_DIR}/builtins
+          ${CMAKE_SOURCE_DIR}/runtime
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Running clang‑tidy over the codebase and applying fixes"
   VERBATIM)

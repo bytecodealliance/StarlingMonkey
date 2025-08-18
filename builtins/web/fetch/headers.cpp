@@ -349,6 +349,8 @@ void skip_values_for_header_from_list(JSContext *cx, JS::HandleObject self, size
 bool validate_guard(JSContext *cx, HandleObject self, string_view header_name, const char *fun_name,
                     bool *is_valid) {
   MOZ_ASSERT(Headers::is_instance(self));
+  *is_valid = false;
+
   Headers::HeadersGuard guard = Headers::guard(self);
   switch (guard) {
   case Headers::HeadersGuard::None:

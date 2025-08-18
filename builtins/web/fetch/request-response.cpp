@@ -147,7 +147,7 @@ bool normalize_http_method(char *method) {
 
       // Note: Safe because `strcasecmp` returning 0 above guarantees
       // same-length strings.
-      strcpy(method, name);
+      strcpy(method, name); // NOLINT
       return true;
     }
   }
@@ -2009,7 +2009,7 @@ Value Response::aborted(JSObject *obj) {
 
 // TODO(jake): Remove this when the reason phrase host-call is implemented
 void Response::set_status_message_from_code(JSContext *cx, JSObject *obj, uint16_t code) {
-  auto phrase = "";
+  const char *phrase = nullptr;
 
   switch (code) {
   case 100: // 100 Continue - https://tools.ietf.org/html/rfc7231#section-6.2.1
@@ -2196,6 +2196,9 @@ void Response::set_status_message_from_code(JSContext *cx, JSObject *obj, uint16
     phrase = "";
     break;
   }
+
+  MOZ_ASSERT(phrase);
+
   JS::SetReservedSlot(obj, static_cast<uint32_t>(Slots::StatusMessage),
                       JS::StringValue(JS_NewStringCopyN(cx, phrase, strlen(phrase))));
 }

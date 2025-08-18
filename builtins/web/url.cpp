@@ -590,6 +590,9 @@ bool URL::createObjectURL(JSContext *cx, unsigned argc, JS::Value *vp) {
 }
 
 bool URL::revokeObjectURL(JSContext *cx, unsigned argc, JS::Value *vp) {
+  // Suppress false positive in Mozilla's HashTable implementation
+  // about null dereference, the remove method will check if the entry exists.
+  // NOLINTBEGIN
   CallArgs args = JS::CallArgsFromVp(argc, vp);
   if (!args.requireAtLeast(cx, "createObjectURL", 1)) {
     return false;
@@ -602,8 +605,8 @@ bool URL::revokeObjectURL(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  //   2. If urlRecord’s scheme is not "blob", return.
-  //   3. Let entry be urlRecord’s blob URL entry.
+  // 2. If urlRecord’s scheme is not "blob", return.
+  // 3. Let entry be urlRecord’s blob URL entry.
   std::string url_record(chars.ptr.get());
   if (!url_record.starts_with("blob:")) {
     return true;
@@ -613,7 +616,9 @@ bool URL::revokeObjectURL(JSContext *cx, unsigned argc, JS::Value *vp) {
   // 5. Let isAuthorized be the result of checking for same-partition blob URL usage with entry and the current settings object.
   // 6. If isAuthorized is false, then return.
   // 7. Remove an entry from the Blob URL Store for url.
-  URL_STORE.get().remove(chars.ptr.get());
+
+  URL_STORE.get().remove(url_record);
+  // NOLINTEND
   return true;
 }
 

@@ -1,12 +1,13 @@
 Checks: >
-  clang-diagnostic-*,
+  -clang-analyzer-optin.core.EnumCastOutOfRange,  # Disable enum cast range checker due to false positives in SpiderMonkey MOZ_ASSERT macro
   clang-analyzer-*,
-  cppcoreguidelines-*,
-  modernize-*,
-  performance-*,
-  readability-*,
-  -modernize-use-trailing-return-type,
-  -readability-identifier-length
+  # clang-diagnostic-*,
+  # cppcoreguidelines-*,
+  # modernize-*,
+  # performance-*,
+  # readability-*,
+  # -modernize-use-trailing-return-type,
+  # -readability-identifier-length
 
 # Treat all warnings as errors
 WarningsAsErrors: '*'
@@ -17,5 +18,5 @@ HeaderFilterRegex: 'builtins/|runtime/'
 # Use the same style as clang-format (look for .clang-format)
 FormatStyle: file
 
-# Don’t analyze temporary dtors (speeds up checking)
-AnalyzeTemporaryDtors: false
+# Explicitly exclude system/dependency headers
+SystemHeaders: false

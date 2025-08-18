@@ -121,10 +121,9 @@ bool fetch_https(JSContext *cx, HandleObject request_obj, HandleObject response_
   // before marking the request as pending.
   if (!streaming) {
     // TODO: what about non streaming?
-    auto task = mozilla::MakeRefPtr<ResponseFutureTask>(request_obj, pending_handle);
-    auto weak = mozilla::WeakPtr<ResponseFutureTask>(task);
-
-    ENGINE->queue_async_task(task);
+    auto task = js::MakeUnique<ResponseFutureTask>(request_obj, pending_handle);
+    auto weak = mozilla::WeakPtr<ResponseFutureTask>(task.get());
+    ENGINE->queue_async_task(task.release());
 
     RootedObject signal(cx, Request::signal(request_obj));
     MOZ_ASSERT(signal);

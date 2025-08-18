@@ -478,7 +478,7 @@ bool TransformStream::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   // 0).
   // 6.  Let readableSizeAlgorithm be !
   // [ExtractSizeAlgorithm](readableStrategy).
-  double readableHighWaterMark;
+  double readableHighWaterMark = 0.0;
   JS::RootedFunction readableSizeAlgorithm(cx);
   if (!ExtractStrategy(cx, args.get(2), 0, &readableHighWaterMark, &readableSizeAlgorithm)) {
     return false;
@@ -488,7 +488,7 @@ bool TransformStream::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   // 1).
   // 8.  Let writableSizeAlgorithm be !
   // [ExtractSizeAlgorithm](writableStrategy).
-  double writableHighWaterMark;
+  double writableHighWaterMark = 1.0;
   JS::RootedFunction writableSizeAlgorithm(cx);
   if (!ExtractStrategy(cx, args.get(1), 1, &writableHighWaterMark, &writableSizeAlgorithm)) {
     return false;

@@ -413,7 +413,7 @@ namespace builtins::web::console {
 
 __attribute__((weak))
 void builtin_impl_console_log(Console::LogType log_ty, const char *msg) {
-  const char *prefix = "";
+  const char *prefix = nullptr;
   switch (log_ty) {
   case Console::LogType::Log:
     prefix = "Log";
@@ -430,7 +430,12 @@ void builtin_impl_console_log(Console::LogType log_ty, const char *msg) {
   case Console::LogType::Error:
     prefix = "Error";
     break;
+  default:
+    prefix = "";
+    break;
   }
+  MOZ_ASSERT(prefix);
+
   fprintf(stdout, "%s: %s\n", prefix, msg);
   fflush(stdout);
 }
