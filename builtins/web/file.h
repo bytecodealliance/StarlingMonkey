@@ -13,7 +13,7 @@ class File : public BuiltinImpl<File> {
 
 public:
   static constexpr int ParentSlots = blob::Blob::Slots::Count;
-  enum Slots { Name = ParentSlots, LastModified, Count };
+  enum Slots : uint8_t { Name = ParentSlots, LastModified, Count };
 
   static constexpr const char *class_name = "File";
   static constexpr unsigned ctor_length = 2;

@@ -28,7 +28,7 @@ public:
   static constexpr const char *class_name = "SubtleCrypto";
   static const int ctor_length = 0;
 
-  enum Slots { Count };
+  enum Slots : uint8_t { Count };
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];

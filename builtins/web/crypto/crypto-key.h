@@ -87,7 +87,7 @@ public:
   // indicates which cryptographic operations are permissible to be used with this key.
   static bool usages_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
-  enum Slots {
+  enum Slots : uint8_t {
     // https://w3c.github.io/webcrypto/#ref-for-dfn-CryptoKey-slot-algorithm-1
     // The contents of the [[algorithm]] internal slot shall be, or be derived from, a KeyAlgorithm.
     // We store a JS::ObjectValue within this slot which contains a JS Object representation of the

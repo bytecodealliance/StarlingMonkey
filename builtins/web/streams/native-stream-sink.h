@@ -12,7 +12,7 @@ private:
 public:
   static constexpr const char *class_name = "NativeStreamSink";
 
-  enum Slots {
+  enum Slots : uint8_t {
     Owner,          // TransformStream.
     Controller,     // The WritableStreamDefaultController.
     InternalWriter, // Only used to lock the stream if it's consumed internally.

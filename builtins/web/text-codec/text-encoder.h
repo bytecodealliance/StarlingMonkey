@@ -15,7 +15,7 @@ class TextEncoder final : public BuiltinImpl<TextEncoder> {
 public:
   static constexpr const char *class_name = "TextEncoder";
 
-  enum class Slots { Count };
+  enum class Slots : uint8_t { Count };
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];

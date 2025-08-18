@@ -18,7 +18,7 @@ bool install(api::Engine *engine);
 class RequestOrResponse final {
 
 public:
-  enum class Slots {
+  enum class Slots : uint8_t {
     RequestOrResponse,
     BodyStream,
     BodyAllPromise,
@@ -74,7 +74,7 @@ public:
 
   using ParseBodyCB = bool(JSContext *cx, JS::HandleObject self, JS::UniqueChars buf, size_t len);
 
-  enum class BodyReadResult {
+  enum class BodyReadResult : uint8_t {
     ArrayBuffer,
     Blob,
     FormData,
@@ -134,7 +134,7 @@ class Request final : public BuiltinImpl<Request> {
 public:
   static constexpr const char *class_name = "Request";
 
-  enum class Slots {
+  enum class Slots : uint8_t {
     Request = static_cast<int>(RequestOrResponse::Slots::RequestOrResponse),
     BodyStream = static_cast<int>(RequestOrResponse::Slots::BodyStream),
     BodyAllPromise = static_cast<int>(RequestOrResponse::Slots::BodyAllPromise),
@@ -191,7 +191,7 @@ class Response final : public BuiltinImpl<Response> {
 public:
   static constexpr const char *class_name = "Response";
 
-  enum class Slots {
+  enum class Slots : uint8_t {
     Response = static_cast<int>(RequestOrResponse::Slots::RequestOrResponse),
     BodyStream = static_cast<int>(RequestOrResponse::Slots::BodyStream),
     BodyAllPromise = static_cast<int>(RequestOrResponse::Slots::BodyAllPromise),
@@ -206,7 +206,7 @@ public:
     Count,
   };
 
-  enum Type { Basic, Cors, Default, Error, Opaque, OpaqueRedirect };
+  enum Type : uint8_t { Basic, Cors, Default, Error, Opaque, OpaqueRedirect };
   using Type = enum Type;
 
   static const JSFunctionSpec static_methods[];

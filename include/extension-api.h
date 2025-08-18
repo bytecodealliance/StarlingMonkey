@@ -76,7 +76,7 @@ struct EngineConfig {
   EngineConfig() = default;
 };
 
-enum class EngineState { Uninitialized, EngineInitializing, ScriptPreInitializing, Initialized, Aborted };
+enum class EngineState : uint8_t { Uninitialized, EngineInitializing, ScriptPreInitializing, Initialized, Aborted };
 
 class Engine {
   std::unique_ptr<EngineConfig> config_;

@@ -24,7 +24,7 @@ using host_api::HostString;
 
 static api::Engine *ENGINE;
 
-enum class FetchScheme {
+enum class FetchScheme : uint8_t {
   About,
   Blob,
   Data,

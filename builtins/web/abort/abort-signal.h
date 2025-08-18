@@ -45,7 +45,7 @@ class AbortSignal : public BuiltinImpl<AbortSignal, TraceableClassPolicy> {
 
 public:
   static constexpr int ParentSlots = event::EventTarget::Slots::Count;
-  enum Slots {
+  enum Slots : uint8_t {
     Reason = ParentSlots,
     Algorithms,
     Dependent,

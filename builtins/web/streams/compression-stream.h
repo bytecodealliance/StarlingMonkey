@@ -22,7 +22,7 @@ class CompressionStream : public BuiltinImpl<CompressionStream> {
 public:
   static constexpr const char *class_name = "CompressionStream";
 
-  enum Slots { Transform, Format, State, Buffer, Count };
+  enum Slots : uint8_t { Transform, Format, State, Buffer, Count };
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];

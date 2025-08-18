@@ -53,7 +53,7 @@ public:
   ///
   /// If a header is added, deleted, or replaced on an instance in `CachedInContent` mode, the
   /// instance transitions to `ContentOnly` mode, and the underlying resource handle is discarded.
-  enum class Mode {
+  enum class Mode : uint8_t {
     HostOnly,        // Headers are stored in the host.
     CachedInContent, // Host holds canonical headers, content a cached copy.
     ContentOnly,     // Headers are stored in a Map held by the `Entries` slot.
@@ -70,7 +70,7 @@ public:
   // example, it is cleared after an insertion. It is recomputed lazily for every lookup.
   using HeadersSortList = std::vector<size_t>;
 
-  enum class Slots {
+  enum class Slots : uint8_t {
     Handle,
     HeadersList,
     HeadersSortList,
@@ -80,7 +80,7 @@ public:
     Count,
   };
 
-  enum class HeadersGuard {
+  enum class HeadersGuard : uint8_t {
     None,
     Request,
     Response,
@@ -160,7 +160,7 @@ class HeadersIterator final : public BuiltinNoConstructor<HeadersIterator> {
 public:
   static constexpr const char *class_name = "Headers Iterator";
 
-  enum Slots {
+  enum Slots : uint8_t {
     Type,
     Cursor,
     Headers,

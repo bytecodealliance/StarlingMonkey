@@ -109,7 +109,7 @@ class MyClass : public BuiltinImpl<MyClass> {
   static bool static_prop_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
 public:
-  enum Slots { SlotA, SlotB, Count };
+  enum Slots : uint8_t { SlotA, SlotB, Count };
 
   static constexpr const char *class_name = "MyClass";
   static constexpr unsigned ctor_length = 2;

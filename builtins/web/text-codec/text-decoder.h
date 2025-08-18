@@ -16,7 +16,7 @@ class TextDecoder final : public BuiltinImpl<TextDecoder, FinalizableClassPolicy
 public:
   static constexpr const char *class_name = "TextDecoder";
 
-  enum class Slots {
+  enum class Slots : uint8_t {
     Decoder,
     Encoding,
     Fatal,

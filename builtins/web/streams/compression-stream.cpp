@@ -19,7 +19,7 @@ namespace builtins::web::streams {
 
 namespace {
 
-enum class Format {
+enum class Format : uint8_t {
   GZIP,
   Deflate,
   DeflateRaw,

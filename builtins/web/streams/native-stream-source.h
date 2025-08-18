@@ -10,7 +10,7 @@ class NativeStreamSource : public BuiltinNoConstructor<NativeStreamSource> {
 private:
 public:
   static constexpr const char *class_name = "NativeStreamSource";
-  enum Slots {
+  enum Slots : uint8_t {
     Owner,          // Request or Response object, or TransformStream.
     Stream,         // The ReadableStreamDefaultObject.
     InternalReader, // Only used to lock the stream if it's consumed internally.

@@ -22,7 +22,7 @@ class DecompressionStream : public BuiltinImpl<DecompressionStream> {
 public:
   static constexpr const char *class_name = "DecompressionStream";
 
-  enum Slots { Transform, Format, State, Buffer, Count };
+  enum Slots : uint8_t { Transform, Format, State, Buffer, Count };
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];

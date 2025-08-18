@@ -118,7 +118,7 @@ host_api::HostString normalize_and_validate_header_value(JSContext *cx, HandleVa
 static const std::vector<const char *> *forbidden_request_headers;
 static const std::vector<const char *> *forbidden_response_headers;
 
-enum class Ordering { Less, Equal, Greater };
+enum class Ordering : uint8_t { Less, Equal, Greater };
 
 inline char header_lowercase(const char c) { return c >= 'A' && c <= 'Z' ? c + ('a' - 'A') : c; }
 

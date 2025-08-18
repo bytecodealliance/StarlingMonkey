@@ -55,7 +55,7 @@ public:
   // - Bubbles
   // - Cancelable
   // clang-format off
-  enum class EventFlag : uint32_t {
+  enum class EventFlag : uint16_t {
     // Event type flags:
     StopPropagation          = 1 << 0,
     StopImmediatePropagation = 1 << 1,
@@ -94,7 +94,7 @@ public:
   static void set_related_target(JSObject *self, HandleObject target);
 
   static constexpr unsigned ctor_length = 1;
-  enum Slots {
+  enum Slots : uint8_t {
     Flags,
     Target,
     RelatedTarget,

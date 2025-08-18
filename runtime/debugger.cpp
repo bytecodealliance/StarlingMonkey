@@ -73,7 +73,7 @@ class TCPSocket : public builtins::BuiltinNoConstructor<TCPSocket> {
 
 public:
   static constexpr const char *class_name = "TCPSocket";
-  enum Slots { TCPSocketHandle, Count };
+  enum Slots : uint8_t { TCPSocketHandle, Count };
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];

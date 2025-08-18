@@ -21,7 +21,7 @@ class FormDataIterator : public BuiltinNoConstructor<FormDataIterator> {
 public:
   static constexpr const char *class_name = "FormDataIterator";
 
-  enum Slots { Form, Type, Index, Count };
+  enum Slots : uint8_t { Form, Type, Index, Count };
 
   static bool next(JSContext *cx, unsigned argc, JS::Value *vp);
 
@@ -69,7 +69,7 @@ public:
 
   static constexpr unsigned ctor_length = 0;
 
-  enum Slots { Entries, Count };
+  enum Slots : uint8_t { Entries, Count };
 
   static JSObject *create(JSContext *cx);
   static bool init_class(JSContext *cx, HandleObject global);

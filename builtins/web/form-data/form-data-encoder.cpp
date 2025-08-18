@@ -229,7 +229,7 @@ struct StreamContext {
 //   - Close:       Write the closing boundary indicating the end of the multipart data.
 //   - Done:        Processing is complete.
 class MultipartFormDataImpl {
-  enum class State : int { Start, EntryHeader, EntryBody, EntryFooter, Close, Done };
+  enum class State : uint8_t { Start, EntryHeader, EntryBody, EntryFooter, Close, Done };
 
   State state_{State::Start};
   std::string boundary_;

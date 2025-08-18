@@ -17,7 +17,7 @@ public:
   static constexpr const char *class_name = "AbortController";
   static constexpr unsigned ctor_length = 0;
 
-  enum Slots { Signal = 0, Count };
+  enum Slots : uint8_t { Signal = 0, Count };
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];

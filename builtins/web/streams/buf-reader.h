@@ -16,7 +16,7 @@ public:
 
   static constexpr const char *class_name = "NativeBufReader";
 
-  enum Slots { User, Stream, Read, Position, Count };
+  enum Slots : uint8_t { User, Stream, Read, Position, Count };
 
   using Buffer = std::span<uint8_t>;
 

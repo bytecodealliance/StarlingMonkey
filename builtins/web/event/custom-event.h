@@ -13,7 +13,7 @@ class CustomEvent : public BuiltinImpl<CustomEvent> {
 
 public:
   static constexpr int ParentSlots = Event::Slots::Count;
-  enum Slots { Detail = ParentSlots, Count };
+  enum Slots : uint8_t { Detail = ParentSlots, Count };
 
   static constexpr const char *class_name = "CustomEvent";
   static constexpr unsigned ctor_length = 2;

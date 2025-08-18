@@ -14,7 +14,7 @@ public:
   static constexpr const char *class_name = "TransformStream";
   static const int ctor_length = 0;
 
-  enum Slots {
+  enum Slots : uint8_t {
     Controller,
     Readable,
     Writable,

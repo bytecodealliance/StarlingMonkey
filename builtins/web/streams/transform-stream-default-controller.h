@@ -13,7 +13,7 @@ private:
 public:
   static constexpr const char *class_name = "TransformStreamDefaultController";
 
-  enum Slots {
+  enum Slots : uint8_t {
     Stream,
     Transformer,
     TransformAlgorithm,
