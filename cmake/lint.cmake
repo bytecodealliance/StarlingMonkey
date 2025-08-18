@@ -10,6 +10,7 @@ add_custom_target(clang-tidy
           -extra-arg=--sysroot=${WASI_SYSROOT}
           -config-file=${CMAKE_SOURCE_DIR}/.clang-tidy
           ${CMAKE_SOURCE_DIR}/builtins
+          ${CMAKE_SOURCE_DIR}/runtime
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Running clang‑tidy over the codebase"
   VERBATIM)
