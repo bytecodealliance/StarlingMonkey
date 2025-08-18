@@ -329,10 +329,12 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
   MOZ_RELEASE_ASSERT(state(self) == State::unhandled || state(self) == State::waitToRespond);
 
   auto headers = std::make_unique<host_api::HttpHeaders>();
-  auto header_set_res = headers->set("content-type", "text/plain");
-  if (auto *err = header_set_res.to_err()) {
-    HANDLE_ERROR(cx, *err);
-    return false;
+  if (body_text) {
+    auto header_set_res = headers->set("content-type", "text/plain");
+    if (auto *err = header_set_res.to_err()) {
+      HANDLE_ERROR(cx, *err);
+      return false;
+    }
   }
 
   auto *response = host_api::HttpOutgoingResponse::make(500, std::move(headers));
