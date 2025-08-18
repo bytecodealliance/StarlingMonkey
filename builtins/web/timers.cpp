@@ -137,7 +137,7 @@ bool set_timeout_or_interval(JSContext *cx, HandleObject handler, JS::HandleValu
 
   // Convert delay from milliseconds to nanoseconds, as that's what Timers operate on.
   const int64_t delay = static_cast<int64_t>(delay_ms) * 1000000;
-  const auto timer = new TimerTask(delay, repeat, handler, handle_args);
+  const auto timer = js_new<TimerTask>(delay, repeat, handler, handle_args);
   ENGINE->queue_async_task(timer);
 
   *timer_id = timer->timer_id();

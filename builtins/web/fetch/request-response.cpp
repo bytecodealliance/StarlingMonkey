@@ -537,7 +537,7 @@ bool finish_outgoing_body_streaming(JSContext *cx, HandleObject body_owner) {
             .toPrivate());
     SetReservedSlot(body_owner, static_cast<uint32_t>(Request::Slots::PendingResponseHandle),
                     PrivateValue(nullptr));
-    ENGINE->queue_async_task(new ResponseFutureTask(body_owner, pending_handle));
+    ENGINE->queue_async_task(js_new<ResponseFutureTask>(body_owner, pending_handle));
   }
 
   return true;
@@ -1004,7 +1004,7 @@ bool do_body_source_pull(JSContext *cx, HandleObject source, HandleObject body_o
     return true;
   }
 
-  ENGINE->queue_async_task(new BodyFutureTask(source));
+  ENGINE->queue_async_task(js_new<BodyFutureTask>(source));
   return true;
 }
 

@@ -96,7 +96,7 @@ bool cancel(JSContext *cx, JS::CallArgs args, HandleObject stream, HandleObject 
 }
 
 bool pull(JSContext *cx, JS::CallArgs args, HandleObject source, HandleObject owner, HandleObject controller) {
-  api::Engine::get(cx)->queue_async_task(new StreamTask(owner));
+  api::Engine::get(cx)->queue_async_task(js_new<StreamTask>(owner));
   args.rval().setUndefined();
   return true;
 }
