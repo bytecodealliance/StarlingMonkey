@@ -2404,164 +2404,137 @@ bool Response::redirect(JSContext *cx, unsigned argc, Value *vp) {
   return true;
 }
 
-// namespace {
-// bool callbackCalled;
-// bool write_json_to_buf(const char16_t *str, uint32_t strlen, void *out) {
-//   callbackCalled = true;
-//   auto outstr = static_cast<std::u16string *>(out);
-//   outstr->append(str, strlen);
+struct JsonCallback {
+  std::u16string output;
+  bool called = false;
 
-//   return true;
-// }
-// } // namespace
+  static bool write_to_buffer(const char16_t *str, uint32_t strlen, void *data) {
+    auto *callback = static_cast<JsonCallback*>(data);
+    callback->called = true;
+    callback->output.append(str, strlen);
+    return true;
+  }
+};
 
-// bool Response::json(JSContext *cx, unsigned argc, JS::Value *vp) {
-//   JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
-//   if (!args.requireAtLeast(cx, "json", 1)) {
-//     return false;
-//   }
-//   JS::RootedValue data(cx, args.get(0));
-//   JS::RootedValue init_val(cx, args.get(1));
-//   JS::RootedObject replacer(cx);
-//   JS::RootedValue space(cx);
 
-//   std::u16string out;
-//   // 1. Let bytes the result of running serialize a JavaScript value to JSON bytes on data.
-//   callbackCalled = false;
-//   if (!JS::ToJSON(cx, data, replacer, space, &write_json_to_buf, &out)) {
-//     return false;
-//   }
-//   if (!callbackCalled) {
-//     return api::throw_error(cx, api::Errors::WrongType, "Response.json", "data", "be a valid JSON
-//     value");
-//   }
-//   // 2. Let body be the result of extracting bytes.
+bool Response::json(JSContext *cx, unsigned argc, JS::Value *vp) {
+  JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
+  if (!args.requireAtLeast(cx, "json", 1)) {
+    return false;
+  }
+  JS::RootedValue data(cx, args.get(0));
+  JS::RootedValue init_val(cx, args.get(1));
+  JS::RootedObject replacer(cx);
+  JS::RootedValue space(cx);
 
-//   // 3. Let responseObject be the result of creating a Response object, given a new response,
-//   // "response", and this’s relevant Realm.
-//   JS::RootedValue status_val(cx);
-//   uint16_t status = 200;
+  // 1. Serialize the data to JSON
+  JsonCallback json_callback;
+  if (!JS::ToJSON(cx, data, replacer, space, &JsonCallback::write_to_buffer, &json_callback)) {
+    return false;
+  }
+  if (!json_callback.called) {
+    // undefined never invokes the callback, so we throw an error
+    return api::throw_error(cx, api::Errors::TypeError, "Response.json", "data", "be a valid JSON value");
+  }
+  // 2. Parse init object to get status, statusText, and headers
+  JS::RootedValue status_val(cx);
+  uint16_t status = 200;
 
-//   JS::RootedValue statusText_val(cx);
-//   JS::RootedString statusText(cx, JS_GetEmptyString(cx));
-//   JS::RootedValue headers_val(cx);
+  JS::RootedValue statusText_val(cx);
+  JS::RootedString statusText(cx, JS_GetEmptyString(cx));
+  JS::RootedValue headers_val(cx);
 
-//   if (init_val.isObject()) {
-//     JS::RootedObject init(cx, init_val.toObjectOrNull());
-//     if (!JS_GetProperty(cx, init, "status", &status_val) ||
-//         !JS_GetProperty(cx, init, "statusText", &statusText_val) ||
-//         !JS_GetProperty(cx, init, "headers", &headers_val)) {
-//       return false;
-//     }
+  if (init_val.isObject()) {
+    JS::RootedObject init(cx, init_val.toObjectOrNull());
+    if (!JS_GetProperty(cx, init, "status", &status_val) ||
+        !JS_GetProperty(cx, init, "statusText", &statusText_val) ||
+        !JS_GetProperty(cx, init, "headers", &headers_val)) {
+      return false;
+    }
 
-//     if (!status_val.isUndefined() && !JS::ToUint16(cx, status_val, &status)) {
-//       return false;
-//     }
+    if (!status_val.isUndefined() && !JS::ToUint16(cx, status_val, &status)) {
+      return false;
+    }
 
-//     if (status == 204 || status == 205 || status == 304) {
-//       auto status_str = std::to_string(status);
-//       return api::throw_error(cx, FetchErrors::NonBodyResponseWithBody, "Response.json",
-//         status_str.c_str());
-//     }
+    if (status == 204 || status == 205 || status == 304) {
+      auto status_str = std::to_string(status);
+      return api::throw_error(cx, FetchErrors::NonBodyResponseWithBody, status_str.c_str());
+    }
 
-//     if (!statusText_val.isUndefined() && !(statusText = JS::ToString(cx, statusText_val))) {
-//       return false;
-//     }
+    if (!statusText_val.isUndefined() && !(statusText = JS::ToString(cx, statusText_val))) {
+      return false;
+    }
 
-//   } else if (!init_val.isNullOrUndefined()) {
-//     return api::throw_error(cx, FetchErrors::InvalidInitArg, "Response.json");
-//   }
+  } else if (!init_val.isNullOrUndefined()) {
+    return api::throw_error(cx, FetchErrors::InvalidInitArg, "Response.json");
+  }
 
-//   auto response_handle_res = host_api::HttpResp::make();
-//   if (auto *err = response_handle_res.to_err()) {
-//     HANDLE_ERROR(cx, *err);
-//     return false;
-//   }
 
-//   auto response_handle = response_handle_res.unwrap();
-//   if (!response_handle.is_valid()) {
-//     return false;
-//   }
+   // 3. Create the Response JS object first
+  JS::RootedObject response_obj(cx, Response::create(cx));
+  if (!response_obj) {
+    return false;
+  }
 
-//   auto make_res = host_api::HttpBody::make(response_handle);
-//   if (auto *err = make_res.to_err()) {
-//     HANDLE_ERROR(cx, *err);
-//     return false;
-//   }
+  // Convert JSON string to a proper body value
+  JS::RootedString json_string(cx, JS_NewUCStringCopyN(cx, json_callback.output.c_str(), json_callback.output.length()));
+  if (!json_string) {
+    return false;
+  }
+  JS::RootedValue body_val(cx, JS::StringValue(json_string));
 
-//   auto body = make_res.unwrap();
-//   JS::RootedString string(cx, JS_NewUCStringCopyN(cx, out.c_str(), out.length()));
-//   auto stringChars = core::encode(cx, string);
+  // Create init object with headers that include content-type
+  JS::RootedObject init_obj(cx, JS_NewPlainObject(cx));
+  if (!init_obj) {
+    return false;
+  }
 
-//   auto write_res =
-//       body.write_all(reinterpret_cast<uint8_t *>(stringChars.begin()), stringChars.len);
-//   if (auto *err = write_res.to_err()) {
-//     HANDLE_ERROR(cx, *err);
-//     return false;
-//   }
-//   JS::RootedObject response_instance(cx, JS_NewObjectWithGivenProto(cx, &Response::class_,
-//                                                                     Response::proto_obj));
-//   if (!response_instance) {
-//     return false;
-//   }
-//   JS::RootedObject response(cx, create(cx, response_instance, response_handle,
-//                                        body, false));
-//   if (!response) {
-//     return false;
-//   }
+  // Set status
+  if (!JS_DefineProperty(cx, init_obj, "status", status_val, JSPROP_ENUMERATE)) {
+    return false;
+  }
 
-//   // Set `this`’s `response`’s `status` to `init`["status"].
-//   auto set_res = response_handle.set_status(status);
-//   if (auto *err = set_res.to_err()) {
-//     HANDLE_ERROR(cx, *err);
-//     return false;
-//   }
-//   // To ensure that we really have the same status value as the host,
-//   // we always read it back here.
-//   auto get_res = response_handle.get_status();
-//   if (auto *err = get_res.to_err()) {
-//     HANDLE_ERROR(cx, *err);
-//     return false;
-//   }
-//   status = get_res.unwrap();
+  // Set statusText
+  if (!JS_DefineProperty(cx, init_obj, "statusText", statusText_val, JSPROP_ENUMERATE)) {
+    return false;
+  }
 
-//   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Status), JS::Int32Value(status));
+  // Create headers object and ensure content-type is set
+  JS::RootedObject headers_obj(cx);
+  if (!headers_val.isUndefined()) {
+    headers_obj = Headers::create(cx, headers_val, Headers::HeadersGuard::Response);
+  } else {
+    headers_obj = Headers::create(cx, Headers::HeadersGuard::Response);
+  }
+  if (!headers_obj) {
+    return false;
+  }
 
-//   // Set `this`’s `response`’s `status message` to `init`["statusText"].
-//   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::StatusMessage),
-//                       JS::StringValue(statusText));
+  // Set content-type header if not already present
+  if (!Headers::set_valid_if_undefined(cx, headers_obj, "Content-Type", "application/json")) {
+    return false;
+  }
 
-//   // If `init`["headers"] `exists`, then `fill` `this`’s `headers` with
-//   // `init`["headers"].
-//   JS::RootedObject headers(cx);
-//   JS::RootedObject headersInstance(
-//       cx, JS_NewObjectWithGivenProto(cx, &Headers::class_, Headers::proto_obj));
-//   if (!headersInstance)
-//     return false;
+  JS::RootedValue headers_obj_val(cx, JS::ObjectValue(*headers_obj));
+  if (!JS_DefineProperty(cx, init_obj, "headers", headers_obj_val, JSPROP_ENUMERATE)) {
+    return false;
+  }
 
-//   headers = Headers::create(cx, headersInstance, Headers::Mode::ProxyToResponse,
-//                                       response, headers_val);
-//   if (!headers) {
-//     return false;
-//   }
-//   // 4. Perform initialize a response given responseObject, init, and (body, "application/json").
-//   if (!Headers::maybe_add(cx, headers, "content-type", "application/json")) {
-//     return false;
-//   }
-//   JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Headers),
-//   JS::ObjectValue(*headers)); JS::SetReservedSlot(response,
-//   static_cast<uint32_t>(Slots::Redirected), JS::FalseValue()); JS::SetReservedSlot(response,
-//   static_cast<uint32_t>(Slots::HasBody), JS::TrueValue()); RequestOrResponse::set_url(response,
-//   JS_GetEmptyStringValue(cx));
+  JS::RootedValue init_obj_val(cx, JS::ObjectValue(*init_obj));
 
-//   // 5. Return responseObject.
-//   args.rval().setObjectOrNull(response);
-//   return true;
-// }
+  // 5. Use the existing initialize method
+  if (!Response::initialize(cx, response_obj, body_val, init_obj_val)) {
+    return false;
+  }
+
+  args.rval().setObject(*response_obj);
+  return true;
+}
+
 
 const JSFunctionSpec Response::static_methods[] = {
     JS_FN("redirect", redirect, 1, JSPROP_ENUMERATE),
-    // JS_FN("json", json, 1, JSPROP_ENUMERATE),
+    JS_FN("json", json, 1, JSPROP_ENUMERATE),
     JS_FS_END,
 };
 
