@@ -37,7 +37,7 @@ bool print_location(JSContext *cx, FILE *fp = stdout) {
   JS::AutoFilename filename;
   uint32_t lineno;
   JS::ColumnNumberOneOrigin column;
-  if (!DescribeScriptedCaller(cx, &filename, &lineno, &column)) {
+  if (!DescribeScriptedCaller(&filename, cx, &lineno, &column)) {
     return false;
   }
   fprintf(fp, "%s@%u:%u: ", filename.get(), lineno, column.oneOriginValue());

@@ -3,11 +3,14 @@
 #include "event.h"
 
 #include "../dom-exception.h"
+#include "../abort/abort-signal.h"
 
 #include "js/GCPolicyAPI.h"
 #include "mozilla/Assertions.h"
 
 namespace {
+
+using builtins::web::abort::AbortSignal;
 
 // https://dom.spec.whatwg.org/#concept-flatten-options
 bool flatten_opts(JSContext *cx, JS::HandleValue opts, bool *rval) {
@@ -77,7 +80,7 @@ bool flatten_more_opts(JSContext *cx, JS::HandleValue opts, bool *capture, bool 
   if (!JS_GetProperty(cx, obj, "signal", &val)) {
     return false;
   }
-  if (val.isObject()) { // TODO: check if is instance of AbortSignal
+  if (val.isObject() && AbortSignal::is_instance(val)) {
     signal.set(val);
   }
 
@@ -102,7 +105,7 @@ bool default_passive_value() {
 
 namespace JS {
 
-template <typename T> struct JS::GCPolicy<RefPtr<T>> {
+template <typename T> struct GCPolicy<RefPtr<T>> {
   static void trace(JSTracer *trc, RefPtr<T> *tp, const char *name) {
     if (T *target = tp->get()) {
       GCPolicy<T>::trace(trc, target, name);
@@ -130,6 +133,34 @@ namespace event {
 
 using EventFlag = Event::EventFlag;
 using dom_exception::DOMException;
+using abort::AbortSignal;
+using abort::AbortAlgorithm;
+
+struct Terminator : AbortAlgorithm {
+  Heap<JSObject *> target;
+  Heap<Value> type;
+  Heap<Value> callback;
+  Heap<Value> opts;
+
+  Terminator(JSContext *cx, HandleObject target, HandleValue type, HandleValue callback, HandleValue opts)
+      : target(target), type(type), callback(callback), opts(opts) {}
+
+  bool run(JSContext *cx) override {
+    RootedObject self(cx, target);
+    RootedValue type_val(cx, type);
+    RootedValue callback_val(cx, callback);
+    RootedValue opts_val(cx, opts);
+
+    return EventTarget::remove_listener(cx, self, type_val, callback_val, opts_val);
+  }
+
+  void trace(JSTracer *trc) override {
+    JS::TraceEdge(trc, &target, "EventTarget Terminator target");
+    JS::TraceEdge(trc, &type, "EventTarget Terminator type");
+    JS::TraceEdge(trc, &callback, "EventTarget Terminator callback");
+    JS::TraceEdge(trc, &opts, "EventTarget Terminator opts");
+  }
+};
 
 const JSFunctionSpec EventTarget::static_methods[] = {
     JS_FS_END,
@@ -213,8 +244,14 @@ bool EventTarget::add_listener(JSContext *cx, HandleObject self, HandleValue typ
   //  of the service worker events, then report a warning to the console that this might not give
   //  the expected results.
   //  N/A
+
   // - If listener's signal is not null and is aborted, then return.
-  // TODO: add AbortSignal
+  if (signal_val.isObject() && AbortSignal::is_instance(signal_val)) {
+    RootedObject signal(cx, &signal_val.toObject());
+    if (AbortSignal::is_aborted(signal)) {
+      return true;
+    }
+  }
 
   // - If listener's callback is null, then return.
   if (callback_val.isNullOrUndefined()) {
@@ -273,7 +310,12 @@ bool EventTarget::add_listener(JSContext *cx, HandleObject self, HandleValue typ
 
   // - If listener's signal is not null, then add the following abort steps to it:
   //  Remove an event listener with eventTarget and listener.
-  // TODO: add AbortSignal
+  if (signal_val.isObject() && AbortSignal::is_instance(signal_val)) {
+    auto terminator = js::MakeUnique<Terminator>(cx, self, type_val, callback_val, opts_val);
+    RootedObject signal(cx, &signal_val.toObject());
+    AbortSignal::add_algorithm(signal, std::move(terminator));
+  }
+
   return true;
 }
 
@@ -553,6 +595,11 @@ JSObject *EventTarget::create(JSContext *cx) {
 
   SetReservedSlot(self, Slots::Listeners, JS::PrivateValue(new ListenerList));
   return self;
+}
+
+bool EventTarget::init(JSContext *cx, HandleObject self) {
+  SetReservedSlot(self, Slots::Listeners, JS::PrivateValue(new ListenerList));
+  return true;
 }
 
 bool EventTarget::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {

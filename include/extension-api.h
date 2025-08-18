@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "builtin.h"
+#include "mozilla/WeakPtr.h"
 
 // TODO: remove these once the warnings are fixed
 #pragma clang diagnostic push
@@ -65,6 +66,13 @@ struct EngineConfig {
    */
   bool debugging = false;
 
+  /**
+   * Whether to enable Web Platform Test mode. Specifically, this means installing a
+   * few global properties required to make WPT work, that wouldn't be made available
+   * to content.
+   */
+  bool wpt_mode = false;
+
   EngineConfig() = default;
 };
 
@@ -82,6 +90,7 @@ public:
   HandleObject global();
   EngineState state();
   bool debugging_enabled();
+  bool wpt_mode();
 
   void finish_pre_initialization();
 
@@ -161,8 +170,8 @@ public:
   HandleValue script_value();
 
   bool has_pending_async_tasks();
-  void queue_async_task(AsyncTask *task);
-  bool cancel_async_task(AsyncTask *task);
+  void queue_async_task(RefPtr<AsyncTask> task);
+  bool cancel_async_task(RefPtr<AsyncTask> task);
 
   bool has_unhandled_promise_rejections();
   void report_unhandled_promise_rejections();
@@ -182,7 +191,7 @@ public:
 
 typedef bool (*TaskCompletionCallback)(JSContext* cx, HandleObject receiver);
 
-class AsyncTask {
+class AsyncTask : public js::RefCounted<AsyncTask>, public mozilla::SupportsWeakPtr {
 protected:
   PollableHandle handle_ = -1;
 
@@ -206,7 +215,7 @@ public:
   /**
    * Select for the next available ready task, providing the oldest ready first.
    */
-  static size_t select(std::vector<AsyncTask *> &handles);
+  static size_t select(std::vector<RefPtr<AsyncTask>> &handles);
 };
 
 } // namespace api

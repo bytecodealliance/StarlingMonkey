@@ -16,6 +16,7 @@ usage() {
   echo "       Specifying '-i' or '--initializer-script-path' allows specifying an initializer script"
   echo "       Specifying '--strip-path-prefix' will cause the provided prefix to be stripped from paths in stack traces and the debugger"
   echo "       Specifying '--legacy-script' causes evaluation as a legacy JS script instead of a module"
+  echo "       Specifying '--wpt-mode' enables WPT compatibility mode"
   exit 1
 }
 
@@ -47,6 +48,10 @@ do
             shift 2
             ;;
         --strip-path-prefix)
+            STARLING_ARGS="$STARLING_ARGS $1 $2"
+            shift 2
+            ;;
+        --wpt-mode)
             STARLING_ARGS="$STARLING_ARGS $1 $2"
             shift 2
             ;;

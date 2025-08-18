@@ -1,6 +1,6 @@
 # Based on https://stackoverflow.com/a/72187533
-set(OPENSSL_VERSION 3.0.16)
-set(OPENSSL_HASH "SHA256=57e03c50feab5d31b152af2b764f10379aecd8ee92f16c985983ce4a99f7ef86")
+set(OPENSSL_VERSION 3.0.17)
+set(OPENSSL_HASH "SHA256=dfdd77e4ea1b57ff3a6dbde6b0bdc3f31db5ac99e7fdd4eaf9e1fbb6ec2db8ce")
 set(OPENSSL_INSTALL_DIR ${CMAKE_BINARY_DIR}/deps/OpenSSL)
 set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_DIR}/include)
 include(ExternalProject)

@@ -1,0 +1,55 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "${workspaceFolder}/tests/js"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js"
+      ],
+      "preLaunchTask": "npm: watch"
+    },
+    {
+      "name": "Web Extension",
+      "type": "extensionHost",
+      "debugWebWorkerHost": true,
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--extensionDevelopmentKind=web",
+        "${workspaceFolder}/tests/ts"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js"
+      ],
+      "preLaunchTask": "npm: watch web"
+    },
+    // TODO: enable the server configuration, once passing the required arguments is figured out
+    // {
+    //   "name": "Server",
+    //   "type": "node",
+    //   "request": "launch",
+    //   "cwd": "${workspaceFolder}",
+    //   "program": "${workspaceFolder}/src/debugAdapter.ts",
+    //   "args": [
+    //     "--server=9721",
+    //     "${workspaceFolder}/sampleWorkspace"
+    //   ],
+    //   "outFiles": [
+    //     "${workspaceFolder}/out/**/*.js"
+    //   ],
+    //   "preLaunchTask": "npm: compile"
+    // }
+  ],
+  // "compounds": [
+  //   {
+  //     "name": "Extension + Server",
+  //     "configurations": [ "Extension", "Server" ]
+  //   }
+  // ]
+}

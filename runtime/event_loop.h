@@ -41,12 +41,12 @@ public:
   /**
    * Queue a new async task.
    */
-  static void queue_async_task(api::AsyncTask *task);
+  static void queue_async_task(RefPtr<api::AsyncTask> task);
 
   /**
    * Remove a queued async task.
    */
-  static bool cancel_async_task(api::Engine *engine, api::AsyncTask *task);
+  static bool cancel_async_task(api::Engine *engine, RefPtr<api::AsyncTask> task);
 };
 
 } // namespace core

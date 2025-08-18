@@ -1,0 +1,10 @@
+{
+  "release-type": "simple",
+  "bump-minor-pre-major": false,
+  "bump-patch-for-minor-pre-major": false,
+  "packages": {
+    ".": {
+      "include-v-in-tag": true
+    }
+  }
+}

@@ -38,6 +38,8 @@ public:
   static host_api::HttpIncomingBody *incoming_body_handle(JSObject *obj);
   static host_api::HttpOutgoingBody *outgoing_body_handle(JSObject *obj);
   static JSObject *body_stream(JSObject *obj);
+  static JSObject *body_all_promise(JSObject *obj);
+  static JSObject *take_body_all_promise(JSObject *obj);
   static JSObject *body_source(JSContext *cx, JS::HandleObject obj);
   static bool body_used(JSObject *obj);
   static bool mark_body_used(JSContext *cx, JS::HandleObject obj);
@@ -125,6 +127,7 @@ class Request final : public BuiltinImpl<Request> {
 
   static bool body_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool bodyUsed_get(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool signal_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
   static bool clone(JSContext *cx, unsigned argc, JS::Value *vp);
 
@@ -134,6 +137,7 @@ public:
   enum class Slots {
     Request = static_cast<int>(RequestOrResponse::Slots::RequestOrResponse),
     BodyStream = static_cast<int>(RequestOrResponse::Slots::BodyStream),
+    BodyAllPromise = static_cast<int>(RequestOrResponse::Slots::BodyAllPromise),
     HasBody = static_cast<int>(RequestOrResponse::Slots::HasBody),
     BodyUsed = static_cast<int>(RequestOrResponse::Slots::BodyUsed),
     Headers = static_cast<int>(RequestOrResponse::Slots::Headers),
@@ -141,11 +145,13 @@ public:
     Method = static_cast<int>(RequestOrResponse::Slots::Count),
     ResponsePromise,
     PendingResponseHandle,
+    Signal,
     Count,
   };
 
   static JSObject *response_promise(JSObject *obj);
   static JSString *method(JS::HandleObject obj);
+  static JSObject *signal(JSObject *obj);
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -188,6 +194,7 @@ public:
   enum class Slots {
     Response = static_cast<int>(RequestOrResponse::Slots::RequestOrResponse),
     BodyStream = static_cast<int>(RequestOrResponse::Slots::BodyStream),
+    BodyAllPromise = static_cast<int>(RequestOrResponse::Slots::BodyAllPromise),
     HasBody = static_cast<int>(RequestOrResponse::Slots::HasBody),
     BodyUsed = static_cast<int>(RequestOrResponse::Slots::BodyUsed),
     Headers = static_cast<int>(RequestOrResponse::Slots::Headers),
@@ -195,6 +202,7 @@ public:
     StatusMessage,
     Redirected,
     Type,
+    Aborted,
     Count,
   };
 
@@ -220,8 +228,10 @@ public:
 
   static host_api::HttpResponse *maybe_response_handle(JSObject *obj);
   static Type type(JSObject *obj);
+  static Value aborted(JSObject *obj);
   static uint16_t status(JSObject *obj);
   static JSString *status_message(JSObject *obj);
+  static void set_aborted(JSObject *obj, HandleValue reason);
   static void set_type(JSObject *obj, Type type);
   static void set_status(JSObject *obj, uint16_t status);
   static void set_status_message_from_code(JSContext *cx, JSObject *obj, uint16_t code);
@@ -233,48 +243,11 @@ class ResponseFutureTask final : public api::AsyncTask {
 
 public:
   explicit ResponseFutureTask(const HandleObject request,
-                              host_api::FutureHttpIncomingResponse *future)
-      : request_(request), future_(future) {
-    auto res = future->subscribe();
-    MOZ_ASSERT(!res.is_err(), "Subscribing to a future should never fail");
-    handle_ = res.unwrap();
-  }
+                              host_api::FutureHttpIncomingResponse *future);
 
-  [[nodiscard]] bool run(api::Engine *engine) override {
-    // MOZ_ASSERT(ready());
-    JSContext *cx = engine->cx();
-
-    const RootedObject request(cx, request_);
-    RootedObject response_promise(cx, Request::response_promise(request));
-
-    auto res = future_->maybe_response();
-    if (res.is_err()) {
-      api::throw_error(cx, FetchErrors::FetchNetworkError);
-      return RejectPromiseWithPendingError(cx, response_promise);
-    }
-
-    auto maybe_response = res.unwrap();
-    MOZ_ASSERT(maybe_response.has_value());
-    auto response = maybe_response.value();
-    RootedObject response_obj(cx, Response::create_incoming(cx, response));
-    if (!response_obj) {
-      return false;
-    }
-
-    RequestOrResponse::set_url(response_obj, RequestOrResponse::url(request));
-    RootedValue response_val(cx, ObjectValue(*response_obj));
-    if (!ResolvePromise(cx, response_promise, response_val)) {
-      return false;
-    }
-
-    return cancel(engine);
-  }
-
-  [[nodiscard]] bool cancel(api::Engine *engine) override {
-    // TODO(TS): implement
-    handle_ = -1;
-    return true;
-  }
+  [[nodiscard]] bool run(api::Engine *engine) override;
+  [[nodiscard]] bool cancel(api::Engine *engine) override;
+  [[nodiscard]] bool abort(api::Engine *engine);
 
   void trace(JSTracer *trc) override { TraceEdge(trc, &request_, "Request for response future"); }
 };

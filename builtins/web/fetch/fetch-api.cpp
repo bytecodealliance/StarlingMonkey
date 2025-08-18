@@ -1,12 +1,14 @@
 #include "fetch-api.h"
-#include "fetch-utils.h"
 #include "builtin.h"
 #include "encode.h"
 #include "extension-api.h"
+#include "fetch-utils.h"
 #include "headers.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/WeakPtr.h"
 #include "request-response.h"
 
+#include "../abort/abort-signal.h"
 #include "../blob.h"
 #include "../url.h"
 
@@ -14,6 +16,8 @@
 
 namespace builtins::web::fetch {
 
+using abort::AbortAlgorithm;
+using abort::AbortSignal;
 using blob::Blob;
 using fetch::Headers;
 using host_api::HostString;
@@ -27,6 +31,19 @@ enum class FetchScheme {
   File,
   Http,
   Https,
+};
+
+struct Terminator : AbortAlgorithm {
+  mozilla::WeakPtr<ResponseFutureTask> task;
+
+  Terminator(mozilla::WeakPtr<ResponseFutureTask> task) : task(std::move(task)) {}
+
+  bool run(JSContext *cx) override {
+    if (auto t = task.get()) {
+      return t->abort(ENGINE);
+    }
+    return true;
+  }
 };
 
 std::optional<FetchScheme> scheme_from_url(const std::string_view &url) {
@@ -67,8 +84,8 @@ bool network_error(JSContext *cx, HandleObject response_promise, MutableHandleVa
   return api::throw_error(cx, FetchErrors::FetchNetworkError);
 }
 
-bool fetch_https(JSContext *cx, HandleObject request_obj, HostString method, HostString url,
-                 MutableHandleValue rval) {
+bool fetch_https(JSContext *cx, HandleObject request_obj, HandleObject response_promise,
+                 HostString method, HostString url) {
   unique_ptr<host_api::HttpHeaders> headers =
       RequestOrResponse::headers_handle_clone(cx, request_obj);
   if (!headers) {
@@ -79,10 +96,6 @@ bool fetch_https(JSContext *cx, HandleObject request_obj, HostString method, Hos
   MOZ_RELEASE_ASSERT(request);
   JS_SetReservedSlot(request_obj, static_cast<uint32_t>(Request::Slots::Request),
                      PrivateValue(request));
-
-  RootedObject response_promise(cx, JS::NewPromiseObject(cx, nullptr));
-  if (!response_promise)
-    return false;
 
   bool streaming = false;
   if (!RequestOrResponse::maybe_stream_body(cx, request_obj, request, &streaming)) {
@@ -107,7 +120,16 @@ bool fetch_https(JSContext *cx, HandleObject request_obj, HostString method, Hos
   // If the request body is streamed, we need to wait for streaming to complete
   // before marking the request as pending.
   if (!streaming) {
-    ENGINE->queue_async_task(new ResponseFutureTask(request_obj, pending_handle));
+    // TODO: what about non streaming?
+    auto task = mozilla::MakeRefPtr<ResponseFutureTask>(request_obj, pending_handle);
+    auto weak = mozilla::WeakPtr<ResponseFutureTask>(task);
+
+    ENGINE->queue_async_task(task);
+
+    RootedObject signal(cx, Request::signal(request_obj));
+    MOZ_ASSERT(signal);
+
+    AbortSignal::add_algorithm(signal, js::MakeUnique<Terminator>(weak));
   }
 
   SetReservedSlot(request_obj, static_cast<uint32_t>(Request::Slots::ResponsePromise),
@@ -115,21 +137,12 @@ bool fetch_https(JSContext *cx, HandleObject request_obj, HostString method, Hos
   SetReservedSlot(request_obj, static_cast<uint32_t>(Request::Slots::PendingResponseHandle),
                   PrivateValue(pending_handle));
 
-  rval.setObject(*response_promise);
   return true;
 }
 
 /// https://fetch.spec.whatwg.org/#scheme-fetch
-bool fetch_blob(JSContext *cx, HandleObject request_obj, HostString method, HostString url,
-                MutableHandleValue rval) {
-
-  RootedObject response_promise(cx, JS::NewPromiseObject(cx, nullptr));
-  if (!response_promise) {
-    return false;
-  }
-
-  rval.setObject(*response_promise);
-
+bool fetch_blob(JSContext *cx, HandleObject request_obj, HandleObject response_promise,
+                HostString method, HostString url, MutableHandleValue rval) {
   // 1. Let blobURLEntry be request's current URL's blob URL entry.
   RootedString blob_url(cx);
 
@@ -140,7 +153,8 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HostString method, Host
 
   // 3. Let requestEnvironment be the result of determining the environment given request.
   // 4. Let isTopLevelNavigation be true if request's destination is "document"; otherwise, false.
-  // 5. If isTopLevelNavigation is false and requestEnvironment is null, then return a network error.
+  // 5. If isTopLevelNavigation is false and requestEnvironment is null, then return a network
+  // error.
   // 6. Let navigationOrEnvironment be the string "navigation" if isTopLevelNavigation is true;
   //  otherwise, requestEnvironment.
   //  N/A
@@ -188,11 +202,12 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HostString method, Host
     // 3. Set response's body to bodyWithType's body.
     // 4. Set response's header list to (`Content-Length`, serializedFullLength), (`Content-Type`, type).
     // 3 and 4 done at the end.
-  // 14. Otherwise:
+    // 14. Otherwise:
   } else {
     // 1. Set response's range-requested flag.
     // 2. Let rangeHeader be the result of getting `Range` from request's header list.
-    // 3. Let rangeValue be the result of parsing a single range header value given rangeHeader and true.
+    // 3. Let rangeValue be the result of parsing a single range header value given rangeHeader and
+    // true.
     // 4. If rangeValue is failure, then return a network error.
     auto *headers = Headers::get_index(cx, req_headers, maybe_range_index.value());
     MOZ_ASSERT(headers);
@@ -208,7 +223,8 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HostString method, Host
 
     const auto [start_range, end_range] = maybe_range.value();
 
-    // 8. Let slicedBlob be the result of invoking slice blob given blob, rangeStart, rangeEnd + 1, and type.
+    // 8. Let slicedBlob be the result of invoking slice blob given blob, rangeStart, rangeEnd + 1,
+    // and type.
     // 9. Let slicedBodyWithType be the result of safely extracting slicedBlob.
     // 10. Set response's body to slicedBodyWithType's body.
     // 11. Let serializedSlicedLength be slicedBlob's size, serialized and isomorphic encoded.
@@ -298,14 +314,37 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
+  // 1. Let p be a new promise.
+  RootedObject response_promise(cx, JS::NewPromiseObject(cx, nullptr));
+  if (!response_promise) {
+    return false;
+  }
+
+  args.rval().setObject(*response_promise);
+
+  // 2. Let requestObject be the result of invoking the initial value of Request as constructor
+  // with input and init as arguments. If this throws an exception, reject p with it and return p.
   RootedObject request_obj(cx, Request::create(cx));
   if (!request_obj) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
-  if (!Request::initialize(cx, request_obj, args[0], args.get(1),
-                           Headers::HeadersGuard::Request)) {
+  // 3. Let request be requestObject's request.
+  if (!Request::initialize(cx, request_obj, args[0], args.get(1), Headers::HeadersGuard::Request)) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  // 4. If requestObject's signal is aborted, then:
+  RootedObject signal(cx, Request::signal(request_obj));
+  MOZ_ASSERT(signal);
+
+  if (AbortSignal::is_aborted(signal)) {
+    // 1. Abort the fetch() call with p, request, null, and requestObject's signal's abort reason.
+    RootedValue error(cx, AbortSignal::reason(signal));
+    abort_fetch(cx, response_promise, request_obj, nullptr, error);
+    // 2. Return p.
+    // (already set in args.rval())
+    return true;
   }
 
   RootedString method_str(cx, Request::method(request_obj));
@@ -322,7 +361,8 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
 
   switch (scheme_from_url(url).value_or(FetchScheme::Https)) {
   case FetchScheme::Blob: {
-    auto res = fetch_blob(cx, request_obj, std::move(method), std::move(url), args.rval());
+    auto res = fetch_blob(cx, request_obj, response_promise, std::move(method), std::move(url),
+                          args.rval());
     if (!res) {
       return ReturnPromiseRejectedWithPendingError(cx, args);
     }
@@ -331,7 +371,7 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
   case FetchScheme::Http:
   case FetchScheme::Https:
   default: {
-    auto res = fetch_https(cx, request_obj, std::move(method), std::move(url), args.rval());
+    auto res = fetch_https(cx, request_obj, response_promise, std::move(method), std::move(url));
     if (!res) {
       return ReturnPromiseRejectedWithPendingError(cx, args);
     }

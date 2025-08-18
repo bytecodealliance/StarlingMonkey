@@ -18,4 +18,4 @@ inputs=(
 )
 
 cat "${inputs[@]}" > wpt-test-runner.js
-./componentize.sh $componentize_flags --verbose --legacy-script wpt-test-runner.js wpt-runtime.wasm
+./componentize.sh $componentize_flags --verbose --wpt-mode --legacy-script wpt-test-runner.js wpt-runtime.wasm

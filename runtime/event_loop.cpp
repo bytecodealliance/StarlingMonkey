@@ -8,12 +8,12 @@
 #include <vector>
 
 struct TaskQueue {
-  std::vector<api::AsyncTask *> tasks = {};
+  std::vector<RefPtr<api::AsyncTask>> tasks = {};
   int interest_cnt = 0;
   bool event_loop_running = false;
 
   void trace(JSTracer *trc) const {
-    for (const auto task : tasks) {
+    for (const auto &task : tasks) {
       task->trace(trc);
     }
   }
@@ -23,12 +23,12 @@ static PersistentRooted<TaskQueue> queue;
 
 namespace core {
 
-void EventLoop::queue_async_task(api::AsyncTask *task) {
+void EventLoop::queue_async_task(RefPtr<api::AsyncTask> task) {
   MOZ_ASSERT(task);
   queue.get().tasks.emplace_back(task);
 }
 
-bool EventLoop::cancel_async_task(api::Engine *engine, api::AsyncTask *task) {
+bool EventLoop::cancel_async_task(api::Engine *engine, RefPtr<api::AsyncTask> task) {
   const auto tasks = &queue.get().tasks;
   for (auto it = tasks->begin(); it != tasks->end(); ++it) {
     if (*it == task) {
