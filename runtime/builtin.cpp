@@ -16,7 +16,7 @@ bool api::throw_error(JSContext* cx, const JSErrorFormatString &error,
   }
 
   JS_ReportErrorNumberUTF8Array(cx, GetErrorMessageFromRef,
-    const_cast<JSErrorFormatString*>(&error), 0, args);
+    const_cast<JSErrorFormatString*>(&error), 0, args);  // NOLINT(cppcoreguidelines-pro-type-const-cast)
   return false;
 }
 

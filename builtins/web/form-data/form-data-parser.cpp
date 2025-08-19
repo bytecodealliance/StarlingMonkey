@@ -80,8 +80,9 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
   jsmultipart::Slice input{.data=data, .len=body.size()};
   jsmultipart::Entry entry{};
 
-  auto *encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
-      reinterpret_cast<uint8_t *>(const_cast<char *>("UTF-8")), 5));
+  const char* utf8_label = "UTF-8";
+  const auto *encoding = jsencoding::encoding_for_label_no_replacement(
+      reinterpret_cast<const uint8_t *>(utf8_label), 5);
 
   auto deleter1 = [&](auto *state) { jsmultipart::multipart_parser_free(state); };
   std::unique_ptr<jsmultipart::State, decltype(deleter1)> parser(

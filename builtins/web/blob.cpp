@@ -332,8 +332,10 @@ bool Blob::text(JSContext *cx, HandleObject self, MutableHandleValue rval) {
   rval.setObject(*promise);
 
   auto *src = Blob::blob(self);
-  auto *encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
-      reinterpret_cast<uint8_t *>(const_cast<char *>("UTF-8")), 5));
+
+  const char* utf8_label = "UTF-8";
+  const auto *encoding =
+      jsencoding::encoding_for_label_no_replacement(reinterpret_cast<const uint8_t *>(utf8_label), 5);
 
   auto deleter = [&](jsencoding::Decoder *dec) { jsencoding::decoder_free(dec); };
   std::unique_ptr<jsencoding::Decoder, decltype(deleter)> decoder(
@@ -449,7 +451,6 @@ bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
     }
 
     return blob->append(chars.ptr.get(), chars.ptr.get() + chars.len);
-   
   }
 
   // FALLBACK: if we ever get here convert, to string and call append again
