@@ -22,7 +22,6 @@ Checks: >
   -cppcoreguidelines-narrowing-conversions,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   -cppcoreguidelines-pro-type-cstyle-cast,
-  -cppcoreguidelines-special-member-functions,
   -cppcoreguidelines-init-variables,
   -cppcoreguidelines-macro-usage,
   -cppcoreguidelines-interfaces-global-init,

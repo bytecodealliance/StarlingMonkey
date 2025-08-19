@@ -35,10 +35,17 @@ class AutoCloseFile {
   FILE* file;
 
 public:
-  explicit AutoCloseFile(FILE* f) : file(f) {}
+  explicit AutoCloseFile(FILE *f) : file(f) {}
   ~AutoCloseFile() {
     release();
   }
+
+  AutoCloseFile(const AutoCloseFile &) = default;
+  AutoCloseFile(AutoCloseFile &&) = delete;
+
+  AutoCloseFile &operator=(const AutoCloseFile &) = default;
+  AutoCloseFile &operator=(AutoCloseFile &&) = delete;
+
   bool release() {
     bool success = true;
     if (file && file != stdin && file != stdout && file != stderr) {

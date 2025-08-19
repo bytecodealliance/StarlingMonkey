@@ -47,7 +47,14 @@ const char *algorithmName(CryptoAlgorithmIdentifier algorithm);
 /// The base class that all algorithm implementations should derive from.
 class CryptoAlgorithm {
 public:
+  CryptoAlgorithm() = default;
   virtual ~CryptoAlgorithm() = default;
+
+  CryptoAlgorithm(const CryptoAlgorithm &) = default;
+  CryptoAlgorithm(CryptoAlgorithm &&) = default;
+
+  CryptoAlgorithm &operator=(const CryptoAlgorithm &) = default;
+  CryptoAlgorithm &operator=(CryptoAlgorithm &&) = default;
 
   [[nodiscard]] virtual const char *name() const noexcept = 0;
   virtual CryptoAlgorithmIdentifier identifier() = 0;

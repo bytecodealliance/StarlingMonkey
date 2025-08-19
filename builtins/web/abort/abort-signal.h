@@ -14,7 +14,14 @@ struct AbortAlgorithm {
   bool virtual run(JSContext *cx) = 0;
   void virtual trace(JSTracer *trc) { };
 
+  AbortAlgorithm() = default;
   virtual ~AbortAlgorithm() = default;
+
+  AbortAlgorithm(const AbortAlgorithm &) = default;
+  AbortAlgorithm(AbortAlgorithm &&) = delete;
+
+  AbortAlgorithm &operator=(const AbortAlgorithm &) = default;
+  AbortAlgorithm &operator=(AbortAlgorithm &&) = delete;
 };
 
 class AbortSignal : public BuiltinImpl<AbortSignal, TraceableClassPolicy> {

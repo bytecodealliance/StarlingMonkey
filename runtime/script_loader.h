@@ -11,6 +11,13 @@ class ScriptLoader {
 public:
   ScriptLoader(api::Engine *engine, JS::CompileOptions *opts,
                mozilla::Maybe<std::string> path_prefix);
+
+  ScriptLoader(const ScriptLoader &) = default;
+  ScriptLoader(ScriptLoader &&) = delete;
+
+  ScriptLoader &operator=(const ScriptLoader &) = default;
+  ScriptLoader &operator=(ScriptLoader &&) = delete;
+
   ~ScriptLoader();
 
   static bool define_builtin_module(const char* id, HandleValue builtin);
