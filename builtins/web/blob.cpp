@@ -344,7 +344,7 @@ bool Blob::text(JSContext *cx, HandleObject self, MutableHandleValue rval) {
   auto src_len = src->length();
   auto dst_len = jsencoding::decoder_max_utf16_buffer_length(decoder.get(), src_len);
 
-  JS::UniqueTwoByteChars dst(new char16_t[dst_len + 1]);
+  JS::UniqueTwoByteChars dst(static_cast<char16_t *>(js_pod_malloc<char16_t>(dst_len + 1)));
   if (!dst) {
     JS_ReportOutOfMemory(cx);
     return false;
@@ -560,22 +560,33 @@ JSObject *Blob::create(JSContext *cx, UniqueChars data, size_t data_len, HandleS
     return nullptr;
   }
 
-  auto *blob = new ByteBuffer;
+  auto blob = js::MakeUnique<ByteBuffer>();
+  if (blob == nullptr) {
+    JS_ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
   if (data != nullptr) {
     // Take the ownership of given data.
     blob->replaceRawBuffer(reinterpret_cast<uint8_t *>(data.release()), data_len);
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(blob));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(blob.release()));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS::StringValue(type));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
   return self;
 }
 
 bool Blob::init(JSContext *cx, HandleObject self, HandleValue blobParts, HandleValue opts) {
+  auto blob = js::MakeUnique<ByteBuffer>();
+  if (blob == nullptr) {
+    JS_ReportOutOfMemory(cx);
+    return false;
+  }
+
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS_GetEmptyStringValue(cx));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(new ByteBuffer));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(blob.release()));
 
   // Walk the blob parts and append them to the blob's buffer.
   if (blobParts.isNull()) {
@@ -620,7 +631,7 @@ void Blob::finalize(JS::GCContext *gcx, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   auto *blob = Blob::blob(self);
   if (blob != nullptr) {
-    free(blob);
+    js_delete(blob);
   }
 }
 

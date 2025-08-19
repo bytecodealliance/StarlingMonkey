@@ -439,60 +439,58 @@ bool switch_mode(JSContext *cx, HandleObject self, const Headers::Mode mode) {
 
   if (current_mode == Headers::Mode::Uninitialized) {
     MOZ_ASSERT(mode == Headers::Mode::ContentOnly);
-    RootedObject map(cx, JS::NewMapObject(cx));
-    if (map == nullptr) {
-      return false;
-    }
-    MOZ_ASSERT(static_cast<Headers::HeadersList *>(
-                   JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersList))
-                       .toPrivate()) == nullptr);
+    MOZ_ASSERT(JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersList))
+                   .toPrivate() == nullptr);
+    MOZ_ASSERT(JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersSortList))
+                   .toPrivate() == nullptr);
+
     SetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersList),
-                    PrivateValue(new Headers::HeadersList()));
-    MOZ_ASSERT(static_cast<std::vector<size_t> *>(
-                   JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersSortList))
-                       .toPrivate()) == nullptr);
+                    PrivateValue(js_new<Headers::HeadersList>()));
     SetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersSortList),
-                    PrivateValue(new std::vector<size_t>()));
+                    PrivateValue(js_new<std::vector<size_t>>()));
     SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Mode),
                     JS::Int32Value(static_cast<int32_t>(Headers::Mode::ContentOnly)));
+
     return true;
   }
 
   if (current_mode == Headers::Mode::ContentOnly) {
     MOZ_ASSERT(mode == Headers::Mode::CachedInContent,
                "Switching from ContentOnly to HostOnly is wasteful and not implemented");
+
     Headers::HeadersList *list = Headers::headers_list(self);
 
     auto handle = host_api::HttpHeaders::FromEntries(*list);
     if (handle.is_err()) {
       return api::throw_error(cx, FetchErrors::HeadersCloningFailed);
     }
-    SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Handle),
-                    PrivateValue(handle.unwrap()));
+    SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Handle), PrivateValue(handle.unwrap()));
   }
 
   if (current_mode == Headers::Mode::HostOnly) {
     MOZ_ASSERT(mode == Headers::Mode::CachedInContent);
-    MOZ_ASSERT(static_cast<Headers::HeadersList *>(
-                   JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersList))
-                       .toPrivate()) == nullptr);
-    auto *list = new Headers::HeadersList();
-    SetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersList), PrivateValue(list));
-    MOZ_ASSERT(static_cast<std::vector<size_t> *>(
-                   JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersSortList))
-                       .toPrivate()) == nullptr);
+    MOZ_ASSERT(JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersList))
+                   .toPrivate() == nullptr);
+    MOZ_ASSERT(JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersSortList))
+                   .toPrivate() == nullptr);
+
+    SetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersList),
+                    PrivateValue(js_new<Headers::HeadersList>()));
     SetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersSortList),
-                    PrivateValue(new std::vector<size_t>()));
+                    PrivateValue(js_new<std::vector<size_t>>()));
     SetReservedSlot(self, static_cast<size_t>(Headers::Slots::Mode),
                     JS::Int32Value(static_cast<int32_t>(Headers::Mode::ContentOnly)));
+
     auto *handle = get_handle(self);
     MOZ_ASSERT(handle);
+
     auto res = handle->entries();
     if (res.is_err()) {
       HANDLE_ERROR(cx, *res.to_err());
       return false;
     }
 
+    Headers::HeadersList *list = Headers::headers_list(self);
     for (auto &entry : std::move(res.unwrap())) {
       list->emplace_back(std::move(std::get<0>(entry)), std::move(std::get<1>(entry)));
     }
@@ -873,12 +871,11 @@ bool Headers::append(JSContext *cx, unsigned argc, JS::Value *vp) {
         skip_values_for_header_from_list(cx, self, &index, false);
         host_api::HostString *header_val = &std::get<1>(*Headers::get_index(cx, self, index));
         size_t combined_len = header_val->len + value_chars.len + 2;
-        char *combined = static_cast<char *>(malloc(combined_len));
-        memcpy(combined, header_val->ptr.get(), header_val->len);
-        memcpy(combined + header_val->len, ", ", 2);
-        memcpy(combined + header_val->len + 2, value_chars.ptr.get(), value_chars.len);
-        JS::UniqueChars combined_chars(combined);
-        header_val->ptr.swap(combined_chars);
+        auto combined = JS::UniqueChars(static_cast<char *>(js_malloc(combined_len)));
+        memcpy(combined.get(), header_val->ptr.get(), header_val->len);
+        memcpy(combined.get() + header_val->len, ", ", 2);
+        memcpy(combined.get() + header_val->len + 2, value_chars.ptr.get(), value_chars.len);
+        header_val->ptr.swap(combined);
         header_val->len = combined_len;
       }
     } else {
@@ -1072,16 +1069,16 @@ bool Headers::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 void Headers::finalize(JS::GCContext *gcx, JSObject *self) {
   auto *list = static_cast<HeadersList *>(
-      JS::GetReservedSlot(self, static_cast<size_t>(Headers::Slots::HeadersList)).toPrivate());
+      JS::GetReservedSlot(self, static_cast<size_t>(Slots::HeadersList)).toPrivate());
   if (list != nullptr) {
     list->clear();
-    free(list);
+    js_delete(list);
   }
   auto *sort_list = static_cast<HeadersSortList *>(
       JS::GetReservedSlot(self, static_cast<size_t>(Slots::HeadersSortList)).toPrivate());
   if (sort_list != nullptr) {
     sort_list->clear();
-    free(sort_list);
+    js_delete(sort_list);
   }
 }
 
@@ -1266,7 +1263,7 @@ bool HeadersIterator::next(JSContext *cx, unsigned argc, Value *vp) {
   if (type != ITER_TYPE_VALUES) {
     const host_api::HostString *key = &std::get<0>(*Headers::get_index(cx, headers, index));
     size_t len = key->len;
-    auto *chars = reinterpret_cast<JS::Latin1Char *>(malloc(len));
+    auto chars = JS::UniqueLatin1Chars(static_cast<JS::Latin1Char *>(js_malloc(len)));
     for (int i = 0; i < len; ++i) {
       const unsigned char ch = key->ptr[i];
       // headers should already be validated by here
@@ -1278,7 +1275,7 @@ bool HeadersIterator::next(JSContext *cx, unsigned argc, Value *vp) {
         chars[i] = ch;
       }
     }
-    key_val = JS::StringValue(JS_NewLatin1String(cx, JS::UniqueLatin1Chars(chars), len));
+    key_val = JS::StringValue(JS_NewLatin1String(cx, std::move(chars), len));
   }
 
   if (type != ITER_TYPE_KEYS) {

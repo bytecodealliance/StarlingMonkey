@@ -412,7 +412,13 @@ JSObject *FormData::create(JSContext *cx) {
     return nullptr;
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Entries), JS::PrivateValue(new EntryList));
+  auto entries = js::MakeUnique<EntryList>();
+  if (entries == nullptr) {
+    JS_ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Entries), JS::PrivateValue(entries.release()));
   return self;
 }
 
@@ -444,7 +450,7 @@ void FormData::finalize(JS::GCContext *gcx, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   auto *entries = entry_list(self);
   if (entries != nullptr) {
-    free(entries);
+    js_delete(entries);
   }
 }
 
