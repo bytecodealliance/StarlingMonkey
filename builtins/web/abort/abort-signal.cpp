@@ -261,7 +261,8 @@ bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {
   // 1. For each algorithm of signal's abort algorithms: run algorithm.
   auto *algorithms = AbortSignal::algorithms(self);
   for (auto &algorithm : *algorithms) {
-    if (!algorithm->run(cx)) { return false;
+    if (!algorithm->run(cx)) {
+      return false;
 }
   }
 

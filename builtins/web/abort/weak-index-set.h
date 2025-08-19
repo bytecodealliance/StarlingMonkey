@@ -30,7 +30,7 @@ public:
   }
 
   WeakVec &items() { return items_;}
-  [[nodiscard]] [[nodiscard]] [[nodiscard]] const WeakVec &items() const { return items_; }
+  [[nodiscard]] const WeakVec &items() const { return items_; }
 
   void trace(JSTracer* trc) { items_.trace(trc); }
 
