@@ -21,13 +21,10 @@
 #include "js/Conversions.h"
 #include "js/JSON.h"
 #include "js/Stream.h"
+#include "js/experimental/TypedData.h"
 #include "mozilla/ResultVariant.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
 #include "../worker-location.h"
-#include "js/experimental/TypedData.h"
-#pragma clang diagnostic pop
 
 namespace builtins::web::streams {
 

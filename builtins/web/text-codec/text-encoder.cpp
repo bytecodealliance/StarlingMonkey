@@ -1,17 +1,10 @@
 #include "text-encoder.h"
 #include "encode.h"
-#include <iostream>
 #include <tuple>
 
 #include "js/ArrayBuffer.h"
-#include "mozilla/Span.h"
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
 #include "js/experimental/TypedData.h"
-#pragma clang diagnostic pop
-
-
+#include "mozilla/Span.h"
 
 namespace builtins::web::text_codec {
 

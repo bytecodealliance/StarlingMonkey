@@ -1,18 +1,11 @@
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include "js/experimental/TypedData.h" // used in "js/Conversions.h"
-#pragma clang diagnostic pop
-
 #include "js/Stream.h"
 
 #include "transform-stream-default-controller.h"
+#include "transform-stream.h"
+#include "stream-errors.h"
 
 #include <cmath>
-#include "transform-stream.h"
-
-#include "stream-errors.h"
 
 /**
  * Implementation of the WHATWG TransformStream builtin.
@@ -471,5 +464,3 @@ void TransformStreamDefaultController::ClearAlgorithms(JSObject *controller) {
   JS::SetReservedSlot(controller, Slots::FlushInput, JS::UndefinedValue());
 }
 } // namespace builtins::web::streams
-
-

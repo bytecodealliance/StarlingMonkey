@@ -1,5 +1,5 @@
-
 #include "allocator.h"
+#include "js/MemoryFunctions.h"
 
 JSContext *CONTEXT = nullptr;
 

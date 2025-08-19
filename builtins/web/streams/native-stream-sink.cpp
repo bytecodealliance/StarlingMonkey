@@ -1,17 +1,10 @@
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include "js/experimental/TypedData.h" // used within "js/Stream.h"
-#pragma clang diagnostic pop
-
 #include "js/Stream.h"
 
 #include "native-stream-sink.h"
 
 // A JS class to use as the underlying sink for native writable streams, used
 // for TransformStream.
-
 
 namespace builtins::web::streams {
 

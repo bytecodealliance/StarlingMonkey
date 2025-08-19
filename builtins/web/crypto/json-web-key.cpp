@@ -1,7 +1,3 @@
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include "js/ArrayBuffer.h"
 #include "js/Conversions.h"
 #include "js/experimental/TypedData.h"
@@ -10,7 +6,6 @@
 #include "js/Promise.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
-#pragma clang diagnostic pop
 
 #include "../dom-exception.h"
 #include "builtin.h"
@@ -18,8 +13,6 @@
 #include "json-web-key.h"
 
 #include <fmt/format.h>
-
-
 
 namespace builtins::web::crypto {
 

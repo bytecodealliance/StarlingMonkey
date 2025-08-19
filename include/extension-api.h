@@ -3,15 +3,8 @@
 #include <vector>
 
 #include "builtin.h"
-#include "mozilla/WeakPtr.h"
-
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
-
 #include "jsapi.h"
-#pragma clang diagnostic pop
+#include "mozilla/WeakPtr.h"
 
 using JS::RootedObject;
 using JS::RootedString;
@@ -27,7 +20,7 @@ using JS::PersistentRootedVector;
 
 using std::optional;
 
-typedef int32_t PollableHandle;
+using PollableHandle = int32_t;
 constexpr PollableHandle INVALID_POLLABLE_HANDLE = -1;
 constexpr PollableHandle IMMEDIATE_TASK_HANDLE = -2;
 

@@ -1,10 +1,4 @@
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include "js/experimental/TypedData.h"
-#pragma clang diagnostic pop
-
 #include "zlib.h"
 
 #include "compression-stream.h"

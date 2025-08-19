@@ -4,13 +4,9 @@
 #include <map>
 
 #include <js/Array.h>
-#include "mozilla/Try.h"
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include <js/experimental/TypedData.h>
 #include <js/PropertyAndElement.h>
-#pragma clang diagnostic pop
+#include "mozilla/Try.h"
 
 namespace {
 using FpMilliseconds = std::chrono::duration<float, std::chrono::milliseconds::period>;

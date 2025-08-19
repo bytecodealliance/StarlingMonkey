@@ -2,21 +2,6 @@
 #define JS_COMPUTE_RUNTIME_ALLOCATOR_H
 
 #include <cstdint>
-#include <memory>
-#include <optional>
-#include <span>
-#include <string>
-#include <string_view>
-#include <variant>
-#include <vector>
-
-#include "js/TypeDecls.h"
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#include "js/Utility.h"
-#include "jsapi.h"
-#pragma clang diagnostic pop
 
 struct JSContext;
 

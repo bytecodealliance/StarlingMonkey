@@ -1,10 +1,5 @@
 #include "encode.h"
-
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
 #include "js/Conversions.h"
-#pragma clang diagnostic pop
 
 namespace core {
 

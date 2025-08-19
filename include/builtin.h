@@ -8,20 +8,14 @@
 #include <tuple>
 #include <unordered_set>
 
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include "js/ArrayBuffer.h"
 #include "js/Conversions.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
-// ReSharper disable once CppUnusedIncludeDirective
 #include "js/experimental/TypedData.h"
 #include "js/ForOfIterator.h"
 #include "js/Object.h"
 #include "js/Promise.h"
-#pragma clang diagnostic pop
 
 using JS::CallArgs;
 using JS::CallArgsFromVp;
