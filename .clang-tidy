@@ -27,7 +27,6 @@ Checks: >
   -cppcoreguidelines-macro-usage,
   -cppcoreguidelines-interfaces-global-init,
   -cppcoreguidelines-use-default-member-init,
-  -cppcoreguidelines-pro-bounds-constant-array-index,
   -cppcoreguidelines-pro-type-static-cast-downcast,
   -modernize-use-trailing-return-type,
   -modernize-avoid-c-arrays,

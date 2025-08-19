@@ -11,7 +11,7 @@
 namespace builtins::web::fetch {
 namespace {
 
-const char VALID_NAME_CHARS[128] = {
+const std::array<char, 128> VALID_NAME_CHARS = {
     0, 0, 0, 0, 0, 0, 0, 0, //   0
     0, 0, 0, 0, 0, 0, 0, 0, //   8
     0, 0, 0, 0, 0, 0, 0, 0, //  16
@@ -591,7 +591,7 @@ host_api::HostString Headers::validate_header_name(JSContext *cx, HandleValue na
   char *name_chars = name.begin();
   for (size_t i = 0; i < name.len; i++) {
     const unsigned char ch = name_chars[i];
-    if (ch > 127 || (VALID_NAME_CHARS[ch] == 0)) {
+    if (ch > 127 || (VALID_NAME_CHARS.at(ch) == 0)) {
       api::throw_error(cx, FetchErrors::InvalidHeaderName, fun_name, name_chars);
       return host_api::HostString{};
     }
@@ -1267,7 +1267,7 @@ bool HeadersIterator::next(JSContext *cx, unsigned argc, Value *vp) {
     for (int i = 0; i < len; ++i) {
       const unsigned char ch = key->ptr[i];
       // headers should already be validated by here
-      MOZ_ASSERT(ch <= 127 && VALID_NAME_CHARS[ch]);
+      MOZ_ASSERT(ch <= 127 && VALID_NAME_CHARS.at(ch));
       // we store header keys with casing, so getter itself lowercases
       if (ch >= 'A' && ch <= 'Z') {
         chars[i] = ch - 'A' + 'a';
