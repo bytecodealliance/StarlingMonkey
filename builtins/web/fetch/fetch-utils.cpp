@@ -208,15 +208,15 @@ bool abort_fetch(JSContext *cx, HandleObject promise, HandleObject request, Hand
   }
 
   // 2. If request's body is non-null and is readable, then cancel request's body with error.
-  if ((request != nullptr) && RequestOrResponse::has_body(request)) {
+  if (request && RequestOrResponse::has_body(request)) {
     RootedObject body(cx, RequestOrResponse::body_stream(request));
-    if ((body != nullptr) && IsReadableStream(body) && (ReadableStreamCancel(cx, body, error) == nullptr)) {
+    if (body && IsReadableStream(body) && !ReadableStreamCancel(cx, body, error)) {
       return false;
     }
   }
 
   // 3. If responseObject is null, then return.
-  if (response == nullptr) {
+  if (!response) {
     return true;
   }
 
@@ -224,9 +224,9 @@ bool abort_fetch(JSContext *cx, HandleObject promise, HandleObject request, Hand
   // (Implicit)
 
   // 5. If response's body is non-null and is readable, then error response's body with error.
-  if ((response != nullptr) && RequestOrResponse::has_body(response)) {
+  if (response && RequestOrResponse::has_body(response)) {
     RootedObject body(cx, RequestOrResponse::body_stream(response));
-    if ((body != nullptr) && IsReadableStream(body) && !ReadableStreamError(cx, body, error)) {
+    if (body && IsReadableStream(body) && !ReadableStreamError(cx, body, error)) {
       return false;
     }
   }

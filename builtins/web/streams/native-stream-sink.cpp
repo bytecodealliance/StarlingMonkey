@@ -132,7 +132,7 @@ JSObject *NativeStreamSink::create(JSContext *cx, JS::HandleObject owner,
                                    CloseAlgorithmImplementation *close,
                                    AbortAlgorithmImplementation *abort) {
   JS::RootedObject sink(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (sink == nullptr) {
+  if (!sink) {
     return nullptr;
 }
 

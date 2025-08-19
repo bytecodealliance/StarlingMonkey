@@ -103,7 +103,7 @@ host_api::HostString normalize_and_validate_header_value(JSContext *cx, HandleVa
   if (!valid) {
     // need to coerce to utf8 to report the error value
     JS::RootedString str(cx, JS::ToString(cx, value_val));
-    if (str == nullptr) {
+    if (!str) {
       return host_api::HostString{};
     }
     auto maybe_utf8 = core::encode(cx, str);
@@ -196,19 +196,19 @@ bool retrieve_value_for_header_from_handle(JSContext *cx, JS::HandleObject self,
   RootedString val_str(cx);
   for (auto &str : values.value()) {
     val_str = core::decode_byte_string(cx, str);
-    if (val_str == nullptr) {
+    if (!val_str) {
       return false;
     }
 
-    if (res_str == nullptr) {
+    if (!res_str) {
       res_str = val_str;
     } else {
       res_str = JS_ConcatStrings(cx, res_str, comma);
-      if (res_str == nullptr) {
+      if (!res_str) {
         return false;
       }
       res_str = JS_ConcatStrings(cx, res_str, val_str);
-      if (res_str == nullptr) {
+      if (!res_str) {
         return false;
       }
     }
@@ -239,7 +239,7 @@ bool retrieve_values_for_header_from_handle(JSContext *cx, JS::HandleObject self
   size_t i = 0;
   for (auto &str : values.value()) {
     val_str = core::decode_byte_string(cx, str);
-    if (val_str == nullptr) {
+    if (!val_str) {
       return false;
 }
     if (!JS_SetElement(cx, out_arr, i, val_str)) {
@@ -261,7 +261,7 @@ bool retrieve_value_for_header_from_list(JSContext *cx, JS::HandleObject self, s
   const host_api::HostString *val = &std::get<1>(*entry);
   // check if we need to join with the next value if it is the same key, comma-separated
   RootedString str(cx, core::decode_byte_string(cx, *val));
-  if (str == nullptr) {
+  if (!str) {
     return false;
   }
   // iterator doesn't join set-cookie, only get
@@ -277,16 +277,16 @@ bool retrieve_value_for_header_from_list(JSContext *cx, JS::HandleObject self, s
       break;
     }
     str = JS_ConcatStrings(cx, str, comma);
-    if (str == nullptr) {
+    if (!str) {
       return false;
     }
     val = &std::get<1>(*entry);
     RootedString next_str(cx, core::decode_byte_string(cx, *val));
-    if (next_str == nullptr) {
+    if (!next_str) {
       return false;
     }
     str = JS_ConcatStrings(cx, str, next_str);
-    if (str == nullptr) {
+    if (!str) {
       return false;
     }
     *index = *index + 1;
@@ -304,7 +304,7 @@ bool retrieve_values_for_header_from_list(JSContext *cx, JS::HandleObject self, 
   const host_api::HostString *val = &std::get<1>(*Headers::get_index(cx, self, index));
   // check if we need to join with the next value if it is the same key
   RootedString str(cx, core::decode_byte_string(cx, *val));
-  if (str == nullptr) {
+  if (!str) {
     return false;
   }
   size_t i = 0;
@@ -319,7 +319,7 @@ bool retrieve_values_for_header_from_list(JSContext *cx, JS::HandleObject self, 
       break;
     }
     str = core::decode_byte_string(cx, *val);
-    if (str == nullptr) {
+    if (!str) {
       return false;
     }
     if (!JS_SetElement(cx, out_arr, i, str)) {
@@ -514,7 +514,7 @@ bool prepare_for_entries_modification(JSContext *cx, JS::HandleObject self) {
     auto *handle = get_handle(self);
     if (!handle->is_writable()) {
       auto *new_handle = handle->clone();
-      if (new_handle == nullptr) {
+      if (!new_handle) {
         return api::throw_error(cx, FetchErrors::HeadersCloningFailed);
       }
       delete handle;
@@ -574,7 +574,7 @@ Headers::HeadersGuard Headers::guard(JSObject *self) {
 host_api::HostString Headers::validate_header_name(JSContext *cx, HandleValue name_val,
                                                    const char *fun_name) {
   JS::RootedString name_str(cx, JS::ToString(cx, name_val));
-  if (name_str == nullptr) {
+  if (!name_str) {
     return host_api::HostString{};
   }
 
@@ -602,7 +602,7 @@ host_api::HostString Headers::validate_header_name(JSContext *cx, HandleValue na
 
 JSObject *Headers::create(JSContext *cx, HeadersGuard guard) {
   JSObject *self = JS_NewObjectWithGivenProto(cx, &class_, proto_obj);
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
 
@@ -620,7 +620,7 @@ JSObject *Headers::create(JSContext *cx, HeadersGuard guard) {
 JSObject *Headers::create(JSContext *cx, host_api::HttpHeadersReadOnly *handle,
                           HeadersGuard guard) {
   RootedObject self(cx, create(cx, guard));
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
 
@@ -633,7 +633,7 @@ JSObject *Headers::create(JSContext *cx, host_api::HttpHeadersReadOnly *handle,
 
 JSObject *Headers::create(JSContext *cx, HandleValue init_headers, HeadersGuard guard) {
   RootedObject self(cx, create(cx, guard));
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
   if (!init_entries(cx, self, init_headers)) {
@@ -1049,7 +1049,7 @@ bool Headers::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("Headers", 0);
   HandleValue headersInit = args.get(0);
   RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  if (self == nullptr) {
+  if (!self) {
     return false;
   }
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Guard),
@@ -1102,7 +1102,7 @@ bool Headers::init_class(JSContext *cx, JS::HandleObject global) {
   set_cookie_str = host_api::HostString("set-cookie");
 
   auto *comma_str = JS_NewStringCopyN(cx, ", ", 2);
-  if (comma_str == nullptr) {
+  if (!comma_str) {
     return false;
   }
   comma.init(cx, comma_str);
@@ -1159,7 +1159,7 @@ BUILTIN_ITERATOR_METHODS(Headers)
 // Headers Iterator
 JSObject *HeadersIterator::create(JSContext *cx, HandleObject headers, uint8_t type) {
   JSObject *self = JS_NewObjectWithGivenProto(cx, &class_, proto_obj);
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Type),
@@ -1188,7 +1188,7 @@ const JSPropertySpec HeadersIterator::properties[] = {
 
 bool HeadersIterator::init_class(JSContext *cx, JS::HandleObject global) {
   JS::RootedObject iterator_proto(cx, JS::GetRealmIteratorPrototype(cx));
-  if (iterator_proto == nullptr) {
+  if (!iterator_proto) {
     return false;
 }
 
@@ -1243,7 +1243,7 @@ bool HeadersIterator::next(JSContext *cx, unsigned argc, Value *vp) {
   auto type = static_cast<uint8_t>(JS::GetReservedSlot(self, Slots::Type).toInt32());
 
   JS::RootedObject result(cx, JS_NewPlainObject(cx));
-  if (result == nullptr) {
+  if (!result) {
     return false;
 }
 
@@ -1291,7 +1291,7 @@ bool HeadersIterator::next(JSContext *cx, unsigned argc, Value *vp) {
   switch (type) {
   case ITER_TYPE_ENTRIES: {
     JS::RootedObject pair(cx, JS::NewArrayObject(cx, 2));
-    if (pair == nullptr) {
+    if (!pair) {
       return false;
 }
     JS_DefineElement(cx, pair, 0, key_val, JSPROP_ENUMERATE);

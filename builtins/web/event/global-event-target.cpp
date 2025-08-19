@@ -54,21 +54,21 @@ static bool dispatchEvent(JSContext *cx, unsigned argc, Value *vp) {
 
 bool global_event_target_init(JSContext *cx, HandleObject global) {
   RootedObject global_event(cx, EventTarget::create(cx));
-  if (global_event == nullptr) {
+  if (!global_event) {
     return false;
   }
 
   GLOBAL_EVENT_TARGET.init(cx, global_event);
 
-  if (JS_DefineFunction(cx, global, "addEventListener", addEventListener, 2, 0) == nullptr) {
+  if (!JS_DefineFunction(cx, global, "addEventListener", addEventListener, 2, 0)) {
     return false;
   }
 
-  if (JS_DefineFunction(cx, global, "removeEventListener", removeEventListener, 2, 0) == nullptr) {
+  if (!JS_DefineFunction(cx, global, "removeEventListener", removeEventListener, 2, 0)) {
     return false;
   }
 
-  if (JS_DefineFunction(cx, global, "dispatchEvent", dispatchEvent, 1, 0) == nullptr) {
+  if (!JS_DefineFunction(cx, global, "dispatchEvent", dispatchEvent, 1, 0)) {
     return false;
   }
 

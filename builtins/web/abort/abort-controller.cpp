@@ -35,7 +35,7 @@ bool AbortController::abort(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   RootedValue reason(cx, args.get(0));
   RootedObject signal(cx, JS::GetReservedSlot(self, Slots::Signal).toObjectOrNull());
-  if (signal == nullptr) {
+  if (!signal) {
     return false;
   }
 
@@ -46,12 +46,12 @@ bool AbortController::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("AbortController", 0);
 
   RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  if (self == nullptr) {
+  if (!self) {
     return false;
   }
 
   RootedObject signal(cx, AbortSignal::create(cx));
-  if (signal == nullptr) {
+  if (!signal) {
     return false;
   }
 

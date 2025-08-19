@@ -45,7 +45,7 @@ const JSPropertySpec Performance::static_properties[] = {JS_PS_END};
 bool Performance::create(JSContext *cx, JS::HandleObject global) {
   JS::RootedObject performance(
       cx, JS_NewObjectWithGivenProto(cx, &Performance::class_, Performance::proto_obj));
-  if (performance == nullptr) {
+  if (!performance) {
     return false;
   }
   if (!JS_DefineProperty(cx, global, "performance", performance, 0)) {

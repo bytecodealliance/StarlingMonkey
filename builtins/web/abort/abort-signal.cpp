@@ -91,7 +91,7 @@ bool AbortSignal::timeout(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   RootedObject self(cx, create_with_timeout(cx, args.get(0)));
-  if (self == nullptr) {
+  if (!self) {
     return false;
   }
 
@@ -108,7 +108,7 @@ bool AbortSignal::abort(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // The abort() method steps are inlined in the AbortSignal::create_with_reason method.
   RootedObject self(cx, create_with_reason(cx, args.get(0)));
-  if (self == nullptr) {
+  if (!self) {
     return false;
   }
 
@@ -125,7 +125,7 @@ bool AbortSignal::any(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // The any() method steps are inlined in the AbortSignal::create_with_signals method.
   RootedObject self(cx, create_with_signals(cx, args));
-  if (self == nullptr) {
+  if (!self) {
     return false;
   }
 
@@ -284,7 +284,7 @@ bool AbortSignal::set_reason(JSContext *cx, HandleObject self, HandleValue reaso
     SetReservedSlot(self, Slots::Reason, reason);
   } else {
     RootedObject exception(cx, dom_exception::DOMException::create(cx, "AbortError", "AbortError"));
-    if (exception == nullptr) {
+    if (!exception) {
       return false;
     }
 
@@ -297,7 +297,7 @@ bool AbortSignal::set_reason(JSContext *cx, HandleObject self, HandleValue reaso
 // https://dom.spec.whatwg.org/#interface-AbortSignal
 JSObject *AbortSignal::create(JSContext *cx) {
   RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
 
@@ -328,7 +328,7 @@ JSObject *AbortSignal::create(JSContext *cx) {
 JSObject *AbortSignal::create_with_reason(JSContext *cx, HandleValue reason) {
   // 1. Let signal be a new AbortSignal object.
   RootedObject self(cx, create(cx));
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
 
@@ -348,7 +348,7 @@ JSObject *AbortSignal::create_with_reason(JSContext *cx, HandleValue reason) {
 JSObject *AbortSignal::create_with_timeout(JSContext *cx, HandleValue timeout) {
   // 1. Let signal be a new AbortSignal object.
   RootedObject self(cx, create(cx));
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
 
@@ -368,11 +368,11 @@ JSObject *AbortSignal::create_with_timeout(JSContext *cx, HandleValue timeout) {
   int32_t timer_id = 0;
 
   JS::RootedObject exception(cx, dom_exception::DOMException::create(cx, "TimeoutError", "TimeoutError"));
-  if (exception == nullptr) {
+  if (!exception) {
     return nullptr;
   }
   JS::RootedFunction on_timeout(cx, JS_NewFunction(cx, AbortSignal::on_timeout, 2, 0, nullptr));
-  if (on_timeout == nullptr) {
+  if (!on_timeout) {
     return nullptr;
   }
 
@@ -400,7 +400,7 @@ JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signa
 
   // 1. Let resultSignal be a new object implementing signalInterface using realm.
   RootedObject self(cx, create(cx));
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
 
@@ -492,7 +492,7 @@ bool AbortSignal::init_class(JSContext *cx, JS::HandleObject global) {
     return false;
   }
 
-  if ((abort_type_atom = JS_AtomizeAndPinString(cx, "abort")) == nullptr) {
+  if (!(abort_type_atom = JS_AtomizeAndPinString(cx, "abort"))) {
     return false;
   }
 

@@ -90,7 +90,7 @@ bool File::init(JSContext *cx, HandleObject self, HandleValue fileBits, HandleVa
 
   // 2. Let n be the fileName argument to the constructor.
   RootedString name(cx, JS::ToString(cx, fileName));
-  if (name == nullptr) {
+  if (!name) {
     return false;
   }
 
@@ -121,7 +121,7 @@ bool File::init(JSContext *cx, HandleObject self, HandleValue fileBits, HandleVa
 
 JSObject* File::create(JSContext *cx, HandleValue fileBits, HandleValue fileName, HandleValue opts) {
   RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
 
@@ -140,7 +140,7 @@ bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   RootedValue opts(cx, args.get(2));
 
   RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  if (self == nullptr) {
+  if (!self) {
     return false;
   }
 

@@ -72,7 +72,7 @@ bool Crypto::random_uuid(JSContext *cx, unsigned argc, JS::Value *vp) {
   MOZ_ASSERT(uuid.size() == 36);
 
   JS::RootedString str(cx, JS_NewStringCopyN(cx, uuid.data(), uuid.size()));
-  if (str == nullptr) {
+  if (!str) {
     return false;
   }
 
@@ -126,7 +126,7 @@ bool Crypto::init_class(JSContext *cx, JS::HandleObject global) {
 
   JS::RootedObject cryptoInstance(
       cx, JS_NewObjectWithGivenProto(cx, &Crypto::class_, Crypto::proto_obj));
-  if (cryptoInstance == nullptr) {
+  if (!cryptoInstance) {
     return false;
   }
   crypto.init(cx, cryptoInstance);

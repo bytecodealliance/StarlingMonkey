@@ -140,7 +140,7 @@ bool CryptoKey::algorithm_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   auto *algorithm = &JS::GetReservedSlot(self, Slots::Algorithm).toObject();
   JS::RootedObject result(cx, algorithm);
-  if (result == nullptr) {
+  if (!result) {
     return false;
   }
   args.rval().setObject(*result);
@@ -177,7 +177,7 @@ bool CryptoKey::type_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   switch (type) {
   case CryptoKeyType::Private: {
     auto *str = JS_AtomizeString(cx, "private");
-    if (str == nullptr) {
+    if (!str) {
       return false;
     }
     args.rval().setString(str);
@@ -185,7 +185,7 @@ bool CryptoKey::type_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
   case CryptoKeyType::Public: {
     auto *str = JS_AtomizeString(cx, "public");
-    if (str == nullptr) {
+    if (!str) {
       return false;
     }
     args.rval().setString(str);
@@ -193,7 +193,7 @@ bool CryptoKey::type_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
   case CryptoKeyType::Secret: {
     auto *str = JS_AtomizeString(cx, "secret");
-    if (str == nullptr) {
+    if (!str) {
       return false;
     }
     args.rval().setString(str);
@@ -281,7 +281,7 @@ bool CryptoKey::usages_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   JS::Rooted<JSObject *> array(cx, JS::NewArrayObject(cx, result));
-  if (array == nullptr) {
+  if (!array) {
     return false;
   }
   cached_usage.setObject(*array);
@@ -438,7 +438,7 @@ EvpPkeyPtr create_ec_key_from_parts(JSContext *cx, CryptoAlgorithmECDSA_Import *
   auto form = EC_GROUP_get_point_conversion_form(group.get());
   unsigned char *pub_key = nullptr;
   auto pub_key_len = EC_POINT_point2buf(group.get(), point.get(), form, &pub_key, nullptr);
-  if (pub_key_len == 0 || (pub_key == nullptr)) {
+  if (pub_key_len == 0 || !pub_key) {
     return nullptr;
   }
 
@@ -484,7 +484,7 @@ EvpPkeyPtr create_ec_key_from_parts(JSContext *cx, CryptoAlgorithmECDSA_Import *
   int key_type = private_key.empty() ? EVP_PKEY_PUBLIC_KEY : EVP_PKEY_KEYPAIR;
 
   int result = EVP_PKEY_fromdata(ctx.get(), &pkey_raw, key_type, params.get());
-  if (result <= 0 || (pkey_raw == nullptr)) {
+  if (result <= 0 || !pkey_raw) {
     return nullptr;
   }
 
@@ -600,12 +600,12 @@ JSObject *CryptoKey::createHMAC(JSContext *cx, CryptoAlgorithmHMAC_Import *algor
   MOZ_ASSERT(algorithm);
   JS::RootedObject instance(
       cx, JS_NewObjectWithGivenProto(cx, &CryptoKey::class_, CryptoKey::proto_obj));
-  if (instance == nullptr) {
+  if (!instance) {
     return nullptr;
   }
 
   JS::RootedObject alg(cx, algorithm->toObject(cx));
-  if (alg == nullptr) {
+  if (!alg) {
     return nullptr;
   }
 
@@ -661,12 +661,12 @@ JSObject *CryptoKey::createECDSA(JSContext *cx, CryptoAlgorithmECDSA_Import *alg
 
   JS::RootedObject instance(
       cx, JS_NewObjectWithGivenProto(cx, &CryptoKey::class_, CryptoKey::proto_obj));
-  if (instance == nullptr) {
+  if (!instance) {
     return nullptr;
   }
 
   JS::RootedObject alg(cx, algorithm->toObject(cx));
-  if (alg == nullptr) {
+  if (!alg) {
     return nullptr;
   }
 
@@ -751,12 +751,12 @@ JSObject *CryptoKey::createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_I
 
   JS::RootedObject instance(
       cx, JS_NewObjectWithGivenProto(cx, &CryptoKey::class_, CryptoKey::proto_obj));
-  if (instance == nullptr) {
+  if (!instance) {
     return nullptr;
   }
 
   JS::RootedObject alg(cx, algorithm->toObject(cx));
-  if (alg == nullptr) {
+  if (!alg) {
     return nullptr;
   }
 
@@ -776,7 +776,7 @@ JSObject *CryptoKey::createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_I
 
   // `buffer` takes ownership of `p` if the call to NewArrayBufferWithContents was successful
   // if the call was not successful, we need to free `p` before exiting from the function.
-  if (buffer == nullptr) {
+  if (!buffer) {
     // We can be here if the array buffer was too large -- if that was the case then a
     // JSMSG_BAD_ARRAY_LENGTH will have been created. Otherwise we're probably out of memory.
     if (!JS_IsExceptionPending(cx)) {
@@ -837,7 +837,7 @@ JS::Result<bool> CryptoKey::is_algorithm(JSContext *cx, JS::HandleObject self,
     return JS::Result<bool>(JS::Error());
   }
   JS::Rooted<JSString *> str(cx, JS::ToString(cx, name_val));
-  if (str == nullptr) {
+  if (!str) {
     return JS::Result<bool>(JS::Error());
   }
   // TODO: should chars be used?

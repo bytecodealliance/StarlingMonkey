@@ -391,7 +391,7 @@ bool EventTarget::dispatch(JSContext *cx, HandleObject self, HandleObject event,
   Event::set_flag(event, EventFlag::Dispatch, true);
   // 2. Let targetOverride be target, if legacy target override flag is not given, and target's
   // associated Document otherwise.
-  RootedObject target(cx, (target_override != nullptr) ? target_override : self);
+  RootedObject target(cx, target_override ? target_override : self);
   // 3. Let activationTarget be null.
   //  N/A
   // 4. Let relatedTarget be the result of retargeting event's relatedTarget against target.
@@ -587,7 +587,7 @@ bool EventTarget::inner_invoke(JSContext *cx, HandleObject event,
 
 JSObject *EventTarget::create(JSContext *cx) {
   JSObject *self = JS_NewObjectWithGivenProto(cx, &class_, proto_obj);
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
 
@@ -604,7 +604,7 @@ bool EventTarget::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("EventTarget", 0);
 
   RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  if (self == nullptr) {
+  if (!self) {
     return false;
   }
 

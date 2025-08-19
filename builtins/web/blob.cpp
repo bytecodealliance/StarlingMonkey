@@ -33,7 +33,7 @@ JSString *normalize_type(JSContext *cx, HandleValue value) {
 
   if (value.isObject() || value.isString()) {
     value_str = JS::ToString(cx, value);
-    if (value_str == nullptr) {
+    if (!value_str) {
       return nullptr;
     }
   } else if (value.isNull()) {
@@ -43,7 +43,7 @@ JSString *normalize_type(JSContext *cx, HandleValue value) {
   }
 
   auto *str = JS::StringToLinearString(cx, value_str);
-  if (str == nullptr) {
+  if (!str) {
     return nullptr;
   }
 
@@ -180,7 +180,7 @@ JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self) {
 
   auto *array_buffer = JS::NewArrayBufferWithContents(
       cx, size, buf.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory);
-  if (array_buffer == nullptr) {
+  if (!array_buffer) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -217,14 +217,14 @@ DEFINE_BLOB_METHOD_W_ARGS(slice)
 
 bool Blob::arrayBuffer(JSContext *cx, HandleObject self, MutableHandleValue rval) {
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
-  if (promise == nullptr) {
+  if (!promise) {
     return false;
   }
 
   rval.setObject(*promise);
 
   auto *buffer = data_to_owned_array_buffer(cx, self);
-  if (buffer == nullptr) {
+  if (!buffer) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
@@ -237,20 +237,20 @@ bool Blob::arrayBuffer(JSContext *cx, HandleObject self, MutableHandleValue rval
 
 bool Blob::bytes(JSContext *cx, HandleObject self, MutableHandleValue rval) {
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
-  if (promise == nullptr) {
+  if (!promise) {
     return false;
   }
 
   rval.setObject(*promise);
 
   JS::RootedObject buffer(cx, data_to_owned_array_buffer(cx, self));
-  if (buffer == nullptr) {
+  if (!buffer) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
   auto len = JS::GetArrayBufferByteLength(buffer);
   JS::RootedObject byte_array(cx, JS_NewUint8ArrayWithBuffer(cx, buffer, 0, len));
-  if (byte_array == nullptr) {
+  if (!byte_array) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
@@ -302,7 +302,7 @@ bool Blob::slice(JSContext *cx, HandleObject self, const CallArgs &args, Mutable
   }
 
   JS::RootedObject new_blob(cx, create(cx, std::move(dst), slice_len, contentType));
-  if (new_blob == nullptr) {
+  if (!new_blob) {
     return false;
   }
 
@@ -312,7 +312,7 @@ bool Blob::slice(JSContext *cx, HandleObject self, const CallArgs &args, Mutable
 
 bool Blob::stream(JSContext *cx, HandleObject self, MutableHandleValue rval) {
   RootedObject reader(cx, BufReader::create(cx, self, read_blob_slice));
-  if (reader == nullptr) {
+  if (!reader) {
     return false;
   }
 
@@ -325,7 +325,7 @@ bool Blob::stream(JSContext *cx, HandleObject self, MutableHandleValue rval) {
 
 bool Blob::text(JSContext *cx, HandleObject self, MutableHandleValue rval) {
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
-  if (promise == nullptr) {
+  if (!promise) {
     return false;
   }
 
@@ -357,7 +357,7 @@ bool Blob::text(JSContext *cx, HandleObject self, MutableHandleValue rval) {
                                       true, &had_replacements);
 
   JS::RootedString str(cx, JS_NewUCString(cx, std::move(dst), dst_len));
-  if (str == nullptr) {
+  if (!str) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
@@ -432,6 +432,7 @@ bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
         auto len = span->size();
         return blob->append(src, src + len);
       }
+
       return true;
     }
   } else if (val.isString()) {
@@ -445,16 +446,15 @@ bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
       auto *src = converted.data();
       auto len = converted.length();
       return blob->append(src, src + len);
+    }
 
-    }       auto *src = chars.ptr.get();
-      auto len = chars.len;
-      return blob->append(src, src + len);
+    return blob->append(chars.ptr.get(), chars.ptr.get() + chars.len);
    
   }
 
   // FALLBACK: if we ever get here convert, to string and call append again
   auto *str = JS::ToString(cx, val);
-  if (str == nullptr) {
+  if (!str) {
     return false;
   }
 
@@ -545,7 +545,7 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
     }
 
     auto *type_str = normalize_type(cx, type);
-    if (type_str == nullptr) {
+    if (!type_str) {
       return false;
     }
     SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS::StringValue(type_str));
@@ -556,12 +556,12 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
 
 JSObject *Blob::create(JSContext *cx, UniqueChars data, size_t data_len, HandleString type) {
   JSObject *self = JS_NewObjectWithGivenProto(cx, &class_, proto_obj);
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
 
   auto blob = js::MakeUnique<ByteBuffer>();
-  if (blob == nullptr) {
+  if (!blob) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -611,7 +611,7 @@ bool Blob::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   RootedValue opts(cx, args.get(1));
   RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));
 
-  if (self == nullptr) {
+  if (!self) {
     return false;
   }
 
@@ -630,7 +630,7 @@ bool Blob::init_class(JSContext *cx, JS::HandleObject global) {
 void Blob::finalize(JS::GCContext *gcx, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   auto *blob = Blob::blob(self);
-  if (blob != nullptr) {
+  if (blob) {
     js_delete(blob);
   }
 }

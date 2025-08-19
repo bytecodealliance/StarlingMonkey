@@ -41,7 +41,7 @@ bool SubtleCrypto::digest(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // 5. Let promise be a new Promise.
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
-  if (promise == nullptr) {
+  if (!promise) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
@@ -53,7 +53,7 @@ bool SubtleCrypto::digest(JSContext *cx, unsigned argc, JS::Value *vp) {
   // 8. Let result be the result of performing the digest operation specified by normalizedAlgorithm
   // using algorithm, with data as message.
   auto *array_buffer = normalizedAlgorithm->digest(cx, data.value());
-  if (array_buffer == nullptr) {
+  if (!array_buffer) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
@@ -133,7 +133,7 @@ bool SubtleCrypto::importKey(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // 5. Let promise be a new Promise.
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
-  if (promise == nullptr) {
+  if (!promise) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
@@ -154,7 +154,7 @@ bool SubtleCrypto::importKey(JSContext *cx, unsigned argc, JS::Value *vp) {
   // usages.
   JS::RootedObject result(cx);
   JSObject *key = normalizedAlgorithm->importKey(cx, format, key_data, extractable, usages);
-  if (key == nullptr) {
+  if (!key) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
@@ -212,7 +212,7 @@ bool SubtleCrypto::sign(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // 5. Let promise be a new Promise.
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
-  if (promise == nullptr) {
+  if (!promise) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
   // 6. Return promise and perform the remaining steps in parallel.
@@ -230,7 +230,7 @@ bool SubtleCrypto::sign(JSContext *cx, unsigned argc, JS::Value *vp) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
-  if (!match_result.unwrap()) {
+  if (match_result.unwrap() == false) {
     DOMException::raise(cx, "CryptoKey doesn't match AlgorithmIdentifier", "InvalidAccessError");
     return RejectPromiseWithPendingError(cx, promise);
   }
@@ -245,7 +245,7 @@ bool SubtleCrypto::sign(JSContext *cx, unsigned argc, JS::Value *vp) {
   // 10. Let result be the result of performing the sign operation specified by normalizedAlgorithm
   // using key and algorithm and with data as message.
   auto *signature = normalizedAlgorithm->sign(cx, key, data);
-  if (signature == nullptr) {
+  if (!signature) {
     return RejectPromiseWithPendingError(cx, promise);
   }
   JS::RootedValue result(cx, JS::ObjectValue(*signature));
@@ -310,7 +310,7 @@ bool SubtleCrypto::verify(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // 6. Let promise be a new Promise.
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
-  if (promise == nullptr) {
+  if (!promise) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
@@ -323,7 +323,7 @@ bool SubtleCrypto::verify(JSContext *cx, unsigned argc, JS::Value *vp) {
   // [[algorithm]] internal slot of key then throw an InvalidAccessError.
   auto identifier = normalizedAlgorithm->identifier();
   auto match_result = CryptoKey::is_algorithm(cx, key, identifier);
-  if (match_result.isErr() || !match_result.unwrap()) {
+  if (match_result.isErr() || match_result.unwrap() == false) {
     DOMException::raise(cx, "CryptoKey doesn't match AlgorithmIdentifier", "InvalidAccessError");
     return RejectPromiseWithPendingError(cx, promise);
   }

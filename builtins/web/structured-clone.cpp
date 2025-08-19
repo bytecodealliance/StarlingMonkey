@@ -25,7 +25,7 @@ JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r,
                               const JS::CloneDataPolicy &cloneDataPolicy, uint32_t tag,
                               uint32_t len, void *closure) {
   void *bytes = JS_malloc(cx, len);
-  if (bytes == nullptr) {
+  if (!bytes) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -40,7 +40,7 @@ JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r,
                                          JS_NewObjectWithGivenProto(cx, &url::URLSearchParams::class_,
                                                                     url::URLSearchParams::proto_obj));
     RootedObject params_obj(cx, url::URLSearchParams::create(cx, urlSearchParamsInstance));
-    if (params_obj == nullptr) {
+    if (!params_obj) {
       return nullptr;
     }
 

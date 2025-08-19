@@ -124,7 +124,7 @@ bool inflate_chunk(JSContext *cx, JS::HandleObject self, JS::HandleValue chunk, 
     size_t bytes = BUFFER_SIZE - zstream->avail_out;
     if (bytes != 0U) {
       JS::RootedObject out_obj(cx, JS_NewUint8Array(cx, bytes));
-      if (out_obj == nullptr) {
+      if (!out_obj) {
         return false;
       }
 
@@ -239,7 +239,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   // _flushAlgorithm_ set to _flushAlgorithm_.
   JS::RootedObject transform(cx, TransformStream::create(cx, 1, nullptr, 0, nullptr, stream_val,
                                                          nullptr, transformAlgo, flushAlgo));
-  if (transform == nullptr) {
+  if (!transform) {
     return nullptr;
   }
 
@@ -250,7 +250,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   // for decompressing chunks.
 
   auto *zstream = (z_stream *)JS_malloc(cx, sizeof(z_stream));
-  if (zstream == nullptr) {
+  if (!zstream) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -259,7 +259,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   JS::SetReservedSlot(stream, DecompressionStream::Slots::State, JS::PrivateValue(zstream));
 
   auto *buffer = (uint8_t *)JS_malloc(cx, BUFFER_SIZE);
-  if (buffer == nullptr) {
+  if (!buffer) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -314,7 +314,7 @@ bool DecompressionStream::constructor(JSContext *cx, unsigned argc, JS::Value *v
   JS::RootedObject decompressionStreamInstance(cx, JS_NewObjectForConstructor(cx, &class_, args));
   // Steps 2-6.
   JS::RootedObject stream(cx, create(cx, decompressionStreamInstance, format));
-  if (stream == nullptr) {
+  if (!stream) {
     return false;
   }
 
@@ -328,13 +328,13 @@ bool DecompressionStream::init_class(JSContext *cx, JS::HandleObject global) {
   }
 
   JSFunction *transformFun = JS_NewFunction(cx, transformAlgorithm, 1, 0, "DS Transform");
-  if (transformFun == nullptr) {
+  if (!transformFun) {
     return false;
 }
   transformAlgo.init(cx, JS_GetFunctionObject(transformFun));
 
   JSFunction *flushFun = JS_NewFunction(cx, flushAlgorithm, 1, 0, "DS Flush");
-  if (flushFun == nullptr) {
+  if (!flushFun) {
     return false;
 }
   flushAlgo.init(cx, JS_GetFunctionObject(flushFun));

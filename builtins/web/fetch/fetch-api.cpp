@@ -69,7 +69,7 @@ bool network_error(JSContext *cx, HandleObject response_promise, MutableHandleVa
   // A network error is a response whose type is "error", status is 0, status message is the empty
   // byte sequence, header list is « », body is null, and body info is a new response body info.
   RootedObject response_obj(cx, Response::create(cx));
-  if (response_obj == nullptr) {
+  if (!response_obj) {
     return false;
   }
 
@@ -163,13 +163,13 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HandleObject response_p
   RootedObject blob(cx, url::URL::getObjectURL(url_key));
 
   // 8. If blob is not a Blob object, then return a network error.
-  if ((blob == nullptr) || !Blob::is_instance(blob)) {
+  if (!blob || !Blob::is_instance(blob)) {
     return network_error(cx, response_promise, rval);
   }
 
   // 9. Let response be a new response.
   RootedObject response_obj(cx, Response::create(cx));
-  if (response_obj == nullptr) {
+  if (!response_obj) {
     return false;
   }
 
@@ -180,7 +180,7 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HandleObject response_p
   RootedString type(cx, Blob::type(blob));
 
   JS::RootedObject req_headers(cx, RequestOrResponse::headers(cx, request_obj));
-  if (req_headers == nullptr) {
+  if (!req_headers) {
     return false;
   }
 
@@ -254,7 +254,7 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HandleObject response_p
     // (`Content-Type`, type), (`Content-Range`, contentRange).
 
     JS::RootedObject resp_headers(cx, RequestOrResponse::headers(cx, response_obj));
-    if (resp_headers == nullptr) {
+    if (!resp_headers) {
       return false;
     }
 
@@ -268,7 +268,7 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HandleObject response_p
   }
 
   JS::RootedObject resp_headers(cx, RequestOrResponse::headers(cx, response_obj));
-  if (resp_headers == nullptr) {
+  if (!resp_headers) {
     return false;
   }
 
@@ -315,7 +315,7 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
 
   // 1. Let p be a new promise.
   RootedObject response_promise(cx, JS::NewPromiseObject(cx, nullptr));
-  if (response_promise == nullptr) {
+  if (!response_promise) {
     return false;
   }
 
@@ -324,7 +324,7 @@ bool fetch(JSContext *cx, unsigned argc, Value *vp) {
   // 2. Let requestObject be the result of invoking the initial value of Request as constructor
   // with input and init as arguments. If this throws an exception, reject p with it and return p.
   RootedObject request_obj(cx, Request::create(cx));
-  if (request_obj == nullptr) {
+  if (!request_obj) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 

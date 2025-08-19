@@ -97,7 +97,7 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   JS::RootedString str(cx,
                        JS_NewUCStringCopyN(cx, reinterpret_cast<char16_t *>(dest.get()), destLen));
-  if (str == nullptr) {
+  if (!str) {
     return api::throw_error(cx, TextCodecErrors::DecodingFailed);
   }
 
@@ -127,7 +127,7 @@ bool TextDecoder::encoding_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     name[i] = std::tolower(name[i]);
   }
   JS::RootedString str(cx, JS_NewStringCopyN(cx, reinterpret_cast<char *>(name.get()), length));
-  if (str == nullptr) {
+  if (!str) {
     JS_ReportOutOfMemory(cx);
     return false;
   }
@@ -209,7 +209,7 @@ bool TextDecoder::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
         reinterpret_cast<uint8_t *>(label_chars.begin()), label_chars.len));
   }
-  if (encoding == nullptr) {
+  if (!encoding) {
     return api::throw_error(cx, TextCodecErrors::InvalidEncoding);
   }
   bool fatal = false;
@@ -261,7 +261,7 @@ void TextDecoder::finalize(JS::GCContext *gcx, JSObject *self) {
   auto *decoder = reinterpret_cast<jsencoding::Decoder *>(
       JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Decoder)).toPrivate());
 
-  if (decoder != nullptr) {
+  if (decoder) {
     jsencoding::decoder_free(decoder);
   }
 }

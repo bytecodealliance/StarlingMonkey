@@ -137,7 +137,7 @@ JSObject *digest(JSContext *cx, std::span<uint8_t> data, const EVP_MD *algorithm
   JS::RootedObject array_buffer(cx);
   array_buffer.set(JS::NewArrayBufferWithContents(
       cx, size, buf.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
-  if (array_buffer == nullptr) {
+  if (!array_buffer) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -469,7 +469,7 @@ JS::Result<CryptoAlgorithmIdentifier> normalizeIdentifier(JSContext *cx, JS::Han
   // If `algName` is falsey, it means the call to JS::ToString failed.
   // In that scenario, we should already have an exception, which is why we are not creating our own
   // one.
-  if (algName == nullptr) {
+  if (!algName) {
     return JS::Result<CryptoAlgorithmIdentifier>(JS::Error());
   }
 
@@ -759,7 +759,7 @@ JSObject *CryptoAlgorithmHMAC_Sign_Verify::sign(JSContext *cx, JS::HandleObject 
 
   // 1. Let mac be the result of performing the MAC Generation operation described in Section 4 of [FIPS-198-1] using the key represented by [[handle]] internal slot of key, the hash function identified by the hash attribute of the [[algorithm]] internal slot of key and message as the input data text.
   const EVP_MD *algorithm = createDigestAlgorithm(cx, key);
-  if (algorithm == nullptr) {
+  if (!algorithm) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return nullptr;
   }
@@ -776,7 +776,7 @@ JSObject *CryptoAlgorithmHMAC_Sign_Verify::sign(JSContext *cx, JS::HandleObject 
   // 2. Return a new ArrayBuffer object, associated with the relevant global object of this [HTML], and containing the bytes of mac.
   JS::RootedObject array_buffer(cx);
   array_buffer.set(JS::NewArrayBufferWithContents(cx, size, sig.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
-  if (array_buffer == nullptr) {
+  if (!array_buffer) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -791,7 +791,7 @@ JS::Result<bool> CryptoAlgorithmHMAC_Sign_Verify::verify(JSContext *cx, JS::Hand
   MOZ_ASSERT(CryptoKey::is_instance(key));
   // 1. Let mac be the result of performing the MAC Generation operation described in Section 4 of [FIPS-198-1] using the key represented by [[handle]] internal slot of key, the hash function identified by the hash attribute of the [[algorithm]] internal slot of key and message as the input data text.
   const EVP_MD *algorithm = createDigestAlgorithm(cx, key);
-  if (algorithm == nullptr) {
+  if (!algorithm) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return JS::Result<bool>(JS::Error());
   }
@@ -825,7 +825,7 @@ JSObject *CryptoAlgorithmECDSA_Sign_Verify::sign(JSContext *cx, JS::HandleObject
 
   // 2. Let hashAlgorithm be the hash member of normalizedAlgorithm.
   const EVP_MD* algorithm = createDigestAlgorithm(cx, this->hashIdentifier);
-  if (algorithm == nullptr) {
+  if (!algorithm) {
     DOMException::raise(cx, "SubtleCrypto.sign: failed to sign", "OperationError");
     return nullptr;
   }
@@ -904,7 +904,7 @@ JSObject *CryptoAlgorithmECDSA_Sign_Verify::sign(JSContext *cx, JS::HandleObject
 
   // 7. Return the result of creating an ArrayBuffer containing result.
   JS::RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, result_size, result.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
-  if (buffer == nullptr) {
+  if (!buffer) {
     // We can be here if the array buffer was too large -- if that was the case then a
     // JSMSG_BAD_ARRAY_LENGTH will have been created. Otherwise we're probably out of memory.
     if (!JS_IsExceptionPending(cx)) {
@@ -928,7 +928,7 @@ JS::Result<bool> CryptoAlgorithmECDSA_Sign_Verify::verify(JSContext *cx, JS::Han
 
   // 2. Let hashAlgorithm be the hash member of normalizedAlgorithm.
   const EVP_MD* algorithm = createDigestAlgorithm(cx, this->hashIdentifier);
-  if (algorithm == nullptr) {
+  if (!algorithm) {
     DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
     return JS::Result<bool>(JS::Error());
   }
@@ -1028,7 +1028,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify::sign(JSContext *cx, JS::
   }
 
   const EVP_MD *algorithm = createDigestAlgorithm(cx, key);
-  if (algorithm == nullptr) {
+  if (!algorithm) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return nullptr;
   }
@@ -1082,7 +1082,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify::sign(JSContext *cx, JS::
   // 5. Return a new ArrayBuffer associated with the relevant global object of this [HTML], and
   // containing the bytes of signature.
   JS::RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, signature_length, signature.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
-  if (buffer == nullptr) {
+  if (!buffer) {
     // We can be here if the array buffer was too large -- if that was the case then a
     // JSMSG_BAD_ARRAY_LENGTH will have been created. Otherwise we're probably out of memory.
     if (!JS_IsExceptionPending(cx)) {
@@ -1261,7 +1261,7 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
     // Otherwise:
       // 6.3 Throw a DataError.
     auto *jwk = std::get<JsonWebKey *>(keyData);
-    if (jwk == nullptr) {
+    if (!jwk) {
       DOMException::raise(cx, "Supplied keyData is not a JSONWebKey", "DataError");
       return nullptr;
     }
@@ -1379,10 +1379,10 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
       // throw a DataError.
       DOMException::raise(cx, "The optional HMAC key length must be shorter than the key data, and by no more than 7 bits.", "DataError");
       return nullptr;
+    }
     // 13. Otherwise:
-    }       // 14. Set length equal to the length member of normalizedAlgorithm.
-      length = this->length.value();
-   
+    // 14. Set length equal to the length member of normalizedAlgorithm.
+    length = this->length.value();
   } else {
     // This is because we need to capture the the length in the algorithm object which is created in CryptoAlgorithmHMAC_Import::toObject
     this->length = length;
@@ -1431,7 +1431,7 @@ JSObject *CryptoAlgorithmHMAC_Import::toObject(JSContext *cx) {
 
   // Set the name attribute of algorithm to "HMAC"
   auto *alg_name = JS_NewStringCopyZ(cx, this->name());
-  if (alg_name == nullptr) {
+  if (!alg_name) {
     return nullptr;
   }
   JS::RootedValue name_val(cx, JS::StringValue(alg_name));
@@ -1443,7 +1443,7 @@ JSObject *CryptoAlgorithmHMAC_Import::toObject(JSContext *cx) {
   JS::RootedObject hash(cx, JS_NewObject(cx, nullptr));
 
   auto *hash_name = JS_NewStringCopyZ(cx, algorithmName(this->hashIdentifier));
-  if (hash_name == nullptr) {
+  if (!hash_name) {
     return nullptr;
   }
   JS::RootedValue hash_name_val(cx, JS::StringValue(hash_name));
@@ -1480,7 +1480,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
       // Otherwise:
         // Throw a DataError.
       auto *jwk = std::get<JsonWebKey *>(keyData);
-      if (jwk == nullptr) {
+      if (!jwk) {
         DOMException::raise(cx, "Supplied keyData is not a JSONWebKey", "DataError");
         return nullptr;
       }
@@ -1764,7 +1764,7 @@ JSObject *CryptoAlgorithmECDSA_Import::toObject(JSContext *cx) const {
 
   // Set the name attribute of algorithm to "RSASSA-PKCS1-v1_5"
   auto *alg_name = JS_NewStringCopyZ(cx, this->name());
-  if (alg_name == nullptr) {
+  if (!alg_name) {
     return nullptr;
   }
   JS::RootedValue name_val(cx, JS::StringValue(alg_name));
@@ -1776,7 +1776,7 @@ JSObject *CryptoAlgorithmECDSA_Import::toObject(JSContext *cx) const {
   JS::RootedObject hash(cx, JS_NewObject(cx, nullptr));
 
   auto *curve_name = JS_NewStringCopyZ(cx, curveName(this->namedCurve));
-  if (curve_name == nullptr) {
+  if (!curve_name) {
     return nullptr;
   }
   JS::RootedValue curve_name_val(cx, JS::StringValue(curve_name));
@@ -1841,7 +1841,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
     // Otherwise:
       // Throw a DataError.
     auto *jwk = std::get<JsonWebKey *>(keyData);
-    if (jwk == nullptr) {
+    if (!jwk) {
       DOMException::raise(cx, "Supplied keyData is not a JSONWebKey", "DataError");
       return nullptr;
     }
@@ -2133,7 +2133,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::toObject(JSContext *cx) const
 
   // Set the name attribute of algorithm to "RSASSA-PKCS1-v1_5"
   auto *alg_name = JS_NewStringCopyZ(cx, this->name());
-  if (alg_name == nullptr) {
+  if (!alg_name) {
     return nullptr;
   }
   JS::RootedValue name_val(cx, JS::StringValue(alg_name));
@@ -2145,7 +2145,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::toObject(JSContext *cx) const
   JS::RootedObject hash(cx, JS_NewObject(cx, nullptr));
 
   auto *hash_name = JS_NewStringCopyZ(cx, algorithmName(this->hashIdentifier));
-  if (hash_name == nullptr) {
+  if (!hash_name) {
     return nullptr;
   }
   JS::RootedValue hash_name_val(cx, JS::StringValue(hash_name));

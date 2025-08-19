@@ -43,7 +43,7 @@ bool pipeTo(JSContext *cx, unsigned argc, JS::Value *vp) {
   // writable end of a TransformStream, set the TransformStream as the owner of
   // the receiver's source. This enables us to shortcut operations later on.
   JS::RootedObject target(cx, args[0].isObject() ? &args[0].toObject() : nullptr);
-  if ((target != nullptr) && NativeStreamSource::stream_has_native_source(cx, self) &&
+  if (target && NativeStreamSource::stream_has_native_source(cx, self) &&
       JS::IsWritableStream(target) && TransformStream::is_ts_writable(cx, target)) {
     if (auto *ts = TransformStream::ts_from_writable(cx, target)) {
       bool streamHasTransformer = false;
@@ -174,12 +174,11 @@ bool initialize_additions(JSContext *cx, JS::HandleObject global) {
   MOZ_ASSERT(JS::IsCallable(&original_pipeTo.toObject()));
 
   JSFunction *pipeTo_fun = JS_DefineFunction(cx, proto_obj, "pipeTo", pipeTo, 1, JSPROP_ENUMERATE);
-  if (pipeTo_fun == nullptr) {
+  if (!pipeTo_fun) {
     return false;
   }
 
   overridden_pipeTo.setObject(*JS_GetFunctionObject(pipeTo_fun));
-
   return JS_DefineFunction(cx, proto_obj, "pipeThrough", pipeThrough, 1, JSPROP_ENUMERATE) != nullptr;
 }
 } // namespace ReadableStream_additions
@@ -242,7 +241,7 @@ bool ExtractStrategy(JSContext *cx, JS::HandleValue strategy, double default_hwm
 
   // JSAPI wants JSHandleFunction instances for the size algorithm, so that's
   // what it'll get.
-  if (size_obj != nullptr) {
+  if (size_obj) {
     val.setObjectOrNull(size_obj);
     size.set(JS_ValueToFunction(cx, val));
   }
@@ -286,11 +285,11 @@ JSObject *TransformStream::readable(JSObject *self) {
 
 bool TransformStream::is_ts_readable(JSContext *cx, JS::HandleObject readable) {
   JSObject *source = NativeStreamSource::get_stream_source(cx, readable);
-  if ((source == nullptr) || !NativeStreamSource::is_instance(source)) {
+  if (!source || !NativeStreamSource::is_instance(source)) {
     return false;
   }
   JSObject *stream_owner = NativeStreamSource::owner(source);
-  return (stream_owner != nullptr) ? TransformStream::is_instance(stream_owner) : false;
+  return stream_owner ? TransformStream::is_instance(stream_owner) : false;
 }
 
 JSObject *TransformStream::ts_from_readable(JSContext *cx, JS::HandleObject readable) {
@@ -333,7 +332,7 @@ JSObject *TransformStream::writable(JSObject *self) {
 JSObject *TransformStream::ts_from_writable(JSContext *cx, JS::HandleObject writable) {
   MOZ_ASSERT(is_ts_writable(cx, writable));
   JSObject *sink = NativeStreamSink::get_stream_sink(cx, writable);
-  if ((sink == nullptr) || !NativeStreamSink::is_instance(sink)) {
+  if (!sink || !NativeStreamSink::is_instance(sink)) {
     return nullptr;
   }
   return NativeStreamSink::owner(sink);
@@ -341,11 +340,11 @@ JSObject *TransformStream::ts_from_writable(JSContext *cx, JS::HandleObject writ
 
 bool TransformStream::is_ts_writable(JSContext *cx, JS::HandleObject writable) {
   JSObject *sink = NativeStreamSink::get_stream_sink(cx, writable);
-  if ((sink == nullptr) || !NativeStreamSink::is_instance(sink)) {
+  if (!sink || !NativeStreamSink::is_instance(sink)) {
     return false;
   }
   JSObject *stream_owner = NativeStreamSink::owner(sink);
-  return (stream_owner != nullptr) ? is_instance(stream_owner) : false;
+  return stream_owner ? is_instance(stream_owner) : false;
 }
 
 JSObject *TransformStream::controller(JSObject *self) {
@@ -378,7 +377,7 @@ bool TransformStream::readable_get(JSContext *cx, unsigned argc, JS::Value *vp) 
   METHOD_HEADER_WITH_NAME(0, "get readable")
   auto *readable_val = readable(self);
   // TODO: determine why this isn't being set in some cases
-  if (readable_val != nullptr) {
+  if (readable_val) {
     args.rval().setObject(*readable_val);
   }
   return true;
@@ -388,7 +387,7 @@ bool TransformStream::writable_get(JSContext *cx, unsigned argc, JS::Value *vp) 
   METHOD_HEADER_WITH_NAME(0, "get writable")
   auto *writable_val = writable(self);
   // TODO: determine why this isn't being set in some cases
-  if (writable_val != nullptr) {
+  if (writable_val) {
     args.rval().setObject(*writable_val);
   }
   return true;
@@ -494,7 +493,7 @@ bool TransformStream::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
                         create(cx, transformStreamInstance, writableHighWaterMark,
                                writableSizeAlgorithm, readableHighWaterMark, readableSizeAlgorithm,
                                transformer, startFunction, transformFunction, flushFunction));
-  if (self == nullptr) {
+  if (!self) {
     return false;
 }
 
@@ -602,7 +601,7 @@ bool TransformStream::default_sink_write_algo_then_handler(JSContext *cx, JS::Ha
   // chunk).
   JS::RootedObject transformPromise(cx);
   transformPromise = TransformStreamDefaultController::PerformTransform(cx, controller, chunk);
-  if (transformPromise == nullptr) {
+  if (!transformPromise) {
     return false;
   }
 
@@ -634,13 +633,13 @@ bool TransformStream::DefaultSinkWriteAlgorithm(JSContext *cx, JS::CallArgs args
     //         fulfillment steps:
     JS::RootedObject then_handler(cx);
     then_handler = create_internal_method<default_sink_write_algo_then_handler>(cx, stream, chunk);
-    if (then_handler == nullptr) {
+    if (!then_handler) {
       return false;
 }
 
     JS::RootedObject result(cx);
     result = JS::CallOriginalPromiseThen(cx, changePromise, then_handler, nullptr);
-    if (result == nullptr) {
+    if (!result) {
       return false;
     }
 
@@ -655,7 +654,7 @@ bool TransformStream::DefaultSinkWriteAlgorithm(JSContext *cx, JS::CallArgs args
   // chunk).
   JS::RootedObject transformPromise(cx);
   transformPromise = TransformStreamDefaultController::PerformTransform(cx, controller, chunk);
-  if (transformPromise == nullptr) {
+  if (!transformPromise) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
@@ -675,7 +674,7 @@ bool TransformStream::DefaultSinkAbortAlgorithm(JSContext *cx, JS::CallArgs args
 
   // 2.  Return [a promise resolved with] undefined.
   JS::RootedObject promise(cx, JS::CallOriginalPromiseResolve(cx, JS::UndefinedHandleValue));
-  if (promise == nullptr) {
+  if (!promise) {
     return false;
   }
 
@@ -754,7 +753,7 @@ bool TransformStream::DefaultSinkCloseAlgorithm(JSContext *cx, JS::CallArgs args
   // controller.[flushAlgorithm].
   auto flushAlgorithm = TransformStreamDefaultController::flushAlgorithm(controller);
   JS::RootedObject flushPromise(cx, flushAlgorithm(cx, controller));
-  if (flushPromise == nullptr) {
+  if (!flushPromise) {
     return false;
   }
 
@@ -768,7 +767,7 @@ bool TransformStream::DefaultSinkCloseAlgorithm(JSContext *cx, JS::CallArgs args
   JS::RootedObject then_handler(cx);
   JS::RootedValue extra(cx, JS::ObjectValue(*readable));
   then_handler = create_internal_method<default_sink_close_algo_then_handler>(cx, stream, extra);
-  if (then_handler == nullptr) {
+  if (!then_handler) {
     return false;
 }
 
@@ -776,13 +775,13 @@ bool TransformStream::DefaultSinkCloseAlgorithm(JSContext *cx, JS::CallArgs args
   // Sub-steps in handler above.
   JS::RootedObject catch_handler(cx);
   catch_handler = create_internal_method<default_sink_close_algo_catch_handler>(cx, stream, extra);
-  if (catch_handler == nullptr) {
+  if (!catch_handler) {
     return false;
 }
 
   JS::RootedObject result(cx);
   result = JS::CallOriginalPromiseThen(cx, flushPromise, then_handler, catch_handler);
-  if (result == nullptr) {
+  if (!result) {
     return false;
   }
 
@@ -800,7 +799,7 @@ bool TransformStream::SetBackpressure(JSContext *cx, JS::HandleObject stream, bo
   // 2.  If stream.[backpressureChangePromise] is not undefined, resolve
   // stream.[backpressureChangePromise] with undefined.
   JS::RootedObject changePromise(cx, backpressureChangePromise(stream));
-  if (changePromise != nullptr) {
+  if (changePromise) {
     if (!JS::ResolvePromise(cx, changePromise, JS::UndefinedHandleValue)) {
       return false;
     }
@@ -808,7 +807,7 @@ bool TransformStream::SetBackpressure(JSContext *cx, JS::HandleObject stream, bo
 
   // 3.  Set stream.[backpressureChangePromise] to a new promise.
   changePromise = JS::NewPromiseObject(cx, nullptr);
-  if (changePromise == nullptr) {
+  if (!changePromise) {
     return false;
   }
   JS::SetReservedSlot(stream, TransformStream::Slots::BackpressureChangePromise,
@@ -841,14 +840,14 @@ bool TransformStream::Initialize(JSContext *cx, JS::HandleObject stream,
   JS::RootedObject sink(
       cx, NativeStreamSink::create(cx, stream, startPromiseVal, DefaultSinkWriteAlgorithm,
                                    DefaultSinkCloseAlgorithm, DefaultSinkAbortAlgorithm));
-  if (sink == nullptr) {
+  if (!sink) {
     return false;
 }
 
   JS::RootedObject writable(cx);
   writable =
       JS::NewWritableDefaultStreamObject(cx, sink, writableSizeAlgorithm, writableHighWaterMark);
-  if (writable == nullptr) {
+  if (!writable) {
     return false;
 }
 
@@ -867,13 +866,13 @@ bool TransformStream::Initialize(JSContext *cx, JS::HandleObject stream,
   JS::RootedObject source(
       cx, NativeStreamSource::create(cx, stream, startPromiseVal, pullAlgorithm, cancelAlgorithm,
                                      readableSizeAlgorithm, readableHighWaterMark));
-  if (source == nullptr) {
+  if (!source) {
     return false;
 }
 
   JS::RootedObject readable(cx);
   readable = NativeStreamSource::stream(source);
-  if (readable == nullptr) {
+  if (!readable) {
     return false;
 }
 
@@ -946,7 +945,7 @@ TransformStream::create(JSContext *cx, JS::HandleObject self, double writableHig
 
   // Step 9.
   JS::RootedObject startPromise(cx, JS::NewPromiseObject(cx, nullptr));
-  if (startPromise == nullptr) {
+  if (!startPromise) {
     return nullptr;
 }
 
@@ -960,7 +959,7 @@ TransformStream::create(JSContext *cx, JS::HandleObject self, double writableHig
   JS::RootedObject controller(cx);
   controller = TransformStreamDefaultController::SetUpFromTransformer(
       cx, self, transformer, transformFunction, flushFunction);
-  if (controller == nullptr) {
+  if (!controller) {
     return nullptr;
   }
 
@@ -970,7 +969,7 @@ TransformStream::create(JSContext *cx, JS::HandleObject self, double writableHig
   // If transformerDict["start"], then resolve startPromise with the result of
   // invoking transformerDict["start"] with argument list «
   // this.[[[controller]]] » and callback this value transformer.
-  if (startFunction != nullptr) {
+  if (startFunction) {
     JS::RootedValueArray<1> newArgs(cx);
     newArgs[0].setObject(*controller);
     if (!JS::Call(cx, transformer, startFunction, newArgs, &rval)) {
@@ -995,7 +994,7 @@ JSObject *TransformStream::create(JSContext *cx, double writableHighWaterMark,
                                   JS::HandleObject transformFunction,
                                   JS::HandleObject flushFunction) {
   JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
 }
 
@@ -1012,7 +1011,7 @@ JSObject *TransformStream::create_rs_proxy(JSContext *cx, JS::HandleObject input
   MOZ_ASSERT(JS::IsReadableStream(input_readable));
   JS::RootedObject transform_stream(
       cx, create(cx, 1, nullptr, 0, nullptr, JS::UndefinedHandleValue, nullptr, nullptr, nullptr));
-  if (transform_stream == nullptr) {
+  if (!transform_stream) {
     return nullptr;
   }
 

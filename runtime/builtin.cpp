@@ -11,7 +11,7 @@ bool api::throw_error(JSContext* cx, const JSErrorFormatString &error,
                       const char* arg1, const char* arg2, const char* arg3, const char* arg4) {
   const char** args = nullptr;
   const char* list[4] = { arg1, arg2, arg3, arg4 };
-  if (arg1 != nullptr) {
+  if (arg1) {
     args = list;
   }
 
@@ -53,7 +53,7 @@ bool RejectPromiseWithPendingError(JSContext *cx, HandleObject promise) {
 
 JSObject *PromiseRejectedWithPendingError(JSContext *cx) {
   RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
-  if ((promise == nullptr) || !RejectPromiseWithPendingError(cx, promise)) {
+  if (!promise || !RejectPromiseWithPendingError(cx, promise)) {
     return nullptr;
   }
   return promise;

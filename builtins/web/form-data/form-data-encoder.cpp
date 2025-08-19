@@ -637,7 +637,7 @@ mozilla::Result<size_t, OutOfMemory> MultipartFormData::query_length(JSContext *
 
 JSObject *MultipartFormData::encode_stream(JSContext *cx, HandleObject self) {
   RootedObject reader(cx, BufReader::create(cx, self, read));
-  if (reader == nullptr) {
+  if (!reader) {
     return nullptr;
   }
 
@@ -649,7 +649,7 @@ JSObject *MultipartFormData::encode_stream(JSContext *cx, HandleObject self) {
 
 JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
   JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
 
@@ -658,7 +658,7 @@ JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
   }
 
   auto res = host_api::Random::get_bytes(12);
-  if (res.to_err() != nullptr) {
+  if (res.to_err()) {
     return nullptr;
   }
 
@@ -679,7 +679,7 @@ JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
 
   auto boundary = fmt::format("--StarlingMonkeyFormBoundary{}", base64_str);
   auto *impl = new (std::nothrow) MultipartFormDataImpl(boundary);
-  if (impl == nullptr) {
+  if (!impl) {
     return nullptr;
   }
 

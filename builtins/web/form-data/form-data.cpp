@@ -34,7 +34,7 @@ bool FormDataIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
   uint8_t type = JS::GetReservedSlot(self, Slots::Type).toInt32();
 
   JS::RootedObject result(cx, JS_NewPlainObject(cx));
-  if (result == nullptr) {
+  if (!result) {
     return false;
 }
 
@@ -55,7 +55,7 @@ bool FormDataIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   if (type != ITER_TYPE_VALUES) {
     JS::RootedString key_str(cx, JS_NewStringCopyN(cx, entry.name.data(), entry.name.size()));
-    if (key_str == nullptr) {
+    if (!key_str) {
       return false;
     }
 
@@ -65,7 +65,7 @@ bool FormDataIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
   switch (type) {
   case ITER_TYPE_ENTRIES: {
     JS::RootedObject pair(cx, JS::NewArrayObject(cx, 2));
-    if (pair == nullptr) {
+    if (!pair) {
       return false;
 }
     JS_DefineElement(cx, pair, 0, key_val, JSPROP_ENUMERATE);
@@ -111,7 +111,7 @@ const JSPropertySpec FormDataIterator::properties[] = {
 
 bool FormDataIterator::init_class(JSContext *cx, JS::HandleObject global) {
   JS::RootedObject iterator_proto(cx, JS::GetRealmIteratorPrototype(cx));
-  if (iterator_proto == nullptr) {
+  if (!iterator_proto) {
     return false;
 }
 
@@ -130,7 +130,7 @@ JSObject *FormDataIterator::create(JSContext *cx, JS::HandleObject form, uint8_t
   MOZ_RELEASE_ASSERT(type <= ITER_TYPE_VALUES);
 
   JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
 }
 
@@ -184,7 +184,7 @@ JSObject *create_opts(JSContext *cx, HandleObject blob) {
   // Check if type is defined in the current blob, if that't the case
   // prepare options object that contains its type.
   RootedObject opts(cx, JS_NewPlainObject(cx));
-  if (opts == nullptr) {
+  if (!opts) {
     return nullptr;
   }
 
@@ -225,7 +225,7 @@ bool FormData::append(JSContext *cx, HandleObject self, std::string_view name, H
   //  into a scalar value string.
   if (!Blob::is_instance(value)) {
     RootedString str(cx, core::to_scalar_value_string(cx, value));
-    if (str == nullptr) {
+    if (!str) {
       return false;
     }
 
@@ -253,7 +253,7 @@ bool FormData::append(JSContext *cx, HandleObject self, std::string_view name, H
 
   if (filename.isUndefined()) {
     RootedString default_name(cx, JS_NewStringCopyZ(cx, "blob"));
-    if (default_name == nullptr) {
+    if (!default_name) {
       return false;
     }
 
@@ -264,19 +264,19 @@ bool FormData::append(JSContext *cx, HandleObject self, std::string_view name, H
 
   auto arr = HandleValueArray(value);
   RootedObject file_bits(cx, NewArrayObject(cx, arr));
-  if (file_bits == nullptr) {
+  if (!file_bits) {
     return false;
   }
 
   RootedObject opts(cx, create_opts(cx, blob));
-  if (opts == nullptr) {
+  if (!opts) {
     return false;
   }
 
   RootedValue file_bits_val(cx, JS::ObjectValue(*file_bits));
   RootedValue opts_val(cx, JS::ObjectValue(*opts));
   RootedObject file(cx, File::create(cx, file_bits_val, filename_val, opts_val));
-  if (file == nullptr) {
+  if (!file) {
     return false;
   }
 
@@ -348,7 +348,7 @@ bool FormData::getAll(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto *entries = entry_list(self);
 
   JS::RootedObject array(cx, JS::NewArrayObject(cx, 0));
-  if (array == nullptr) {
+  if (!array) {
     return false;
   }
 
@@ -408,7 +408,7 @@ bool FormData::set(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 JSObject *FormData::create(JSContext *cx) {
   JSObject *self = JS_NewObjectWithGivenProto(cx, &class_, proto_obj);
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
 
@@ -436,7 +436,7 @@ bool FormData::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));
 
-  if (self == nullptr) {
+  if (!self) {
     return false;
   }
 
@@ -449,7 +449,7 @@ bool FormData::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 void FormData::finalize(JS::GCContext *gcx, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   auto *entries = entry_list(self);
-  if (entries != nullptr) {
+  if (!entries) {
     js_delete(entries);
   }
 }

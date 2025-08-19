@@ -24,7 +24,7 @@ HostString encode(JSContext *cx, JS::HandleString str) {
 
 HostString encode(JSContext *cx, JS::HandleValue val) {
   JS::RootedString str(cx, JS::ToString(cx, val));
-  if (str == nullptr) {
+  if (!str) {
     return HostString{};
   }
 
@@ -33,7 +33,7 @@ HostString encode(JSContext *cx, JS::HandleValue val) {
 
 HostString encode_byte_string(JSContext *cx, JS::HandleValue val) {
   JS::RootedString str(cx, JS::ToString(cx, val));
-  if (str == nullptr) {
+  if (!str) {
     return HostString{};
   }
   size_t length = 0;
@@ -42,7 +42,7 @@ HostString encode_byte_string(JSContext *cx, JS::HandleValue val) {
     {
       JS::AutoCheckCannotGC nogc;
       const char16_t* chars = JS_GetTwoByteStringCharsAndLength(cx, nogc, str, &length);
-      if (chars == nullptr) {
+      if (!chars) {
         foundBadChar = true;
       }
       else {

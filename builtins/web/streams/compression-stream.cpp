@@ -236,7 +236,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   // _flushAlgorithm_ set to _flushAlgorithm_.
   JS::RootedObject transform(cx, TransformStream::create(cx, 1, nullptr, 0, nullptr, stream_val,
                                                          nullptr, transformAlgo, flushAlgo));
-  if (transform == nullptr) {
+  if (!transform) {
     return nullptr;
   }
 
@@ -246,7 +246,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   // The remainder of the function deals with setting up the deflate state used
   // for compressing chunks.
   auto *zstream = (z_stream *)JS_malloc(cx, sizeof(z_stream));
-  if (zstream == nullptr) {
+  if (!zstream) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -255,7 +255,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   JS::SetReservedSlot(stream, CompressionStream::Slots::State, JS::PrivateValue(zstream));
 
   auto *buffer = (uint8_t *)JS_malloc(cx, BUFFER_SIZE);
-  if (buffer == nullptr) {
+  if (!buffer) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -310,7 +310,7 @@ bool CompressionStream::constructor(JSContext *cx, unsigned argc, JS::Value *vp)
   JS::RootedObject compressionStreamInstance(cx, JS_NewObjectForConstructor(cx, &class_, args));
   // Steps 2-6.
   JS::RootedObject stream(cx, create(cx, compressionStreamInstance, format));
-  if (stream == nullptr) {
+  if (!stream) {
     return false;
   }
 
@@ -324,13 +324,13 @@ bool CompressionStream::init_class(JSContext *cx, JS::HandleObject global) {
   }
 
   JSFunction *transformFun = JS_NewFunction(cx, transformAlgorithm, 1, 0, "CS Transform");
-  if (transformFun == nullptr) {
+  if (!transformFun) {
     return false;
 }
   transformAlgo.init(cx, JS_GetFunctionObject(transformFun));
 
   JSFunction *flushFun = JS_NewFunction(cx, flushAlgorithm, 1, 0, "CS Flush");
-  if (flushFun == nullptr) {
+  if (!flushFun) {
     return false;
 }
   flushAlgo.init(cx, JS_GetFunctionObject(flushFun));

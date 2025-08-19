@@ -14,7 +14,7 @@ JS::Result<std::string> valueToJSByteString(JSContext *cx, JS::Handle<JS::Value>
     s = v.toString();
   } else {
     s = JS::ToString(cx, v);
-    if (s == nullptr) {
+    if (!s) {
       api::throw_error(cx, InvalidCharacterError);
       return JS::Result<std::string>(JS::Error());
     }
@@ -27,7 +27,7 @@ JS::Result<std::string> valueToJSByteString(JSContext *cx, JS::Handle<JS::Value>
   if (!JS::StringHasLatin1Chars(s)) {
     JS::AutoCheckCannotGC nogc(cx);
     const char16_t *chars = JS_GetTwoByteStringCharsAndLength(cx, nogc, s, &length);
-    if (chars == nullptr) {
+    if (!chars) {
       // Reset the nogc guard, since otherwise we can't throw errors.
       nogc.reset();
       api::throw_error(cx, InvalidCharacterError);
@@ -320,7 +320,7 @@ bool atob(JSContext *cx, unsigned argc, Value *vp) {
   }
   auto decoded = decoded_result.unwrap();
   RootedString decodedData(cx, JS_NewStringCopyN(cx, decoded.c_str(), decoded.length()));
-  if (decodedData == nullptr) {
+  if (!decodedData) {
     return false;
   }
 
@@ -423,7 +423,7 @@ bool btoa(JSContext *cx, unsigned argc, Value *vp) {
   auto result = forgivingBase64Encode(byteString, base64EncodeTable);
 
   JSString *str = JS_NewStringCopyN(cx, result.c_str(), result.length());
-  if (str == nullptr) {
+  if (!str) {
     return api::throw_error(cx, InvalidCharacterError);
   }
 

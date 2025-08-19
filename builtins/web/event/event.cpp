@@ -142,7 +142,7 @@ bool Event::composedPath(JSContext *cx, unsigned argc, JS::Value *vp) {
   RootedObject tgt(cx, current_target(self));
   RootedObject paths(cx);
 
-  if (tgt != nullptr) {
+  if (tgt) {
     RootedValueArray<1> arr(cx);
     arr[0].setObject(*tgt);
     paths = JS::NewArrayObject(cx, arr);
@@ -150,7 +150,7 @@ bool Event::composedPath(JSContext *cx, unsigned argc, JS::Value *vp) {
     paths = JS::NewArrayObject(cx, 0);
   }
 
-  if (paths == nullptr) {
+  if (!paths) {
     return false;
   }
 
@@ -241,7 +241,7 @@ void Event::set_canceled(JSObject *self, bool val) {
 bool Event::init(JSContext *cx, HandleObject self, HandleValue type, HandleValue init)
 {
   auto *type_str = JS::ToString(cx, type);
-  if (type_str == nullptr) {
+  if (!type_str) {
     return false;
   }
 
@@ -279,7 +279,7 @@ bool Event::init(JSContext *cx, HandleObject self, HandleValue type, HandleValue
 
 JSObject *Event::create(JSContext *cx, HandleValue type, HandleValue init) {
   RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
 
@@ -295,7 +295,7 @@ bool Event::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("Event", 1);
 
   RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  if (self == nullptr) {
+  if (!self) {
     return false;
   }
 

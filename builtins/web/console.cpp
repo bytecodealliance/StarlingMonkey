@@ -291,9 +291,9 @@ JS::Result<mozilla::Ok> ToSource(JSContext *cx, std::string &sourceOut, JS::Hand
       sourceOut += "[";
       std::string source;
       JS::RootedFunction fun(cx, JS_ValueToFunction(cx, val));
-      if (fun != nullptr) {
+      if (fun) {
         JS::RootedString result(cx, JS_DecompileFunction(cx, fun));
-        if (result == nullptr) {
+        if (!result) {
           return JS::Result<mozilla::Ok>(JS::Error());
         }
         sourceOut += " ";
@@ -844,7 +844,7 @@ bool install(api::Engine *engine) {
   JS::RootedObject proto(engine->cx(), JS_NewPlainObject(engine->cx()));
   JS::RootedObject console(engine->cx(),
                            JS_NewObjectWithGivenProto(engine->cx(), &Console::class_, proto));
-  if (console == nullptr) {
+  if (!console) {
     return false;
   }
   if (!JS_DefineProperty(engine->cx(), engine->global(), "console", console, 0)) {

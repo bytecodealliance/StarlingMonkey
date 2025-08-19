@@ -97,7 +97,7 @@ bool add_pending_promise(JSContext *cx, JS::HandleObject self, JS::HandleObject 
   } else {
     reject_handler = resolve_handler;
   }
-  if (reject_handler == nullptr) {
+  if (!reject_handler) {
     return false;
 }
   if (!JS::AddPromiseReactions(cx, promise, resolve_handler, reject_handler)) {
@@ -112,7 +112,7 @@ bool add_pending_promise(JSContext *cx, JS::HandleObject self, JS::HandleObject 
 
 JSObject *FetchEvent::prepare_downstream_request(JSContext *cx) {
   JS::RootedObject request(cx, Request::create(cx));
-  if (request == nullptr) {
+  if (!request) {
     return nullptr;
 }
   Request::init_slots(request);
@@ -139,7 +139,7 @@ bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
 
   if (!is_get) {
     JS::RootedString method(cx, JS_NewStringCopyN(cx, &*method_str.cbegin(), method_str.length()));
-    if (method == nullptr) {
+    if (!method) {
       return false;
     }
 
@@ -157,7 +157,7 @@ bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
 
   auto uri_str = req->url();
   JS::RootedString url(cx, JS_NewStringCopyN(cx, uri_str.data(), uri_str.size()));
-  if (url == nullptr) {
+  if (!url) {
     return false;
   }
   JS::SetReservedSlot(request, static_cast<uint32_t>(Request::Slots::URL), JS::StringValue(url));
@@ -165,7 +165,7 @@ bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
   // Set the URL for `globalThis.location` to the client request's URL.
   JS::RootedObject url_instance(
       cx, JS_NewObjectWithGivenProto(cx, &url::URL::class_, url::URL::proto_obj));
-  if (url_instance == nullptr) {
+  if (!url_instance) {
     return false;
   }
 
@@ -212,7 +212,7 @@ bool start_response(JSContext *cx, JS::HandleObject response_obj) {
     host_api::HttpOutgoingResponse::make(status, std::move(headers));
 
   auto *existing_handle = Response::maybe_response_handle(response_obj);
-  if (existing_handle != nullptr) {
+  if (existing_handle) {
     MOZ_ASSERT(existing_handle->is_incoming());
   } else {
     SetReservedSlot(response_obj, static_cast<uint32_t>(Response::Slots::Response),
@@ -247,7 +247,7 @@ bool response_promise_then_handler(JSContext *cx, JS::HandleObject event, JS::Ha
   if (!Response::is_instance(args.get(0))) {
     api::throw_error(cx, FetchErrors::InvalidRespondWithArg);
     JS::RootedObject rejection(cx, PromiseRejectedWithPendingError(cx));
-    if (rejection == nullptr) {
+    if (!rejection) {
       return false;
 }
     args.rval().setObject(*rejection);
@@ -283,7 +283,7 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // Coercion of argument `r` to a Promise<Response>
   JS::RootedObject response_promise(cx, JS::CallOriginalPromiseResolve(cx, args.get(0)));
-  if (response_promise == nullptr) {
+  if (!response_promise) {
     return false;
 }
 
@@ -310,14 +310,14 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedObject catch_handler(cx);
   JS::RootedValue extra(cx, JS::ObjectValue(*response_promise));
   catch_handler = create_internal_method<response_promise_catch_handler>(cx, self, extra);
-  if (catch_handler == nullptr) {
+  if (!catch_handler) {
     return false;
 }
 
   // Step 10 (continued in `response_promise_then_handler` above)
   JS::RootedObject then_handler(cx);
   then_handler = create_internal_method<response_promise_then_handler>(cx, self);
-  if (then_handler == nullptr) {
+  if (!then_handler) {
     return false;
 }
 
@@ -363,7 +363,7 @@ bool FetchEvent::waitUntil(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
   JS::RootedObject promise(cx, JS::CallOriginalPromiseResolve(cx, args.get(0)));
-  if (promise == nullptr) {
+  if (!promise) {
     return false;
 }
 
@@ -407,7 +407,7 @@ const JSPropertySpec FetchEvent::properties[] = {
 
 JSObject *FetchEvent::create(JSContext *cx) {
   JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (self == nullptr) {
+  if (!self) {
     return nullptr;
   }
 
@@ -418,12 +418,12 @@ JSObject *FetchEvent::create(JSContext *cx) {
   }
 
   JS::RootedObject request(cx, prepare_downstream_request(cx));
-  if (request == nullptr) {
+  if (!request) {
     return nullptr;
   }
 
   JS::RootedObject dec_count_handler(cx, create_internal_method<dec_pending_promise_count>(cx, self));
-  if (dec_count_handler == nullptr) {
+  if (!dec_count_handler) {
     return nullptr;
   }
 
@@ -466,7 +466,7 @@ void FetchEvent::set_state(JSObject *self, FetchEvent::State new_state) {
 
   if (current_state == State::responseStreaming &&
     (new_state == State::responseDone || new_state == State::respondedWithError)) {
-    if ((STREAMING_BODY != nullptr) && STREAMING_BODY->valid()) {
+    if (STREAMING_BODY && STREAMING_BODY->valid()) {
       STREAMING_BODY->close();
     }
     decrease_interest();
@@ -531,7 +531,7 @@ bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
     return true;
   }
 
-  if ((STREAMING_BODY != nullptr) && STREAMING_BODY->valid()) {
+  if (STREAMING_BODY && STREAMING_BODY->valid()) {
     STREAMING_BODY->close();
   }
 
@@ -551,7 +551,7 @@ bool FetchEvent::init_class(JSContext *cx, JS::HandleObject global) {
 bool install(api::Engine *engine) {
   ENGINE = engine;
 
-  if ((fetch_type_atom = JS_AtomizeAndPinString(engine->cx(), "fetch")) == nullptr) {
+  if (!(fetch_type_atom = JS_AtomizeAndPinString(engine->cx(), "fetch"))) {
     return false;
   }
 
@@ -559,7 +559,7 @@ bool install(api::Engine *engine) {
     return false;
   }
 
-  if (FetchEvent::create(engine->cx()) == nullptr) {
+  if (!FetchEvent::create(engine->cx())) {
     MOZ_RELEASE_ASSERT(false);
   }
 

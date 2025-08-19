@@ -78,7 +78,7 @@ bool debug_logging_enabled() { return DEBUG_LOGGING; }
 
 JS::UniqueChars stringify_value(JSContext *cx, JS::HandleValue value) {
   JS::RootedString str(cx, JS_ValueToSource(cx, value));
-  if (str == nullptr) {
+  if (!str) {
     return nullptr;
 }
 
@@ -149,7 +149,7 @@ void dump_error(JSContext *cx, HandleValue error, bool *has_stack, FILE *fp) {
   if (error.isObject()) {
     RootedObject err(cx, &error.toObject());
     JSErrorReport *report = JS_ErrorFromException(cx, err);
-    if (report != nullptr) {
+    if (report) {
       fprintf(stderr, "%s\n", report->message().c_str());
       reported = true;
     }
@@ -163,7 +163,7 @@ void dump_error(JSContext *cx, HandleValue error, bool *has_stack, FILE *fp) {
     dump_value(cx, error, stderr);
   }
 
-  if (stack != nullptr) {
+  if (stack) {
     *has_stack = true;
     fprintf(stderr, "Stack:\n");
     print_stack(cx, stack, stderr);
@@ -263,7 +263,7 @@ bool create_content_global(JSContext * cx) {
 
   RootedObject global(
       cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::FireOnNewGlobalHook, options));
-  if (global == nullptr) {
+  if (!global) {
     return false;
   }
 
@@ -289,15 +289,15 @@ bool create_initializer_global(Engine *engine) {
   static JSClass global_class = {.name="global", .flags=JSCLASS_GLOBAL_FLAGS, .cOps=&JS::DefaultGlobalClassOps};
   RootedObject global(cx);
   global = JS_NewGlobalObject(cx, &global_class, nullptr, JS::DontFireOnNewGlobalHook, options);
-  if (global == nullptr) {
+  if (!global) {
     return false;
   }
 
   JSAutoRealm ar(cx, global);
 
-  if ((JS_DefineFunction(cx, global, "defineBuiltinModule", ::define_builtin_module, 2, 0) == nullptr) ||
+  if (!JS_DefineFunction(cx, global, "defineBuiltinModule", ::define_builtin_module, 2, 0) ||
       !JS_DefineProperty(cx, global, "contentGlobal", ENGINE->global(), JSPROP_READONLY) ||
-      (JS_DefineFunction(cx, global, "print", content_debugger::dbg_print, 1, 0) == nullptr)) {
+      !JS_DefineFunction(cx, global, "print", content_debugger::dbg_print, 1, 0)) {
     return false;
   }
 
@@ -309,7 +309,7 @@ bool init_js(const EngineConfig& config) {
   JS_Init();
 
   JSContext *cx = JS_NewContext(JS::DefaultHeapMaxBytes);
-  if (cx == nullptr) {
+  if (!cx) {
     return false;
   }
   CONTEXT = cx;
@@ -335,7 +335,7 @@ bool init_js(const EngineConfig& config) {
 
   JS::SetPromiseRejectionTrackerCallback(cx, rejection_tracker);
   unhandledRejectedPromises.init(cx, JS::NewSetObject(cx));
-  if (unhandledRejectedPromises == nullptr) {
+  if (!unhandledRejectedPromises) {
     return false;
   }
 
@@ -462,7 +462,7 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
   TRACE("Builtins installed");
 
 #ifdef DEBUG
-  if (JS_DefineFunction(cx(), global(), "trap", trap, 1, 0) == nullptr) {
+  if (!JS_DefineFunction(cx(), global(), "trap", trap, 1, 0)) {
     abort("installing trap function");
   }
 #endif
@@ -579,7 +579,7 @@ bool Engine::run_initialization_script() {
   opts->setDiscardSource();
   opts->setFile(path.c_str());
   JS::RootedScript script(cx, Compile(cx, *opts, source));
-  if (script == nullptr) {
+  if (!script) {
     return false;
   }
   RootedValue result(cx);

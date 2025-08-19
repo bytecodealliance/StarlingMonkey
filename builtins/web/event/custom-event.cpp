@@ -42,7 +42,7 @@ bool CustomEvent::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   RootedValue detail(cx);
 
   RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  if (self == nullptr) {
+  if (!self) {
     return false;
   }
 

@@ -38,6 +38,11 @@ Checks: >
   -readability-magic-numbers,
   -readability-simplify-boolean-expr,
 
+# Check options configuration
+CheckOptions:
+  - key: readability-implicit-bool-conversion.AllowPointerConditions
+    value: 'true'
+
 # Treat all warnings as errors
 WarningsAsErrors: '*'
 
