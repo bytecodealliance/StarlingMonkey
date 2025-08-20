@@ -50,7 +50,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",
-    "@types/glob": "8.1.0",
     "@types/mocha": "10.0.10",
     "@types/node": "22.10.0",
     "@types/path-browserify": "^1.0.3",
@@ -61,7 +60,7 @@
     "@vscode/debugadapter-testsupport": "^1.68.0",
     "@vscode/vsce": "^3.2.1",
     "concurrently": "^9.1.2",
-    "esbuild": "0.24.0",
+    "esbuild": "0.25.9",
     "eslint": "^9.28.0",
     "events": "^3.3.0",
     "glob": "11.0.0",
