@@ -7,7 +7,7 @@ import * as Path from "path";
 import * as FS from "fs";
 import * as CP from "child_process";
 import {glob} from "glob";
-import minimatch from "minimatch";
+import {minimatch} from "minimatch";
 
 /**
  * The input paths must use the path syntax of the underlying operating system.
