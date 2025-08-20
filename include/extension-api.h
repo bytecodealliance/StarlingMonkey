@@ -109,8 +109,8 @@ public:
    * changing this default, and will impact all subsequent top-level
    * evaluations.
    */
-  bool eval_toplevel(const char *path, MutableHandleValue result);
-  bool eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char *path,
+  bool eval_toplevel(std::string_view, MutableHandleValue result);
+  bool eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, std::string_view path,
                      MutableHandleValue result);
 
   /**
@@ -182,14 +182,21 @@ public:
 };
 
 
-typedef bool (*TaskCompletionCallback)(JSContext* cx, HandleObject receiver);
+using TaskCompletionCallback = bool (*)(JSContext* cx, HandleObject receiver);
 
 class AsyncTask : public js::RefCounted<AsyncTask>, public mozilla::SupportsWeakPtr {
 protected:
   PollableHandle handle_ = -1;
 
 public:
+  AsyncTask() = default;
   virtual ~AsyncTask() = default;
+
+  AsyncTask(const AsyncTask &) = delete;
+  AsyncTask(AsyncTask &&) = delete;
+
+  AsyncTask &operator=(const AsyncTask &) = delete;
+  AsyncTask &operator=(AsyncTask &&) = delete;
 
   virtual bool run(Engine *engine) = 0;
   virtual bool cancel(Engine *engine) = 0;

@@ -51,8 +51,6 @@ class EventTarget : public BuiltinImpl<EventTarget, TraceableClassPolicy> {
 
   static bool invoke_listeners(JSContext *cx, HandleObject target, HandleObject event);
 
-  static bool on_abort(JSContext *cx, std::span<HeapValue> args);
-
 public:
   static constexpr const char *class_name = "EventTarget";
   static constexpr unsigned ctor_length = 0;

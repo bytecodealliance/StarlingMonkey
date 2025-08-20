@@ -717,26 +717,25 @@ JSObject *CryptoKey::createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_I
   }
 
   // For private keys, we require the private exponent, as well as p and q prime information.
-  if (is_private) {
-    if (keyData->privateExponent.empty() || keyData->firstPrimeInfo->primeFactor.empty() ||
-        keyData->secondPrimeInfo->primeFactor.empty()) {
-      return nullptr;
-    }
+  //
+  // Linter is confused about unwrapping optional here, but we check that
+  // prime info has value for private keys before accessing its value.
+  // NOLINTBEGIN(bugprone-unchecked-optional-access)
+  if (is_private &&
+      (keyData->privateExponent.empty() || !keyData->firstPrimeInfo.has_value() ||
+       keyData->firstPrimeInfo->primeFactor.empty() || !keyData->secondPrimeInfo.has_value() ||
+       keyData->secondPrimeInfo->primeFactor.empty())) {
+    return nullptr;
   }
 
-  const auto get_param = [=](std::string_view value) {
-    return is_private ? value : std::string_view{};
-  };
-  const auto get_param2 = [=](auto &&info, auto &&member) {
-    return (is_private && info) ? member : std::string_view{};
-  };
-
-  auto private_exponent = get_param(keyData->privateExponent);
-  auto prime1 = get_param2(keyData->firstPrimeInfo, keyData->firstPrimeInfo->primeFactor);
-  auto prime2 = get_param2(keyData->secondPrimeInfo, keyData->secondPrimeInfo->primeFactor);
-  auto exponent1 = get_param2(keyData->firstPrimeInfo, keyData->firstPrimeInfo->factorCRTExponent);
-  auto exponent2 = get_param2(keyData->secondPrimeInfo, keyData->secondPrimeInfo->factorCRTExponent);
-  auto coeff = get_param2(keyData->secondPrimeInfo, keyData->secondPrimeInfo->factorCRTCoefficient);
+  auto none = std::string_view{};
+  auto private_exponent = is_private ? keyData->privateExponent : none;
+  auto prime1 = is_private ? keyData->firstPrimeInfo.value().primeFactor : none;
+  auto prime2 = is_private ? keyData->secondPrimeInfo.value().primeFactor : none;
+  auto exponent1 = is_private ? keyData->firstPrimeInfo.value().factorCRTExponent : none;
+  auto exponent2 = is_private ? keyData->secondPrimeInfo.value().factorCRTExponent : none;
+  auto coeff = is_private ? keyData->secondPrimeInfo.value().factorCRTCoefficient : none;
+  // NOLINTEND(bugprone-unchecked-optional-access)
 
   auto pkey = create_rsa_key_from_parts(cx, keyData->modulus, keyData->exponent, private_exponent,
                                         prime1, prime2, exponent1, exponent2, coeff);

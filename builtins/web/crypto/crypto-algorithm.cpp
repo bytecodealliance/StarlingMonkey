@@ -249,7 +249,7 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPrivateKeyFromJWK(JSContext *cx
   // then throw a DataError. 2.10.2 Let privateKey represents the RSA private key identified by
   // interpreting jwk according to Section 6.3.2 of JSON Web Algorithms [JWA]. 2.10.3 If privateKey
   // is not a valid RSA private key according to [RFC3447], then throw a DataError.
-  auto modulusResult = base64::forgivingBase64Decode(jwk->n.value(), base64::base64URLDecodeTable);
+  auto modulusResult = base64::forgivingBase64Decode(jwk->n.value_or(""), base64::base64URLDecodeTable);
   if (modulusResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'n' could not be base64url decoded or contained padding", "DataError");
@@ -260,7 +260,7 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPrivateKeyFromJWK(JSContext *cx
   if (modulus.starts_with('0')) {
     modulus = modulus.erase(0, 1);
   }
-  auto dataResult = base64::stringToJSByteString(cx, jwk->e.value());
+  auto dataResult = base64::stringToJSByteString(cx, jwk->e.value_or(""));
   if (dataResult.isErr()) {
     DOMException::raise(cx, "Data provided to an operation does not meet requirements",
                         "DataError");
@@ -275,7 +275,7 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPrivateKeyFromJWK(JSContext *cx
   }
   auto exponent = exponentResult.unwrap();
   auto privateExponentResult =
-      base64::forgivingBase64Decode(jwk->d.value(), base64::base64URLDecodeTable);
+      base64::forgivingBase64Decode(jwk->d.value_or(""), base64::base64URLDecodeTable);
   if (privateExponentResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'd' could not be base64url decoded or contained padding", "DataError");
@@ -1272,7 +1272,7 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
 
     // 6.6 Let data be the octet string obtained by decoding the k field of jwk.
     auto dataResult = base64::forgivingBase64Decode(
-      jwk->k.value(), base64::base64URLDecodeTable);
+      jwk->k.value_or(""), base64::base64URLDecodeTable);
     if (dataResult.isErr()) {
       DOMException::raise(cx,
                          "The JWK member 'k' could not be base64url decoded or contained padding", "DataError");
@@ -1520,7 +1520,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
         return nullptr;
       }
       // 2.7. Let namedCurve be a string whose value is equal to the "crv" field of jwk.
-      auto namedCurve = toNamedCurve(jwk->crv.value());
+      auto namedCurve = toNamedCurve(jwk->crv.value_or(""));
       // 2.8. If namedCurve is not equal to the namedCurve member of normalizedAlgorithm, throw a DataError.
       if (!namedCurve.has_value() || namedCurve.value() != this->namedCurve) {
         DOMException::raise(cx, "The JWK's \"crv\" member specifies a different curve than requested", "DataError");
@@ -1541,7 +1541,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
         //     throw a DataError.
         // 2.9.3. If algNamedCurve is defined, and is not equal to namedCurve, throw a DataError.
         if (jwk->alg.has_value()) {
-          auto algNamedCurve = toNamedCurve(jwk->crv.value());
+          auto algNamedCurve = toNamedCurve(jwk->crv.value_or(""));
           if (!algNamedCurve.has_value() || algNamedCurve.value() != this->namedCurve) {
             DOMException::raise(cx, "Oopsie", "DataError");
             return nullptr;

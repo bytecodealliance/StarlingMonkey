@@ -116,7 +116,7 @@ const char base64EncodeTable[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 bool base64CharacterToValue(char character, uint8_t *value, const uint8_t *decodeTable) {
   static const size_t mask = 127;
-  auto index = static_cast<size_t>(character);
+  auto index = static_cast<uint8_t>(character);
 
   if ((index & ~mask) != 0U) {
     return false;

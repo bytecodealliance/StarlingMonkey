@@ -471,7 +471,7 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
   TRACE("Module mode: ", config_->module_mode);
   scriptLoader->enable_module_mode(config_->module_mode);
 
-  mozilla::Maybe<std::string_view> content_script_path = config_->content_script_path;
+  auto content_script_path = config_->content_script_path;
 
   if (config_->pre_initialize) {
     state_ = EngineState::ScriptPreInitializing;
@@ -490,7 +490,7 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
   if (content_script_path) {
     TRACE("Evaluating initial script from file ", content_script_path.value());
     RootedValue result(cx());
-    if (!eval_toplevel(content_script_path.value().data(), &result)) {
+    if (!eval_toplevel(content_script_path.value(), &result)) {
       abort("evaluating top-level script");
     }
   }
@@ -502,7 +502,7 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
     const std::string& script = config_->content_script.value();
     RootedValue result(cx());
     if (!source.init(cx(), script.c_str(), script.size(), JS::SourceOwnership::Borrowed)
-        || !eval_toplevel(source, path.data(), &result)) {
+        || !eval_toplevel(source, path, &result)) {
       abort("evaluating top-level inline script");
     }
   }
@@ -567,7 +567,7 @@ bool Engine::run_initialization_script() {
   auto path = config_->initializer_script_path.value();
   TRACE("Running initialization script from file ", path);
   JS::SourceText<mozilla::Utf8Unit> source;
-  if (!scriptLoader->load_resolved_script(CONTEXT, path.c_str(), path.c_str(), source)) {
+  if (!scriptLoader->load_resolved_script(CONTEXT, path, path, source)) {
     return false;
   }
   auto *opts = new JS::CompileOptions(cx);
@@ -583,7 +583,7 @@ bool Engine::run_initialization_script() {
 
 HandleObject Engine::init_script_global() { return INIT_SCRIPT_GLOBAL; }
 
-bool Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char *path,
+bool Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, std::string_view path,
                            MutableHandleValue result) {
   MOZ_ASSERT(state() > EngineState::EngineInitializing, "Engine must be done initializing");
   MOZ_ASSERT(state() != EngineState::Aborted, "Engine state is aborted");
@@ -648,7 +648,7 @@ bool Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char
   return true;
 }
 
-bool Engine::eval_toplevel(const char *path, MutableHandleValue result) {
+bool Engine::eval_toplevel(std::string_view path, MutableHandleValue result) {
   JS::SourceText<mozilla::Utf8Unit> source;
   if (!scriptLoader->load_script(CONTEXT, path, source)) {
     return false;

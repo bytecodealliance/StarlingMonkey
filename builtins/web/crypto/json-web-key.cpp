@@ -18,16 +18,16 @@ namespace builtins::web::crypto {
 
 namespace {
 JS::Result<std::optional<std::string>>
-extractStringPropertyFromObject(JSContext *cx, JS::HandleObject object, std::string_view property) {
+extractStringPropertyFromObject(JSContext *cx, JS::HandleObject object, const char* property) {
   bool has_property = false;
-  if (!JS_HasProperty(cx, object, property.data(), &has_property)) {
+  if (!JS_HasProperty(cx, object, property, &has_property)) {
     return JS::Result<std::optional<std::string>>(JS::Error());
   }
   if (!has_property) {
     return std::optional<std::string>(std::nullopt);
   }
   JS::RootedValue value(cx);
-  if (!JS_GetProperty(cx, object, property.data(), &value)) {
+  if (!JS_GetProperty(cx, object, property, &value)) {
     return JS::Result<std::optional<std::string>>(JS::Error());
   }
   // Convert into a String following https://tc39.es/ecma262/#sec-tostring

@@ -273,8 +273,8 @@ MultipartFormDataImpl::State MultipartFormDataImpl::next_state(StreamContext &st
   case State::EntryFooter:
     return finished ? State::Close : State::EntryHeader;
   case State::Close:
-    return State::Done;
   case State::Done:
+    // fallthrough
     return State::Done;
   default:
     MOZ_ASSERT_UNREACHABLE("Invalid state");

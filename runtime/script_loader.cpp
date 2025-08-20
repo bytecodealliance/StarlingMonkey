@@ -160,7 +160,7 @@ static std::string resolve_path(std::string_view path, std::string_view base) {
 }
 
 static JSObject* get_module(JSContext* cx, JS::SourceText<mozilla::Utf8Unit> &source,
-                            const char* resolved_path, const JS::CompileOptions &opts) {
+                            std::string_view resolved_path, const JS::CompileOptions &opts) {
   RootedObject module(cx, JS::CompileModule(cx, opts, source));
   if (!module) {
     return nullptr;
@@ -172,12 +172,12 @@ static JSObject* get_module(JSContext* cx, JS::SourceText<mozilla::Utf8Unit> &so
     return nullptr;
   }
 
-  RootedString resolved_path_str(cx, JS_NewStringCopyZ(cx, resolved_path));
+  RootedString resolved_path_str(cx, JS_NewStringCopyN(cx, resolved_path.data(), resolved_path.size()));
   if (!resolved_path_str) {
     return nullptr;
   }
-  RootedValue resolved_path_val(cx, StringValue(resolved_path_str));
 
+  RootedValue resolved_path_val(cx, StringValue(resolved_path_str));
   if (!JS_DefineProperty(cx, info, "id", resolved_path_val, JSPROP_ENUMERATE)) {
     return nullptr;
   }
@@ -191,10 +191,9 @@ static JSObject* get_module(JSContext* cx, JS::SourceText<mozilla::Utf8Unit> &so
   return module;
 }
 
-static JSObject* get_module(JSContext* cx, const char* specifier, const char* resolved_path,
-                            const JS::CompileOptions &opts) {
-  RootedString resolved_path_str(cx, JS_NewStringCopyZ(cx, resolved_path));
-
+static JSObject *get_module(JSContext *cx, std::string_view specifier,
+                            std::string_view resolved_path, const JS::CompileOptions &opts) {
+  RootedString resolved_path_str(cx, JS_NewStringCopyN(cx, resolved_path.data(), resolved_path.size()));
   if (!resolved_path_str) {
     return nullptr;
   }
@@ -349,7 +348,7 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
   JS::CompileOptions opts(cx, *COMPILE_OPTS);
   auto stripped = strip_prefix(resolved_path, PATH_PREFIX);
   opts.setFileAndLine(stripped.c_str(), 1);
-  return get_module(cx, path.get(), resolved_path.c_str(), opts);
+  return get_module(cx, path.get(), resolved_path, opts);
 }
 
 bool module_metadata_hook(JSContext* cx, HandleValue referencingPrivate, HandleObject metaObject) {
@@ -414,9 +413,15 @@ void ScriptLoader::enable_module_mode(bool enable) {
   MODULE_MODE = enable;
 }
 
-bool ScriptLoader::load_resolved_script(JSContext *cx, const char *specifier,
-                                        const char* resolved_path,
+bool ScriptLoader::load_resolved_script(JSContext *cx, std::string_view specifier_sv,
+                                        std::string_view resolved_path_sv,
                                         JS::SourceText<mozilla::Utf8Unit> &script) {
+  std::string specifier_str(specifier_sv);
+  std::string resolved_path_str(resolved_path_sv);
+
+  const auto *specifier = specifier_str.c_str();
+  const auto *resolved_path = resolved_path_str.c_str();
+
   FILE *file = fopen(resolved_path, "r");
   if (!file) {
     return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError,
@@ -448,10 +453,9 @@ bool ScriptLoader::load_resolved_script(JSContext *cx, const char *specifier,
   return script.init(cx, std::move(buf), len);
 }
 
-bool ScriptLoader::load_script(JSContext *cx, const char *script_path,
+bool ScriptLoader::load_script(JSContext *cx, std::string_view path,
                                JS::SourceText<mozilla::Utf8Unit> &script) {
 
-  std::string path(script_path);
   std::string resolved;
   if (BASE_PATH.empty()) {
     auto pos = path.find_last_of('/');
@@ -464,10 +468,10 @@ bool ScriptLoader::load_script(JSContext *cx, const char *script_path,
   } else {
     resolved = resolve_path(path, BASE_PATH);
   }
-  return load_resolved_script(cx, script_path, resolved.c_str(), script);
+  return load_resolved_script(cx, path, resolved, script);
 }
 
-bool ScriptLoader::eval_top_level_script(const char *path, JS::SourceText<mozilla::Utf8Unit> &source,
+bool ScriptLoader::eval_top_level_script(std::string_view path, JS::SourceText<mozilla::Utf8Unit> &source,
                                          MutableHandleValue result, MutableHandleValue tla_promise) {
   JSContext *cx = ENGINE->cx();
 
