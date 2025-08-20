@@ -130,7 +130,8 @@ inline Ordering header_compare(const std::string_view a, const std::string_view 
     char cb = header_lowercase(*it_b);
     if (ca < cb) {
       return Ordering::Less;
-    } if (ca > cb) {
+    }
+    if (ca > cb) {
       return Ordering::Greater;
     }
     ++it_a;
@@ -138,8 +139,8 @@ inline Ordering header_compare(const std::string_view a, const std::string_view 
   }
   if (it_a == a.end()) {
     return it_b == b.end() ? Ordering::Equal : Ordering::Less;
-  }     return Ordering::Greater;
- 
+  }
+  return Ordering::Greater;
 }
 
 struct HeaderCompare {
@@ -241,10 +242,10 @@ bool retrieve_values_for_header_from_handle(JSContext *cx, JS::HandleObject self
     val_str = core::decode_byte_string(cx, str);
     if (!val_str) {
       return false;
-}
+    }
     if (!JS_SetElement(cx, out_arr, i, val_str)) {
       return false;
-}
+    }
     i++;
   }
 
@@ -311,7 +312,7 @@ bool retrieve_values_for_header_from_list(JSContext *cx, JS::HandleObject self, 
   size_t len = headers_list->size();
   if (!JS_SetElement(cx, out_arr, i, str)) {
     return false;
-}
+  }
   while (++i < len - index) {
     const host_api::HostString *next_key = &std::get<0>(*Headers::get_index(cx, self, index + i));
     val = &std::get<1>(*Headers::get_index(cx, self, index + i));
@@ -324,7 +325,7 @@ bool retrieve_values_for_header_from_list(JSContext *cx, JS::HandleObject self, 
     }
     if (!JS_SetElement(cx, out_arr, i, str)) {
       return false;
-}
+    }
   }
   return true;
 }
@@ -728,17 +729,17 @@ bool Headers::set(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto name_chars = validate_header_name(cx, args[0], "Headers.set");
   if (!name_chars) {
     return false;
-}
+  }
 
   auto value_chars = normalize_and_validate_header_value(cx, args[1], "headers.set");
   if (!value_chars.ptr) {
     return false;
-}
+  }
 
   bool is_valid = false;
   if (!validate_guard(cx, self, name_chars, "Headers.append", &is_valid)) {
     return false;
-}
+  }
 
   if (!is_valid) {
     args.rval().setUndefined();
@@ -747,7 +748,7 @@ bool Headers::set(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   if (!prepare_for_entries_modification(cx, self)) {
     return false;
-}
+  }
 
   Mode mode = Headers::mode(self);
   if (mode == Mode::HostOnly) {
@@ -763,40 +764,53 @@ bool Headers::set(JSContext *cx, unsigned argc, JS::Value *vp) {
 
     auto idx = Headers::lookup(cx, self, name_chars);
     if (!idx) {
-      if (!append_valid_normalized_header(cx, self, std::move(name_chars), std::move(value_chars))) {
-        return false;
-}
-    } else {
-      size_t index = idx.value();
-      // The lookup above will guarantee that sort_list is up to date.
-      std::vector<size_t> *headers_sort_list = Headers::headers_sort_list(self);
-      HeadersList *headers_list = Headers::headers_list(self);
+      args.rval().setUndefined();
+      return append_valid_normalized_header(cx, self, std::move(name_chars), std::move(value_chars));
+    }
 
-      // Update the first entry in place to the new value
-      host_api::HostString *header_val =
-          &std::get<1>(headers_list->at(headers_sort_list->at(index)));
+    size_t index = idx.value();
+    // The lookup above will guarantee that sort_list is up to date.
+    std::vector<size_t> *headers_sort_list = Headers::headers_sort_list(self);
+    HeadersList *headers_list = Headers::headers_list(self);
 
-      // Swap in the new value respecting the disposal semantics
-      header_val->ptr.swap(value_chars.ptr);
-      header_val->len = value_chars.len;
+    // Update the first entry in place to the new value
+    host_api::HostString *header_val =
+        &std::get<1>(headers_list->at(headers_sort_list->at(index)));
 
-      // Delete all subsequent entries for this header excluding the first,
-      // as a variation of Headers::delete.
-      size_t len = headers_list->size();
-      size_t delete_cnt = 0;
-      while (index + delete_cnt + 1 < len &&
-             headers_sort_list->at(index + delete_cnt + 1) >= delete_cnt &&
-             (header_compare(std::get<0>(headers_list->at(
-                                 headers_sort_list->at(index + delete_cnt + 1) - delete_cnt)),
-                             name_chars) == Ordering::Equal)) {
-        headers_list->erase(headers_list->begin() + headers_sort_list->at(index + delete_cnt + 1) -
-                            delete_cnt);
-        delete_cnt++;
+    // Swap in the new value respecting the disposal semantics
+    header_val->ptr.swap(value_chars.ptr);
+    header_val->len = value_chars.len;
+
+    // Delete all subsequent entries for this header excluding the first,
+    // as a variation of Headers::delete.
+    size_t len = headers_list->size();
+    size_t delete_cnt = 0;
+
+    while (true) {
+      size_t next_index = index + delete_cnt + 1;
+      if (next_index >= len) {
+        break;
       }
-      // Reset the sort list if we performed additional deletions.
-      if (delete_cnt > 0) {
-        headers_sort_list->clear();
+
+      size_t sorted_pos = headers_sort_list->at(next_index);
+      if (sorted_pos < delete_cnt) {
+        break;
       }
+
+      size_t actual_pos = sorted_pos - delete_cnt;
+      const auto& header_name = std::get<0>(headers_list->at(actual_pos));
+
+      if (header_compare(header_name, name_chars) != Ordering::Equal) {
+        break;
+      }
+
+      headers_list->erase(headers_list->begin() + actual_pos);
+      delete_cnt++;
+    }
+
+    // Reset the sort list if we performed additional deletions.
+    if (delete_cnt > 0) {
+      headers_sort_list->clear();
     }
   }
 
@@ -810,7 +824,7 @@ bool Headers::has(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto name_chars = validate_header_name(cx, args[0], "Headers.has");
   if (!name_chars) {
     return false;
-}
+  }
 
   Mode mode = Headers::mode(self);
   if (mode == Mode::Uninitialized) {
@@ -837,58 +851,54 @@ bool Headers::append(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto name_chars = validate_header_name(cx, args[0], "Headers.append");
   if (!name_chars) {
     return false;
-}
+  }
 
   auto value_chars = normalize_and_validate_header_value(cx, args[1], "Headers.append");
   if (!value_chars) {
     return false;
-}
+  }
 
   bool is_valid = false;
   if (!validate_guard(cx, self, name_chars, "Headers.append", &is_valid)) {
     return false;
   }
 
-  if (is_valid) {
-    // name casing must come from existing name match if there is one.
-    auto idx = Headers::lookup(cx, self, name_chars);
-
-    if (!prepare_for_entries_modification(cx, self)) {
-      return false;
-}
-
-    if (idx) {
-      // set-cookie doesn't combine
-      if (header_compare(name_chars, set_cookie_str) == Ordering::Equal) {
-        if (!append_valid_normalized_header(cx, self,
-                                            std::get<0>(*Headers::get_index(cx, self, idx.value())),
-                                            std::move(value_chars))) {
-          return false;
-}
-      } else {
-        // walk to the last name if multiple to do the combining into
-        size_t index = idx.value();
-        skip_values_for_header_from_list(cx, self, &index, false);
-        host_api::HostString *header_val = &std::get<1>(*Headers::get_index(cx, self, index));
-        size_t combined_len = header_val->len + value_chars.len + 2;
-        auto combined = JS::UniqueChars(static_cast<char *>(js_malloc(combined_len)));
-        memcpy(combined.get(), header_val->ptr.get(), header_val->len);
-        memcpy(combined.get() + header_val->len, ", ", 2);
-        memcpy(combined.get() + header_val->len + 2, value_chars.ptr.get(), value_chars.len);
-        header_val->ptr.swap(combined);
-        header_val->len = combined_len;
-      }
-    } else {
-      if (!append_valid_normalized_header(cx, self, std::move(name_chars), std::move(value_chars))) {
-        return false;
-}
-    }
+  if (!is_valid) {
+    args.rval().setUndefined();
     return true;
   }
 
-  args.rval().setUndefined();
+  // name casing must come from existing name match if there is one.
+  auto idx = Headers::lookup(cx, self, name_chars);
+
+  if (!prepare_for_entries_modification(cx, self)) {
+    return false;
+  }
+
+  if (!idx) {
+    return append_valid_normalized_header(cx, self, std::move(name_chars), std::move(value_chars));
+  }
+
+  // set-cookie doesn't combine
+  if (header_compare(name_chars, set_cookie_str) == Ordering::Equal) {
+    return append_valid_normalized_header(cx, self, std::get<0>(*Headers::get_index(cx, self, idx.value())), std::move(value_chars));
+  }
+
+  // walk to the last name if multiple to do the combining into
+  size_t index = idx.value();
+  skip_values_for_header_from_list(cx, self, &index, false);
+  host_api::HostString *header_val = &std::get<1>(*Headers::get_index(cx, self, index));
+  size_t combined_len = header_val->len + value_chars.len + 2;
+  auto combined = JS::UniqueChars(static_cast<char *>(js_malloc(combined_len)));
+  memcpy(combined.get(), header_val->ptr.get(), header_val->len);
+  memcpy(combined.get() + header_val->len, ", ", 2);
+  memcpy(combined.get() + header_val->len + 2, value_chars.ptr.get(), value_chars.len);
+  header_val->ptr.swap(combined);
+  header_val->len = combined_len;
+
   return true;
 }
+
 
 bool Headers::set_valid_if_undefined(JSContext *cx, HandleObject self, string_view name,
                                      string_view value) {
@@ -926,12 +936,12 @@ bool Headers::delete_(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto name_chars = validate_header_name(cx, args[0], "Headers.delete");
   if (!name_chars) {
     return false;
-}
+  }
 
   bool is_valid = false;
   if (!validate_guard(cx, self, name_chars, "Headers.delete", &is_valid)) {
     return false;
-}
+  }
 
   if (!is_valid) {
     args.rval().setUndefined();
@@ -940,7 +950,7 @@ bool Headers::delete_(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   if (!prepare_for_entries_modification(cx, self)) {
     return false;
-}
+  }
 
   Mode mode = Headers::mode(self);
   if (mode == Mode::HostOnly) {
@@ -952,34 +962,54 @@ bool Headers::delete_(JSContext *cx, unsigned argc, JS::Value *vp) {
       HANDLE_ERROR(cx, *err);
       return false;
     }
-  } else {
-    MOZ_ASSERT(mode == Mode::ContentOnly);
-
-    auto idx = Headers::lookup(cx, self, name_chars);
-    if (idx) {
-      size_t index = idx.value();
-      // The lookup above will guarantee that sort_list is up to date.
-      std::vector<size_t> *headers_sort_list = Headers::headers_sort_list(self);
-      HeadersList *headers_list = Headers::headers_list(self);
-
-      // Delete all case-insensitively equal names.
-      // The ordering guarantee for sort_list is that equal names will come later in headers_list
-      // so that we can continue to use sort list during the delete operation, only recomputing it
-      // after.
-      size_t delete_cnt = 0;
-      size_t len = headers_sort_list->size();
-      do {
-        headers_list->erase(headers_list->begin() + headers_sort_list->at(index + delete_cnt) -
-                            delete_cnt);
-        delete_cnt++;
-      } while (
-          index + delete_cnt < len && headers_sort_list->at(index + delete_cnt) >= delete_cnt &&
-          header_compare(
-              std::get<0>(headers_list->at(headers_sort_list->at(index + delete_cnt) - delete_cnt)),
-              name_chars) == Ordering::Equal);
-      headers_sort_list->clear();
-    }
+    args.rval().setUndefined();
+    return true;
   }
+
+  MOZ_ASSERT(mode == Mode::ContentOnly);
+
+  auto idx = Headers::lookup(cx, self, name_chars);
+  if (!idx) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  size_t index = idx.value();
+  // The lookup above will guarantee that sort_list is up to date.
+  std::vector<size_t> *headers_sort_list = Headers::headers_sort_list(self);
+  HeadersList *headers_list = Headers::headers_list(self);
+
+  // Delete all case-insensitively equal names.
+  // The ordering guarantee for sort_list is that equal names will come later in headers_list
+  // so that we can continue to use sort list during the delete operation, only recomputing it
+  // after.
+  size_t delete_cnt = 0;
+  size_t len = headers_sort_list->size();
+
+  while (true) {
+    size_t current_index = index + delete_cnt;
+
+    if (current_index >= len) {
+      break;
+    }
+
+    size_t sorted_pos = headers_sort_list->at(current_index);
+    if (sorted_pos < delete_cnt) {
+      break;
+    }
+
+    size_t actual_pos = sorted_pos - delete_cnt;
+    const auto& header_name = std::get<0>(headers_list->at(actual_pos));
+
+    if (header_compare(header_name, name_chars) != Ordering::Equal) {
+      break;
+    }
+
+    headers_list->erase(headers_list->begin() + actual_pos);
+    delete_cnt++;
+  }
+
+  headers_sort_list->clear();
 
   args.rval().setUndefined();
   return true;
@@ -992,6 +1022,7 @@ bool Headers::append_valid_header(JSContext *cx, JS::HandleObject self,
   if (!validate_guard(cx, self, valid_key, "Headers constructor", &is_valid)) {
     return false;
   }
+
   if (!is_valid) {
     return true;
   }
@@ -999,23 +1030,21 @@ bool Headers::append_valid_header(JSContext *cx, JS::HandleObject self,
   auto value_chars = normalize_and_validate_header_value(cx, value, fun_name);
   if (!value_chars.ptr) {
     return false;
-}
+  }
 
   if (!prepare_for_entries_modification(cx, self)) {
     return false;
-}
+  }
 
   // name casing must come from existing name match if there is one.
   auto idx = Headers::lookup(cx, self, valid_key);
+
   if (idx) {
-    if (!append_valid_normalized_header(
-            cx, self, std::get<0>(*Headers::get_index(cx, self, idx.value())), value_chars)) {
-      return false;
-    }
-  } else if (!append_valid_normalized_header(cx, self, valid_key, value_chars)) {
-    return false;
+    return append_valid_normalized_header(
+        cx, self, std::get<0>(*Headers::get_index(cx, self, idx.value())), value_chars);
   }
-  return true;
+
+  return append_valid_normalized_header(cx, self, valid_key, value_chars);
 }
 
 const JSFunctionSpec Headers::static_methods[] = {
@@ -1114,7 +1143,7 @@ bool Headers::init_class(JSContext *cx, JS::HandleObject global) {
   JS::RootedValue entries(cx);
   if (!JS_GetProperty(cx, proto_obj, "entries", &entries)) {
     return false;
-}
+  }
 
   JS::SymbolCode code = JS::SymbolCode::iterator;
   JS::RootedId iteratorId(cx, JS::GetWellKnownSymbolKey(cx, code));
@@ -1190,11 +1219,11 @@ bool HeadersIterator::init_class(JSContext *cx, JS::HandleObject global) {
   JS::RootedObject iterator_proto(cx, JS::GetRealmIteratorPrototype(cx));
   if (!iterator_proto) {
     return false;
-}
+  }
 
   if (!init_class_impl(cx, global, iterator_proto)) {
     return false;
-}
+  }
 
   // Delete both the `HeadersIterator` global property and the
   // `constructor` property on `HeadersIterator.prototype`. The latter
@@ -1245,7 +1274,7 @@ bool HeadersIterator::next(JSContext *cx, unsigned argc, Value *vp) {
   JS::RootedObject result(cx, JS_NewPlainObject(cx));
   if (!result) {
     return false;
-}
+  }
 
   if (index >= len) {
     JS_DefineProperty(cx, result, "done", JS::TrueHandleValue, JSPROP_ENUMERATE);
@@ -1293,7 +1322,7 @@ bool HeadersIterator::next(JSContext *cx, unsigned argc, Value *vp) {
     JS::RootedObject pair(cx, JS::NewArrayObject(cx, 2));
     if (!pair) {
       return false;
-}
+    }
     JS_DefineElement(cx, pair, 0, key_val, JSPROP_ENUMERATE);
     JS_DefineElement(cx, pair, 1, val_val, JSPROP_ENUMERATE);
     result_val = JS::ObjectValue(*pair);

@@ -591,12 +591,14 @@ JSObject *EventTarget::create(JSContext *cx) {
     return nullptr;
   }
 
-  SetReservedSlot(self, Slots::Listeners, JS::PrivateValue(new ListenerList));
+  auto list = js::MakeUnique<ListenerList>();
+  SetReservedSlot(self, Slots::Listeners, JS::PrivateValue(list.release()));
   return self;
 }
 
 bool EventTarget::init(JSContext *cx, HandleObject self) {
-  SetReservedSlot(self, Slots::Listeners, JS::PrivateValue(new ListenerList));
+  auto list = js::MakeUnique<ListenerList>();
+  SetReservedSlot(self, Slots::Listeners, JS::PrivateValue(list.release()));
   return true;
 }
 
@@ -608,7 +610,8 @@ bool EventTarget::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  SetReservedSlot(self, Slots::Listeners, JS::PrivateValue(new ListenerList));
+  auto list = js::MakeUnique<ListenerList>();
+  SetReservedSlot(self, Slots::Listeners, JS::PrivateValue(list.release()));
 
   args.rval().setObject(*self);
   return true;
@@ -617,9 +620,9 @@ bool EventTarget::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 void EventTarget::finalize(JS::GCContext *gcx, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   auto *list = listeners(self);
-  
-    delete list;
-  
+  if (list) {
+    js_delete(list);
+  }
 }
 
 void EventTarget::trace(JSTracer *trc, JSObject *self) {

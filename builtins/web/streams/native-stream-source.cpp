@@ -92,7 +92,7 @@ bool NativeStreamSource::lock_stream(JSContext *cx, JS::HandleObject stream) {
   JS::RootedObject reader(cx, JS::ReadableStreamGetReader(cx, stream, mode));
   if (!reader) {
     return false;
-}
+  }
 
   JS::SetReservedSlot(self, Slots::InternalReader, JS::ObjectValue(*reader));
   return true;

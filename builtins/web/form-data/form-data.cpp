@@ -17,8 +17,6 @@ using builtins::web::form_data::FormDataEntry;
 
 } // namespace
 
-
-
 namespace builtins::web::form_data {
 
 using blob::Blob;
@@ -36,7 +34,7 @@ bool FormDataIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedObject result(cx, JS_NewPlainObject(cx));
   if (!result) {
     return false;
-}
+  }
 
   if (index == entries->length()) {
     JS_DefineProperty(cx, result, "done", JS::TrueHandleValue, JSPROP_ENUMERATE);
@@ -67,7 +65,7 @@ bool FormDataIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
     JS::RootedObject pair(cx, JS::NewArrayObject(cx, 2));
     if (!pair) {
       return false;
-}
+    }
     JS_DefineElement(cx, pair, 0, key_val, JSPROP_ENUMERATE);
     JS_DefineElement(cx, pair, 1, val_val, JSPROP_ENUMERATE);
     result_val = JS::ObjectValue(*pair);
@@ -113,11 +111,11 @@ bool FormDataIterator::init_class(JSContext *cx, JS::HandleObject global) {
   JS::RootedObject iterator_proto(cx, JS::GetRealmIteratorPrototype(cx));
   if (!iterator_proto) {
     return false;
-}
+  }
 
   if (!init_class_impl(cx, global, iterator_proto)) {
     return false;
-}
+  }
 
   // Delete both the `FormDataIterator` global property and the
   // `constructor` property on `FormDataIterator.prototype`. The latter
@@ -132,7 +130,7 @@ JSObject *FormDataIterator::create(JSContext *cx, JS::HandleObject form, uint8_t
   JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
   if (!self) {
     return nullptr;
-}
+  }
 
   JS::SetReservedSlot(self, Slots::Form, JS::ObjectValue(*form));
   JS::SetReservedSlot(self, Slots::Type, JS::Int32Value(type));
@@ -402,8 +400,9 @@ bool FormData::set(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (it != entries->end()) {
     it->value = value;
     return true;
-  }     return append(cx, self, name, value, filename);
- 
+  }
+
+  return append(cx, self, name, value, filename);
 }
 
 JSObject *FormData::create(JSContext *cx) {
@@ -497,5 +496,3 @@ bool install(api::Engine *engine) {
 }
 
 } // namespace builtins::web::form_data
-
-

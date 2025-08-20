@@ -97,12 +97,14 @@ bool add_pending_promise(JSContext *cx, JS::HandleObject self, JS::HandleObject 
   } else {
     reject_handler = resolve_handler;
   }
+
   if (!reject_handler) {
     return false;
-}
+  }
+
   if (!JS::AddPromiseReactions(cx, promise, resolve_handler, reject_handler)) {
     return false;
-}
+  }
 
   inc_pending_promise_count(self);
   return true;
@@ -114,7 +116,8 @@ JSObject *FetchEvent::prepare_downstream_request(JSContext *cx) {
   JS::RootedObject request(cx, Request::create(cx));
   if (!request) {
     return nullptr;
-}
+  }
+
   Request::init_slots(request);
   return request;
 }
@@ -249,7 +252,7 @@ bool response_promise_then_handler(JSContext *cx, JS::HandleObject event, JS::Ha
     JS::RootedObject rejection(cx, PromiseRejectedWithPendingError(cx));
     if (!rejection) {
       return false;
-}
+    }
     args.rval().setObject(*rejection);
     return FetchEvent::respondWithError(cx, event);
   }
@@ -285,7 +288,7 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedObject response_promise(cx, JS::CallOriginalPromiseResolve(cx, args.get(0)));
   if (!response_promise) {
     return false;
-}
+  }
 
   // Step 2
   if (!Event::has_flag(self, EventFlag::Dispatch)) {
@@ -312,18 +315,18 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
   catch_handler = create_internal_method<response_promise_catch_handler>(cx, self, extra);
   if (!catch_handler) {
     return false;
-}
+  }
 
   // Step 10 (continued in `response_promise_then_handler` above)
   JS::RootedObject then_handler(cx);
   then_handler = create_internal_method<response_promise_then_handler>(cx, self);
   if (!then_handler) {
     return false;
-}
+  }
 
   if (!JS::AddPromiseReactions(cx, response_promise, then_handler, catch_handler)) {
     return false;
-}
+  }
 
   args.rval().setUndefined();
   return true;
@@ -365,7 +368,7 @@ bool FetchEvent::waitUntil(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedObject promise(cx, JS::CallOriginalPromiseResolve(cx, args.get(0)));
   if (!promise) {
     return false;
-}
+  }
 
   // Step 2
   if (!is_active(self)) {

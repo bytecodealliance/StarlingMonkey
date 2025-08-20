@@ -88,15 +88,20 @@ const EVP_MD *createDigestAlgorithm(JSContext *cx, JS::HandleObject key) {
   std::string_view name = name_chars;
   if (name == "MD5") {
     return EVP_md5();
-  } if (name == "SHA-1") {
+  }
+  if (name == "SHA-1") {
     return EVP_sha1();
-  } if (name == "SHA-224") {
+  }
+  if (name == "SHA-224") {
     return EVP_sha224();
-  } if (name == "SHA-256") {
+  }
+  if (name == "SHA-256") {
     return EVP_sha256();
-  } if (name == "SHA-384") {
+  }
+  if (name == "SHA-384") {
     return EVP_sha384();
-  } if (name == "SHA-512") {
+  }
+  if (name == "SHA-512") {
     return EVP_sha512();
   }
 
@@ -387,9 +392,11 @@ JS::Result<CryptoAlgorithmIdentifier> toHashIdentifier(JSContext *cx, JS::Handle
 std::optional<NamedCurve> toNamedCurve(std::string_view name) {
   if (name == "P-256") {
     return NamedCurve::P256;
-  } if (name == "P-384") {
+  }
+  if (name == "P-384") {
     return NamedCurve::P384;
-  } if (name == "P-521") {
+  }
+  if (name == "P-521") {
     return NamedCurve::P521;
   }
 
@@ -401,8 +408,8 @@ JS::Result<NamedCurve> toNamedCurve(JSContext *cx, JS::HandleValue value) {
   auto name = toNamedCurve(nameChars);
   if (name.has_value()) {
     return name.value();
-  }     return JS::Result<NamedCurve>(JS::Error());
- 
+  }
+  return JS::Result<NamedCurve>(JS::Error());
 }
 
 JS::Result<size_t> curveSize(JSContext *cx, JS::HandleObject key) {
@@ -418,9 +425,11 @@ JS::Result<size_t> curveSize(JSContext *cx, JS::HandleObject key) {
   std::string_view namedCurve = namedCurve_chars;
   if (namedCurve == "P-256") {
     return 256;
-  } if (namedCurve == "P-384") {
+  }
+  if (namedCurve == "P-384") {
     return 384;
-  } if (namedCurve == "P-521") {
+  }
+  if (namedCurve == "P-521") {
     return 521;
   }
 
@@ -490,37 +499,53 @@ JS::Result<CryptoAlgorithmIdentifier> normalizeIdentifier(JSContext *cx, JS::Han
                  [](unsigned char c) { return std::toupper(c); });
   if (algorithm == "RSASSA-PKCS1-V1_5") {
     return CryptoAlgorithmIdentifier::RSASSA_PKCS1_v1_5;
-  } if (algorithm == "RSA-PSS") {
+  }
+  if (algorithm == "RSA-PSS") {
     return CryptoAlgorithmIdentifier::RSA_PSS;
-  } if (algorithm == "RSA-OAEP") {
+  }
+  if (algorithm == "RSA-OAEP") {
     return CryptoAlgorithmIdentifier::RSA_OAEP;
-  } if (algorithm == "ECDSA") {
+  }
+  if (algorithm == "ECDSA") {
     return CryptoAlgorithmIdentifier::ECDSA;
-  } if (algorithm == "ECDH") {
+  }
+  if (algorithm == "ECDH") {
     return CryptoAlgorithmIdentifier::ECDH;
-  } if (algorithm == "AES-CTR") {
+  }
+  if (algorithm == "AES-CTR") {
     return CryptoAlgorithmIdentifier::AES_CTR;
-  } if (algorithm == "AES-CBC") {
+  }
+  if (algorithm == "AES-CBC") {
     return CryptoAlgorithmIdentifier::AES_CBC;
-  } if (algorithm == "AES-GCM") {
+  }
+  if (algorithm == "AES-GCM") {
     return CryptoAlgorithmIdentifier::AES_GCM;
-  } if (algorithm == "AES-KW") {
+  }
+  if (algorithm == "AES-KW") {
     return CryptoAlgorithmIdentifier::AES_KW;
-  } if (algorithm == "HMAC") {
+  }
+  if (algorithm == "HMAC") {
     return CryptoAlgorithmIdentifier::HMAC;
-  } if (algorithm == "MD5") {
+  }
+  if (algorithm == "MD5") {
     return CryptoAlgorithmIdentifier::MD5;
-  } if (algorithm == "SHA-1") {
+  }
+  if (algorithm == "SHA-1") {
     return CryptoAlgorithmIdentifier::SHA_1;
-  } if (algorithm == "SHA-256") {
+  }
+  if (algorithm == "SHA-256") {
     return CryptoAlgorithmIdentifier::SHA_256;
-  } if (algorithm == "SHA-384") {
+  }
+  if (algorithm == "SHA-384") {
     return CryptoAlgorithmIdentifier::SHA_384;
-  } if (algorithm == "SHA-512") {
+  }
+  if (algorithm == "SHA-512") {
     return CryptoAlgorithmIdentifier::SHA_512;
-  } if (algorithm == "HKDF") {
+  }
+  if (algorithm == "HKDF") {
     return CryptoAlgorithmIdentifier::HKDF;
-  } if (algorithm == "PBKDF2") {
+  }
+  if (algorithm == "PBKDF2") {
     return CryptoAlgorithmIdentifier::PBKDF2;
   }
 
@@ -1219,8 +1244,8 @@ std::unique_ptr<CryptoAlgorithmHMAC_Import> CryptoAlgorithmHMAC_Import::fromPara
     }
     length = length_val.toNumber();
     return std::make_unique<CryptoAlgorithmHMAC_Import>(hashIdentifier.unwrap(), length);
-  }     return std::make_unique<CryptoAlgorithmHMAC_Import>(hashIdentifier.unwrap());
- 
+  }
+  return std::make_unique<CryptoAlgorithmHMAC_Import>(hashIdentifier.unwrap());
 }
 
 // https://w3c.github.io/webcrypto/#hmac-operations
@@ -1374,8 +1399,10 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
       // throw a DataError.
       DOMException::raise(cx, "The optional HMAC key length must be shorter than the key data, and by no more than 7 bits.", "DataError");
       return nullptr;
+    }
+
     // 12. If the length member of normalizedAlgorithm, is less than or equal to length minus eight:
-    } if (this->length.value() <= (length - 8)) {
+    if (this->length.value() <= (length - 8)) {
       // throw a DataError.
       DOMException::raise(cx, "The optional HMAC key length must be shorter than the key data, and by no more than 7 bits.", "DataError");
       return nullptr;
@@ -1398,7 +1425,7 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
 }
 
 JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat format, JS::HandleValue key_data, bool extractable,
-                      CryptoKeyUsages usages) {
+                                                CryptoKeyUsages usages) {
   MOZ_ASSERT(cx);
   // The only supported formats for HMAC are raw, and jwk.
   if (format != CryptoKeyFormat::Raw && format != CryptoKeyFormat::Jwk) {
@@ -2045,44 +2072,45 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
         (EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_EXPONENT2, &dmq1_raw) != 0) &&
         (EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_COEFFICIENT1, &iqmp_raw) != 0);
 
-    if (has_crt_params) {
-      BignumPtr p(p_raw);
-      BignumPtr q(q_raw);
-      BignumPtr dmp1(dmp1_raw);
-      BignumPtr dmq1(dmq1_raw);
-      BignumPtr iqmp(iqmp_raw);
-
-      int byte_len = BN_num_bytes(n.get());
-
-      auto [p_bytes, p_size] = to_bytes_expand(cx, p.get(), byte_len);
-      auto [q_bytes, q_size] = to_bytes_expand(cx, q.get(), byte_len);
-      auto [dp_bytes, dp_size] = to_bytes_expand(cx, dmp1.get(), byte_len);
-      auto [dq_bytes, dq_size] = to_bytes_expand(cx, dmq1.get(), byte_len);
-      auto [qi_bytes, qi_size] = to_bytes_expand(cx, iqmp.get(), byte_len);
-
-      if (!p_bytes || !q_bytes || !dp_bytes || !dq_bytes || !qi_bytes) {
-        JS_ReportOutOfMemory(cx);
-        return nullptr;
-      }
-
-      std::string_view p_sv(reinterpret_cast<const char *>(p_bytes.get()), p_size);
-      std::string_view q_sv(reinterpret_cast<const char *>(q_bytes.get()), q_size);
-      std::string_view dp_sv(reinterpret_cast<const char *>(dp_bytes.get()), dp_size);
-      std::string_view dq_sv(reinterpret_cast<const char *>(dq_bytes.get()), dq_size);
-      std::string_view qi_sv(reinterpret_cast<const char *>(qi_bytes.get()), qi_size);
-
-      // Create prime info structures
-      CryptoKeyRSAComponents::PrimeInfo prime1(p_sv, dp_sv);
-      CryptoKeyRSAComponents::PrimeInfo prime2(q_sv, dq_sv, qi_sv);
-
-      // Create RSA key with CRT parameters
-      auto rsa_key = CryptoKeyRSAComponents::createPrivateWithAdditionalData(
-          modulus_sv, exponent_sv, priv_exponent_sv, prime1, prime2, {});
-
-      return CryptoKey::createRSA(cx, this, std::move(rsa_key), extractable, usages);
-    }       auto key = CryptoKeyRSAComponents::createPrivate(modulus_sv, exponent_sv, priv_exponent_sv);
+    if (!has_crt_params) {
+      auto key = CryptoKeyRSAComponents::createPrivate(modulus_sv, exponent_sv, priv_exponent_sv);
       return CryptoKey::createRSA(cx, this, std::move(key), extractable, usages);
-   
+    }
+
+    BignumPtr p(p_raw);
+    BignumPtr q(q_raw);
+    BignumPtr dmp1(dmp1_raw);
+    BignumPtr dmq1(dmq1_raw);
+    BignumPtr iqmp(iqmp_raw);
+
+    int byte_len = BN_num_bytes(n.get());
+
+    auto [p_bytes, p_size] = to_bytes_expand(cx, p.get(), byte_len);
+    auto [q_bytes, q_size] = to_bytes_expand(cx, q.get(), byte_len);
+    auto [dp_bytes, dp_size] = to_bytes_expand(cx, dmp1.get(), byte_len);
+    auto [dq_bytes, dq_size] = to_bytes_expand(cx, dmq1.get(), byte_len);
+    auto [qi_bytes, qi_size] = to_bytes_expand(cx, iqmp.get(), byte_len);
+
+    if (!p_bytes || !q_bytes || !dp_bytes || !dq_bytes || !qi_bytes) {
+      JS_ReportOutOfMemory(cx);
+      return nullptr;
+    }
+
+    std::string_view p_sv(reinterpret_cast<const char *>(p_bytes.get()), p_size);
+    std::string_view q_sv(reinterpret_cast<const char *>(q_bytes.get()), q_size);
+    std::string_view dp_sv(reinterpret_cast<const char *>(dp_bytes.get()), dp_size);
+    std::string_view dq_sv(reinterpret_cast<const char *>(dq_bytes.get()), dq_size);
+    std::string_view qi_sv(reinterpret_cast<const char *>(qi_bytes.get()), qi_size);
+
+    // Create prime info structures
+    CryptoKeyRSAComponents::PrimeInfo prime1(p_sv, dp_sv);
+    CryptoKeyRSAComponents::PrimeInfo prime2(q_sv, dq_sv, qi_sv);
+
+    // Create RSA key with CRT parameters
+    auto rsa_key = CryptoKeyRSAComponents::createPrivateWithAdditionalData(
+        modulus_sv, exponent_sv, priv_exponent_sv, prime1, prime2, {});
+
+    return CryptoKey::createRSA(cx, this, std::move(rsa_key), extractable, usages);
   }
   case CryptoKeyFormat::Spki: {
     // TODO: Add implementations for these

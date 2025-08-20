@@ -75,7 +75,7 @@ JS::UniqueChars stringify_value(JSContext *cx, JS::HandleValue value) {
   JS::RootedString str(cx, JS_ValueToSource(cx, value));
   if (!str) {
     return nullptr;
-}
+  }
 
   return JS_EncodeStringToUTF8(cx, str);
 }
@@ -110,7 +110,7 @@ bool print_stack(JSContext *cx, FILE *fp) {
   RootedObject stackp(cx);
   if (!JS::CaptureCurrentStack(cx, &stackp)) {
     return false;
-}
+  }
   return print_stack(cx, stackp, fp);
 }
 
@@ -353,12 +353,12 @@ static bool report_unhandled_promise_rejections(JSContext *cx) {
   RootedValue iterable(cx);
   if (!JS::SetValues(cx, unhandledRejectedPromises, &iterable)) {
     return false;
-}
+  }
 
   JS::ForOfIterator it(cx);
   if (!it.init(iterable)) {
     return false;
-}
+  }
 
   RootedValue promise_val(cx);
   RootedObject promise(cx);
@@ -366,11 +366,11 @@ static bool report_unhandled_promise_rejections(JSContext *cx) {
     bool done = false;
     if (!it.next(&promise_val, &done)) {
       return false;
-}
+    }
 
     if (done) {
       break;
-}
+    }
 
     promise = &promise_val.toObject();
     // Note: we unconditionally print these, since they almost always indicate

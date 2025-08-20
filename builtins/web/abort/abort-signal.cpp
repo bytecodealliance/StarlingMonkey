@@ -263,7 +263,7 @@ bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {
   for (auto &algorithm : *algorithms) {
     if (!algorithm->run(cx)) {
       return false;
-}
+    }
   }
 
   // 2. Empty signals's abort algorithms.

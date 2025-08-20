@@ -121,10 +121,10 @@ static std::string resolve_path(std::string_view path, std::string_view base) {
     // as the substring between path_from_idx and path_cur_idx
     while (path_cur_idx < path_len && path[path_cur_idx] != '/') {
       path_cur_idx++;
-}
+    }
     if (path_cur_idx == path_from_idx) {
       break;
-}
+    }
     // . segment to skip
     if (path_cur_idx - path_from_idx == 1 && path[path_from_idx] == '.') {
       path_cur_idx++;
@@ -148,7 +148,7 @@ static std::string resolve_path(std::string_view path, std::string_view base) {
     // normal segment to copy (with the trailing / if not the last segment)
     if (path_cur_idx < path_len && path[path_cur_idx] == '/') {
       path_cur_idx++;
-}
+    }
 
     // Copy segment equivalent to: strncpy(resolved_path + resolved_len, path + path_from_idx, path_cur_idx - path_from_idx);
     resolved_path.append(path.substr(path_from_idx, path_cur_idx - path_from_idx));

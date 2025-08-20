@@ -127,7 +127,7 @@ JSObject *NativeStreamSink::create(JSContext *cx, JS::HandleObject owner,
   JS::RootedObject sink(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
   if (!sink) {
     return nullptr;
-}
+  }
 
   JS::SetReservedSlot(sink, Slots::Owner, JS::ObjectValue(*owner));
   JS::SetReservedSlot(sink, Slots::StartPromise, startPromise);

@@ -427,7 +427,9 @@ bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
     if (Blob::is_instance(obj)) {
       auto *src = Blob::blob(obj);
       return blob->append(src->begin(), src->end());
-    } if (JS_IsArrayBufferViewObject(obj) || JS::IsArrayBufferObject(obj)) {
+    }
+
+    if (JS_IsArrayBufferViewObject(obj) || JS::IsArrayBufferObject(obj)) {
       auto span = value_to_buffer(cx, val, "Blob Parts");
       if (span.has_value()) {
         auto *src = span->data();
@@ -490,9 +492,9 @@ bool Blob::init_blob_parts(JSContext *cx, HandleObject self, HandleValue value) 
     }
 
     return true;
-  }     // non-objects are not allowed for the blobParts
-    return api::throw_error(cx, api::Errors::TypeError, "Blob.constructor", "blobParts", "be an object");
- 
+  }
+  // non-objects are not allowed for the blobParts
+  return api::throw_error(cx, api::Errors::TypeError, "Blob.constructor", "blobParts", "be an object");
 }
 
 bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {

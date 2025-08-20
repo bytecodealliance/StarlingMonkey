@@ -140,13 +140,13 @@ bool Crypto::init_class(JSContext *cx, JS::HandleObject global) {
 bool install(api::Engine *engine) {
   if (!SubtleCrypto::init_class(engine->cx(), engine->global())) {
     return false;
-}
+  }
   if (!Crypto::init_class(engine->cx(), engine->global())) {
     return false;
-}
+  }
   if (!CryptoKey::init_class(engine->cx(), engine->global())) {
     return false;
-}
+  }
   return true;
 }
 

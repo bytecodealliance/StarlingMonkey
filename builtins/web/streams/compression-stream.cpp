@@ -320,13 +320,13 @@ bool CompressionStream::init_class(JSContext *cx, JS::HandleObject global) {
   JSFunction *transformFun = JS_NewFunction(cx, transformAlgorithm, 1, 0, "CS Transform");
   if (!transformFun) {
     return false;
-}
+  }
   transformAlgo.init(cx, JS_GetFunctionObject(transformFun));
 
   JSFunction *flushFun = JS_NewFunction(cx, flushAlgorithm, 1, 0, "CS Flush");
   if (!flushFun) {
     return false;
-}
+  }
   flushAlgo.init(cx, JS_GetFunctionObject(flushFun));
 
   return true;

@@ -52,7 +52,7 @@ bool error_stream_controller_with_pending_exception(JSContext *cx, HandleObject 
   RootedValue exn(cx);
   if (!JS_GetPendingException(cx, &exn)) {
     return false;
-}
+  }
   JS_ClearPendingException(cx);
 
   RootedValue args(cx);
@@ -199,19 +199,17 @@ bool RequestOrResponse::has_body(JSObject *obj) {
 host_api::HttpIncomingBody *RequestOrResponse::incoming_body_handle(JSObject *obj) {
   MOZ_ASSERT(is_incoming(obj));
   auto *handle = RequestOrResponse::handle(obj);
-  if (handle->is_request()) {
-    return reinterpret_cast<host_api::HttpIncomingRequest *>(handle)->body().unwrap();
-  }     return reinterpret_cast<host_api::HttpIncomingResponse *>(handle)->body().unwrap();
- 
+  return handle->is_request() ?
+    reinterpret_cast<host_api::HttpIncomingRequest *>(handle)->body().unwrap() :
+    reinterpret_cast<host_api::HttpIncomingResponse *>(handle)->body().unwrap();
 }
 
 host_api::HttpOutgoingBody *RequestOrResponse::outgoing_body_handle(JSObject *obj) {
   MOZ_ASSERT(!is_incoming(obj));
   auto *handle = RequestOrResponse::handle(obj);
-  if (handle->is_request()) {
-    return reinterpret_cast<host_api::HttpOutgoingRequest *>(handle)->body().unwrap();
-  }     return reinterpret_cast<host_api::HttpOutgoingResponse *>(handle)->body().unwrap();
- 
+  return handle->is_request() ?
+    reinterpret_cast<host_api::HttpOutgoingRequest *>(handle)->body().unwrap() :
+    reinterpret_cast<host_api::HttpOutgoingResponse *>(handle)->body().unwrap();
 }
 
 JSObject *RequestOrResponse::body_stream(JSObject *obj) {
@@ -953,10 +951,9 @@ bool RequestOrResponse::bodyAll(JSContext *cx, JS::CallArgs args, JS::HandleObje
   // TODO(performance): don't reify a ReadableStream for body handles—use an AsyncTask instead
   JS::RootedObject stream(cx, body_stream(self));
   if (!stream) {
-    stream = create_body_stream(cx, self);
-    if (!stream) {
+    if (!(stream = create_body_stream(cx, self))) {
       return false;
-}
+    }
   }
 
   if (!JS_SetElement(cx, stream, 1, body_parser)) {
@@ -1090,7 +1087,7 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
   JS::RootedValue done_val(cx);
   if (!JS_GetProperty(cx, chunk_obj, "done", &done_val)) {
     return false;
-}
+  }
 
   if (done_val.toBoolean()) {
     return finish_outgoing_body_streaming(cx, body_owner);
@@ -1099,7 +1096,7 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
   JS::RootedValue val(cx);
   if (!JS_GetProperty(cx, chunk_obj, "value", &val)) {
     return false;
-}
+  }
 
   // The read operation returned something that's not a Uint8Array, or an array whose buffer has
   // been detached.
@@ -1224,7 +1221,7 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
       cx, JS::ReadableStreamGetReader(cx, stream, JS::ReadableStreamReaderMode::Default));
   if (!reader) {
     return false;
-}
+  }
 
   // Create handlers for both `then` and `catch`.
   // These are functions with two reserved slots, in which we store all
@@ -1239,7 +1236,7 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
       create_internal_method<reader_for_outgoing_body_catch_handler>(cx, body_owner, extra);
   if (!catch_handler) {
     return false;
-}
+  }
 
   JS::RootedObject then_handler(cx);
   extra.setObject(*catch_handler);
@@ -1247,15 +1244,15 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
       create_internal_method<reader_for_outgoing_body_then_handler>(cx, body_owner, extra);
   if (!then_handler) {
     return false;
-}
+  }
 
   JS::RootedObject promise(cx, JS::ReadableStreamDefaultReaderRead(cx, reader));
   if (!promise) {
     return false;
-}
+  }
   if (!JS::AddPromiseReactions(cx, promise, then_handler, catch_handler)) {
     return false;
-}
+  }
 
   *requires_streaming = true;
   return true;
@@ -1270,7 +1267,7 @@ JSObject *RequestOrResponse::create_body_stream(JSContext *cx, JS::HandleObject 
                                   body_source_cancel_algorithm));
   if (!source) {
     return nullptr;
-}
+  }
 
   JS::RootedObject body_stream(cx, streams::NativeStreamSource::stream(source));
   if (!body_stream) {
@@ -1301,7 +1298,7 @@ bool RequestOrResponse::body_get(JSContext *cx, JS::CallArgs args, JS::HandleObj
     body_stream = create_body_stream(cx, self);
     if (!body_stream) {
       return false;
-}
+    }
   }
 
   args.rval().setObjectOrNull(body_stream);
@@ -1344,7 +1341,7 @@ bool Request::headers_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   JSObject *headers = RequestOrResponse::headers(cx, self);
   if (!headers) {
     return false;
-}
+  }
 
   args.rval().setObject(*headers);
   return true;
@@ -1617,7 +1614,7 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
         cx, JS_NewObjectWithGivenProto(cx, &url::URL::class_, url::URL::proto_obj));
     if (!url_instance) {
       return false;
-}
+    }
 
     JS::RootedObject parsedURL(
         cx, url::URL::create(cx, url_instance, input, worker_location::WorkerLocation::url));
@@ -2293,7 +2290,7 @@ bool Response::headers_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   JSObject *headers = RequestOrResponse::headers(cx, self);
   if (!headers) {
     return false;
-}
+  }
 
   args.rval().setObject(*headers);
   return true;
@@ -2852,10 +2849,10 @@ bool install(api::Engine *engine) {
 
   if (!Request::init_class(engine->cx(), engine->global())) {
     return false;
-}
+  }
   if (!Response::init_class(engine->cx(), engine->global())) {
     return false;
-}
+  }
   return true;
 }
 

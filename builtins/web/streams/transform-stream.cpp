@@ -118,7 +118,8 @@ bool pipeThrough(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedValue val(cx);
   if (!JS_GetProperty(cx, transform, "readable", &val)) {
     return false;
-}
+  }
+
   if (!val.isObject() || !JS::IsReadableStream(&val.toObject())) {
     return api::throw_error(
         cx, api::Errors::TypeError, "ReadableStream.pipeThrough", "transformStream parameter",
@@ -129,7 +130,8 @@ bool pipeThrough(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   if (!JS_GetProperty(cx, transform, "writable", &val)) {
     return false;
-}
+  }
+
   if (!val.isObject() || !JS::IsWritableStream(&val.toObject())) {
     return api::throw_error(
         cx, api::Errors::TypeError, "ReadableStream.pipeThrough", "transformStream parameter",
@@ -488,7 +490,7 @@ bool TransformStream::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
                                transformer, startFunction, transformFunction, flushFunction));
   if (!self) {
     return false;
-}
+  }
 
   JS::SetReservedSlot(self, TransformStream::Slots::HasTransformer,
                       JS::BooleanValue(JS::ToBoolean(transformer)));
@@ -501,7 +503,7 @@ bool TransformStream::init_class(JSContext *cx, JS::HandleObject global) {
   bool ok = init_class_impl(cx, global);
   if (!ok) {
     return false;
-}
+  }
 
   return ReadableStream_additions::initialize_additions(cx, global);
 }
@@ -628,7 +630,7 @@ bool TransformStream::DefaultSinkWriteAlgorithm(JSContext *cx, JS::CallArgs args
     then_handler = create_internal_method<default_sink_write_algo_then_handler>(cx, stream, chunk);
     if (!then_handler) {
       return false;
-}
+    }
 
     JS::RootedObject result(cx);
     result = JS::CallOriginalPromiseThen(cx, changePromise, then_handler, nullptr);
@@ -707,8 +709,9 @@ bool TransformStream::default_sink_close_algo_then_handler(JSContext *cx, JS::Ha
   // throwing an exception, and the `else` branch will never be taken.
   if (JS::CheckReadableStreamControllerCanCloseOrEnqueue(cx, readableController, "close")) {
     return JS::ReadableStreamClose(cx, readable);
-  }     JS_ClearPendingException(cx);
- 
+  }
+
+  JS_ClearPendingException(cx);
   return true;
 }
 
@@ -762,7 +765,7 @@ bool TransformStream::DefaultSinkCloseAlgorithm(JSContext *cx, JS::CallArgs args
   then_handler = create_internal_method<default_sink_close_algo_then_handler>(cx, stream, extra);
   if (!then_handler) {
     return false;
-}
+  }
 
   // 5.2.  If flushPromise was rejected with reason r, then:
   // Sub-steps in handler above.
@@ -770,7 +773,7 @@ bool TransformStream::DefaultSinkCloseAlgorithm(JSContext *cx, JS::CallArgs args
   catch_handler = create_internal_method<default_sink_close_algo_catch_handler>(cx, stream, extra);
   if (!catch_handler) {
     return false;
-}
+  }
 
   JS::RootedObject result(cx);
   result = JS::CallOriginalPromiseThen(cx, flushPromise, then_handler, catch_handler);
@@ -835,14 +838,14 @@ bool TransformStream::Initialize(JSContext *cx, JS::HandleObject stream,
                                    DefaultSinkCloseAlgorithm, DefaultSinkAbortAlgorithm));
   if (!sink) {
     return false;
-}
+  }
 
   JS::RootedObject writable(cx);
   writable =
       JS::NewWritableDefaultStreamObject(cx, sink, writableSizeAlgorithm, writableHighWaterMark);
   if (!writable) {
     return false;
-}
+  }
 
   JS::SetReservedSlot(stream, TransformStream::Slots::Writable, JS::ObjectValue(*writable));
 
@@ -861,13 +864,13 @@ bool TransformStream::Initialize(JSContext *cx, JS::HandleObject stream,
                                      readableSizeAlgorithm, readableHighWaterMark));
   if (!source) {
     return false;
-}
+  }
 
   JS::RootedObject readable(cx);
   readable = NativeStreamSource::stream(source);
   if (!readable) {
     return false;
-}
+  }
 
   JS::SetReservedSlot(stream, TransformStream::Slots::Readable, JS::ObjectValue(*readable));
 
@@ -940,7 +943,7 @@ TransformStream::create(JSContext *cx, JS::HandleObject self, double writableHig
   JS::RootedObject startPromise(cx, JS::NewPromiseObject(cx, nullptr));
   if (!startPromise) {
     return nullptr;
-}
+  }
 
   // Step 10.
   if (!Initialize(cx, self, startPromise, writableHighWaterMark, writableSizeAlgorithm,
@@ -989,7 +992,7 @@ JSObject *TransformStream::create(JSContext *cx, double writableHighWaterMark,
   JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
   if (!self) {
     return nullptr;
-}
+  }
 
   return TransformStream::create(cx, self, writableHighWaterMark, writableSizeAlgorithm,
                                  readableHighWaterMark, readableSizeAlgorithm, transformer,
@@ -1018,5 +1021,3 @@ JSObject *TransformStream::create_rs_proxy(JSContext *cx, JS::HandleObject input
   return readable(transform_stream);
 }
 } // namespace builtins::web::streams
-
-

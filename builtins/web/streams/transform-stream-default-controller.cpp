@@ -134,7 +134,7 @@ JSObject *TransformStreamDefaultController::create(
   JS::RootedObject controller(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
   if (!controller) {
     return nullptr;
-}
+  }
 
   // 1.  Assert: stream [implements] `[TransformStream]`.
   MOZ_ASSERT(TransformStream::is_instance(stream));
@@ -393,7 +393,7 @@ JSObject *TransformStreamDefaultController::SetUpFromTransformer(JSContext *cx,
   controller = SetUp(cx, stream, transform_algorithm_transformer, flush_algorithm_transformer);
   if (!controller) {
     return nullptr;
-}
+  }
 
   // Set the additional bits required to execute the transformer-based transform
   // and flush algorithms.

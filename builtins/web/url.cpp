@@ -31,7 +31,7 @@ bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) 
   JS::RootedObject result(cx, JS_NewPlainObject(cx));
   if (!result) {
     return false;
-}
+  }
 
   jsurl::JSSearchParam param{};
   jsurl::params_at(params, index, &param);
@@ -54,7 +54,7 @@ bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) 
     JS::RootedString str(cx, JS_NewStringCopyUTF8N(cx, chars));
     if (!str) {
       return false;
-}
+    }
     key_val = JS::StringValue(str);
   }
 
@@ -63,7 +63,7 @@ bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) 
     JS::RootedString str(cx, JS_NewStringCopyUTF8N(cx, chars));
     if (!str) {
       return false;
-}
+    }
     val_val = JS::StringValue(str);
   }
 
@@ -74,7 +74,7 @@ bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) 
     JS::RootedObject pair(cx, JS::NewArrayObject(cx, 2));
     if (!pair) {
       return false;
-}
+    }
     JS_DefineElement(cx, pair, 0, key_val, JSPROP_ENUMERATE);
     JS_DefineElement(cx, pair, 1, val_val, JSPROP_ENUMERATE);
     result_val = JS::ObjectValue(*pair);
@@ -120,11 +120,11 @@ bool URLSearchParamsIterator::init_class(JSContext *cx, JS::HandleObject global)
   JS::RootedObject iterator_proto(cx, JS::GetRealmIteratorPrototype(cx));
   if (!iterator_proto) {
     return false;
-}
+  }
 
   if (!init_class_impl(cx, global, iterator_proto)) {
     return false;
-}
+  }
 
   // Delete both the `URLSearchParamsIterator` global property and the
   // `constructor` property on `URLSearchParamsIterator.prototype`. The latter
@@ -139,7 +139,7 @@ JSObject *URLSearchParamsIterator::create(JSContext *cx, JS::HandleObject params
   JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
   if (!self) {
     return nullptr;
-}
+  }
 
   JS::SetReservedSlot(self, Slots::Params, JS::ObjectValue(*params));
   JS::SetReservedSlot(self, Slots::Type, JS::Int32Value(type));
@@ -193,7 +193,7 @@ bool append_impl(JSContext *cx, JS::HandleObject self, jsurl::SpecString key, JS
   auto value = core::encode_spec_string(cx, val);
   if (!value.data) {
     return false;
-}
+  }
 
   jsurl::params_append(params, key, value);
   return true;
@@ -209,7 +209,7 @@ bool URLSearchParams::append(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto value = append_impl_validate(cx, args[0], "append");
   if (!append_impl(cx, self, value, args[1], "append")) {
     return false;
-}
+  }
 
   args.rval().setUndefined();
   return true;
@@ -224,12 +224,13 @@ bool URLSearchParams::delete_(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto name = core::encode_spec_string(cx, args.get(0));
   if (!name.data) {
     return false;
-}
+  }
 
   if (args.hasDefined(1)) {
     auto value = core::encode_spec_string(cx, args.get(1));
-    if (!value.data) { return false;
-}
+    if (!value.data) {
+      return false;
+    }
     jsurl::params_delete_kv(params, &name, &value);
   } else {
     jsurl::params_delete(params, &name);
@@ -247,12 +248,13 @@ bool URLSearchParams::has(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto name = core::encode_spec_string(cx, args.get(0));
   if (!name.data) {
     return false;
-}
+  }
 
   if (args.hasDefined(1)) {
     auto value = core::encode_spec_string(cx, args.get(1));
-    if (!value.data) { return false;
-}
+    if (!value.data) {
+      return false;
+    }
     args.rval().setBoolean(jsurl::params_has_kv(params, &name, &value));
   } else {
     args.rval().setBoolean(jsurl::params_has(params, &name));
@@ -269,7 +271,7 @@ bool URLSearchParams::get(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto name = core::encode_spec_string(cx, args.get(0));
   if (!name.data) {
     return false;
-}
+  }
 
   const jsurl::SpecSlice slice = jsurl::params_get(params, &name);
   if (!slice.data) {
@@ -280,7 +282,7 @@ bool URLSearchParams::get(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedString str(cx, JS_NewStringCopyUTF8N(cx, JS::UTF8Chars((char *)slice.data, slice.len)));
   if (!str) {
     return false;
-}
+  }
   args.rval().setString(str);
   return true;
 }
@@ -294,14 +296,14 @@ bool URLSearchParams::getAll(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto name = core::encode_spec_string(cx, args.get(0));
   if (!name.data) {
     return false;
-}
+  }
 
   const jsurl::CVec<jsurl::SpecSlice> values = jsurl::params_get_all(params, &name);
 
   JS::RootedObject result(cx, JS::NewArrayObject(cx, values.len));
   if (!result) {
     return false;
-}
+  }
 
   JS::RootedString str(cx);
   JS::RootedValue str_val(cx);
@@ -310,12 +312,12 @@ bool URLSearchParams::getAll(JSContext *cx, unsigned argc, JS::Value *vp) {
     str = JS_NewStringCopyUTF8N(cx, JS::UTF8Chars((char *)value.data, value.len));
     if (!str) {
       return false;
-}
+    }
 
     str_val.setString(str);
     if (!JS_SetElement(cx, result, i, str_val)) {
       return false;
-}
+    }
   }
 
   args.rval().setObject(*result);
@@ -331,12 +333,12 @@ bool URLSearchParams::set(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto name = core::encode_spec_string(cx, args[0]);
   if (!name.data) {
     return false;
-}
+  }
 
   auto value = core::encode_spec_string(cx, args[1]);
   if (!value.data) {
     return false;
-}
+  }
 
   jsurl::params_set(params, name, value);
   return true;
@@ -362,7 +364,7 @@ bool URLSearchParams::toString(JSContext *cx, unsigned argc, JS::Value *vp) {
               cx, JS::UTF8Chars(reinterpret_cast<const char *>(slice.data), slice.len)));
   if (!str) {
     return false;
-}
+  }
 
   args.rval().setString(str);
   return true;
@@ -377,7 +379,7 @@ bool URLSearchParams::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedObject self(cx, create(cx, urlSearchParamsInstance, args.get(0)));
   if (!self) {
     return false;
-}
+  }
 
   args.rval().setObject(*self);
   return true;
@@ -386,12 +388,12 @@ bool URLSearchParams::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool URLSearchParams::init_class(JSContext *cx, JS::HandleObject global) {
   if (!init_class_impl(cx, global)) {
     return false;
-}
+  }
 
   JS::RootedValue entries(cx);
   if (!JS_GetProperty(cx, proto_obj, "entries", &entries)) {
     return false;
-}
+  }
 
   JS::SymbolCode code = JS::SymbolCode::iterator;
   JS::RootedId iteratorId(cx, JS::GetWellKnownSymbolKey(cx, code));
@@ -414,7 +416,7 @@ JSObject *URLSearchParams::create(JSContext *cx, JS::HandleObject self,
     auto init = core::encode_spec_string(cx, params_val);
     if (!init.data) {
       return nullptr;
-}
+    }
 
     jsurl::params_init(params, &init);
   }
@@ -427,7 +429,7 @@ JSObject *URLSearchParams::create(JSContext *cx, JS::HandleObject self, jsurl::J
   jsurl::JSUrlSearchParams *params = jsurl::url_search_params(url);
   if (!params) {
     return nullptr;
-}
+  }
 
   JS::SetReservedSlot(self, Slots::Params, JS::PrivateValue(params));
   JS::SetReservedSlot(self, Slots::Url, JS::PrivateValue(url));
@@ -678,7 +680,7 @@ bool URL::origin(JSContext *cx, JS::HandleObject self, JS::MutableHandleValue rv
   JS::RootedString str(cx, JS_NewStringCopyUTF8N(cx, JS::UTF8Chars((char *)slice.data, slice.len)));
   if (!str) {
     return false;
-}
+  }
   rval.setString(str);
   return true;
 }
@@ -728,11 +730,11 @@ bool URL::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedObject urlInstance(cx, JS_NewObjectForConstructor(cx, &class_, args));
   if (!urlInstance) {
     return false;
-}
+  }
   JS::RootedObject self(cx, create(cx, urlInstance, args.get(0), args.get(1)));
   if (!self) {
     return false;
-}
+  }
 
   args.rval().setObject(*self);
   return true;
@@ -764,7 +766,7 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, JS::HandleValue url_
   auto str = core::encode_spec_string(cx, url_val);
   if (!str.data) {
     return nullptr;
-}
+  }
 
   return create(cx, self, str, base);
 }
@@ -798,7 +800,7 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, JS::HandleValue url_
     auto str = core::encode_spec_string(cx, base_val);
     if (!str.data) {
       return nullptr;
-}
+    }
 
     base = jsurl::new_jsurl(&str);
     if (!base) {
@@ -818,13 +820,13 @@ bool URL::init_class(JSContext *cx, JS::HandleObject global) {
 bool install(api::Engine *engine) {
   if (!URL::init_class(engine->cx(), engine->global())) {
     return false;
-}
+  }
   if (!URLSearchParams::init_class(engine->cx(), engine->global())) {
     return false;
-}
+  }
   if (!URLSearchParamsIterator::init_class(engine->cx(), engine->global())) {
     return false;
-}
+  }
   return true;
 }
 

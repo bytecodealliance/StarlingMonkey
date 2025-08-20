@@ -29,7 +29,7 @@ bool maybe_consume_sequence_or_record(JSContext *cx, JS::HandleValue initv, JS::
   JS::ForOfIterator it(cx);
   if (!it.init(initv, JS::ForOfIterator::AllowNonIterable)) {
     return false;
-}
+  }
 
   // Note: this currently doesn't treat strings as iterable even though they
   // are. We don't have any constructors that want to iterate over strings, and
@@ -41,24 +41,24 @@ bool maybe_consume_sequence_or_record(JSContext *cx, JS::HandleValue initv, JS::
       bool done = false;
       if (!it.next(&entry, &done)) {
         return false;
-}
+      }
 
       if (done) {
         break;
-}
+      }
 
       if (!entry.isObject()) {
         return api::throw_error(cx, api::Errors::InvalidSequence, ctor_name, alt_text);
-}
+      }
 
       JS::ForOfIterator entr_iter(cx);
       if (!entr_iter.init(entry, JS::ForOfIterator::AllowNonIterable)) {
         return false;
-}
+      }
 
       if (!entr_iter.valueIsIterable()) {
         return api::throw_error(cx, api::Errors::InvalidSequence, ctor_name, alt_text);
-}
+      }
 
       {
         bool done = false;
@@ -66,35 +66,35 @@ bool maybe_consume_sequence_or_record(JSContext *cx, JS::HandleValue initv, JS::
         // Extract key.
         if (!entr_iter.next(&key, &done)) {
           return false;
-}
+        }
         if (done) {
           return api::throw_error(cx, api::Errors::InvalidSequence, ctor_name, alt_text);
-}
+        }
 
         T validated_key = validate(cx, key, ctor_name);
         if (!validated_key) {
           return false;
-}
+        }
 
         // Extract value.
         if (!entr_iter.next(&value, &done)) {
           return false;
-}
+        }
         if (done) {
           return api::throw_error(cx, api::Errors::InvalidSequence, ctor_name, alt_text);
-}
+        }
 
         // Ensure that there aren't any further entries.
         if (!entr_iter.next(&entry, &done)) {
           return false;
-}
+        }
         if (!done) {
           return api::throw_error(cx, api::Errors::InvalidSequence, ctor_name, alt_text);
-}
+        }
 
         if (!apply(cx, target, std::move(validated_key), value, ctor_name)) {
           return false;
-}
+        }
       }
     }
     *consumed = true;
@@ -105,7 +105,7 @@ bool maybe_consume_sequence_or_record(JSContext *cx, JS::HandleValue initv, JS::
     JS::RootedIdVector ids(cx);
     if (!js::GetPropertyKeys(cx, init, JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS, &ids)) {
       return false;
-}
+    }
 
     JS::RootedId curId(cx);
 
@@ -116,21 +116,21 @@ bool maybe_consume_sequence_or_record(JSContext *cx, JS::HandleValue initv, JS::
       key = js::IdToValue(curId);
       if (!JS_GetOwnPropertyDescriptorById(cx, init, curId, &desc)) {
         return false;
-}
+      }
       if (desc.isNothing() || !desc->enumerable()) {
         continue;
-}
+      }
       // Get call is observable and must come after any value validation
       T validated_key = validate(cx, key, ctor_name);
       if (!validated_key) {
         return false;
-}
+      }
       if (!JS_GetPropertyById(cx, init, curId, &value)) {
         return false;
-}
+      }
       if (!apply(cx, target, std::move(validated_key), value, ctor_name)) {
         return false;
-}
+      }
     }
     *consumed = true;
   } else {

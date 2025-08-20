@@ -49,15 +49,20 @@ struct Terminator : AbortAlgorithm {
 std::optional<FetchScheme> scheme_from_url(const std::string_view &url) {
   if (url.starts_with("about:")) {
     return FetchScheme::About;
-  } if (url.starts_with("blob:")) {
+  }
+  if (url.starts_with("blob:")) {
     return FetchScheme::Blob;
-  } if (url.starts_with("data:")) {
+  }
+  if (url.starts_with("data:")) {
     return FetchScheme::Data;
-  } if (url.starts_with("file:")) {
+  }
+  if (url.starts_with("file:")) {
     return FetchScheme::File;
-  } if (url.starts_with("http")) {
+  }
+  if (url.starts_with("http")) {
     return FetchScheme::Http;
-  } if (url.starts_with("https")) {
+  }
+  if (url.starts_with("https")) {
     return FetchScheme::Https;
   }
 
@@ -388,13 +393,13 @@ bool install(api::Engine *engine) {
 
   if (!JS_DefineFunctions(engine->cx(), engine->global(), methods)) {
     return false;
-}
+  }
   if (!request_response::install(engine)) {
     return false;
   }
   if (!Headers::init_class(engine->cx(), engine->global())) {
     return false;
-}
+  }
   return true;
 }
 

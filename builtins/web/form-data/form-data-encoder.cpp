@@ -678,13 +678,13 @@ JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
   auto base64_str = base64::forgivingBase64Encode(bytes_str, base64::base64EncodeTable);
 
   auto boundary = fmt::format("--StarlingMonkeyFormBoundary{}", base64_str);
-  auto *impl = new (std::nothrow) MultipartFormDataImpl(boundary);
+  auto impl = js::MakeUnique<MultipartFormDataImpl>(boundary);
   if (!impl) {
     return nullptr;
   }
 
   JS::SetReservedSlot(self, Slots::Form, JS::ObjectValue(*form_data));
-  JS::SetReservedSlot(self, Slots::Inner, JS::PrivateValue(reinterpret_cast<void *>(impl)));
+  JS::SetReservedSlot(self, Slots::Inner, JS::PrivateValue(reinterpret_cast<void *>(impl.release())));
 
   return self;
 }
@@ -700,9 +700,9 @@ bool MultipartFormData::constructor(JSContext *cx, unsigned argc, JS::Value *vp)
 void MultipartFormData::finalize(JS::GCContext *gcx, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   auto *impl = as_impl(self);
-  
-    delete impl;
-  
+  if (impl) {
+    js_delete(impl);
+  }
 }
 
 } // namespace builtins::web::form_data
