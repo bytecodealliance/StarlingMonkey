@@ -128,9 +128,9 @@ public:
 
   CryptoAlgorithmIdentifier identifier() final { return CryptoAlgorithmIdentifier::ECDSA; };
 
-  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, JS::HandleValue /*key_data*/, bool extractable,
+  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, JS::HandleValue key_data, bool extractable,
                       CryptoKeyUsages usages) override;
-  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, KeyData /*keyData*/ /*key_data*/, bool extractable,
+  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, KeyData key_data, bool extractable,
                       CryptoKeyUsages usages) override;
   JSObject *toObject(JSContext *cx) const;
 };
@@ -167,9 +167,9 @@ public:
     return CryptoAlgorithmIdentifier::RSASSA_PKCS1_v1_5;
   };
 
-  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, JS::HandleValue /*key_data*/, bool extractable,
+  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, JS::HandleValue key_data, bool extractable,
                       CryptoKeyUsages usages) override;
-  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, KeyData /*keyData*/ /*key_data*/, bool extractable,
+  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, KeyData key_data, bool extractable,
                       CryptoKeyUsages usages) override;
   JSObject *toObject(JSContext *cx) const;
 };
@@ -199,9 +199,9 @@ public:
 
   CryptoAlgorithmIdentifier identifier() final { return CryptoAlgorithmIdentifier::HMAC; };
 
-  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, JS::HandleValue /*key_data*/, bool extractable,
+  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, JS::HandleValue key_data, bool extractable,
                       CryptoKeyUsages usages) override;
-  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, KeyData /*keyData*/ /*key_data*/, bool extractable,
+  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, KeyData key_data, bool extractable,
                       CryptoKeyUsages usages) override;
   JSObject *toObject(JSContext *cx);
 };
@@ -216,35 +216,35 @@ class CryptoAlgorithmMD5 final : public CryptoAlgorithmDigest {
 public:
   [[nodiscard]] const char *name() const noexcept override { return "MD5"; };
   CryptoAlgorithmIdentifier identifier() override { return CryptoAlgorithmIdentifier::MD5; };
-  JSObject *digest(JSContext *cx, std::span<uint8_t> /*data*/ /*unused*/) override;
+  JSObject *digest(JSContext *cx, std::span<uint8_t> data) override;
 };
 
 class CryptoAlgorithmSHA1 final : public CryptoAlgorithmDigest {
 public:
   [[nodiscard]] const char *name() const noexcept override { return "SHA-1"; };
   CryptoAlgorithmIdentifier identifier() override { return CryptoAlgorithmIdentifier::SHA_1; };
-  JSObject *digest(JSContext *cx, std::span<uint8_t> /*data*/ /*unused*/) override;
+  JSObject *digest(JSContext *cx, std::span<uint8_t> data) override;
 };
 
 class CryptoAlgorithmSHA256 final : public CryptoAlgorithmDigest {
 public:
   [[nodiscard]] const char *name() const noexcept override { return "SHA-256"; };
   CryptoAlgorithmIdentifier identifier() override { return CryptoAlgorithmIdentifier::SHA_256; };
-  JSObject *digest(JSContext *cx, std::span<uint8_t> /*data*/ /*unused*/) override;
+  JSObject *digest(JSContext *cx, std::span<uint8_t> data) override;
 };
 
 class CryptoAlgorithmSHA384 final : public CryptoAlgorithmDigest {
 public:
   [[nodiscard]] const char *name() const noexcept override { return "SHA-384"; };
   CryptoAlgorithmIdentifier identifier() override { return CryptoAlgorithmIdentifier::SHA_384; };
-  JSObject *digest(JSContext *cx, std::span<uint8_t> /*data*/ /*unused*/) override;
+  JSObject *digest(JSContext *cx, std::span<uint8_t> data) override;
 };
 
 class CryptoAlgorithmSHA512 final : public CryptoAlgorithmDigest {
 public:
   [[nodiscard]] const char *name() const noexcept override { return "SHA-512"; };
   CryptoAlgorithmIdentifier identifier() override { return CryptoAlgorithmIdentifier::SHA_512; };
-  JSObject *digest(JSContext *cx, std::span<uint8_t> /*data*/ /*unused*/) override;
+  JSObject *digest(JSContext *cx, std::span<uint8_t> data) override;
 };
 
 } // namespace builtins::web::crypto

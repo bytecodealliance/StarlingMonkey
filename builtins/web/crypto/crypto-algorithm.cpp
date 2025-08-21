@@ -1250,7 +1250,7 @@ std::unique_ptr<CryptoAlgorithmHMAC_Import> CryptoAlgorithmHMAC_Import::fromPara
 
 // https://w3c.github.io/webcrypto/#hmac-operations
 JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat format,
-                                                             KeyData keyData, bool extractable,
+                                                             KeyData key_data, bool extractable,
                                                              CryptoKeyUsages usages) {
   MOZ_ASSERT(cx);
   JS::RootedObject result(cx);
@@ -1269,7 +1269,7 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
   // 5. If format is "raw":
   case CryptoKeyFormat::Raw: {
     // 5.1 Let data be the octet string contained in keyData.
-    data = std::make_unique<std::span<uint8_t>>(std::get<std::span<uint8_t>>(keyData));
+    data = std::make_unique<std::span<uint8_t>>(std::get<std::span<uint8_t>>(key_data));
     if (!data) {
       DOMException::raise(cx, "Supplied keyData must be either an ArrayBuffer, TypedArray, or DataView.", "DataError");
       return nullptr;
@@ -1285,7 +1285,7 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
       // 6.2 Let jwk equal keyData.
     // Otherwise:
       // 6.3 Throw a DataError.
-    auto *jwk = std::get<JsonWebKey *>(keyData);
+    auto *jwk = std::get<JsonWebKey *>(key_data);
     if (!jwk) {
       DOMException::raise(cx, "Supplied keyData is not a JSONWebKey", "DataError");
       return nullptr;
@@ -1492,7 +1492,7 @@ JSObject *CryptoAlgorithmHMAC_Import::toObject(JSContext *cx) {
 }
 
 JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat format,
-                                                             KeyData keyData, bool extractable,
+                                                             KeyData key_data, bool extractable,
                                                              CryptoKeyUsages usages) {
   // 1. Let keyData be the key data to be imported.
   MOZ_ASSERT(cx);
@@ -1506,7 +1506,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
         // Let jwk equal keyData.
       // Otherwise:
         // Throw a DataError.
-      auto *jwk = std::get<JsonWebKey *>(keyData);
+      auto *jwk = std::get<JsonWebKey *>(key_data);
       if (!jwk) {
         DOMException::raise(cx, "Supplied keyData is not a JSONWebKey", "DataError");
         return nullptr;
@@ -1653,7 +1653,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
         return nullptr;
       }
 
-      auto keyBytes = std::get<std::span<uint8_t>>(keyData);
+      auto keyBytes = std::get<std::span<uint8_t>>(key_data);
       const uint8_t *data = keyBytes.data();
 
       EvpPkeyPtr pkey(d2i_PrivateKey(EVP_PKEY_NONE, nullptr, &data, keyBytes.size()));
@@ -1856,7 +1856,7 @@ std::unique_ptr<CryptoAlgorithmRSASSA_PKCS1_v1_5_Import> CryptoAlgorithmRSASSA_P
 
 // https://w3c.github.io/webcrypto/#rsassa-pkcs1-operations
 JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, CryptoKeyFormat format,
-                                                             KeyData keyData, bool extractable,
+                                                             KeyData key_data, bool extractable,
                                                              CryptoKeyUsages usages) {
   MOZ_ASSERT(cx);
   JS::RootedObject result(cx);
@@ -1867,7 +1867,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
       // Let jwk equal keyData.
     // Otherwise:
       // Throw a DataError.
-    auto *jwk = std::get<JsonWebKey *>(keyData);
+    auto *jwk = std::get<JsonWebKey *>(key_data);
     if (!jwk) {
       DOMException::raise(cx, "Supplied keyData is not a JSONWebKey", "DataError");
       return nullptr;
@@ -2007,7 +2007,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
       return nullptr;
     }
 
-    auto keyBytes = std::get<std::span<uint8_t>>(keyData);
+    auto keyBytes = std::get<std::span<uint8_t>>(key_data);
     const uint8_t *data = keyBytes.data();
 
     auto pkey_deleter = [](EVP_PKEY *pkey) { EVP_PKEY_free(pkey); };

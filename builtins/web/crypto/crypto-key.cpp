@@ -17,7 +17,7 @@ namespace builtins::web::crypto {
 CryptoKeyUsages::CryptoKeyUsages(uint8_t mask) : mask(mask) { };
 CryptoKeyUsages::CryptoKeyUsages(bool encrypt, bool decrypt, bool sign, bool verify,
                                  bool derive_key, bool derive_bits, bool wrap_key,
-                                 bool unwrap_key)  {
+                                 bool unwrap_key) {
   
   if (encrypt) {
     this->mask |= encrypt_flag;
