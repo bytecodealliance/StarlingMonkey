@@ -3,16 +3,16 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace worker_location {
+
+
+namespace builtins::web::worker_location {
 
 class WorkerLocation : public BuiltinNoConstructor<WorkerLocation> {
 private:
 public:
   static constexpr const char *class_name = "WorkerLocation";
   static const int ctor_length = 1;
-  enum Slots { Count };
+  enum Slots : uint8_t { Count };
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
@@ -26,8 +26,8 @@ public:
 
 bool install(api::Engine *engine);
 
-} // namespace worker_location
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::worker_location
+
+
 
 #endif

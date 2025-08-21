@@ -3,14 +3,14 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace fetch {
+
+
+namespace builtins::web::fetch {
 
 bool install(api::Engine *engine);
 
-} // namespace fetch
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::fetch
+
+
 
 #endif

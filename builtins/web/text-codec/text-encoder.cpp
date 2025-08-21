@@ -1,19 +1,12 @@
 #include "text-encoder.h"
 #include "encode.h"
-#include <iostream>
 #include <tuple>
 
 #include "js/ArrayBuffer.h"
-#include "mozilla/Span.h"
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
 #include "js/experimental/TypedData.h"
-#pragma clang diagnostic pop
+#include "mozilla/Span.h"
 
-namespace builtins {
-namespace web {
-namespace text_codec {
+namespace builtins::web::text_codec {
 
 bool TextEncoder::encode(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
@@ -62,7 +55,7 @@ bool TextEncoder::encodeInto(JSContext *cx, unsigned argc, JS::Value *vp) {
     return api::throw_error(cx, api::Errors::WrongReceiver, "encodeInto", "TextEncoder");
   }
 
-  auto source = JS::ToString(cx, args.get(0));
+  auto *source = JS::ToString(cx, args.get(0));
   if (!source) {
     return false;
   }
@@ -74,8 +67,8 @@ bool TextEncoder::encodeInto(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
   JS::RootedObject destination(cx, &destination_value.toObject());
 
-  uint8_t *data;
-  bool is_shared;
+  uint8_t *data = nullptr;
+  bool is_shared = false;
   size_t len = 0;
   // JS_GetObjectAsUint8Array returns nullptr without throwing if the object is not
   // a Uint8Array, so we don't need to do explicit checks before calling it.
@@ -88,8 +81,8 @@ bool TextEncoder::encodeInto(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!maybe) {
     return false;
   }
-  size_t read;
-  size_t written;
+  size_t read = 0;
+  size_t written = 0;
   std::tie(read, written) = *maybe;
 
   MOZ_ASSERT(written <= len);
@@ -164,6 +157,6 @@ bool TextEncoder::init_class(JSContext *cx, JS::HandleObject global) {
   return init_class_impl(cx, global);
 }
 
-} // namespace text_codec
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::text_codec
+
+

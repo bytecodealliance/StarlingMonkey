@@ -5,9 +5,9 @@ namespace {
 JS::PersistentRootedObject GLOBAL_EVENT_TARGET;
 }
 
-namespace builtins {
-namespace web {
-namespace event {
+
+
+namespace builtins::web::event {
 
 JSObject *global_event_target() {
   return GLOBAL_EVENT_TARGET;
@@ -75,6 +75,6 @@ bool global_event_target_init(JSContext *cx, HandleObject global) {
   return true;
 }
 
-} // namespace event
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::event
+
+

@@ -162,9 +162,9 @@ std::string normalize_and_escape(std::string_view src) {
 
 }// namespace
 
-namespace builtins {
-namespace web {
-namespace form_data {
+
+
+namespace builtins::web::form_data {
 
 using blob::Blob;
 using file::File;
@@ -175,14 +175,14 @@ using EntryList = JS::GCVector<FormDataEntry, 0, js::SystemAllocPolicy>;
 
 struct StreamContext {
   StreamContext(const EntryList *entries, std::span<uint8_t> outbuf)
-      : entries(entries), outbuf(outbuf), read(0), done(false) {}
+      : entries(entries), outbuf(outbuf) {}
   const EntryList *entries;
 
   std::span<uint8_t> outbuf;
-  size_t read;
-  bool done;
+  size_t read{0};
+  bool done{false};
 
-  size_t remaining() {
+  [[nodiscard]] size_t remaining() const {
     MOZ_ASSERT(outbuf.size() >= read);
     return outbuf.size() - read;
   }
@@ -229,17 +229,17 @@ struct StreamContext {
 //   - Close:       Write the closing boundary indicating the end of the multipart data.
 //   - Done:        Processing is complete.
 class MultipartFormDataImpl {
-  enum class State : int { Start, EntryHeader, EntryBody, EntryFooter, Close, Done };
+  enum class State : uint8_t { Start, EntryHeader, EntryBody, EntryFooter, Close, Done };
 
-  State state_;
+  State state_{State::Start};
   std::string boundary_;
   std::string remainder_;
   std::string_view remainder_view_;
 
-  size_t chunk_idx_;
-  size_t file_leftovers_;
+  size_t chunk_idx_{0};
+  size_t file_leftovers_{0};
 
-  bool is_draining() { return (file_leftovers_ || remainder_.size()); };
+  bool is_draining() { return ((file_leftovers_ != 0U) || (static_cast<unsigned int>(!remainder_.empty()) != 0U)); };
 
   template <typename I> void write_and_store_remainder(StreamContext &stream, I first, I last);
 
@@ -252,7 +252,7 @@ class MultipartFormDataImpl {
 
 public:
   MultipartFormDataImpl(std::string boundary)
-      : state_(State::Start), boundary_(std::move(boundary)), chunk_idx_(0), file_leftovers_(0) {}
+      :  boundary_(std::move(boundary)) {}
 
   mozilla::Result<size_t, OutOfMemory> query_length(JSContext* cx, const EntryList *entries);
   std::string boundary() {  return boundary_; };
@@ -273,8 +273,8 @@ MultipartFormDataImpl::State MultipartFormDataImpl::next_state(StreamContext &st
   case State::EntryFooter:
     return finished ? State::Close : State::EntryHeader;
   case State::Close:
-    return State::Done;
   case State::Done:
+    // fallthrough
     return State::Done;
   default:
     MOZ_ASSERT_UNREACHABLE("Invalid state");
@@ -308,7 +308,7 @@ void MultipartFormDataImpl::maybe_drain_leftovers(JSContext *cx, StreamContext &
     MOZ_ASSERT(File::is_instance(entry.value));
 
     RootedObject obj(cx, &entry.value.toObject());
-    auto blob = Blob::blob(obj);
+    auto *blob = Blob::blob(obj);
     auto offset = blob->length() - file_leftovers_;
     file_leftovers_ -= stream.write(blob->begin() + offset, blob->end());
   }
@@ -386,7 +386,7 @@ bool MultipartFormDataImpl::handle_entry_header(JSContext *cx, StreamContext &st
       return false;
     }
 
-    auto tmp = type.size() ? std::string_view(type) : "application/octet-stream";
+    auto tmp = (type.size() != 0U) ? std::string_view(type) : "application/octet-stream";
     fmt::format_to(std::back_inserter(header), "; filename=\"{}\"\r\n", filename.value());
     fmt::format_to(std::back_inserter(header), "Content-Type: {}\r\n\r\n", tmp);
   }
@@ -417,7 +417,7 @@ bool MultipartFormDataImpl::handle_entry_body(JSContext *cx, StreamContext &stre
     MOZ_ASSERT(File::is_instance(entry.value));
     RootedObject obj(cx, &entry.value.toObject());
 
-    auto blob = Blob::blob(obj);
+    auto *blob = Blob::blob(obj);
     auto to_write = blob->length();
     auto written = stream.write(blob->begin(), blob->end());
     MOZ_ASSERT(written <= to_write);
@@ -585,8 +585,8 @@ bool MultipartFormData::read(JSContext *cx, HandleObject self, std::span<uint8_t
   bool finished = false;
   RootedObject obj(cx, form_data(self));
 
-  auto entries = FormData::entry_list(obj);
-  auto impl = as_impl(self);
+  auto *entries = FormData::entry_list(obj);
+  auto *impl = as_impl(self);
 
   // Try to fill the buffer
   while (total < buffer_size && !finished) {
@@ -609,7 +609,7 @@ bool MultipartFormData::read(JSContext *cx, HandleObject self, std::span<uint8_t
 
 std::string MultipartFormData::boundary(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  auto impl = as_impl(self);
+  auto *impl = as_impl(self);
   MOZ_ASSERT(impl);
 
   return impl->boundary();
@@ -629,8 +629,8 @@ JSObject *MultipartFormData::form_data(JSObject *self) {
 mozilla::Result<size_t, OutOfMemory> MultipartFormData::query_length(JSContext *cx, HandleObject self) {
   RootedObject obj(cx, form_data(self));
 
-  auto entries = FormData::entry_list(obj);
-  auto impl = as_impl(self);
+  auto *entries = FormData::entry_list(obj);
+  auto *impl = as_impl(self);
 
   return impl->query_length(cx, entries);
 }
@@ -678,13 +678,13 @@ JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
   auto base64_str = base64::forgivingBase64Encode(bytes_str, base64::base64EncodeTable);
 
   auto boundary = fmt::format("--StarlingMonkeyFormBoundary{}", base64_str);
-  auto impl = new (std::nothrow) MultipartFormDataImpl(boundary);
+  auto impl = js::MakeUnique<MultipartFormDataImpl>(boundary);
   if (!impl) {
     return nullptr;
   }
 
   JS::SetReservedSlot(self, Slots::Form, JS::ObjectValue(*form_data));
-  JS::SetReservedSlot(self, Slots::Inner, JS::PrivateValue(reinterpret_cast<void *>(impl)));
+  JS::SetReservedSlot(self, Slots::Inner, JS::PrivateValue(reinterpret_cast<void *>(impl.release())));
 
   return self;
 }
@@ -699,12 +699,12 @@ bool MultipartFormData::constructor(JSContext *cx, unsigned argc, JS::Value *vp)
 
 void MultipartFormData::finalize(JS::GCContext *gcx, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  auto impl = as_impl(self);
+  auto *impl = as_impl(self);
   if (impl) {
-    delete impl;
+    js_delete(impl);
   }
 }
 
-} // namespace form_data
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::form_data
+
+

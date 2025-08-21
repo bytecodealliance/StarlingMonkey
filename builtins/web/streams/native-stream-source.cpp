@@ -1,10 +1,4 @@
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include "js/experimental/TypedData.h" // used within "js/Stream.h"
-#pragma clang diagnostic pop
-
 #include "js/Stream.h"
 
 #include "native-stream-sink.h"
@@ -14,9 +8,9 @@
 
 // A JS class to use as the underlying source for native readable streams, used
 // for Request/Response bodies and TransformStream.
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 
 JSObject *NativeStreamSource::owner(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
@@ -51,9 +45,8 @@ JSObject *NativeStreamSource::stream(JSObject *self) {
  */
 JSObject *NativeStreamSource::get_controller_source(JSContext *cx, JS::HandleObject controller) {
   JS::RootedValue source(cx);
-  bool success __attribute__((unused));
-  success = JS::ReadableStreamControllerGetUnderlyingSource(cx, controller, &source);
-  MOZ_ASSERT(success);
+  auto success = JS::ReadableStreamControllerGetUnderlyingSource(cx, controller, &source);
+  MOZ_RELEASE_ASSERT(success);
   return source.isObject() ? &source.toObject() : nullptr;
 }
 
@@ -86,7 +79,7 @@ JSObject *NativeStreamSource::piped_to_transform_stream(JSObject *self) {
 bool NativeStreamSource::lock_stream(JSContext *cx, JS::HandleObject stream) {
   MOZ_ASSERT(JS::IsReadableStream(stream));
 
-  bool locked;
+  bool locked = false;
   JS::ReadableStreamIsLocked(cx, stream, &locked);
   if (locked) {
     return api::throw_error(cx, StreamErrors::StreamAlreadyLocked);
@@ -97,8 +90,9 @@ bool NativeStreamSource::lock_stream(JSContext *cx, JS::HandleObject stream) {
 
   auto mode = JS::ReadableStreamReaderMode::Default;
   JS::RootedObject reader(cx, JS::ReadableStreamGetReader(cx, stream, mode));
-  if (!reader)
+  if (!reader) {
     return false;
+  }
 
   JS::SetReservedSlot(self, Slots::InternalReader, JS::ObjectValue(*reader));
   return true;
@@ -183,6 +177,6 @@ JSObject *NativeStreamSource::create(JSContext *cx, JS::HandleObject owner, JS::
   JS::SetReservedSlot(source, Slots::Stream, JS::ObjectValue(*stream));
   return source;
 }
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+

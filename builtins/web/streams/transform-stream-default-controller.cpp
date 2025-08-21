@@ -1,16 +1,11 @@
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include "js/experimental/TypedData.h" // used in "js/Conversions.h"
-#pragma clang diagnostic pop
-
 #include "js/Stream.h"
 
 #include "transform-stream-default-controller.h"
 #include "transform-stream.h"
-
 #include "stream-errors.h"
+
+#include <cmath>
 
 /**
  * Implementation of the WHATWG TransformStream builtin.
@@ -20,9 +15,9 @@
  */
 // A JS class to use as the underlying sink for native writable streams, used
 // for TransformStream.
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 JSObject *TransformStreamDefaultController::stream(JSObject *controller) {
   MOZ_ASSERT(is_instance(controller));
   return &JS::GetReservedSlot(controller, Slots::Stream).toObject();
@@ -53,8 +48,8 @@ bool TransformStreamDefaultController::desiredSize_get(JSContext *cx, unsigned a
   // 1.  Let readableController be [this].[stream].[readable].[controller].
   JSObject *stream = TransformStreamDefaultController::stream(self);
   JSObject *readable = TransformStream::readable(stream);
-  double value;
-  bool has_value;
+  double value = NAN;
+  bool has_value = false;
   if (!JS::ReadableStreamGetDesiredSize(cx, readable, &has_value, &value)) {
     return false;
   }
@@ -137,8 +132,9 @@ JSObject *TransformStreamDefaultController::create(
     TransformStreamDefaultController::TransformAlgorithmImplementation *transformAlgo,
     TransformStreamDefaultController::FlushAlgorithmImplementation *flushAlgo) {
   JS::RootedObject controller(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (!controller)
+  if (!controller) {
     return nullptr;
+  }
 
   // 1.  Assert: stream [implements] `[TransformStream]`.
   MOZ_ASSERT(TransformStream::is_instance(stream));
@@ -395,8 +391,9 @@ JSObject *TransformStreamDefaultController::SetUpFromTransformer(JSContext *cx,
   // controller, transformAlgorithm, flushAlgorithm).
   JS::RootedObject controller(cx);
   controller = SetUp(cx, stream, transform_algorithm_transformer, flush_algorithm_transformer);
-  if (!controller)
+  if (!controller) {
     return nullptr;
+  }
 
   // Set the additional bits required to execute the transformer-based transform
   // and flush algorithms.
@@ -466,6 +463,4 @@ void TransformStreamDefaultController::ClearAlgorithms(JSObject *controller) {
   JS::SetReservedSlot(controller, Slots::FlushAlgorithm, JS::PrivateValue(nullptr));
   JS::SetReservedSlot(controller, Slots::FlushInput, JS::UndefinedValue());
 }
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams

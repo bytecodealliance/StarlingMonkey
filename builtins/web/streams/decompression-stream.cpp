@@ -1,26 +1,17 @@
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include "js/experimental/TypedData.h"
-#pragma clang diagnostic pop
-
 #include "zlib.h"
 
 #include "decompression-stream.h"
 #include "encode.h"
 #include "transform-stream-default-controller.h"
 #include "transform-stream.h"
-
 #include "stream-errors.h"
 
-namespace builtins {
-namespace web {
-namespace streams {
+namespace builtins::web::streams {
 
 namespace {
 
-enum class Format {
+enum class Format : uint8_t {
   GZIP,
   Deflate,
   DeflateRaw,
@@ -64,7 +55,7 @@ bool inflate_chunk(JSContext *cx, JS::HandleObject self, JS::HandleValue chunk, 
       return false;
     }
 
-    if (data->size() == 0) {
+    if (data->empty()) {
       return true;
     }
 
@@ -122,14 +113,14 @@ bool inflate_chunk(JSContext *cx, JS::HandleObject self, JS::HandleValue chunk, 
     }
 
     size_t bytes = BUFFER_SIZE - zstream->avail_out;
-    if (bytes) {
+    if (bytes != 0U) {
       JS::RootedObject out_obj(cx, JS_NewUint8Array(cx, bytes));
       if (!out_obj) {
         return false;
       }
 
       {
-        bool is_shared;
+        bool is_shared = false;
         JS::AutoCheckCannotGC nogc;
         uint8_t *out_buffer = JS_GetUint8ArrayData(out_obj, &is_shared, nogc);
         memcpy(out_buffer, buffer, bytes);
@@ -249,7 +240,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   // The remainder of the function deals with setting up the inflate state used
   // for decompressing chunks.
 
-  z_stream *zstream = (z_stream *)JS_malloc(cx, sizeof(z_stream));
+  auto *zstream = (z_stream *)JS_malloc(cx, sizeof(z_stream));
   if (!zstream) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
@@ -258,7 +249,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   memset(zstream, 0, sizeof(z_stream));
   JS::SetReservedSlot(stream, DecompressionStream::Slots::State, JS::PrivateValue(zstream));
 
-  uint8_t *buffer = (uint8_t *)JS_malloc(cx, BUFFER_SIZE);
+  auto *buffer = (uint8_t *)JS_malloc(cx, BUFFER_SIZE);
   if (!buffer) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
@@ -300,11 +291,11 @@ bool DecompressionStream::constructor(JSContext *cx, unsigned argc, JS::Value *v
   }
 
   enum Format format;
-  if (!strcmp(format_chars.begin(), "deflate-raw")) {
+  if (strcmp(format_chars.begin(), "deflate-raw") == 0) {
     format = Format::DeflateRaw;
-  } else if (!strcmp(format_chars.begin(), "deflate")) {
+  } else if (strcmp(format_chars.begin(), "deflate") == 0) {
     format = Format::Deflate;
-  } else if (!strcmp(format_chars.begin(), "gzip")) {
+  } else if (strcmp(format_chars.begin(), "gzip") == 0) {
     format = Format::GZIP;
   } else {
     return api::throw_error(cx, api::Errors::TypeError, "DecompressionStream constructor",
@@ -328,18 +319,20 @@ bool DecompressionStream::init_class(JSContext *cx, JS::HandleObject global) {
   }
 
   JSFunction *transformFun = JS_NewFunction(cx, transformAlgorithm, 1, 0, "DS Transform");
-  if (!transformFun)
+  if (!transformFun) {
     return false;
+  }
   transformAlgo.init(cx, JS_GetFunctionObject(transformFun));
 
   JSFunction *flushFun = JS_NewFunction(cx, flushAlgorithm, 1, 0, "DS Flush");
-  if (!flushFun)
+  if (!flushFun) {
     return false;
+  }
   flushAlgo.init(cx, JS_GetFunctionObject(flushFun));
 
   return true;
 }
 
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+

@@ -3,12 +3,12 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 bool install(api::Engine *engine);
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+
 
 #endif

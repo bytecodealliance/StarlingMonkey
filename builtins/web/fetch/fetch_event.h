@@ -19,7 +19,7 @@ class FetchEvent final : public BuiltinNoConstructor<FetchEvent> {
 public:
   static constexpr const char *class_name = "FetchEvent";
 
-  enum class State {
+  enum class State : uint8_t {
     unhandled,
     waitToRespond,
     responseStreaming,
@@ -29,7 +29,7 @@ public:
 
   static constexpr int ParentSlots = event::Event::Slots::Count;
 
-  enum Slots {
+  enum Slots : uint8_t {
     Request = ParentSlots,
     CurrentState,
     PendingPromiseCount,

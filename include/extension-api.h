@@ -3,15 +3,8 @@
 #include <vector>
 
 #include "builtin.h"
-#include "mozilla/WeakPtr.h"
-
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
-
 #include "jsapi.h"
-#pragma clang diagnostic pop
+#include "mozilla/WeakPtr.h"
 
 using JS::RootedObject;
 using JS::RootedString;
@@ -27,7 +20,7 @@ using JS::PersistentRootedVector;
 
 using std::optional;
 
-typedef int32_t PollableHandle;
+using PollableHandle = int32_t;
 constexpr PollableHandle INVALID_POLLABLE_HANDLE = -1;
 constexpr PollableHandle IMMEDIATE_TASK_HANDLE = -2;
 
@@ -76,7 +69,7 @@ struct EngineConfig {
   EngineConfig() = default;
 };
 
-enum class EngineState { Uninitialized, EngineInitializing, ScriptPreInitializing, Initialized, Aborted };
+enum class EngineState : uint8_t { Uninitialized, EngineInitializing, ScriptPreInitializing, Initialized, Aborted };
 
 class Engine {
   std::unique_ptr<EngineConfig> config_;
@@ -86,8 +79,8 @@ public:
   explicit Engine(std::unique_ptr<EngineConfig> config);
   static Engine *get(JSContext *cx);
 
-  JSContext *cx();
-  HandleObject global();
+  static JSContext *cx();
+  static HandleObject global();
   EngineState state();
   bool debugging_enabled();
   bool wpt_mode();
@@ -116,8 +109,8 @@ public:
    * changing this default, and will impact all subsequent top-level
    * evaluations.
    */
-  bool eval_toplevel(const char *path, MutableHandleValue result);
-  bool eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char *path,
+  bool eval_toplevel(std::string_view, MutableHandleValue result);
+  bool eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, std::string_view path,
                      MutableHandleValue result);
 
   /**
@@ -132,7 +125,7 @@ public:
   /**
    * Returns the global the initialization script runs in.
    */
-  HandleObject init_script_global();
+  static HandleObject init_script_global();
 
   /**
    * Run the async event loop as long as there's interest registered in keeping it running.
@@ -155,48 +148,55 @@ public:
   /**
    * Add an event loop interest to track
    */
-  void incr_event_loop_interest();
+  static void incr_event_loop_interest();
 
   /**
    * Remove an event loop interest to track
    * The last decrementer marks the event loop as complete to finish
    */
-  void decr_event_loop_interest();
+  static void decr_event_loop_interest();
 
   /**
    * Get the JS value associated with the top-level script execution -
    * the last expression for a script, or the module namespace for a module.
    */
-  HandleValue script_value();
+  static HandleValue script_value();
 
-  bool has_pending_async_tasks();
-  void queue_async_task(RefPtr<AsyncTask> task);
-  bool cancel_async_task(RefPtr<AsyncTask> task);
+  static bool has_pending_async_tasks();
+  static void queue_async_task(const RefPtr<AsyncTask>& task);
+  bool cancel_async_task(const RefPtr<AsyncTask>& task);
 
-  bool has_unhandled_promise_rejections();
+  static bool has_unhandled_promise_rejections();
   void report_unhandled_promise_rejections();
-  void clear_unhandled_promise_rejections();
+  static void clear_unhandled_promise_rejections();
 
   void abort(const char *reason);
 
-  bool debug_logging_enabled();
+  static bool debug_logging_enabled();
 
-  bool dump_value(JS::Value val, FILE *fp = stdout);
-  bool print_stack(FILE *fp);
-  void dump_error(HandleValue error, FILE *fp = stderr);
-  void dump_pending_exception(const char *description = "", FILE *fp = stderr);
-  void dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp = stderr);
+  static bool dump_value(JS::Value val, FILE *fp = stdout);
+  static bool print_stack(FILE *fp);
+  static void dump_error(HandleValue error, FILE *fp = stderr);
+  static void dump_pending_exception(const char *description = "", FILE *fp = stderr);
+  static void dump_promise_rejection(HandleValue reason, HandleObject promise, FILE *fp = stderr);
 };
 
 
-typedef bool (*TaskCompletionCallback)(JSContext* cx, HandleObject receiver);
+using TaskCompletionCallback = bool (*)(JSContext* cx, HandleObject receiver);
 
 class AsyncTask : public js::RefCounted<AsyncTask>, public mozilla::SupportsWeakPtr {
 protected:
   PollableHandle handle_ = -1;
 
 public:
+  AsyncTask() = default;
   virtual ~AsyncTask() = default;
+
+  AsyncTask(const AsyncTask &) = delete;
+  AsyncTask(AsyncTask &&) = delete;
+
+  AsyncTask &operator=(const AsyncTask &) = delete;
+  AsyncTask &operator=(AsyncTask &&) = delete;
 
   virtual bool run(Engine *engine) = 0;
   virtual bool cancel(Engine *engine) = 0;

@@ -97,10 +97,14 @@ bool add_pending_promise(JSContext *cx, JS::HandleObject self, JS::HandleObject 
   } else {
     reject_handler = resolve_handler;
   }
-  if (!reject_handler)
+
+  if (!reject_handler) {
     return false;
-  if (!JS::AddPromiseReactions(cx, promise, resolve_handler, reject_handler))
+  }
+
+  if (!JS::AddPromiseReactions(cx, promise, resolve_handler, reject_handler)) {
     return false;
+  }
 
   inc_pending_promise_count(self);
   return true;
@@ -110,8 +114,10 @@ bool add_pending_promise(JSContext *cx, JS::HandleObject self, JS::HandleObject 
 
 JSObject *FetchEvent::prepare_downstream_request(JSContext *cx) {
   JS::RootedObject request(cx, Request::create(cx));
-  if (!request)
+  if (!request) {
     return nullptr;
+  }
+
   Request::init_slots(request);
   return request;
 }
@@ -166,16 +172,12 @@ bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
     return false;
   }
 
-  auto uri_bytes = new uint8_t[uri_str.size() + 1];
+  auto *uri_bytes = new uint8_t[uri_str.size() + 1];
   std::copy(uri_str.begin(), uri_str.end(), uri_bytes);
   jsurl::SpecString spec(uri_bytes, uri_str.size(), uri_str.size());
 
   worker_location::WorkerLocation::url = url::URL::create(cx, url_instance, spec);
-  if (!worker_location::WorkerLocation::url) {
-    return false;
-  }
-
-  return true;
+  return worker_location::WorkerLocation::url != nullptr;
 }
 
 bool FetchEvent::request_get(JSContext *cx, unsigned argc, JS::Value *vp) {
@@ -194,7 +196,7 @@ bool send_response(host_api::HttpOutgoingResponse *response, JS::HandleObject se
   auto result = response->send();
   FetchEvent::set_state(self, new_state);
 
-  if (auto *err = result.to_err()) {
+  if (const auto *err = result.to_err()) {
     HANDLE_ERROR(ENGINE->cx(), *err);
     return false;
   }
@@ -212,7 +214,7 @@ bool start_response(JSContext *cx, JS::HandleObject response_obj) {
   host_api::HttpOutgoingResponse* response =
     host_api::HttpOutgoingResponse::make(status, std::move(headers));
 
-  auto existing_handle = Response::maybe_response_handle(response_obj);
+  auto *existing_handle = Response::maybe_response_handle(response_obj);
   if (existing_handle) {
     MOZ_ASSERT(existing_handle->is_incoming());
   } else {
@@ -248,8 +250,9 @@ bool response_promise_then_handler(JSContext *cx, JS::HandleObject event, JS::Ha
   if (!Response::is_instance(args.get(0))) {
     api::throw_error(cx, FetchErrors::InvalidRespondWithArg);
     JS::RootedObject rejection(cx, PromiseRejectedWithPendingError(cx));
-    if (!rejection)
+    if (!rejection) {
       return false;
+    }
     args.rval().setObject(*rejection);
     return FetchEvent::respondWithError(cx, event);
   }
@@ -283,8 +286,9 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // Coercion of argument `r` to a Promise<Response>
   JS::RootedObject response_promise(cx, JS::CallOriginalPromiseResolve(cx, args.get(0)));
-  if (!response_promise)
+  if (!response_promise) {
     return false;
+  }
 
   // Step 2
   if (!Event::has_flag(self, EventFlag::Dispatch)) {
@@ -309,17 +313,20 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedObject catch_handler(cx);
   JS::RootedValue extra(cx, JS::ObjectValue(*response_promise));
   catch_handler = create_internal_method<response_promise_catch_handler>(cx, self, extra);
-  if (!catch_handler)
+  if (!catch_handler) {
     return false;
+  }
 
   // Step 10 (continued in `response_promise_then_handler` above)
   JS::RootedObject then_handler(cx);
   then_handler = create_internal_method<response_promise_then_handler>(cx, self);
-  if (!then_handler)
+  if (!then_handler) {
     return false;
+  }
 
-  if (!JS::AddPromiseReactions(cx, response_promise, then_handler, catch_handler))
+  if (!JS::AddPromiseReactions(cx, response_promise, then_handler, catch_handler)) {
     return false;
+  }
 
   args.rval().setUndefined();
   return true;
@@ -331,7 +338,7 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto headers = std::make_unique<host_api::HttpHeaders>();
   if (body_text) {
     auto header_set_res = headers->set("content-type", "text/plain");
-    if (auto *err = header_set_res.to_err()) {
+    if (const auto *err = header_set_res.to_err()) {
       HANDLE_ERROR(cx, *err);
       return false;
     }
@@ -340,13 +347,13 @@ bool FetchEvent::respondWith(JSContext *cx, unsigned argc, JS::Value *vp) {
   auto *response = host_api::HttpOutgoingResponse::make(500, std::move(headers));
 
   auto body_res = response->body();
-  if (auto *err = body_res.to_err()) {
+  if (const auto *err = body_res.to_err()) {
     HANDLE_ERROR(cx, *err);
     return false;
   }
 
   if (body_text) {
-    auto body = std::move(body_res.unwrap());
+    auto *body = body_res.unwrap();
     body->write(reinterpret_cast<const uint8_t*>(body_text->data()), body_text->length());
   }
 
@@ -359,8 +366,9 @@ bool FetchEvent::waitUntil(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
   JS::RootedObject promise(cx, JS::CallOriginalPromiseResolve(cx, args.get(0)));
-  if (!promise)
+  if (!promise) {
     return false;
+  }
 
   // Step 2
   if (!is_active(self)) {

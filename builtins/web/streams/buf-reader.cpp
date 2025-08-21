@@ -11,9 +11,9 @@ constexpr size_t CHUNK_SIZE = 8192;
 
 } // namespace
 
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 
 class StreamTask final : public api::AsyncTask {
   Heap<JSObject *> reader_;
@@ -96,7 +96,7 @@ bool cancel(JSContext *cx, JS::CallArgs args, HandleObject stream, HandleObject 
 }
 
 bool pull(JSContext *cx, JS::CallArgs args, HandleObject source, HandleObject owner, HandleObject controller) {
-  api::Engine::get(cx)->queue_async_task(new StreamTask(owner));
+  api::Engine::get(cx)->queue_async_task(js_new<StreamTask>(owner));
   args.rval().setUndefined();
   return true;
 }
@@ -123,6 +123,7 @@ size_t BufReader::position(JSObject *self) {
 
 void BufReader::set_position(JSObject *self, size_t pos) {
   MOZ_ASSERT(is_instance(self));
+  // NOLINTNEXTLINE(performance-no-int-to-ptr): we use a private slot to store the position, not a pointer.
   JS::SetReservedSlot(self, Slots::Position, JS::PrivateValue(reinterpret_cast<void *>(pos)));
 }
 
@@ -146,6 +147,6 @@ JSObject *BufReader::create(JSContext *cx, JS::HandleObject user, BufReader::Rea
   return self;
 }
 
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+

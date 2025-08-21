@@ -2,7 +2,6 @@
 #define JS_RUNTIME_HOST_API_H
 
 #include <cstdint>
-#include <list>
 #include <optional>
 #include <span>
 #include <string>
@@ -10,15 +9,11 @@
 #include <variant>
 #include <vector>
 
-#include "../crates/rust-url/rust-url.h"
 #include "extension-api.h"
 #include "js/TypeDecls.h"
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
 #include "js/Utility.h"
-#include "jsapi.h"
-#pragma clang diagnostic pop
+
+#include "../crates/rust-url/rust-url.h"
 
 using std::optional;
 using std::string_view;

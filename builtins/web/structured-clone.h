@@ -5,14 +5,14 @@
 #include "js/StructuredClone.h"
 #include "url.h"
 
-namespace builtins {
-namespace web {
-namespace structured_clone {
+
+
+namespace builtins::web::structured_clone {
 
 bool install(api::Engine *engine);
 
-} // namespace structured_clone
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::structured_clone
+
+
 
 #endif

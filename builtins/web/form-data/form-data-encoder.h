@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace form_data {
+
+
+namespace builtins::web::form_data {
 
 class OutOfMemory {};
 class MultipartFormDataImpl;
@@ -25,7 +25,7 @@ public:
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
 
-  enum Slots { Form, Inner, Count };
+  enum Slots : uint8_t { Form, Inner, Count };
 
   static JSObject *form_data(JSObject *self);
   static std::string boundary(JSObject *self);
@@ -40,7 +40,7 @@ public:
 };
 
 } // namespace form_data_encoder
-} // namespace web
-} // namespace builtins
+
+
 
 #endif // BUILTINS_WEB_FORM_DATA_ENCODER_

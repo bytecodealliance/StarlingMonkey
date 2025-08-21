@@ -9,7 +9,7 @@ JSString *decode(JSContext *cx, string_view str) {
 
 JSString *decode_byte_string(JSContext *cx, string_view str) {
   JS::UniqueLatin1Chars chars(
-      static_cast<JS::Latin1Char *>(std::memcpy(malloc(str.size()), str.data(), str.size())));
+      static_cast<JS::Latin1Char *>(std::memcpy(js_malloc(str.size()), str.data(), str.size())));
   return JS_NewLatin1String(cx, std::move(chars), str.length());
 }
 

@@ -7,9 +7,9 @@
 #include "js/RefCounted.h"
 #include "mozilla/RefPtr.h"
 
-namespace builtins {
-namespace web {
-namespace event {
+
+
+namespace builtins::web::event {
 
 struct EventListener : public js::RefCounted<EventListener> {
   void trace(JSTracer *trc) {
@@ -22,10 +22,10 @@ struct EventListener : public js::RefCounted<EventListener> {
 
   std::string type;
 
-  bool passive;
-  bool capture;
-  bool once;
-  bool removed;
+  bool passive{};
+  bool capture{};
+  bool once{};
+  bool removed{};
 
   // Define equality: only callback, type, and capture matter.
   bool operator==(const EventListener &other) const {
@@ -51,8 +51,6 @@ class EventTarget : public BuiltinImpl<EventTarget, TraceableClassPolicy> {
 
   static bool invoke_listeners(JSContext *cx, HandleObject target, HandleObject event);
 
-  static bool on_abort(JSContext *cx, std::span<HeapValue> args);
-
 public:
   static constexpr const char *class_name = "EventTarget";
   static constexpr unsigned ctor_length = 0;
@@ -62,7 +60,7 @@ public:
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
 
-  enum Slots { Listeners, Count };
+  enum Slots : uint8_t { Listeners, Count };
 
   static bool add_listener(JSContext *cx, HandleObject self, HandleValue type, HandleValue callback,
                            HandleValue opts);
@@ -80,8 +78,8 @@ public:
   static void trace(JSTracer *trc, JSObject *self);
 };
 
-} // namespace event
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::event
+
+
 
 #endif // BUILTINS_WEB_EVENT_TARGET_H_

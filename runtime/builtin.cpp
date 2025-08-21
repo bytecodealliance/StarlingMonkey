@@ -1,7 +1,7 @@
 #include "builtin.h"
 
 static const JSErrorFormatString *GetErrorMessageFromRef(void *userRef, unsigned errorNumber) {
-  auto error = static_cast<JSErrorFormatString *>(userRef);
+  auto *error = static_cast<JSErrorFormatString *>(userRef);
 
   JS::ConstUTF8CharsZ(error->format, strlen(error->format));
   return error;
@@ -16,7 +16,7 @@ bool api::throw_error(JSContext* cx, const JSErrorFormatString &error,
   }
 
   JS_ReportErrorNumberUTF8Array(cx, GetErrorMessageFromRef,
-    const_cast<JSErrorFormatString*>(&error), 0, args);
+    const_cast<JSErrorFormatString*>(&error), 0, args);  // NOLINT(cppcoreguidelines-pro-type-const-cast)
   return false;
 }
 
@@ -29,8 +29,8 @@ std::optional<std::span<uint8_t>> value_to_buffer(JSContext *cx, JS::HandleValue
   }
 
   JS::RootedObject input(cx, &val.toObject());
-  uint8_t *data;
-  bool is_shared;
+  uint8_t *data = nullptr;
+  bool is_shared = false;
   size_t len = 0;
 
   if (JS_IsArrayBufferViewObject(input)) {

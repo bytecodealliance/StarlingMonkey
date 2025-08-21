@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace text_codec {
+
+
+namespace builtins::web::text_codec {
 
 class TextDecoder final : public BuiltinImpl<TextDecoder, FinalizableClassPolicy> {
   static bool decode(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -16,7 +16,7 @@ class TextDecoder final : public BuiltinImpl<TextDecoder, FinalizableClassPolicy
 public:
   static constexpr const char *class_name = "TextDecoder";
 
-  enum class Slots {
+  enum class Slots : uint8_t {
     Decoder,
     Encoding,
     Fatal,
@@ -36,8 +36,8 @@ public:
   static void finalize(JS::GCContext *gcx, JSObject *self);
 };
 
-} // namespace text_codec
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::text_codec
+
+
 
 #endif

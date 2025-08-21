@@ -43,11 +43,11 @@ bool Crypto::get_random_values(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   JS::AutoCheckCannotGC noGC(cx);
-  bool is_shared;
+  bool is_shared = false;
   auto *buffer = static_cast<uint8_t *>(JS_GetArrayBufferViewData(typed_array, &is_shared, noGC));
 
   auto res = host_api::Random::get_bytes(byte_length);
-  if (auto *err = res.to_err()) {
+  if (const auto *err = res.to_err()) {
     noGC.reset();
     HANDLE_ERROR(cx, *err);
     return false;
@@ -68,7 +68,7 @@ bool Crypto::random_uuid(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  auto uuid = maybe_uuid.value();
+  const auto& uuid = maybe_uuid.value();
   MOZ_ASSERT(uuid.size() == 36);
 
   JS::RootedString str(cx, JS_NewStringCopyN(cx, uuid.data(), uuid.size()));
@@ -138,12 +138,15 @@ bool Crypto::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 bool install(api::Engine *engine) {
-  if (!SubtleCrypto::init_class(engine->cx(), engine->global()))
+  if (!SubtleCrypto::init_class(engine->cx(), engine->global())) {
     return false;
-  if (!Crypto::init_class(engine->cx(), engine->global()))
+  }
+  if (!Crypto::init_class(engine->cx(), engine->global())) {
     return false;
-  if (!CryptoKey::init_class(engine->cx(), engine->global()))
+  }
+  if (!CryptoKey::init_class(engine->cx(), engine->global())) {
     return false;
+  }
   return true;
 }
 

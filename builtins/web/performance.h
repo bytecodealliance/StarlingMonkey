@@ -3,15 +3,15 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace performance {
+
+
+namespace builtins::web::performance {
 
 class Performance : public BuiltinNoConstructor<Performance> {
 public:
   static constexpr const char *class_name = "Performance";
   static const int ctor_length = 0;
-  enum Slots { Count };
+  enum Slots : uint8_t { Count };
   static const JSFunctionSpec methods[];
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec properties[];
@@ -27,8 +27,8 @@ public:
 
 bool install(api::Engine *engine);
 
-} // namespace performance
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::performance
+
+
 
 #endif

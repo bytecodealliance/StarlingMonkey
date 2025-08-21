@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace crypto {
+
+
+namespace builtins::web::crypto {
 
 class Crypto : public BuiltinNoConstructor<Crypto> {
 private:
@@ -15,7 +15,7 @@ public:
 
   static JS::PersistentRooted<JSObject *> subtle;
 
-  enum Slots { Count };
+  enum Slots : uint8_t { Count };
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
@@ -30,8 +30,8 @@ public:
 
 bool install(api::Engine *engine);
 
-} // namespace crypto
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::crypto
+
+
 
 #endif

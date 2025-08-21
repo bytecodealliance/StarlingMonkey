@@ -1,19 +1,12 @@
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include "js/experimental/TypedData.h" // used within "js/Stream.h"
-#pragma clang diagnostic pop
-
 #include "js/Stream.h"
 
 #include "native-stream-sink.h"
 
 // A JS class to use as the underlying sink for native writable streams, used
 // for TransformStream.
-namespace builtins {
-namespace web {
-namespace streams {
+
+namespace builtins::web::streams {
 
 JSObject *NativeStreamSink::owner(JSObject *self) {
   return &JS::GetReservedSlot(self, Slots::Owner).toObject();
@@ -132,8 +125,9 @@ JSObject *NativeStreamSink::create(JSContext *cx, JS::HandleObject owner,
                                    CloseAlgorithmImplementation *close,
                                    AbortAlgorithmImplementation *abort) {
   JS::RootedObject sink(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (!sink)
+  if (!sink) {
     return nullptr;
+  }
 
   JS::SetReservedSlot(sink, Slots::Owner, JS::ObjectValue(*owner));
   JS::SetReservedSlot(sink, Slots::StartPromise, startPromise);
@@ -142,6 +136,6 @@ JSObject *NativeStreamSink::create(JSContext *cx, JS::HandleObject owner,
   JS::SetReservedSlot(sink, Slots::CloseAlgorithm, JS::PrivateValue((void *)close));
   return sink;
 }
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+

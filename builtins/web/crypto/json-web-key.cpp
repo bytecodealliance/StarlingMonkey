@@ -1,7 +1,3 @@
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include "js/ArrayBuffer.h"
 #include "js/Conversions.h"
 #include "js/experimental/TypedData.h"
@@ -10,7 +6,6 @@
 #include "js/Promise.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
-#pragma clang diagnostic pop
 
 #include "../dom-exception.h"
 #include "builtin.h"
@@ -19,22 +14,20 @@
 
 #include <fmt/format.h>
 
-namespace builtins {
-namespace web {
-namespace crypto {
+namespace builtins::web::crypto {
 
 namespace {
 JS::Result<std::optional<std::string>>
-extractStringPropertyFromObject(JSContext *cx, JS::HandleObject object, std::string_view property) {
-  bool has_property;
-  if (!JS_HasProperty(cx, object, property.data(), &has_property)) {
+extractStringPropertyFromObject(JSContext *cx, JS::HandleObject object, const char* property) {
+  bool has_property = false;
+  if (!JS_HasProperty(cx, object, property, &has_property)) {
     return JS::Result<std::optional<std::string>>(JS::Error());
   }
   if (!has_property) {
     return std::optional<std::string>(std::nullopt);
   }
   JS::RootedValue value(cx);
-  if (!JS_GetProperty(cx, object, property.data(), &value)) {
+  if (!JS_GetProperty(cx, object, property, &value)) {
     return JS::Result<std::optional<std::string>>(JS::Error());
   }
   // Convert into a String following https://tc39.es/ecma262/#sec-tostring
@@ -175,7 +168,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
   //   boolean ext;
   std::optional<bool> ext = std::nullopt;
   {
-    bool has_ext;
+    bool has_ext = false;
     if (!JS_HasProperty(cx, object, "ext", &has_ext)) {
       return nullptr;
     }
@@ -190,7 +183,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
   //   sequence<DOMString> key_ops;
   std::vector<std::string> key_ops;
   {
-    bool has_key_ops;
+    bool has_key_ops = false;
     if (!JS_HasProperty(cx, object, "key_ops", &has_key_ops)) {
       return nullptr;
     }
@@ -199,7 +192,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
       if (!JS_GetProperty(cx, object, "key_ops", &key_ops_val)) {
         return nullptr;
       }
-      bool key_ops_is_array;
+      bool key_ops_is_array = false;
       if (!JS::IsArrayObject(cx, key_ops_val, &key_ops_is_array)) {
         return nullptr;
       }
@@ -210,7 +203,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
           "DataError");
         return nullptr;
       }
-      uint32_t length;
+      uint32_t length = 0;
       JS::RootedObject key_ops_array(cx, &key_ops_val.toObject());
       if (!JS::GetArrayLength(cx, key_ops_array, &length)) {
         return nullptr;
@@ -267,7 +260,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
 
   std::vector<RsaOtherPrimesInfo> oth;
   {
-    bool has_oth;
+    bool has_oth = false;
     if (!JS_HasProperty(cx, object, "oth", &has_oth)) {
       return nullptr;
     }
@@ -276,7 +269,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
       if (!JS_GetProperty(cx, object, "oth", &oth_val)) {
         return nullptr;
       }
-      bool oth_is_array;
+      bool oth_is_array = false;
       if (!JS::IsArrayObject(cx, oth_val, &oth_is_array)) {
         return nullptr;
       }
@@ -287,7 +280,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
           "DataError");
         return nullptr;
       }
-      uint32_t length;
+      uint32_t length = 0;
       JS::RootedObject oth_array(cx, &oth_val.toObject());
       if (!JS::GetArrayLength(cx, oth_array, &length)) {
         return nullptr;
@@ -364,6 +357,6 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
   return std::make_unique<JsonWebKey>(kty, use, key_ops, alg, ext, crv, x, y, n, e, d, p, q, dp, dq,
                                       qi, oth, k);
 }
-} // namespace crypto
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::crypto
+
+

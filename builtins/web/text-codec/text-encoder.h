@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace text_codec {
+
+
+namespace builtins::web::text_codec {
 
 class TextEncoder final : public BuiltinImpl<TextEncoder> {
   static bool encode(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -15,7 +15,7 @@ class TextEncoder final : public BuiltinImpl<TextEncoder> {
 public:
   static constexpr const char *class_name = "TextEncoder";
 
-  enum class Slots { Count };
+  enum class Slots : uint8_t { Count };
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
@@ -27,8 +27,8 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 };
 
-} // namespace text_codec
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::text_codec
+
+
 
 #endif

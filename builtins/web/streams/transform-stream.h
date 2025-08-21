@@ -4,9 +4,9 @@
 #include "builtin.h"
 // #include "js-compute-builtins.h"
 
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 
 class TransformStream : public BuiltinImpl<TransformStream> {
 private:
@@ -14,7 +14,7 @@ public:
   static constexpr const char *class_name = "TransformStream";
   static const int ctor_length = 0;
 
-  enum Slots {
+  enum Slots : uint8_t {
     Controller,
     Readable,
     Writable,
@@ -93,8 +93,8 @@ public:
   static JSObject *create_rs_proxy(JSContext *cx, JS::HandleObject input_readable);
 };
 
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+
 
 #endif

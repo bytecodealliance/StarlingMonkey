@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 
 class BufReader : public BuiltinNoConstructor<BufReader> {
 public:
@@ -16,7 +16,7 @@ public:
 
   static constexpr const char *class_name = "NativeBufReader";
 
-  enum Slots { User, Stream, Read, Position, Count };
+  enum Slots : uint8_t { User, Stream, Read, Position, Count };
 
   using Buffer = std::span<uint8_t>;
 
@@ -26,7 +26,7 @@ public:
   // already been enqueued or consumed by previous reads. The callee should read
   // up to `buf.size()` bytes into `buf`. The actual number of bytes read has
   // to be stored in `read`, and `done` set to true when no further data remains.
-  typedef bool ReadFn(JSContext *cx, HandleObject user, Buffer buf, size_t start, size_t *read, bool *done);
+  using ReadFn = bool (JSContext *, HandleObject, Buffer, size_t, size_t *, bool *);
 
   static JSObject *user(JSObject *self);
   static JSObject *stream(JSObject *self);
@@ -34,11 +34,11 @@ public:
   static size_t position(JSObject *self);
   static void set_position(JSObject *self, size_t pos);
 
-  static JSObject *create(JSContext *cx, HandleObject owner, ReadFn *read);
+  static JSObject *create(JSContext *cx, HandleObject user, ReadFn *read);
 };
 
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+
 
 #endif // BUILTINS_WEB_STREAMS_BUF_FREADER_H

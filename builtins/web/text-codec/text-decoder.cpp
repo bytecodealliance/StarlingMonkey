@@ -4,9 +4,9 @@
 
 #include "text-codec-errors.h"
 
-namespace builtins {
-namespace web {
-namespace text_codec {
+
+
+namespace builtins::web::text_codec {
 
 bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
@@ -57,11 +57,11 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
       JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Fatal)).toBoolean();
   auto ignoreBOM =
       JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::IgnoreBOM)).toBoolean();
-  auto decoder = reinterpret_cast<jsencoding::Decoder *>(
+  auto *decoder = reinterpret_cast<jsencoding::Decoder *>(
       JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Decoder)).toPrivate());
   MOZ_ASSERT(decoder);
 
-  uint32_t result;
+  uint32_t result = 0;
   size_t srcLen = src->size();
   size_t destLen = jsencoding::decoder_max_utf16_buffer_length(decoder, srcLen);
   std::unique_ptr<uint16_t[]> dest(new uint16_t[destLen + 1]);
@@ -76,13 +76,13 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
       return api::throw_error(cx, TextCodecErrors::DecodingFailed);
     }
   } else {
-    bool hadReplacements;
+    bool hadReplacements = false;
     result = jsencoding::decoder_decode_to_utf16(decoder, src_ptr, &srcLen, dest.get(),
                                                  &destLen, !stream, &hadReplacements);
   }
   MOZ_ASSERT(result == 0);
 
-  auto encoding = reinterpret_cast<jsencoding::Encoding *>(
+  auto *encoding = reinterpret_cast<jsencoding::Encoding *>(
       JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Encoding)).toPrivate());
   MOZ_ASSERT(encoding);
   // If the internal streaming flag of the decoder object is not set,
@@ -112,7 +112,7 @@ bool TextDecoder::encoding_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     return api::throw_error(cx, api::Errors::WrongReceiver, "encoding get", "TextDecoder");
   }
 
-  auto encoding = reinterpret_cast<jsencoding::Encoding *>(
+  auto *encoding = reinterpret_cast<jsencoding::Encoding *>(
       JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Encoding)).toPrivate());
   MOZ_ASSERT(encoding);
 
@@ -197,17 +197,18 @@ bool TextDecoder::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   // 1. Remove any leading and trailing ASCII whitespace from label.
   // 2. If label is an ASCII case-insensitive match for any of the labels listed in the table
   // below, then return the corresponding encoding; otherwise return failure. JS-Compute-Runtime:
-  jsencoding::Encoding *encoding;
+  const jsencoding::Encoding *encoding = nullptr;
   if (label_value.isUndefined()) {
-    encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
-        reinterpret_cast<uint8_t *>(const_cast<char *>("UTF-8")), 5));
+    const char *utf8_label = "UTF-8";
+    encoding = jsencoding::encoding_for_label_no_replacement(
+        reinterpret_cast<const uint8_t *>(utf8_label), 5);
   } else {
     auto label_chars = core::encode(cx, label_value);
     if (!label_chars) {
       return false;
     }
-    encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
-        reinterpret_cast<uint8_t *>(label_chars.begin()), label_chars.len));
+    encoding = jsencoding::encoding_for_label_no_replacement(
+        reinterpret_cast<uint8_t *>(label_chars.begin()), label_chars.len);
   }
   if (!encoding) {
     return api::throw_error(cx, TextCodecErrors::InvalidEncoding);
@@ -234,16 +235,20 @@ bool TextDecoder::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     }
   }
   JS::RootedObject self(cx, JS_NewObjectForConstructor(cx, &class_, args));
-  jsencoding::Decoder *decoder;
+  jsencoding::Decoder *decoder = nullptr;
   if (ignoreBOM) {
     decoder = jsencoding::encoding_new_decoder_without_bom_handling(encoding);
   } else {
     decoder = jsencoding::encoding_new_decoder_with_bom_removal(encoding);
   }
+
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): drop const to store encoding in the slot
+  auto *encoding_ptr = const_cast<jsencoding::Encoding *>(encoding);
+
   JS::SetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Decoder),
                       JS::PrivateValue(decoder));
   JS::SetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Encoding),
-                      JS::PrivateValue(encoding));
+                      JS::PrivateValue(encoding_ptr));
   JS::SetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Fatal),
                       JS::BooleanValue(fatal));
   JS::SetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::IgnoreBOM),
@@ -258,7 +263,7 @@ bool TextDecoder::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 void TextDecoder::finalize(JS::GCContext *gcx, JSObject *self) {
-  auto decoder = reinterpret_cast<jsencoding::Decoder *>(
+  auto *decoder = reinterpret_cast<jsencoding::Decoder *>(
       JS::GetReservedSlot(self, static_cast<uint32_t>(TextDecoder::Slots::Decoder)).toPrivate());
 
   if (decoder) {
@@ -266,6 +271,6 @@ void TextDecoder::finalize(JS::GCContext *gcx, JSObject *self) {
   }
 }
 
-} // namespace text_codec
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::text_codec
+
+

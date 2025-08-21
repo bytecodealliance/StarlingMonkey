@@ -5,9 +5,9 @@
 #include "../event/event.h"
 #include "../timers.h"
 
-namespace builtins {
-namespace web {
-namespace abort {
+
+
+namespace builtins::web::abort {
 
 using event::Event;
 using event::EventTarget;
@@ -195,7 +195,7 @@ bool AbortSignal::add_algorithm(JSObject *self, js::UniquePtr<AbortAlgorithm> al
   }
 
   // 2. Append algorithm to signal's abort algorithms.
-  auto algorithms = AbortSignal::algorithms(self);
+  auto *algorithms = AbortSignal::algorithms(self);
   return algorithms->append(std::move(algorithm));
 }
 
@@ -228,7 +228,7 @@ bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
   JS::RootedObjectVector dep_signals_to_abort(cx);
 
   // 4. For each dependentSignal of signal's dependent signals:
-  auto dep_signals = dependent_signals(self);
+  auto *dep_signals = dependent_signals(self);
   for (auto const &sig : dep_signals->items()) {
     RootedObject signal(cx, sig);
     // 1. If dependentSignal is not aborted:
@@ -259,9 +259,11 @@ bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
 bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {
   // To run the abort steps for an AbortSignal signal:
   // 1. For each algorithm of signal's abort algorithms: run algorithm.
-  auto algorithms = AbortSignal::algorithms(self);
+  auto *algorithms = AbortSignal::algorithms(self);
   for (auto &algorithm : *algorithms) {
-    if (!algorithm->run(cx)) return false;
+    if (!algorithm->run(cx)) {
+      return false;
+    }
   }
 
   // 2. Empty signals's abort algorithms.
@@ -274,11 +276,7 @@ bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {
   RootedObject event(cx, Event::create(cx, type_val, JS::NullHandleValue));
   RootedValue event_val(cx, JS::ObjectValue(*event));
 
-  if (!EventTarget::dispatch_event(cx, self, event_val, &res_val)) {
-    return false;
-  }
-
-  return true;
+  return EventTarget::dispatch_event(cx, self, event_val, &res_val);
 }
 
 // Set signal's abort reason to reason if it is given; otherwise to a new "AbortError" DOMException.
@@ -420,7 +418,7 @@ JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signa
 
   // 3. Set resultSignal's dependent to true.
   SetReservedSlot(self, Slots::Dependent, JS::TrueValue());
-  auto our_signals = source_signals(self);
+  auto *our_signals = source_signals(self);
 
   // 4. For each signal of signals:
   for (size_t i = 0; i < signals.length(); ++i) {
@@ -431,12 +429,12 @@ JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signa
       // 1. Append signal to resultSignal's source signals.
       our_signals->insert(signal);
       // 2. Append resultSignal to signal's dependent signals.
-      auto their_signals = dependent_signals(signal);
+      auto *their_signals = dependent_signals(signal);
       their_signals->insert(self);
     }
     // 2. Otherwise...
     else {
-      auto src_signals = source_signals(signal);
+      auto *src_signals = source_signals(signal);
       // for each sourceSignal of signal's source signals:
       for (auto const &source : src_signals->items()) {
         // 1. Assert: sourceSignal is not aborted and not dependent.
@@ -444,7 +442,7 @@ JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signa
         // 2. Append sourceSignal to resultSignal's source signals.
         our_signals->insert(source);
         // 3. Append resultSignal to sourceSignal's dependent signals.
-        auto their_signals = dependent_signals(source);
+        auto *their_signals = dependent_signals(source);
         their_signals->insert(self);
       };
     }
@@ -469,21 +467,21 @@ void AbortSignal::trace(JSTracer *trc, JSObject *self) {
 
   auto has_sources = !JS::GetReservedSlot(self, Slots::SourceSignals).isNullOrUndefined();
   if (has_sources) {
-    auto srcsig = source_signals(self);
+    auto *srcsig = source_signals(self);
     srcsig->trace(trc);
     srcsig->traceWeak(trc);
   }
 
   auto has_deps = !JS::GetReservedSlot(self, Slots::DependentSignals).isNullOrUndefined();
   if (has_deps) {
-    auto depsig = dependent_signals(self);
+    auto *depsig = dependent_signals(self);
     depsig->trace(trc);
     depsig->traceWeak(trc);
   }
 
   auto has_algorithms = !JS::GetReservedSlot(self, Slots::Algorithms).isNullOrUndefined();
   if (has_algorithms) {
-    auto algorithms = AbortSignal::algorithms(self);
+    auto *algorithms = AbortSignal::algorithms(self);
     algorithms->trace(trc);
   }
 }
@@ -515,6 +513,6 @@ bool install(api::Engine *engine) {
 
 JSString *AbortSignal::abort_type_atom = nullptr;
 
-} // namespace abort
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::abort
+
+

@@ -4,16 +4,16 @@
 #include "blob.h"
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace file {
+
+
+namespace builtins::web::file {
 class File : public BuiltinImpl<File> {
   static bool name_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool lastModified_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
 public:
   static constexpr int ParentSlots = blob::Blob::Slots::Count;
-  enum Slots { Name = ParentSlots, LastModified, Count };
+  enum Slots : uint8_t { Name = ParentSlots, LastModified, Count };
 
   static constexpr const char *class_name = "File";
   static constexpr unsigned ctor_length = 2;
@@ -33,8 +33,8 @@ public:
 
 bool install(api::Engine *engine);
 
-} // namespace file
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::file
+
+
 
 #endif // BUILTINS_WEB_FILE_H

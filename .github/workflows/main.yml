@@ -113,6 +113,13 @@ jobs:
         name: spidermonkey-${{ matrix.build }}
         path: spidermonkey-dist-${{ matrix.build }}/*
 
+    - name: Install Just
+      uses: taiki-e/install-action@just
+
+    - name: Run clang linter
+      if: matrix.build == 'debug'
+      run: just lint
+
   release-spidermonkey:
     needs: test
     if: needs.test.outputs.SM_TAG_EXISTS == 'false' && (github.event_name == 'push' && 

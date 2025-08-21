@@ -6,15 +6,22 @@
 
 #include "../event/event-target.h"
 
-namespace builtins {
-namespace web {
-namespace abort {
+
+
+namespace builtins::web::abort {
 
 struct AbortAlgorithm {
   bool virtual run(JSContext *cx) = 0;
   void virtual trace(JSTracer *trc) { };
 
+  AbortAlgorithm() = default;
   virtual ~AbortAlgorithm() = default;
+
+  AbortAlgorithm(const AbortAlgorithm &) = default;
+  AbortAlgorithm(AbortAlgorithm &&) = delete;
+
+  AbortAlgorithm &operator=(const AbortAlgorithm &) = default;
+  AbortAlgorithm &operator=(AbortAlgorithm &&) = delete;
 };
 
 class AbortSignal : public BuiltinImpl<AbortSignal, TraceableClassPolicy> {
@@ -45,7 +52,7 @@ class AbortSignal : public BuiltinImpl<AbortSignal, TraceableClassPolicy> {
 
 public:
   static constexpr int ParentSlots = event::EventTarget::Slots::Count;
-  enum Slots {
+  enum Slots : uint8_t {
     Reason = ParentSlots,
     Algorithms,
     Dependent,
@@ -81,8 +88,8 @@ public:
   static void trace(JSTracer *trc, JSObject *self);
 };
 
-} // namespace abort
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::abort
+
+
 
 #endif // BUILTINS_WEB_ABORT_SIGNAL_H_

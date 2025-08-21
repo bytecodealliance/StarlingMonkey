@@ -1,14 +1,8 @@
 #include "encode.h"
-
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
 #include "js/Conversions.h"
-#pragma clang diagnostic pop
 
 namespace core {
 
-using host_api::HostBytes;
 using host_api::HostString;
 
 HostString encode(JSContext *cx, JS::HandleString str) {
@@ -37,7 +31,7 @@ HostString encode_byte_string(JSContext *cx, JS::HandleValue val) {
   if (!str) {
     return HostString{};
   }
-  size_t length;
+  size_t length = 0;
   if (!JS::StringHasLatin1Chars(str)) {
     bool foundBadChar = false;
     {
@@ -62,10 +56,12 @@ HostString encode_byte_string(JSContext *cx, JS::HandleValue val) {
   } else {
     length = JS::GetStringLength(str);
   }
-  char *buf = static_cast<char *>(malloc(length));
-  if (!JS_EncodeStringToBuffer(cx, str, buf, length))
+
+  char *buf = static_cast<char *>(js_malloc(length));
+  if (!JS_EncodeStringToBuffer(cx, str, buf, length)) {
     MOZ_ASSERT_UNREACHABLE();
-  return HostString(JS::UniqueChars(buf), length);
+}
+  return {JS::UniqueChars(buf), length};
 }
 
 jsurl::SpecString encode_spec_string(JSContext *cx, JS::HandleValue val) {

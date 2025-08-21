@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 
 /**
  * Implementation of the WICG DecompressionStream builtin.
@@ -22,7 +22,7 @@ class DecompressionStream : public BuiltinImpl<DecompressionStream> {
 public:
   static constexpr const char *class_name = "DecompressionStream";
 
-  enum Slots { Transform, Format, State, Buffer, Count };
+  enum Slots : uint8_t { Transform, Format, State, Buffer, Count };
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -35,8 +35,8 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 };
 
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+
 
 #endif

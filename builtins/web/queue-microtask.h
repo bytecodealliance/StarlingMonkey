@@ -3,14 +3,14 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace queue_microtask {
+
+
+namespace builtins::web::queue_microtask {
 
 bool install(api::Engine *engine);
 
-} // namespace queue_microtask
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::queue_microtask
+
+
 
 #endif

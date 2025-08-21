@@ -52,7 +52,7 @@ bool SubtleCrypto::digest(JSContext *cx, unsigned argc, JS::Value *vp) {
   // the returned error and then terminate the algorithm.
   // 8. Let result be the result of performing the digest operation specified by normalizedAlgorithm
   // using algorithm, with data as message.
-  auto array_buffer = normalizedAlgorithm->digest(cx, data.value());
+  auto *array_buffer = normalizedAlgorithm->digest(cx, data.value());
   if (!array_buffer) {
     return RejectPromiseWithPendingError(cx, promise);
   }
@@ -244,7 +244,7 @@ bool SubtleCrypto::sign(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // 10. Let result be the result of performing the sign operation specified by normalizedAlgorithm
   // using key and algorithm and with data as message.
-  auto signature = normalizedAlgorithm->sign(cx, key, data);
+  auto *signature = normalizedAlgorithm->sign(cx, key, data);
   if (!signature) {
     return RejectPromiseWithPendingError(cx, promise);
   }
