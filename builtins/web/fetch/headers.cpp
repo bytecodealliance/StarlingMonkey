@@ -876,6 +876,7 @@ bool Headers::append(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   if (!idx) {
+    args.rval().setUndefined();
     return append_valid_normalized_header(cx, self, std::move(name_chars), std::move(value_chars));
   }
 
@@ -896,6 +897,7 @@ bool Headers::append(JSContext *cx, unsigned argc, JS::Value *vp) {
   header_val->ptr.swap(combined);
   header_val->len = combined_len;
 
+  args.rval().setUndefined();
   return true;
 }
 

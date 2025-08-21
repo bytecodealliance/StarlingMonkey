@@ -51,7 +51,7 @@ public:
   static bool init(JSContext *cx, HandleObject self, HandleValue blobParts, HandleValue opts);
 
   static JSObject *data_to_owned_array_buffer(JSContext *cx, HandleObject self);
-  static bool read_blob_slice(JSContext *cx, HandleObject self, std::span<uint8_t> /*buf*/,
+  static bool read_blob_slice(JSContext *cx, HandleObject self, std::span<uint8_t> buf,
                               size_t start, size_t *read, bool *done);
 
   static JSObject *create(JSContext *cx, UniqueChars data, size_t data_len, HandleString type);

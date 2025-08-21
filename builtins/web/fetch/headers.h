@@ -151,7 +151,7 @@ public:
    *
    * The handle is guaranteed to be uniquely owned by the caller.
    */
-  static unique_ptr<host_api::HttpHeaders> handle_clone(JSContext * /*cx*/, HandleObject self);
+  static unique_ptr<host_api::HttpHeaders> handle_clone(JSContext *cx, HandleObject self);
 };
 
 class HeadersIterator final : public BuiltinNoConstructor<HeadersIterator> {
