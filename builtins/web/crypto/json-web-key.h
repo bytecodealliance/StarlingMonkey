@@ -5,11 +5,12 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
-namespace builtins {
-namespace web {
-namespace crypto {
+
+
+namespace builtins::web::crypto {
 
 // https://datatracker.ietf.org/doc/html/rfc7518#section-6.3.2.7
 // 6.3.2.7.  "oth" (Other Primes Info) Parameter
@@ -35,7 +36,7 @@ public:
   // member represents the CRT coefficient of the corresponding prime
   // factor.  It is represented as a Base64urlUInt-encoded value.
   std::string t;
-  RsaOtherPrimesInfo(std::string r, std::string d, std::string t) : r{r}, d{d}, t{t} {}
+  RsaOtherPrimesInfo(std::string r, std::string d, std::string t) : r{std::move(r)}, d{std::move(d)}, t{std::move(t)} {}
 };
 
 // https://datatracker.ietf.org/doc/html/rfc7517#section-4
@@ -149,38 +150,38 @@ public:
 
   JsonWebKey(std::string kty, std::vector<std::string> key_ops, std::optional<bool> ext,
              std::optional<std::string> n, std::optional<std::string> e)
-      : kty{kty}, key_ops{key_ops}, ext{ext}, n{n}, e{e} {}
+      : kty{std::move(kty)}, key_ops{std::move(key_ops)}, ext{ext}, n{std::move(n)}, e{std::move(e)} {}
 
-  JsonWebKey RSAPublicKey(std::string kty, std::vector<std::string> key_ops,
+  static JsonWebKey RSAPublicKey(std::string kty, std::vector<std::string> key_ops,
                           std::optional<bool> ext, std::optional<std::string> n,
                           std::optional<std::string> e) {
-    return JsonWebKey(kty, key_ops, ext, n, e);
+    return {std::move(kty), std::move(key_ops), ext, std::move(n), std::move(e)};
   }
 
   JsonWebKey(std::string kty, std::vector<std::string> key_ops, std::optional<bool> ext,
              std::optional<std::string> n, std::optional<std::string> e,
              std::optional<std::string> d)
-      : kty{kty}, key_ops{key_ops}, ext{ext}, d{d}, n{n}, e{e} {}
+      : kty{std::move(kty)}, key_ops{std::move(key_ops)}, ext{ext}, d{std::move(d)}, n{std::move(n)}, e{std::move(e)} {}
 
-  JsonWebKey RSAPrivateKey(std::string kty, std::vector<std::string> key_ops,
+  static JsonWebKey RSAPrivateKey(std::string kty, std::vector<std::string> key_ops,
                            std::optional<bool> ext, std::optional<std::string> n,
                            std::optional<std::string> e, std::optional<std::string> d) {
-    return JsonWebKey(kty, key_ops, ext, n, e, d);
+    return {std::move(kty), std::move(key_ops), ext, std::move(n), std::move(e), std::move(d)};
   }
   JsonWebKey(std::string kty, std::vector<std::string> key_ops, std::optional<bool> ext,
              std::optional<std::string> n, std::optional<std::string> e,
              std::optional<std::string> d, std::optional<std::string> p,
              std::optional<std::string> q, std::optional<std::string> dp,
              std::optional<std::string> dq, std::optional<std::string> qi)
-      : kty{kty}, key_ops{key_ops}, ext{ext}, d{d}, n{n}, e{e}, p{p}, q{q}, dp{dp}, dq{dq}, qi{qi} {
+      : kty{std::move(kty)}, key_ops{std::move(key_ops)}, ext{ext}, d{std::move(d)}, n{std::move(n)}, e{std::move(e)}, p{std::move(p)}, q{std::move(q)}, dp{std::move(dp)}, dq{std::move(dq)}, qi{std::move(qi)} {
   }
 
-  JsonWebKey RSAPrivateKeyWithAdditionalPrimes(
+  static JsonWebKey RSAPrivateKeyWithAdditionalPrimes(
       std::string kty, std::vector<std::string> key_ops, std::optional<bool> ext,
       std::optional<std::string> n, std::optional<std::string> e, std::optional<std::string> d,
       std::optional<std::string> p, std::optional<std::string> q, std::optional<std::string> dp,
       std::optional<std::string> dq, std::optional<std::string> qi) {
-    return JsonWebKey(kty, key_ops, ext, n, e, d, p, q, dp, dq, qi);
+    return {std::move(kty), std::move(key_ops), ext, std::move(n), std::move(e), std::move(d), std::move(p), std::move(q), std::move(dp), std::move(dq), std::move(qi)};
   }
 
   JsonWebKey(std::string kty, std::optional<std::string> use, std::vector<std::string> key_ops,
@@ -192,13 +193,13 @@ public:
              std::optional<std::string> dp, std::optional<std::string> dq,
              std::optional<std::string> qi, std::vector<RsaOtherPrimesInfo> oth,
              std::optional<std::string> k)
-      : kty{kty}, use{use}, key_ops{key_ops}, alg{alg}, ext{ext}, crv{crv}, x{x}, y{y}, d{d}, n{n},
-        e{e}, p{p}, q{q}, dp{dp}, dq{dq}, qi{qi}, oth{oth}, k{k} {}
+      : kty{std::move(kty)}, use{std::move(use)}, key_ops{std::move(key_ops)}, alg{std::move(alg)}, ext{ext}, crv{std::move(crv)}, x{std::move(x)}, y{std::move(y)}, d{std::move(d)}, n{std::move(n)},
+        e{std::move(e)}, p{std::move(p)}, q{std::move(q)}, dp{std::move(dp)}, dq{std::move(dq)}, qi{std::move(qi)}, oth{std::move(oth)}, k{std::move(k)} {}
 
   static std::unique_ptr<JsonWebKey> parse(JSContext *cx, JS::HandleValue value,
                                            std::string_view required_kty_value);
 };
-} // namespace crypto
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::crypto
+
+
 #endif

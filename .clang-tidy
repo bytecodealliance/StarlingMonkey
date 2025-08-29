@@ -1,0 +1,58 @@
+Checks: >
+  clang-analyzer-*,
+  clang-diagnostic-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  bugprone-*,
+  misc-redundant-expression,
+  misc-uniqueptr-reset-release,
+  misc-unused-alias-decls,
+  misc-unused-using-decls,
+  -clang-analyzer-optin.core.EnumCastOutOfRange,
+  -cppcoreguidelines-avoid-do-while,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-narrowing-conversions,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-cstyle-cast,
+  -cppcoreguidelines-init-variables,
+  -cppcoreguidelines-macro-usage,
+  -cppcoreguidelines-interfaces-global-init,
+  -cppcoreguidelines-use-default-member-init,
+  -cppcoreguidelines-pro-type-static-cast-downcast,
+  -modernize-use-trailing-return-type,
+  -modernize-avoid-c-arrays,
+  -modernize-use-ranges,
+  -readability-identifier-length,
+  -readability-static-accessed-through-instance,
+  -readability-function-cognitive-complexity,
+  -readability-magic-numbers,
+  -readability-simplify-boolean-expr,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-dynamic-static-initializers,
+  -bugprone-assignment-in-if-condition,
+  -bugprone-narrowing-conversions,
+
+# Check options configuration
+CheckOptions:
+  - key: readability-implicit-bool-conversion.AllowPointerConditions
+    value: 'true'
+
+# Treat all warnings as errors
+WarningsAsErrors: '*'
+
+# Only warn on headers in the code tree
+HeaderFilterRegex: 'builtins/|runtime/'
+
+# Use the same style as clang-format (look for .clang-format)
+FormatStyle: file
+
+# Explicitly exclude system/dependency headers
+SystemHeaders: false

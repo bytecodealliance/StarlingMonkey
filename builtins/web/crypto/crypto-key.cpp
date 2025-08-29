@@ -10,15 +10,15 @@
 #include <openssl/err.h>
 #include <utility>
 
-namespace builtins {
-namespace web {
-namespace crypto {
 
-CryptoKeyUsages::CryptoKeyUsages(uint8_t mask) { this->mask = mask; };
+
+namespace builtins::web::crypto {
+
+CryptoKeyUsages::CryptoKeyUsages(uint8_t mask) : mask(mask) { };
 CryptoKeyUsages::CryptoKeyUsages(bool encrypt, bool decrypt, bool sign, bool verify,
                                  bool derive_key, bool derive_bits, bool wrap_key,
                                  bool unwrap_key) {
-  this->mask = 0;
+  
   if (encrypt) {
     this->mask |= encrypt_flag;
   }
@@ -45,7 +45,7 @@ CryptoKeyUsages::CryptoKeyUsages(bool encrypt, bool decrypt, bool sign, bool ver
   }
 };
 
-CryptoKeyUsages CryptoKeyUsages::from(std::vector<std::string> key_usages) {
+CryptoKeyUsages CryptoKeyUsages::from(const std::vector<std::string>& key_usages) {
   uint8_t mask = 0;
   for (const auto &usage : key_usages) {
     if (usage == "encrypt") {
@@ -66,11 +66,11 @@ CryptoKeyUsages CryptoKeyUsages::from(std::vector<std::string> key_usages) {
       mask |= unwrap_key_flag;
     }
   }
-  return CryptoKeyUsages(mask);
+  return {mask};
 }
 
 JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue key_usages) {
-  bool key_usages_is_array;
+  bool key_usages_is_array = false;
   if (!JS::IsArrayObject(cx, key_usages, &key_usages_is_array)) {
     return JS::Result<CryptoKeyUsages>(JS::Error());
   }
@@ -84,7 +84,7 @@ JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue
   }
 
   JS::RootedObject array(cx, &key_usages.toObject());
-  uint32_t key_usages_length;
+  uint32_t key_usages_length = 0;
   if (!JS::GetArrayLength(cx, array, &key_usages_length)) {
     return JS::Result<CryptoKeyUsages>(JS::Error());
   }
@@ -138,7 +138,7 @@ bool CryptoKey::algorithm_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     return api::throw_error(cx, api::Errors::WrongReceiver, "algorithm get", "CryptoKey");
   }
 
-  auto algorithm = &JS::GetReservedSlot(self, Slots::Algorithm).toObject();
+  auto *algorithm = &JS::GetReservedSlot(self, Slots::Algorithm).toObject();
   JS::RootedObject result(cx, algorithm);
   if (!result) {
     return false;
@@ -176,7 +176,7 @@ bool CryptoKey::type_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   // convert it into it's JSString representation.
   switch (type) {
   case CryptoKeyType::Private: {
-    auto str = JS_AtomizeString(cx, "private");
+    auto *str = JS_AtomizeString(cx, "private");
     if (!str) {
       return false;
     }
@@ -184,7 +184,7 @@ bool CryptoKey::type_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     return true;
   }
   case CryptoKeyType::Public: {
-    auto str = JS_AtomizeString(cx, "public");
+    auto *str = JS_AtomizeString(cx, "public");
     if (!str) {
       return false;
     }
@@ -192,7 +192,7 @@ bool CryptoKey::type_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     return true;
   }
   case CryptoKeyType::Secret: {
-    auto str = JS_AtomizeString(cx, "secret");
+    auto *str = JS_AtomizeString(cx, "secret");
     if (!str) {
       return false;
     }
@@ -336,7 +336,7 @@ BignumPtr make_bignum(std::string_view bytes) {
     return nullptr;
   }
 
-  auto bn = BN_bin2bn(reinterpret_cast<const unsigned char *>(bytes.data()),
+  auto *bn = BN_bin2bn(reinterpret_cast<const unsigned char *>(bytes.data()),
                       static_cast<int>(bytes.length()), nullptr);
   return BignumPtr(bn);
 }
@@ -389,7 +389,7 @@ bool validate_key(JSContext *cx, const EvpPkeyPtr &pkey, bool has_private) {
                           : EVP_PKEY_public_check(check_ctx.get());
 
   if (valid != 1) {
-    auto reason = ERR_reason_error_string(ERR_get_error());
+    const auto *reason = ERR_reason_error_string(ERR_get_error());
     dom_exception::DOMException::raise(cx, "KeyValidation", reason);
     return false;
   }
@@ -407,7 +407,7 @@ EvpPkeyPtr create_ec_key_from_parts(JSContext *cx, CryptoAlgorithmECDSA_Import *
 
   auto has_private_key = !private_key.empty();
   auto curve_nid = curve_identifier(algorithm->namedCurve);
-  auto curve_name = get_curve_name(curve_nid);
+  const auto *curve_name = get_curve_name(curve_nid);
   MOZ_ASSERT(curve_name);
 
   auto group = EcGroupPtr(EC_GROUP_new_by_curve_name(curve_nid));
@@ -431,7 +431,7 @@ EvpPkeyPtr create_ec_key_from_parts(JSContext *cx, CryptoAlgorithmECDSA_Import *
     return nullptr;
   }
 
-  if (!EC_POINT_set_affine_coordinates(group.get(), point.get(), x_bn.get(), y_bn.get(), nullptr)) {
+  if (EC_POINT_set_affine_coordinates(group.get(), point.get(), x_bn.get(), y_bn.get(), nullptr) == 0) {
     return nullptr;
   }
 
@@ -447,10 +447,10 @@ EvpPkeyPtr create_ec_key_from_parts(JSContext *cx, CryptoAlgorithmECDSA_Import *
     return nullptr;
   }
 
-  if (!OSSL_PARAM_BLD_push_utf8_string(bld.get(), OSSL_PKEY_PARAM_GROUP_NAME, curve_name, 0) ||
-      !OSSL_PARAM_BLD_push_BN(bld.get(), OSSL_PKEY_PARAM_EC_PUB_X, x_bn.get()) ||
-      !OSSL_PARAM_BLD_push_BN(bld.get(), OSSL_PKEY_PARAM_EC_PUB_Y, y_bn.get()) ||
-      !OSSL_PARAM_BLD_push_octet_string(bld.get(), OSSL_PKEY_PARAM_PUB_KEY, pub_key, pub_key_len)) {
+  if ((OSSL_PARAM_BLD_push_utf8_string(bld.get(), OSSL_PKEY_PARAM_GROUP_NAME, curve_name, 0) == 0) ||
+      (OSSL_PARAM_BLD_push_BN(bld.get(), OSSL_PKEY_PARAM_EC_PUB_X, x_bn.get()) == 0) ||
+      (OSSL_PARAM_BLD_push_BN(bld.get(), OSSL_PKEY_PARAM_EC_PUB_Y, y_bn.get()) == 0) ||
+      (OSSL_PARAM_BLD_push_octet_string(bld.get(), OSSL_PKEY_PARAM_PUB_KEY, pub_key, pub_key_len) == 0)) {
     return nullptr;
   }
 
@@ -461,7 +461,7 @@ EvpPkeyPtr create_ec_key_from_parts(JSContext *cx, CryptoAlgorithmECDSA_Import *
       return nullptr;
     }
 
-    if (!OSSL_PARAM_BLD_push_BN(bld.get(), OSSL_PKEY_PARAM_PRIV_KEY, d_bn.get())) {
+    if (OSSL_PARAM_BLD_push_BN(bld.get(), OSSL_PKEY_PARAM_PRIV_KEY, d_bn.get()) == 0) {
       return nullptr;
     }
   }
@@ -508,12 +508,12 @@ EvpPkeyPtr create_rsa_key_from_parts(
   }
 
   auto n_bn = make_bignum(modulus);
-  if (!n_bn || !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_N, n_bn.get())) {
+  if (!n_bn || (OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_N, n_bn.get()) == 0)) {
     return nullptr;
   }
 
   auto e_bn = make_bignum(public_exponent);
-  if (!e_bn || !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_E, e_bn.get())) {
+  if (!e_bn || (OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_E, e_bn.get()) == 0)) {
     return nullptr;
   }
 
@@ -528,37 +528,37 @@ EvpPkeyPtr create_rsa_key_from_parts(
   bool is_private = !private_exponent.empty();
   if (is_private) {
     d_bn = make_bignum(private_exponent);
-    if (!d_bn || !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_D, d_bn.get())) {
+    if (!d_bn || (OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_D, d_bn.get()) == 0)) {
       return nullptr;
     }
 
     p_bn = make_bignum(prime1);
     if (!p_bn ||
-        !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_FACTOR1, p_bn.get())) {
+        (OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_FACTOR1, p_bn.get()) == 0)) {
       return nullptr;
     }
 
     q_bn = make_bignum(prime2);
     if (!q_bn ||
-        !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_FACTOR2, q_bn.get())) {
+        (OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_FACTOR2, q_bn.get()) == 0)) {
       return nullptr;
     }
 
     dmp1_bn = make_bignum(exponent1);
     if (!dmp1_bn ||
-        !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_EXPONENT1, dmp1_bn.get())) {
+        (OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_EXPONENT1, dmp1_bn.get()) == 0)) {
       return nullptr;
     }
 
     dmq1_bn = make_bignum(exponent2);
     if (!dmq1_bn ||
-        !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_EXPONENT2, dmq1_bn.get())) {
+        (OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_EXPONENT2, dmq1_bn.get()) == 0)) {
       return nullptr;
     }
 
     iqmp_bn = make_bignum(coefficient);
     if (!iqmp_bn ||
-        !OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_COEFFICIENT1, iqmp_bn.get())) {
+        (OSSL_PARAM_BLD_push_BN(param_bld.get(), OSSL_PKEY_PARAM_RSA_COEFFICIENT1, iqmp_bn.get()) == 0)) {
       return nullptr;
     }
   }
@@ -717,26 +717,25 @@ JSObject *CryptoKey::createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_I
   }
 
   // For private keys, we require the private exponent, as well as p and q prime information.
-  if (is_private) {
-    if (keyData->privateExponent.empty() || keyData->firstPrimeInfo->primeFactor.empty() ||
-        keyData->secondPrimeInfo->primeFactor.empty()) {
-      return nullptr;
-    }
+  //
+  // Linter is confused about unwrapping optional here, but we check that
+  // prime info has value for private keys before accessing its value.
+  // NOLINTBEGIN(bugprone-unchecked-optional-access)
+  if (is_private &&
+      (keyData->privateExponent.empty() || !keyData->firstPrimeInfo.has_value() ||
+       keyData->firstPrimeInfo->primeFactor.empty() || !keyData->secondPrimeInfo.has_value() ||
+       keyData->secondPrimeInfo->primeFactor.empty())) {
+    return nullptr;
   }
 
-  const auto get_param = [=](std::string_view value) {
-    return is_private ? value : std::string_view{};
-  };
-  const auto get_param2 = [=](auto &&info, auto &&member) {
-    return (is_private && info) ? member : std::string_view{};
-  };
-
-  auto private_exponent = get_param(keyData->privateExponent);
-  auto prime1 = get_param2(keyData->firstPrimeInfo, keyData->firstPrimeInfo->primeFactor);
-  auto prime2 = get_param2(keyData->secondPrimeInfo, keyData->secondPrimeInfo->primeFactor);
-  auto exponent1 = get_param2(keyData->firstPrimeInfo, keyData->firstPrimeInfo->factorCRTExponent);
-  auto exponent2 = get_param2(keyData->secondPrimeInfo, keyData->secondPrimeInfo->factorCRTExponent);
-  auto coeff = get_param2(keyData->secondPrimeInfo, keyData->secondPrimeInfo->factorCRTCoefficient);
+  auto none = std::string_view{};
+  auto private_exponent = is_private ? keyData->privateExponent : none;
+  auto prime1 = is_private ? keyData->firstPrimeInfo.value().primeFactor : none;
+  auto prime2 = is_private ? keyData->secondPrimeInfo.value().primeFactor : none;
+  auto exponent1 = is_private ? keyData->firstPrimeInfo.value().factorCRTExponent : none;
+  auto exponent2 = is_private ? keyData->secondPrimeInfo.value().factorCRTExponent : none;
+  auto coeff = is_private ? keyData->secondPrimeInfo.value().factorCRTCoefficient : none;
+  // NOLINTEND(bugprone-unchecked-optional-access)
 
   auto pkey = create_rsa_key_from_parts(cx, keyData->modulus, keyData->exponent, private_exponent,
                                         prime1, prime2, exponent1, exponent2, coeff);
@@ -811,7 +810,7 @@ CryptoKeyType CryptoKey::type(JSObject *self) {
 
 JSObject *CryptoKey::get_algorithm(JS::HandleObject self) {
   MOZ_ASSERT(is_instance(self));
-  auto algorithm = JS::GetReservedSlot(self, Slots::Algorithm).toObjectOrNull();
+  auto *algorithm = JS::GetReservedSlot(self, Slots::Algorithm).toObjectOrNull();
   return algorithm;
 }
 
@@ -822,9 +821,9 @@ EVP_PKEY *CryptoKey::key(JSObject *self) {
 
 std::span<uint8_t> CryptoKey::hmacKeyData(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return std::span<uint8_t>(
+  return {
       static_cast<uint8_t *>(JS::GetReservedSlot(self, Slots::KeyData).toPrivate()),
-      JS::GetReservedSlot(self, Slots::KeyDataLength).toInt32());
+      static_cast<size_t>(JS::GetReservedSlot(self, Slots::KeyDataLength).toInt32())};
 }
 
 JS::Result<bool> CryptoKey::is_algorithm(JSContext *cx, JS::HandleObject self,
@@ -845,7 +844,7 @@ JS::Result<bool> CryptoKey::is_algorithm(JSContext *cx, JS::HandleObject self,
   if (!chars) {
     return JS::Result<bool>(JS::Error());
   }
-  bool match;
+  bool match = false;
   if (!JS_StringEqualsAscii(cx, JS::ToString(cx, name_val), algorithmName(algorithm), &match)) {
     return JS::Result<bool>(JS::Error());
   }
@@ -868,6 +867,6 @@ bool CryptoKey::canVerify(JS::HandleObject self) {
   return usage.canVerify();
 }
 
-} // namespace crypto
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::crypto
+
+

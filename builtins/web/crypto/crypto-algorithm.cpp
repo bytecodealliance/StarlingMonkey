@@ -23,7 +23,7 @@ using dom_exception::DOMException;
 
 // namespace {
 
-int num_bits_to_bytes(int x) { return (x / 8) + (7 + (x % 8)) / 8; }
+int num_bits_to_bytes(int x) { return (x / 8) + ((7 + (x % 8)) / 8); }
 
 std::pair<mozilla::UniquePtr<uint8_t[], JS::FreePolicy>, size_t>
 to_bytes_expand(JSContext *cx, const BIGNUM *bignum, size_t minimumBufferSize) {
@@ -35,12 +35,11 @@ to_bytes_expand(JSContext *cx, const BIGNUM *bignum, size_t minimumBufferSize) {
 
   size_t paddingLength = bufferSize - length;
   if (paddingLength > 0) {
-    uint8_t padding = BN_is_negative(bignum) ? 0xFF : 0x00;
+    uint8_t padding = (BN_is_negative(bignum) != 0) ? 0xFF : 0x00;
     std::fill_n(bytes.get(), paddingLength, padding);
   }
   BN_bn2bin(bignum, bytes.get() + paddingLength);
-  return std::pair<mozilla::UniquePtr<uint8_t[], JS::FreePolicy>, size_t>(std::move(bytes),
-                                                                          bufferSize);
+  return { std::move(bytes), bufferSize };
 }
 
 const EVP_MD *createDigestAlgorithm(JSContext *cx, CryptoAlgorithmIdentifier hashIdentifier) {
@@ -89,28 +88,33 @@ const EVP_MD *createDigestAlgorithm(JSContext *cx, JS::HandleObject key) {
   std::string_view name = name_chars;
   if (name == "MD5") {
     return EVP_md5();
-  } else if (name == "SHA-1") {
-    return EVP_sha1();
-  } else if (name == "SHA-224") {
-    return EVP_sha224();
-  } else if (name == "SHA-256") {
-    return EVP_sha256();
-  } else if (name == "SHA-384") {
-    return EVP_sha384();
-  } else if (name == "SHA-512") {
-    return EVP_sha512();
-  } else {
-    DOMException::raise(cx, "NotSupportedError", "NotSupportedError");
-    return nullptr;
   }
+  if (name == "SHA-1") {
+    return EVP_sha1();
+  }
+  if (name == "SHA-224") {
+    return EVP_sha224();
+  }
+  if (name == "SHA-256") {
+    return EVP_sha256();
+  }
+  if (name == "SHA-384") {
+    return EVP_sha384();
+  }
+  if (name == "SHA-512") {
+    return EVP_sha512();
+  }
+
+  DOMException::raise(cx, "NotSupportedError", "NotSupportedError");
+  return nullptr;
 }
 // This implements https://w3c.github.io/webcrypto/#sha-operations for all
 // the SHA algorithms that we support.
 std::optional<std::vector<uint8_t>> rawDigest(JSContext *cx, std::span<uint8_t> data,
                                               const EVP_MD *algorithm, size_t buffer_size) {
-  unsigned int size;
+  unsigned int size = 0;
   std::vector<uint8_t> buf(buffer_size, 0);
-  if (!EVP_Digest(data.data(), data.size(), buf.data(), &size, algorithm, NULL)) {
+  if (EVP_Digest(data.data(), data.size(), buf.data(), &size, algorithm, nullptr) == 0) {
     // 2. If performing the operation results in an error, then throw an OperationError.
     DOMException::raise(cx, "SubtleCrypto.digest: failed to create digest", "OperationError");
     return std::nullopt;
@@ -122,14 +126,14 @@ std::optional<std::vector<uint8_t>> rawDigest(JSContext *cx, std::span<uint8_t> 
 // the SHA algorithms that we support.
 JSObject *digest(JSContext *cx, std::span<uint8_t> data, const EVP_MD *algorithm,
                  size_t buffer_size) {
-  unsigned int size;
+  unsigned int size = 0;
   mozilla::UniquePtr<uint8_t[], JS::FreePolicy> buf{
       static_cast<uint8_t *>(JS_malloc(cx, buffer_size))};
   if (!buf) {
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }
-  if (!EVP_Digest(data.data(), data.size(), buf.get(), &size, algorithm, NULL)) {
+  if (EVP_Digest(data.data(), data.size(), buf.get(), &size, algorithm, nullptr) == 0) {
     // 2. If performing the operation results in an error, then throw an OperationError.
     DOMException::raise(cx, "SubtleCrypto.digest: failed to create digest", "OperationError");
     return nullptr;
@@ -250,7 +254,7 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPrivateKeyFromJWK(JSContext *cx
   // then throw a DataError. 2.10.2 Let privateKey represents the RSA private key identified by
   // interpreting jwk according to Section 6.3.2 of JSON Web Algorithms [JWA]. 2.10.3 If privateKey
   // is not a valid RSA private key according to [RFC3447], then throw a DataError.
-  auto modulusResult = base64::forgivingBase64Decode(jwk->n.value(), base64::base64URLDecodeTable);
+  auto modulusResult = base64::forgivingBase64Decode(jwk->n.value_or(""), base64::base64URLDecodeTable);
   if (modulusResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'n' could not be base64url decoded or contained padding", "DataError");
@@ -261,7 +265,7 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPrivateKeyFromJWK(JSContext *cx
   if (modulus.starts_with('0')) {
     modulus = modulus.erase(0, 1);
   }
-  auto dataResult = base64::stringToJSByteString(cx, jwk->e.value());
+  auto dataResult = base64::stringToJSByteString(cx, jwk->e.value_or(""));
   if (dataResult.isErr()) {
     DOMException::raise(cx, "Data provided to an operation does not meet requirements",
                         "DataError");
@@ -276,7 +280,7 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPrivateKeyFromJWK(JSContext *cx
   }
   auto exponent = exponentResult.unwrap();
   auto privateExponentResult =
-      base64::forgivingBase64Decode(jwk->d.value(), base64::base64URLDecodeTable);
+      base64::forgivingBase64Decode(jwk->d.value_or(""), base64::base64URLDecodeTable);
   if (privateExponentResult.isErr()) {
     DOMException::raise(
         cx, "The JWK member 'd' could not be base64url decoded or contained padding", "DataError");
@@ -343,7 +347,7 @@ std::unique_ptr<CryptoKeyRSAComponents> createRSAPrivateKeyFromJWK(JSContext *cx
   CryptoKeyRSAComponents::PrimeInfo secondPrimeInfo{secondPrimeFactor, secondFactorCRTExponent,
                                                     secondFactorCRTCoefficient};
 
-  if (!jwk->oth.size()) {
+  if (jwk->oth.empty()) {
     auto privateKeyComponents = CryptoKeyRSAComponents::createPrivateWithAdditionalData(
         modulus, exponent, privateExponent, firstPrimeInfo, secondPrimeInfo, {});
     return privateKeyComponents;
@@ -388,9 +392,11 @@ JS::Result<CryptoAlgorithmIdentifier> toHashIdentifier(JSContext *cx, JS::Handle
 std::optional<NamedCurve> toNamedCurve(std::string_view name) {
   if (name == "P-256") {
     return NamedCurve::P256;
-  } else if (name == "P-384") {
+  }
+  if (name == "P-384") {
     return NamedCurve::P384;
-  } else if (name == "P-521") {
+  }
+  if (name == "P-521") {
     return NamedCurve::P521;
   }
 
@@ -402,9 +408,8 @@ JS::Result<NamedCurve> toNamedCurve(JSContext *cx, JS::HandleValue value) {
   auto name = toNamedCurve(nameChars);
   if (name.has_value()) {
     return name.value();
-  } else {
-    return JS::Result<NamedCurve>(JS::Error());
   }
+  return JS::Result<NamedCurve>(JS::Error());
 }
 
 JS::Result<size_t> curveSize(JSContext *cx, JS::HandleObject key) {
@@ -420,9 +425,11 @@ JS::Result<size_t> curveSize(JSContext *cx, JS::HandleObject key) {
   std::string_view namedCurve = namedCurve_chars;
   if (namedCurve == "P-256") {
     return 256;
-  } else if (namedCurve == "P-384") {
+  }
+  if (namedCurve == "P-384") {
     return 384;
-  } else if (namedCurve == "P-521") {
+  }
+  if (namedCurve == "P-521") {
     return 521;
   }
 
@@ -492,43 +499,59 @@ JS::Result<CryptoAlgorithmIdentifier> normalizeIdentifier(JSContext *cx, JS::Han
                  [](unsigned char c) { return std::toupper(c); });
   if (algorithm == "RSASSA-PKCS1-V1_5") {
     return CryptoAlgorithmIdentifier::RSASSA_PKCS1_v1_5;
-  } else if (algorithm == "RSA-PSS") {
-    return CryptoAlgorithmIdentifier::RSA_PSS;
-  } else if (algorithm == "RSA-OAEP") {
-    return CryptoAlgorithmIdentifier::RSA_OAEP;
-  } else if (algorithm == "ECDSA") {
-    return CryptoAlgorithmIdentifier::ECDSA;
-  } else if (algorithm == "ECDH") {
-    return CryptoAlgorithmIdentifier::ECDH;
-  } else if (algorithm == "AES-CTR") {
-    return CryptoAlgorithmIdentifier::AES_CTR;
-  } else if (algorithm == "AES-CBC") {
-    return CryptoAlgorithmIdentifier::AES_CBC;
-  } else if (algorithm == "AES-GCM") {
-    return CryptoAlgorithmIdentifier::AES_GCM;
-  } else if (algorithm == "AES-KW") {
-    return CryptoAlgorithmIdentifier::AES_KW;
-  } else if (algorithm == "HMAC") {
-    return CryptoAlgorithmIdentifier::HMAC;
-  } else if (algorithm == "MD5") {
-    return CryptoAlgorithmIdentifier::MD5;
-  } else if (algorithm == "SHA-1") {
-    return CryptoAlgorithmIdentifier::SHA_1;
-  } else if (algorithm == "SHA-256") {
-    return CryptoAlgorithmIdentifier::SHA_256;
-  } else if (algorithm == "SHA-384") {
-    return CryptoAlgorithmIdentifier::SHA_384;
-  } else if (algorithm == "SHA-512") {
-    return CryptoAlgorithmIdentifier::SHA_512;
-  } else if (algorithm == "HKDF") {
-    return CryptoAlgorithmIdentifier::HKDF;
-  } else if (algorithm == "PBKDF2") {
-    return CryptoAlgorithmIdentifier::PBKDF2;
-  } else {
-    // Otherwise: Return a new NotSupportedError and terminate this algorithm.
-    DOMException::raise(cx, "Algorithm: Unrecognized name", "NotSupportedError");
-    return JS::Result<CryptoAlgorithmIdentifier>(JS::Error());
   }
+  if (algorithm == "RSA-PSS") {
+    return CryptoAlgorithmIdentifier::RSA_PSS;
+  }
+  if (algorithm == "RSA-OAEP") {
+    return CryptoAlgorithmIdentifier::RSA_OAEP;
+  }
+  if (algorithm == "ECDSA") {
+    return CryptoAlgorithmIdentifier::ECDSA;
+  }
+  if (algorithm == "ECDH") {
+    return CryptoAlgorithmIdentifier::ECDH;
+  }
+  if (algorithm == "AES-CTR") {
+    return CryptoAlgorithmIdentifier::AES_CTR;
+  }
+  if (algorithm == "AES-CBC") {
+    return CryptoAlgorithmIdentifier::AES_CBC;
+  }
+  if (algorithm == "AES-GCM") {
+    return CryptoAlgorithmIdentifier::AES_GCM;
+  }
+  if (algorithm == "AES-KW") {
+    return CryptoAlgorithmIdentifier::AES_KW;
+  }
+  if (algorithm == "HMAC") {
+    return CryptoAlgorithmIdentifier::HMAC;
+  }
+  if (algorithm == "MD5") {
+    return CryptoAlgorithmIdentifier::MD5;
+  }
+  if (algorithm == "SHA-1") {
+    return CryptoAlgorithmIdentifier::SHA_1;
+  }
+  if (algorithm == "SHA-256") {
+    return CryptoAlgorithmIdentifier::SHA_256;
+  }
+  if (algorithm == "SHA-384") {
+    return CryptoAlgorithmIdentifier::SHA_384;
+  }
+  if (algorithm == "SHA-512") {
+    return CryptoAlgorithmIdentifier::SHA_512;
+  }
+  if (algorithm == "HKDF") {
+    return CryptoAlgorithmIdentifier::HKDF;
+  }
+  if (algorithm == "PBKDF2") {
+    return CryptoAlgorithmIdentifier::PBKDF2;
+  }
+
+  // Otherwise: Return a new NotSupportedError and terminate this algorithm.
+  DOMException::raise(cx, "Algorithm: Unrecognized name", "NotSupportedError");
+  return JS::Result<CryptoAlgorithmIdentifier>(JS::Error());
 }
 // } // namespace
 
@@ -683,7 +706,7 @@ CryptoAlgorithmSignVerify::normalize(JSContext *cx, JS::HandleValue value) {
   // The value can either be a JS String or a JS Object with a 'name' property which is the algorithm identifier.
   // Other properties within the object will be the parameters for the algorithm to use.
   if (value.isString()) {
-    auto obj = JS_NewPlainObject(cx);
+    auto *obj = JS_NewPlainObject(cx);
     params.set(obj);
     if (!JS_SetProperty(cx, params, "name", value)) {
       return nullptr;
@@ -773,7 +796,7 @@ JSObject *CryptoAlgorithmHMAC_Sign_Verify::sign(JSContext *cx, JS::HandleObject 
     return nullptr;
   }
   auto sig = std::move(result.value().first);
-  auto size = std::move(result.value().second);
+  auto size = result.value().second;
 
   // 2. Return a new ArrayBuffer object, associated with the relevant global object of this [HTML], and containing the bytes of mac.
   JS::RootedObject array_buffer(cx);
@@ -805,7 +828,7 @@ JS::Result<bool> CryptoAlgorithmHMAC_Sign_Verify::verify(JSContext *cx, JS::Hand
     return JS::Result<bool>(JS::Error());
   }
   auto sig = std::move(result.value().first);
-  auto size = std::move(result.value().second);
+  auto size = result.value().second;
 
 
   // 2. Return true if mac is equal to signature and false otherwise.
@@ -839,7 +862,7 @@ JSObject *CryptoAlgorithmECDSA_Sign_Verify::sign(JSContext *cx, JS::HandleObject
     return nullptr;
   }
 
-  auto digest = digestOption.value();
+  const auto& digest = digestOption.value();
 
   // 4. Let d be the ECDSA private key associated with key.
   EVP_PKEY *pkey = CryptoKey::key(key);
@@ -885,7 +908,8 @@ JSObject *CryptoAlgorithmECDSA_Sign_Verify::sign(JSContext *cx, JS::HandleObject
   //         Convert s to an octet string of length n and append this sequence of bytes to result.
   // Otherwise, the namedCurve attribute of the [[algorithm]] internal slot of key is a value specified in an applicable specification:
   //     Perform the ECDSA signature steps specified in that specification, passing in M, params and d and resulting in result.
-  const BIGNUM *r_raw, *s_raw;
+  const BIGNUM *r_raw = nullptr;
+  const BIGNUM *s_raw = nullptr;
   ECDSA_SIG_get0(sig.get(), &r_raw, &s_raw);
   size_t coord_size = num_bits_to_bytes(curveSize(cx, key).unwrap());
 
@@ -940,7 +964,7 @@ JS::Result<bool> CryptoAlgorithmECDSA_Sign_Verify::verify(JSContext *cx, JS::Han
     DOMException::raise(cx, "OperationError", "OperationError");
     return JS::Result<bool>(JS::Error());
   }
-  auto digest = digestOption.value();
+  const auto& digest = digestOption.value();
 
   // 4. Let Q be the ECDSA public key associated with key.
   // 5. Let params be the EC domain parameters associated with key.
@@ -972,7 +996,7 @@ JS::Result<bool> CryptoAlgorithmECDSA_Sign_Verify::verify(JSContext *cx, JS::Han
   }
 
   EcdsaSigPtr sig(ECDSA_SIG_new());
-  if (!sig || !ECDSA_SIG_set0(sig.get(), r.release(), s.release())) {
+  if (!sig || (ECDSA_SIG_set0(sig.get(), r.release(), s.release()) == 0)) {
     DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
     return JS::Result<bool>(JS::Error());
   }
@@ -1067,7 +1091,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify::sign(JSContext *cx, JS::
     return nullptr;
   }
 
-  size_t signature_length;
+  size_t signature_length = 0;
   if (EVP_PKEY_sign(ctx.get(), nullptr, &signature_length, digest->data(), digest->size()) <= 0) {
     DOMException::raise(cx, "OperationError", "OperationError");
     return nullptr;
@@ -1115,7 +1139,7 @@ JS::Result<bool> CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify::verify(JSContext 
     return JS::Result<bool>(JS::Error());
   }
 
-  auto digest = digestOption.value();
+  const auto& digest = digestOption.value();
 
   EvpPkeyCtxPtr ctx(EVP_PKEY_CTX_new(CryptoKey::key(key), nullptr));
   if (!ctx) {
@@ -1157,7 +1181,7 @@ CryptoAlgorithmImportKey::normalize(JSContext *cx, JS::HandleValue value) {
   // The value can either be a JS String or a JS Object with a 'name' property which is the algorithm identifier.
   // Other properties within the object will be the parameters for the algorithm to use.
   if (value.isString()) {
-    auto obj = JS_NewPlainObject(cx);
+    auto *obj = JS_NewPlainObject(cx);
     params.set(obj);
     JS_SetProperty(cx, params, "name", value);
   } else if (value.isObject()) {
@@ -1205,8 +1229,8 @@ std::unique_ptr<CryptoAlgorithmHMAC_Import> CryptoAlgorithmHMAC_Import::fromPara
   if (hashIdentifier.isErr()) {
     return nullptr;
   }
-  bool found;
-  unsigned long length;
+  bool found = false;
+  unsigned long length = 0;
   if (!JS_HasProperty(cx, parameters, "length", &found)) {
     return nullptr;
   }
@@ -1220,14 +1244,13 @@ std::unique_ptr<CryptoAlgorithmHMAC_Import> CryptoAlgorithmHMAC_Import::fromPara
     }
     length = length_val.toNumber();
     return std::make_unique<CryptoAlgorithmHMAC_Import>(hashIdentifier.unwrap(), length);
-  } else {
-    return std::make_unique<CryptoAlgorithmHMAC_Import>(hashIdentifier.unwrap());
   }
+  return std::make_unique<CryptoAlgorithmHMAC_Import>(hashIdentifier.unwrap());
 }
 
 // https://w3c.github.io/webcrypto/#hmac-operations
 JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat format,
-                                                             KeyData keyData, bool extractable,
+                                                             KeyData key_data, bool extractable,
                                                              CryptoKeyUsages usages) {
   MOZ_ASSERT(cx);
   JS::RootedObject result(cx);
@@ -1246,7 +1269,7 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
   // 5. If format is "raw":
   case CryptoKeyFormat::Raw: {
     // 5.1 Let data be the octet string contained in keyData.
-    data = std::make_unique<std::span<uint8_t>>(std::get<std::span<uint8_t>>(keyData));
+    data = std::make_unique<std::span<uint8_t>>(std::get<std::span<uint8_t>>(key_data));
     if (!data) {
       DOMException::raise(cx, "Supplied keyData must be either an ArrayBuffer, TypedArray, or DataView.", "DataError");
       return nullptr;
@@ -1262,7 +1285,7 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
       // 6.2 Let jwk equal keyData.
     // Otherwise:
       // 6.3 Throw a DataError.
-    auto jwk = std::get<JsonWebKey *>(keyData);
+    auto *jwk = std::get<JsonWebKey *>(key_data);
     if (!jwk) {
       DOMException::raise(cx, "Supplied keyData is not a JSONWebKey", "DataError");
       return nullptr;
@@ -1274,7 +1297,7 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
 
     // 6.6 Let data be the octet string obtained by decoding the k field of jwk.
     auto dataResult = base64::forgivingBase64Decode(
-      jwk->k.value(), base64::base64URLDecodeTable);
+      jwk->k.value_or(""), base64::base64URLDecodeTable);
     if (dataResult.isErr()) {
       DOMException::raise(cx,
                          "The JWK member 'k' could not be base64url decoded or contained padding", "DataError");
@@ -1337,7 +1360,7 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
       return nullptr;
     }
     // 6.15 If the key_ops field of jwk is present, and is invalid according to the requirements of JSON Web Key [JWK] or does not contain all of the specified usages values, then throw a DataError.
-    if (jwk->key_ops.size() > 0) {
+    if (!jwk->key_ops.empty()) {
       auto ops = CryptoKeyUsages::from(jwk->key_ops);
       if (!ops.isSuperSetOf(usages)) {
         DOMException::raise(cx,
@@ -1376,16 +1399,17 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
       // throw a DataError.
       DOMException::raise(cx, "The optional HMAC key length must be shorter than the key data, and by no more than 7 bits.", "DataError");
       return nullptr;
+    }
+
     // 12. If the length member of normalizedAlgorithm, is less than or equal to length minus eight:
-    } else if (this->length.value() <= (length - 8)) {
+    if (this->length.value() <= (length - 8)) {
       // throw a DataError.
       DOMException::raise(cx, "The optional HMAC key length must be shorter than the key data, and by no more than 7 bits.", "DataError");
       return nullptr;
-    // 13. Otherwise:
-    } else {
-      // 14. Set length equal to the length member of normalizedAlgorithm.
-      length = this->length.value();
     }
+    // 13. Otherwise:
+    // 14. Set length equal to the length member of normalizedAlgorithm.
+    length = this->length.value();
   } else {
     // This is because we need to capture the the length in the algorithm object which is created in CryptoAlgorithmHMAC_Import::toObject
     this->length = length;
@@ -1401,7 +1425,7 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
 }
 
 JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat format, JS::HandleValue key_data, bool extractable,
-                      CryptoKeyUsages usages) {
+                                                CryptoKeyUsages usages) {
   MOZ_ASSERT(cx);
   // The only supported formats for HMAC are raw, and jwk.
   if (format != CryptoKeyFormat::Raw && format != CryptoKeyFormat::Jwk) {
@@ -1433,7 +1457,7 @@ JSObject *CryptoAlgorithmHMAC_Import::toObject(JSContext *cx) {
   JS::RootedObject algorithm(cx, JS_NewPlainObject(cx));
 
   // Set the name attribute of algorithm to "HMAC"
-  auto alg_name = JS_NewStringCopyZ(cx, this->name());
+  auto *alg_name = JS_NewStringCopyZ(cx, this->name());
   if (!alg_name) {
     return nullptr;
   }
@@ -1445,7 +1469,7 @@ JSObject *CryptoAlgorithmHMAC_Import::toObject(JSContext *cx) {
   // Set the hash attribute of algorithm to the hash member of normalizedAlgorithm.
   JS::RootedObject hash(cx, JS_NewObject(cx, nullptr));
 
-  auto hash_name = JS_NewStringCopyZ(cx, algorithmName(this->hashIdentifier));
+  auto *hash_name = JS_NewStringCopyZ(cx, algorithmName(this->hashIdentifier));
   if (!hash_name) {
     return nullptr;
   }
@@ -1468,7 +1492,7 @@ JSObject *CryptoAlgorithmHMAC_Import::toObject(JSContext *cx) {
 }
 
 JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat format,
-                                                             KeyData keyData, bool extractable,
+                                                             KeyData key_data, bool extractable,
                                                              CryptoKeyUsages usages) {
   // 1. Let keyData be the key data to be imported.
   MOZ_ASSERT(cx);
@@ -1482,7 +1506,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
         // Let jwk equal keyData.
       // Otherwise:
         // Throw a DataError.
-      auto jwk = std::get<JsonWebKey *>(keyData);
+      auto *jwk = std::get<JsonWebKey *>(key_data);
       if (!jwk) {
         DOMException::raise(cx, "Supplied keyData is not a JSONWebKey", "DataError");
         return nullptr;
@@ -1508,7 +1532,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
         return nullptr;
       }
       // 2.5. If the "key_ops" field of jwk is present, and is invalid according to the requirements of JSON Web Key, or it does not contain all of the specified usages values, then throw a DataError.
-      if (jwk->key_ops.size() > 0) {
+      if (!jwk->key_ops.empty()) {
         auto ops = CryptoKeyUsages::from(jwk->key_ops);
         if (!ops.isSuperSetOf(usages)) {
           DOMException::raise(cx,
@@ -1523,7 +1547,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
         return nullptr;
       }
       // 2.7. Let namedCurve be a string whose value is equal to the "crv" field of jwk.
-      auto namedCurve = toNamedCurve(jwk->crv.value());
+      auto namedCurve = toNamedCurve(jwk->crv.value_or(""));
       // 2.8. If namedCurve is not equal to the namedCurve member of normalizedAlgorithm, throw a DataError.
       if (!namedCurve.has_value() || namedCurve.value() != this->namedCurve) {
         DOMException::raise(cx, "The JWK's \"crv\" member specifies a different curve than requested", "DataError");
@@ -1544,7 +1568,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
         //     throw a DataError.
         // 2.9.3. If algNamedCurve is defined, and is not equal to namedCurve, throw a DataError.
         if (jwk->alg.has_value()) {
-          auto algNamedCurve = toNamedCurve(jwk->crv.value());
+          auto algNamedCurve = toNamedCurve(jwk->crv.value_or(""));
           if (!algNamedCurve.has_value() || algNamedCurve.value() != this->namedCurve) {
             DOMException::raise(cx, "Oopsie", "DataError");
             return nullptr;
@@ -1629,7 +1653,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
         return nullptr;
       }
 
-      auto keyBytes = std::get<std::span<uint8_t>>(keyData);
+      auto keyBytes = std::get<std::span<uint8_t>>(key_data);
       const uint8_t *data = keyBytes.data();
 
       EvpPkeyPtr pkey(d2i_PrivateKey(EVP_PKEY_NONE, nullptr, &data, keyBytes.size()));
@@ -1645,8 +1669,8 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
 
       char curve_name[64];
       size_t curve_name_len = sizeof(curve_name);
-      if (!EVP_PKEY_get_utf8_string_param(pkey.get(), OSSL_PKEY_PARAM_GROUP_NAME, curve_name,
-                                          sizeof(curve_name), &curve_name_len)) {
+      if (EVP_PKEY_get_utf8_string_param(pkey.get(), OSSL_PKEY_PARAM_GROUP_NAME, curve_name,
+                                          sizeof(curve_name), &curve_name_len) == 0) {
         DOMException::raise(cx, "Failed to get EC curve name", "DataError");
         return nullptr;
       }
@@ -1673,9 +1697,9 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
       BIGNUM *y_raw = nullptr;
       BIGNUM *d_raw = nullptr;
 
-      if (!EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_EC_PUB_X, &x_raw) ||
-          !EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_EC_PUB_Y, &y_raw) ||
-          !EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_PRIV_KEY, &d_raw)) {
+      if ((EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_EC_PUB_X, &x_raw) == 0) ||
+          (EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_EC_PUB_Y, &y_raw) == 0) ||
+          (EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_PRIV_KEY, &d_raw) == 0)) {
         DOMException::raise(cx, "Failed to extract EC parameters", "DataError");
         return nullptr;
       }
@@ -1689,7 +1713,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
         return nullptr;
       }
 
-      size_t coordSize;
+      size_t coordSize = 0;
       switch (actualCurve) {
       case NamedCurve::P256:
         coordSize = 32;
@@ -1761,12 +1785,12 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
   return this->importKey(cx, format, data, extractable, usages);
 }
 
-JSObject *CryptoAlgorithmECDSA_Import::toObject(JSContext *cx) {
+JSObject *CryptoAlgorithmECDSA_Import::toObject(JSContext *cx) const {
   // Let algorithm be a new RsaHashedKeyAlgorithm dictionary.
   JS::RootedObject algorithm(cx, JS_NewPlainObject(cx));
 
   // Set the name attribute of algorithm to "RSASSA-PKCS1-v1_5"
-  auto alg_name = JS_NewStringCopyZ(cx, this->name());
+  auto *alg_name = JS_NewStringCopyZ(cx, this->name());
   if (!alg_name) {
     return nullptr;
   }
@@ -1778,7 +1802,7 @@ JSObject *CryptoAlgorithmECDSA_Import::toObject(JSContext *cx) {
   // Set the hash attribute of algorithm to the hash member of normalizedAlgorithm.
   JS::RootedObject hash(cx, JS_NewObject(cx, nullptr));
 
-  auto curve_name = JS_NewStringCopyZ(cx, curveName(this->namedCurve));
+  auto *curve_name = JS_NewStringCopyZ(cx, curveName(this->namedCurve));
   if (!curve_name) {
     return nullptr;
   }
@@ -1832,7 +1856,7 @@ std::unique_ptr<CryptoAlgorithmRSASSA_PKCS1_v1_5_Import> CryptoAlgorithmRSASSA_P
 
 // https://w3c.github.io/webcrypto/#rsassa-pkcs1-operations
 JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, CryptoKeyFormat format,
-                                                             KeyData keyData, bool extractable,
+                                                             KeyData key_data, bool extractable,
                                                              CryptoKeyUsages usages) {
   MOZ_ASSERT(cx);
   JS::RootedObject result(cx);
@@ -1843,7 +1867,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
       // Let jwk equal keyData.
     // Otherwise:
       // Throw a DataError.
-    auto jwk = std::get<JsonWebKey *>(keyData);
+    auto *jwk = std::get<JsonWebKey *>(key_data);
     if (!jwk) {
       DOMException::raise(cx, "Supplied keyData is not a JSONWebKey", "DataError");
       return nullptr;
@@ -1883,7 +1907,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
     // 2.5. If the key_ops field of jwk is present, and is invalid according to
     // the requirements of JSON Web Key [JWK] or does not contain all of the
     // specified usages values, then throw a DataError.
-    if (jwk->key_ops.size() > 0) {
+    if (!jwk->key_ops.empty()) {
       auto ops = CryptoKeyUsages::from(jwk->key_ops);
       if (!ops.isSuperSetOf(usages)) {
         DOMException::raise(cx,
@@ -1983,7 +2007,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
       return nullptr;
     }
 
-    auto keyBytes = std::get<std::span<uint8_t>>(keyData);
+    auto keyBytes = std::get<std::span<uint8_t>>(key_data);
     const uint8_t *data = keyBytes.data();
 
     auto pkey_deleter = [](EVP_PKEY *pkey) { EVP_PKEY_free(pkey); };
@@ -2005,9 +2029,9 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
     BIGNUM *e_raw = nullptr;
     BIGNUM *d_raw = nullptr;
 
-    if (!EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_N, &n_raw) ||
-        !EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_E, &e_raw) ||
-        !EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_D, &d_raw)) {
+    if ((EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_N, &n_raw) == 0) ||
+        (EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_E, &e_raw) == 0) ||
+        (EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_D, &d_raw) == 0)) {
       DOMException::raise(cx, "Failed to extract RSA parameters", "DataError");
       return nullptr;
     }
@@ -2042,51 +2066,51 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
     BIGNUM *iqmp_raw = nullptr;
 
     bool has_crt_params =
-        EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_FACTOR1, &p_raw) &&
-        EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_FACTOR2, &q_raw) &&
-        EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_EXPONENT1, &dmp1_raw) &&
-        EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_EXPONENT2, &dmq1_raw) &&
-        EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_COEFFICIENT1, &iqmp_raw);
+        (EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_FACTOR1, &p_raw) != 0) &&
+        (EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_FACTOR2, &q_raw) != 0) &&
+        (EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_EXPONENT1, &dmp1_raw) != 0) &&
+        (EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_EXPONENT2, &dmq1_raw) != 0) &&
+        (EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_COEFFICIENT1, &iqmp_raw) != 0);
 
-    if (has_crt_params) {
-      BignumPtr p(p_raw);
-      BignumPtr q(q_raw);
-      BignumPtr dmp1(dmp1_raw);
-      BignumPtr dmq1(dmq1_raw);
-      BignumPtr iqmp(iqmp_raw);
-
-      int byte_len = BN_num_bytes(n.get());
-
-      auto [p_bytes, p_size] = to_bytes_expand(cx, p.get(), byte_len);
-      auto [q_bytes, q_size] = to_bytes_expand(cx, q.get(), byte_len);
-      auto [dp_bytes, dp_size] = to_bytes_expand(cx, dmp1.get(), byte_len);
-      auto [dq_bytes, dq_size] = to_bytes_expand(cx, dmq1.get(), byte_len);
-      auto [qi_bytes, qi_size] = to_bytes_expand(cx, iqmp.get(), byte_len);
-
-      if (!p_bytes || !q_bytes || !dp_bytes || !dq_bytes || !qi_bytes) {
-        JS_ReportOutOfMemory(cx);
-        return nullptr;
-      }
-
-      std::string_view p_sv(reinterpret_cast<const char *>(p_bytes.get()), p_size);
-      std::string_view q_sv(reinterpret_cast<const char *>(q_bytes.get()), q_size);
-      std::string_view dp_sv(reinterpret_cast<const char *>(dp_bytes.get()), dp_size);
-      std::string_view dq_sv(reinterpret_cast<const char *>(dq_bytes.get()), dq_size);
-      std::string_view qi_sv(reinterpret_cast<const char *>(qi_bytes.get()), qi_size);
-
-      // Create prime info structures
-      CryptoKeyRSAComponents::PrimeInfo prime1(p_sv, dp_sv);
-      CryptoKeyRSAComponents::PrimeInfo prime2(q_sv, dq_sv, qi_sv);
-
-      // Create RSA key with CRT parameters
-      auto rsa_key = CryptoKeyRSAComponents::createPrivateWithAdditionalData(
-          modulus_sv, exponent_sv, priv_exponent_sv, prime1, prime2, {});
-
-      return CryptoKey::createRSA(cx, this, std::move(rsa_key), extractable, usages);
-    } else {
+    if (!has_crt_params) {
       auto key = CryptoKeyRSAComponents::createPrivate(modulus_sv, exponent_sv, priv_exponent_sv);
       return CryptoKey::createRSA(cx, this, std::move(key), extractable, usages);
     }
+
+    BignumPtr p(p_raw);
+    BignumPtr q(q_raw);
+    BignumPtr dmp1(dmp1_raw);
+    BignumPtr dmq1(dmq1_raw);
+    BignumPtr iqmp(iqmp_raw);
+
+    int byte_len = BN_num_bytes(n.get());
+
+    auto [p_bytes, p_size] = to_bytes_expand(cx, p.get(), byte_len);
+    auto [q_bytes, q_size] = to_bytes_expand(cx, q.get(), byte_len);
+    auto [dp_bytes, dp_size] = to_bytes_expand(cx, dmp1.get(), byte_len);
+    auto [dq_bytes, dq_size] = to_bytes_expand(cx, dmq1.get(), byte_len);
+    auto [qi_bytes, qi_size] = to_bytes_expand(cx, iqmp.get(), byte_len);
+
+    if (!p_bytes || !q_bytes || !dp_bytes || !dq_bytes || !qi_bytes) {
+      JS_ReportOutOfMemory(cx);
+      return nullptr;
+    }
+
+    std::string_view p_sv(reinterpret_cast<const char *>(p_bytes.get()), p_size);
+    std::string_view q_sv(reinterpret_cast<const char *>(q_bytes.get()), q_size);
+    std::string_view dp_sv(reinterpret_cast<const char *>(dp_bytes.get()), dp_size);
+    std::string_view dq_sv(reinterpret_cast<const char *>(dq_bytes.get()), dq_size);
+    std::string_view qi_sv(reinterpret_cast<const char *>(qi_bytes.get()), qi_size);
+
+    // Create prime info structures
+    CryptoKeyRSAComponents::PrimeInfo prime1(p_sv, dp_sv);
+    CryptoKeyRSAComponents::PrimeInfo prime2(q_sv, dq_sv, qi_sv);
+
+    // Create RSA key with CRT parameters
+    auto rsa_key = CryptoKeyRSAComponents::createPrivateWithAdditionalData(
+        modulus_sv, exponent_sv, priv_exponent_sv, prime1, prime2, {});
+
+    return CryptoKey::createRSA(cx, this, std::move(rsa_key), extractable, usages);
   }
   case CryptoKeyFormat::Spki: {
     // TODO: Add implementations for these
@@ -2131,12 +2155,12 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx,
   return this->importKey(cx, format, data, extractable, usages);
 }
 
-JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::toObject(JSContext *cx) {
+JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::toObject(JSContext *cx) const {
   // Let algorithm be a new RsaHashedKeyAlgorithm dictionary.
   JS::RootedObject algorithm(cx, JS_NewPlainObject(cx));
 
   // Set the name attribute of algorithm to "RSASSA-PKCS1-v1_5"
-  auto alg_name = JS_NewStringCopyZ(cx, this->name());
+  auto *alg_name = JS_NewStringCopyZ(cx, this->name());
   if (!alg_name) {
     return nullptr;
   }
@@ -2148,7 +2172,7 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::toObject(JSContext *cx) {
   // Set the hash attribute of algorithm to the hash member of normalizedAlgorithm.
   JS::RootedObject hash(cx, JS_NewObject(cx, nullptr));
 
-  auto hash_name = JS_NewStringCopyZ(cx, algorithmName(this->hashIdentifier));
+  auto *hash_name = JS_NewStringCopyZ(cx, algorithmName(this->hashIdentifier));
   if (!hash_name) {
     return nullptr;
   }

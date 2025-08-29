@@ -4,9 +4,9 @@
 #include "builtin.h"
 #include "crypto-algorithm.h"
 
-namespace builtins {
-namespace web {
-namespace crypto {
+
+
+namespace builtins::web::crypto {
 
 enum class Operations : uint8_t {
   Encrypt,
@@ -28,7 +28,7 @@ public:
   static constexpr const char *class_name = "SubtleCrypto";
   static const int ctor_length = 0;
 
-  enum Slots { Count };
+  enum Slots : uint8_t { Count };
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
@@ -41,7 +41,7 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
 };
 
-} // namespace crypto
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::crypto
+
+
 #endif

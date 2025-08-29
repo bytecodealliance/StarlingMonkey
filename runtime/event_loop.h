@@ -2,13 +2,7 @@
 #define JS_COMPUTE_RUNTIME_EVENT_LOOP_H
 
 #include "extension-api.h"
-
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include "jsapi.h"
-#pragma clang diagnostic pop
 
 namespace core {
 
@@ -41,12 +35,12 @@ public:
   /**
    * Queue a new async task.
    */
-  static void queue_async_task(RefPtr<api::AsyncTask> task);
+  static void queue_async_task(const RefPtr<api::AsyncTask>& task);
 
   /**
    * Remove a queued async task.
    */
-  static bool cancel_async_task(api::Engine *engine, RefPtr<api::AsyncTask> task);
+  static bool cancel_async_task(api::Engine *engine, const RefPtr<api::AsyncTask>& task);
 };
 
 } // namespace core

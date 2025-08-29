@@ -43,9 +43,9 @@ bool read_event_init(JSContext *cx, HandleValue initv,
 
 } // namespace
 
-namespace builtins {
-namespace web {
-namespace event {
+
+
+namespace builtins::web::event {
 
 const JSFunctionSpec Event::static_methods[] = {
     JS_FS_END,
@@ -240,7 +240,7 @@ void Event::set_canceled(JSObject *self, bool val) {
 // https://dom.spec.whatwg.org/#inner-event-creation-steps
 bool Event::init(JSContext *cx, HandleObject self, HandleValue type, HandleValue init)
 {
-  auto type_str = JS::ToString(cx, type);
+  auto *type_str = JS::ToString(cx, type);
   if (!type_str) {
     return false;
   }
@@ -256,7 +256,7 @@ bool Event::init(JSContext *cx, HandleObject self, HandleValue type, HandleValue
   // To initialize an event, with type, bubbles, and cancelable, run these steps:
   // - Set event's initialized flag.
   // - Unset event's stop propagation flag, stop immediate propagation flag, and canceled flag.
-  uint32_t flags = static_cast<uint32_t>(EventFlag::Initialized);
+  auto flags = static_cast<uint32_t>(EventFlag::Initialized);
   set_event_flag(&flags, EventFlag::Bubbles, bubbles);
   set_event_flag(&flags, EventFlag::Composed, composed);
   set_event_flag(&flags, EventFlag::Cancelable, cancelable);
@@ -324,11 +324,7 @@ bool Event::initEvent(JSContext *cx, unsigned argc, JS::Value *vp) {
   RootedValue type(cx, args.get(0));
   RootedValue init(cx, args.get(1));
 
-  if (!Event::init(cx, self, type, init)) {
-    return false;
-  }
-
-  return true;
+  return Event::init(cx, self, type, init);
 }
 
 bool Event::init_class(JSContext *cx, JS::HandleObject global) {
@@ -352,6 +348,6 @@ bool install(api::Engine *engine) {
   return true;
 }
 
-} // namespace event
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::event
+
+

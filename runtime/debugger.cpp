@@ -35,7 +35,7 @@ bool dbg_set_content_path(JSContext *cx, unsigned argc, Value *vp) {
 
 bool print_location(JSContext *cx, FILE *fp = stdout) {
   JS::AutoFilename filename;
-  uint32_t lineno;
+  uint32_t lineno = 0;
   JS::ColumnNumberOneOrigin column;
   if (!DescribeScriptedCaller(&filename, cx, &lineno, &column)) {
     return false;
@@ -73,7 +73,7 @@ class TCPSocket : public builtins::BuiltinNoConstructor<TCPSocket> {
 
 public:
   static constexpr const char *class_name = "TCPSocket";
-  enum Slots { TCPSocketHandle, Count };
+  enum Slots : uint8_t { TCPSocketHandle, Count };
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -99,12 +99,12 @@ bool TCPSocket::send(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 bool TCPSocket::receive(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1);
-  int32_t chunk_size;
+  int32_t chunk_size = 0;
   if (!ToInt32(cx, args[0], &chunk_size)) {
     return false;
   }
   auto chunk = socket(self)->receive(chunk_size);
-  auto str = core::decode(cx, chunk);
+  auto *str = core::decode(cx, chunk);
   if (!str) {
     return false;
   }
@@ -134,7 +134,7 @@ host_api::HostString read_message(JSContext *cx, host_api::TCPSocket *socket) {
     return nullptr;
   }
 
-  char *end;
+  char *end = nullptr;
   uint16_t message_length = std::strtoul(chunk.begin(), &end, 10);
   if (end == chunk.begin() || *end != '\n') {
     return nullptr;
@@ -154,7 +154,7 @@ host_api::HostString read_message(JSContext *cx, host_api::TCPSocket *socket) {
 } // namespace debugging_socket
 
 bool initialize_debugger(JSContext *cx, uint16_t port, bool content_already_initialized) {
-  auto socket = host_api::TCPSocket::make(host_api::TCPSocket::IPAddressFamily::IPV4);
+  auto *socket = host_api::TCPSocket::make(host_api::TCPSocket::IPAddressFamily::IPV4);
   MOZ_RELEASE_ASSERT(socket, "Failed to create debugging socket");
 
   if (!socket->connect({127, 0, 0, 1}, port) || !socket->send("get-session-port")) {
@@ -175,7 +175,7 @@ bool initialize_debugger(JSContext *cx, uint16_t port, bool content_already_init
     return true;
   }
 
-  char *end;
+  char *end = nullptr;
   uint16_t session_port = std::strtoul(response.begin(), &end, 10);
   if (session_port < 1024 || session_port > 65535) {
     printf("Invalid debugging session port '%*s' received, continuing without debugging ...\n",
@@ -206,7 +206,7 @@ bool initialize_debugger(JSContext *cx, uint16_t port, bool content_already_init
       .setNewCompartmentInSystemZone()
       .setInvisibleToDebugger(true);
 
-  static JSClass global_class = {"global", JSCLASS_GLOBAL_FLAGS, &JS::DefaultGlobalClassOps};
+  static JSClass global_class = {.name="global", .flags=JSCLASS_GLOBAL_FLAGS, .cOps=&JS::DefaultGlobalClassOps};
   RootedObject global(cx);
   global = JS_NewGlobalObject(cx, &global_class, nullptr, JS::DontFireOnNewGlobalHook, options);
   if (!global) {
@@ -256,11 +256,7 @@ bool initialize_debugger(JSContext *cx, uint16_t port, bool content_already_init
   }
 
   RootedValue result(cx);
-  if (!JS_ExecuteScript(cx, script, &result)) {
-    return false;
-  }
-
-  return true;
+  return JS_ExecuteScript(cx, script, &result);
 }
 
 } // anonymous namespace
@@ -297,7 +293,7 @@ void maybe_init_debugger(api::Engine *engine, bool content_already_initialized) 
   // Resuming a wizer snapshot, so we have to ensure that the environment is reset.
   __wasilibc_initialize_environ();
 
-  auto port_str = std::getenv("DEBUGGER_PORT");
+  auto *port_str = std::getenv("DEBUGGER_PORT");
   if (port_str) {
     uint32_t port = std::stoi(port_str);
     if (!initialize_debugger(engine->cx(), port, content_already_initialized)) {

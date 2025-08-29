@@ -453,7 +453,7 @@ Result<Void> HttpOutgoingBody::write_all(api::Engine *engine, HostBytes bytes,
 }
 
 class BodyAppendTask final : public api::AsyncTask {
-  enum class State {
+  enum class State : uint8_t {
     BlockedOnBoth,
     BlockedOnIncoming,
     BlockedOnOutgoing,

@@ -4,9 +4,9 @@
 #include "builtin.h"
 #include "host_api.h"
 
-namespace builtins {
-namespace web {
-namespace fetch {
+
+
+namespace builtins::web::fetch {
 
 class Headers final : public BuiltinImpl<Headers, FinalizableClassPolicy> {
   static bool append(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -53,7 +53,7 @@ public:
   ///
   /// If a header is added, deleted, or replaced on an instance in `CachedInContent` mode, the
   /// instance transitions to `ContentOnly` mode, and the underlying resource handle is discarded.
-  enum class Mode {
+  enum class Mode : uint8_t {
     HostOnly,        // Headers are stored in the host.
     CachedInContent, // Host holds canonical headers, content a cached copy.
     ContentOnly,     // Headers are stored in a Map held by the `Entries` slot.
@@ -70,7 +70,7 @@ public:
   // example, it is cleared after an insertion. It is recomputed lazily for every lookup.
   using HeadersSortList = std::vector<size_t>;
 
-  enum class Slots {
+  enum class Slots : uint8_t {
     Handle,
     HeadersList,
     HeadersSortList,
@@ -80,7 +80,7 @@ public:
     Count,
   };
 
-  enum class HeadersGuard {
+  enum class HeadersGuard : uint8_t {
     None,
     Request,
     Response,
@@ -112,7 +112,7 @@ public:
   /// Get the header entry for a given index, ensuring that HeadersSortList is recomputed if
   /// necessary in the process.
   static std::tuple<host_api::HostString, host_api::HostString> *
-  get_index(JSContext *cx, JS::HandleObject self, size_t idx);
+  get_index(JSContext *cx, JS::HandleObject self, size_t index);
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -128,9 +128,9 @@ public:
   static JSObject *create(JSContext *cx, HandleValue init_headers, HeadersGuard guard);
   static JSObject *create(JSContext *cx, host_api::HttpHeadersReadOnly *handle, HeadersGuard guard);
 
-  static void finalize(JS::GCContext *gcx, JSObject *obj);
+  static void finalize(JS::GCContext *gcx, JSObject *self);
 
-  static bool init_entries(JSContext *cx, HandleObject self, HandleValue init_headers);
+  static bool init_entries(JSContext *cx, HandleObject self, HandleValue initv);
 
   /// Returns the headers list of entries, constructing it if necessary.
   /// Depending on the `Mode` the instance is in, this can be a cache or the canonical store for
@@ -151,7 +151,7 @@ public:
    *
    * The handle is guaranteed to be uniquely owned by the caller.
    */
-  static unique_ptr<host_api::HttpHeaders> handle_clone(JSContext *, HandleObject self);
+  static unique_ptr<host_api::HttpHeaders> handle_clone(JSContext *cx, HandleObject self);
 };
 
 class HeadersIterator final : public BuiltinNoConstructor<HeadersIterator> {
@@ -160,7 +160,7 @@ class HeadersIterator final : public BuiltinNoConstructor<HeadersIterator> {
 public:
   static constexpr const char *class_name = "Headers Iterator";
 
-  enum Slots {
+  enum Slots : uint8_t {
     Type,
     Cursor,
     Headers,
@@ -177,8 +177,8 @@ public:
   static JSObject *create(JSContext *cx, JS::HandleObject headers, uint8_t iter_type);
 };
 
-} // namespace fetch
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::fetch
+
+
 
 #endif

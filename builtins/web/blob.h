@@ -6,9 +6,9 @@
 #include "js/AllocPolicy.h"
 #include "js/Vector.h"
 
-namespace builtins {
-namespace web {
-namespace blob {
+
+
+namespace builtins::web::blob {
 
 class Blob : public BuiltinImpl<Blob, FinalizableClassPolicy> {
   static bool arrayBuffer(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -29,8 +29,8 @@ public:
   static const JSPropertySpec properties[];
 
   static constexpr unsigned ctor_length = 0;
-  enum Slots { Data, Type, Endings, Readers, Count };
-  enum LineEndings { Transparent, Native };
+  enum Slots : uint8_t { Data, Type, Endings, Readers, Count };
+  enum LineEndings : uint8_t { Transparent, Native };
 
   using ByteBuffer = js::Vector<uint8_t, 0, js::SystemAllocPolicy>;
 
@@ -46,12 +46,12 @@ public:
   static LineEndings line_endings(JSObject *self);
 
   static bool append_value(JSContext *cx, HandleObject self, HandleValue val);
-  static bool init_blob_parts(JSContext *cx, HandleObject self, HandleValue iterable);
-  static bool init_options(JSContext *cx, HandleObject self, HandleValue opts);
+  static bool init_blob_parts(JSContext *cx, HandleObject self, HandleValue value);
+  static bool init_options(JSContext *cx, HandleObject self, HandleValue initv);
   static bool init(JSContext *cx, HandleObject self, HandleValue blobParts, HandleValue opts);
 
   static JSObject *data_to_owned_array_buffer(JSContext *cx, HandleObject self);
-  static bool read_blob_slice(JSContext *cx, HandleObject self, std::span<uint8_t>,
+  static bool read_blob_slice(JSContext *cx, HandleObject self, std::span<uint8_t> buf,
                               size_t start, size_t *read, bool *done);
 
   static JSObject *create(JSContext *cx, UniqueChars data, size_t data_len, HandleString type);
@@ -63,8 +63,8 @@ public:
 
 bool install(api::Engine *engine);
 
-} // namespace blob
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::blob
+
+
 
 #endif // BUILTINS_WEB_URL_H

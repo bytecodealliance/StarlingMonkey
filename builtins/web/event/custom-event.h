@@ -4,16 +4,16 @@
 #include "builtin.h"
 #include "event.h"
 
-namespace builtins {
-namespace web {
-namespace event {
+
+
+namespace builtins::web::event {
 
 class CustomEvent : public BuiltinImpl<CustomEvent> {
   static bool detail_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
 public:
   static constexpr int ParentSlots = Event::Slots::Count;
-  enum Slots { Detail = ParentSlots, Count };
+  enum Slots : uint8_t { Detail = ParentSlots, Count };
 
   static constexpr const char *class_name = "CustomEvent";
   static constexpr unsigned ctor_length = 2;
@@ -29,8 +29,8 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
 };
 
-} // namespace event
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::event
+
+
 
 #endif // BUILTINS_WEB_CUSTOM_EVENT_H_

@@ -168,12 +168,12 @@ JSObject *DOMException::create(JSContext *cx, std::string_view message, std::str
   if (!instance) {
     return nullptr;
   }
-  auto message_str = JS_NewStringCopyN(cx, message.data(), message.size());
+  auto *message_str = JS_NewStringCopyN(cx, message.data(), message.size());
   if (!message_str) {
     return nullptr;
   }
   JS::SetReservedSlot(instance, Slots::Message, JS::StringValue(message_str));
-  auto name_str = JS_NewStringCopyN(cx, name.data(), name.size());
+  auto *name_str = JS_NewStringCopyN(cx, name.data(), name.size());
   if (!name_str) {
     return nullptr;
   }
@@ -199,7 +199,7 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
   if (args.hasDefined(0)) {
-    auto message = JS::ToString(cx, args.get(0));
+    auto *message = JS::ToString(cx, args.get(0));
     if (!message) {
       return false;
     }
@@ -208,7 +208,7 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     JS::SetReservedSlot(instance, Slots::Message, JS_GetEmptyStringValue(cx));
   }
   if (args.hasDefined(1)) {
-    auto name = JS::ToString(cx, args.get(1));
+    auto *name = JS::ToString(cx, args.get(1));
     if (!name) {
       return false;
     }

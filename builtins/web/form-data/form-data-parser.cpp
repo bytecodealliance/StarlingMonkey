@@ -11,7 +11,7 @@
 namespace {
 
 JSString *to_owned_string(JSContext *cx, jsmultipart::Slice src) {
-  auto chars = reinterpret_cast<const char *>(src.data);
+  const auto *chars = reinterpret_cast<const char *>(src.data);
 
   std::string_view sv(chars, src.len);
   return core::decode(cx, sv);
@@ -47,13 +47,12 @@ JSObject *to_owned_buffer(JSContext *cx, jsmultipart::Slice src) {
 
 } // namespace
 
-namespace builtins {
-namespace web {
-namespace form_data {
+
+
+namespace builtins::web::form_data {
 
 using file::File;
 using form_data::FormData;
-using form_data::FormDataEntry;
 using jsmultipart::RetCode;
 
 class MultipartParser : public FormDataParser {
@@ -62,7 +61,7 @@ class MultipartParser : public FormDataParser {
 public:
   MultipartParser(std::string_view boundary) : boundary_(boundary) {}
 
-  virtual JSObject *parse(JSContext *cx, std::string_view body) override;
+  JSObject *parse(JSContext *cx, std::string_view body) override;
 };
 
 JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
@@ -76,13 +75,14 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
   }
 
   auto done = false;
-  auto data = reinterpret_cast<const uint8_t *>(body.data());
+  const auto *data = reinterpret_cast<const uint8_t *>(body.data());
 
-  jsmultipart::Slice input{data, body.size()};
-  jsmultipart::Entry entry;
+  jsmultipart::Slice input{.data=data, .len=body.size()};
+  jsmultipart::Entry entry{};
 
-  auto encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
-      reinterpret_cast<uint8_t *>(const_cast<char *>("UTF-8")), 5));
+  const char* utf8_label = "UTF-8";
+  const auto *encoding = jsencoding::encoding_for_label_no_replacement(
+      reinterpret_cast<const uint8_t *>(utf8_label), 5);
 
   auto deleter1 = [&](auto *state) { jsmultipart::multipart_parser_free(state); };
   std::unique_ptr<jsmultipart::State, decltype(deleter1)> parser(
@@ -133,9 +133,9 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
           return nullptr;
         }
 
-        bool ignore;
-        auto dst = reinterpret_cast<uint16_t *>(data.get());
-        auto src = entry.value.data;
+        bool ignore = false;
+        auto *dst = reinterpret_cast<uint16_t *>(data.get());
+        const auto *src = entry.value.data;
 
         jsencoding::decoder_decode_to_utf16(decoder.get(), src, &src_size, dst, &dst_size, false, &ignore);
 
@@ -167,7 +167,7 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
         }
 
         RootedValue content_type_val(cx);
-        if (entry.content_type.data && entry.content_type.len) {
+        if (entry.content_type.data && (entry.content_type.len != 0U)) {
           RootedString content_type(cx, to_owned_string(cx, entry.content_type));
           if (!content_type) {
             return nullptr;
@@ -219,7 +219,7 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
 }
 
 class UrlParser : public FormDataParser {
-  virtual JSObject *parse(JSContext *cx, std::string_view body) override;
+  JSObject *parse(JSContext *cx, std::string_view body) override;
 };
 
 JSObject *UrlParser::parse(JSContext *cx, std::string_view body) {
@@ -275,8 +275,8 @@ JSObject *UrlParser::parse(JSContext *cx, std::string_view body) {
 
 std::unique_ptr<FormDataParser> FormDataParser::create(std::string_view content_type) {
   if (content_type.starts_with("multipart/form-data")) {
-    jsmultipart::Slice content_slice{(uint8_t *)(content_type.data()), content_type.size()};
-    jsmultipart::Slice boundary_slice{nullptr, 0};
+    jsmultipart::Slice content_slice{.data=(uint8_t *)(content_type.data()), .len=content_type.size()};
+    jsmultipart::Slice boundary_slice{.data=nullptr, .len=0};
 
     jsmultipart::boundary_from_content_type(&content_slice, &boundary_slice);
     if (boundary_slice.data == nullptr) {
@@ -285,15 +285,19 @@ std::unique_ptr<FormDataParser> FormDataParser::create(std::string_view content_
 
     std::string_view boundary((char *)boundary_slice.data, boundary_slice.len);
     return std::make_unique<MultipartParser>(boundary);
-  } else if (content_type.starts_with("application/x-www-form-urlencoded")) {
+  }
+
+  if (content_type.starts_with("application/x-www-form-urlencoded")) {
     return std::make_unique<UrlParser>();
-  } else if (content_type.starts_with("text/plain")) {
+  }
+
+  if (content_type.starts_with("text/plain")) {
     // TODO: add plain text content parser
   }
 
   return nullptr;
 }
 
-} // namespace form_data
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::form_data
+
+

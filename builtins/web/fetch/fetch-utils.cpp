@@ -74,7 +74,7 @@ std::optional<MimeType> parse_mime_type(std::string_view str) {
       auto value = trim(param.substr(pos + 1));
 
       if (!key.empty()) {
-        mime.params.push_back({as_string(key), as_string(value)});
+        mime.params.emplace_back(as_string(key), as_string(value));
       }
     }
   }
@@ -132,7 +132,7 @@ mozilla::Result<MimeType, InvalidMimeType> extract_mime_type(std::string_view qu
                              [&](const auto &kv) { return std::get<0>(kv) == "charset"; });
 
       if (it == mime.params.end() && !charset.empty()) {
-        mime.params.push_back({"charset", charset});
+        mime.params.emplace_back("charset", charset);
       }
     }
   }
@@ -159,7 +159,7 @@ std::optional<std::tuple<size_t, size_t>> extract_range(std::string_view range_q
   auto end_str = range_query.substr(dash_pos + 1);
 
   auto to_size = [](std::string_view s) -> std::optional<size_t> {
-    size_t v;
+    size_t v = 0;
     auto [ptr, ec] = std::from_chars(&*s.begin(), &*s.end(), v);
     return ec == std::errc() ? std::optional<size_t>(v) : std::nullopt;
   };

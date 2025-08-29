@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 
 class TransformStreamDefaultController
     : public BuiltinNoConstructor<TransformStreamDefaultController> {
@@ -13,7 +13,7 @@ private:
 public:
   static constexpr const char *class_name = "TransformStreamDefaultController";
 
-  enum Slots {
+  enum Slots : uint8_t {
     Stream,
     Transformer,
     TransformAlgorithm,
@@ -25,9 +25,8 @@ public:
     Count
   };
 
-  typedef JSObject *TransformAlgorithmImplementation(JSContext *cx, JS::HandleObject controller,
-                                                     JS::HandleValue chunk);
-  typedef JSObject *FlushAlgorithmImplementation(JSContext *cx, JS::HandleObject controller);
+  using TransformAlgorithmImplementation = JSObject *(JSContext *, JS::HandleObject, JS::HandleValue);
+  using FlushAlgorithmImplementation = JSObject *(JSContext *, JS::HandleObject);
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -69,8 +68,8 @@ public:
   static void ClearAlgorithms(JSObject *controller);
 };
 
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+
 
 #endif

@@ -13,16 +13,15 @@ class WeakIndexSet {
   WeakVec items_;
 
 public:
-  WeakIndexSet() : items_() {}
+  WeakIndexSet()  = default;
 
   bool insert(JSObject* obj) {
-    auto it = std::find_if(items_.begin(), items_.end(), [&obj](const auto &item) { return item == obj; });
+    auto *it = std::find_if(items_.begin(), items_.end(), [&obj](const auto &item) { return item == obj; });
 
     if (it == items_.end()) {
       return items_.append(obj);
-    } else {
-      return true;
     }
+    return true;
   }
 
   bool remove(JSObject* obj) {
@@ -31,7 +30,7 @@ public:
   }
 
   WeakVec &items() { return items_;}
-  const WeakVec &items() const { return items_; }
+  [[nodiscard]] const WeakVec &items() const { return items_; }
 
   void trace(JSTracer* trc) { items_.trace(trc); }
 

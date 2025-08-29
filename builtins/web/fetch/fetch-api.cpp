@@ -24,7 +24,7 @@ using host_api::HostString;
 
 static api::Engine *ENGINE;
 
-enum class FetchScheme {
+enum class FetchScheme : uint8_t {
   About,
   Blob,
   Data,
@@ -36,10 +36,10 @@ enum class FetchScheme {
 struct Terminator : AbortAlgorithm {
   mozilla::WeakPtr<ResponseFutureTask> task;
 
-  Terminator(mozilla::WeakPtr<ResponseFutureTask> task) : task(std::move(task)) {}
+  Terminator(const mozilla::WeakPtr<ResponseFutureTask>& task) : task(task) {}
 
   bool run(JSContext *cx) override {
-    if (auto t = task.get()) {
+    if (auto *t = task.get()) {
       return t->abort(ENGINE);
     }
     return true;
@@ -49,19 +49,24 @@ struct Terminator : AbortAlgorithm {
 std::optional<FetchScheme> scheme_from_url(const std::string_view &url) {
   if (url.starts_with("about:")) {
     return FetchScheme::About;
-  } else if (url.starts_with("blob:")) {
-    return FetchScheme::Blob;
-  } else if (url.starts_with("data:")) {
-    return FetchScheme::Data;
-  } else if (url.starts_with("file:")) {
-    return FetchScheme::File;
-  } else if (url.starts_with("http")) {
-    return FetchScheme::Http;
-  } else if (url.starts_with("https")) {
-    return FetchScheme::Https;
-  } else {
-    return std::nullopt;
   }
+  if (url.starts_with("blob:")) {
+    return FetchScheme::Blob;
+  }
+  if (url.starts_with("data:")) {
+    return FetchScheme::Data;
+  }
+  if (url.starts_with("file:")) {
+    return FetchScheme::File;
+  }
+  if (url.starts_with("http")) {
+    return FetchScheme::Http;
+  }
+  if (url.starts_with("https")) {
+    return FetchScheme::Https;
+  }
+
+  return std::nullopt;
 }
 
 // https://fetch.spec.whatwg.org/#concept-network-error
@@ -92,7 +97,7 @@ bool fetch_https(JSContext *cx, HandleObject request_obj, HandleObject response_
     return false;
   }
 
-  auto request = host_api::HttpOutgoingRequest::make(method, std::move(url), std::move(headers));
+  auto *request = host_api::HttpOutgoingRequest::make(method, std::move(url), std::move(headers));
   MOZ_RELEASE_ASSERT(request);
   JS_SetReservedSlot(request_obj, static_cast<uint32_t>(Request::Slots::Request),
                      PrivateValue(request));
@@ -106,10 +111,10 @@ bool fetch_https(JSContext *cx, HandleObject request_obj, HandleObject response_
     request->body();
   }
 
-  host_api::FutureHttpIncomingResponse *pending_handle;
+  host_api::FutureHttpIncomingResponse *pending_handle = nullptr;
   {
     auto res = request->send();
-    if (auto *err = res.to_err()) {
+    if (const auto *err = res.to_err()) {
       HANDLE_ERROR(cx, *err);
       return false;
     }
@@ -121,10 +126,9 @@ bool fetch_https(JSContext *cx, HandleObject request_obj, HandleObject response_
   // before marking the request as pending.
   if (!streaming) {
     // TODO: what about non streaming?
-    auto task = mozilla::MakeRefPtr<ResponseFutureTask>(request_obj, pending_handle);
-    auto weak = mozilla::WeakPtr<ResponseFutureTask>(task);
-
-    ENGINE->queue_async_task(task);
+    auto task = js::MakeUnique<ResponseFutureTask>(request_obj, pending_handle);
+    auto weak = mozilla::WeakPtr<ResponseFutureTask>(task.get());
+    ENGINE->queue_async_task(task.release());
 
     RootedObject signal(cx, Request::signal(request_obj));
     MOZ_ASSERT(signal);
@@ -283,7 +287,7 @@ bool fetch_blob(JSContext *cx, HandleObject request_obj, HandleObject response_p
     return false;
   }
 
-  auto type_str = JS::GetStringLength(type) ? chars.ptr.get() : "";
+  const auto *type_str = (JS::GetStringLength(type) != 0U) ? chars.ptr.get() : "";
   if (!Headers::set_valid_if_undefined(cx, resp_headers, "Content-Type", type_str)) {
     return false;
   }
@@ -387,13 +391,15 @@ const JSFunctionSpec methods[] = {JS_FN("fetch", fetch, 2, JSPROP_ENUMERATE), JS
 bool install(api::Engine *engine) {
   ENGINE = engine;
 
-  if (!JS_DefineFunctions(engine->cx(), engine->global(), methods))
+  if (!JS_DefineFunctions(engine->cx(), engine->global(), methods)) {
     return false;
+  }
   if (!request_response::install(engine)) {
     return false;
   }
-  if (!Headers::init_class(engine->cx(), engine->global()))
+  if (!Headers::init_class(engine->cx(), engine->global())) {
     return false;
+  }
   return true;
 }
 

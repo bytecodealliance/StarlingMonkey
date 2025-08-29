@@ -13,55 +13,55 @@ namespace builtins::web::crypto {
 namespace detail {
   struct BignumDeleter {
     void operator()(BIGNUM *bn) const {
-      if (bn) BN_free(bn);
+      if (bn) { BN_free(bn); }
     }
   };
 
   struct EvpPkeyDeleter {
     void operator()(EVP_PKEY *pkey) const {
-      if (pkey) EVP_PKEY_free(pkey);
+      if (pkey) { EVP_PKEY_free(pkey); }
     }
   };
 
   struct EvpPkeyCtxDeleter {
     void operator()(EVP_PKEY_CTX *ctx) const {
-      if (ctx) EVP_PKEY_CTX_free(ctx);
+      if (ctx) { EVP_PKEY_CTX_free(ctx); }
     }
   };
 
   struct ParamBldDeleter {
     void operator()(OSSL_PARAM_BLD *bld) const {
-      if (bld) OSSL_PARAM_BLD_free(bld);
+      if (bld) { OSSL_PARAM_BLD_free(bld); }
     }
   };
 
   struct ParamDeleter {
     void operator()(OSSL_PARAM *params) const {
-      if (params) OSSL_PARAM_free(params);
+      if (params) { OSSL_PARAM_free(params); }
     }
   };
 
   struct EvpMdCtxDeleter {
     void operator()(EVP_MD_CTX *ctx) const {
-      if (ctx) EVP_MD_CTX_free(ctx);
+      if (ctx) { EVP_MD_CTX_free(ctx); }
     }
   };
 
   struct EcdsaSigDeleter {
     void operator()(ECDSA_SIG *sig) const {
-      if (sig) ECDSA_SIG_free(sig);
+      if (sig) { ECDSA_SIG_free(sig); }
     }
   };
 
   struct EcGroupDeleter {
     void operator()(EC_GROUP *group) const {
-      if (group) EC_GROUP_free(group);
+      if (group) { EC_GROUP_free(group); }
     }
   };
 
   struct EcPointDeleter {
     void operator()(EC_POINT *point) const {
-      if (point) EC_POINT_free(point);
+      if (point) { EC_POINT_free(point); }
     }
   };
 }

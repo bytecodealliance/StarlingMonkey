@@ -1,8 +1,8 @@
 #include "custom-event.h"
 
-namespace builtins {
-namespace web {
-namespace event {
+
+
+namespace builtins::web::event {
 
 const JSFunctionSpec CustomEvent::static_methods[] = {
     JS_FS_END,
@@ -68,6 +68,6 @@ bool CustomEvent::init_class(JSContext *cx, JS::HandleObject global) {
   return init_class_impl(cx, global, Event::proto_obj);
 }
 
-} // namespace event
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::event
+
+

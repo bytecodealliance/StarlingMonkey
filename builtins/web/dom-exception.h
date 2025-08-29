@@ -9,7 +9,7 @@ class DOMException : public BuiltinImpl<DOMException> {
 private:
 public:
   static constexpr const char *class_name = "DOMException";
-  enum Slots { Name, Message, Code, Count };
+  enum Slots : uint8_t { Name, Message, Code, Count };
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];

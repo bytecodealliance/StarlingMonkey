@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace abort {
+
+
+namespace builtins::web::abort {
 
 class AbortController : public BuiltinImpl<AbortController> {
   static bool signal_get(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -17,7 +17,7 @@ public:
   static constexpr const char *class_name = "AbortController";
   static constexpr unsigned ctor_length = 0;
 
-  enum Slots { Signal = 0, Count };
+  enum Slots : uint8_t { Signal = 0, Count };
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -28,9 +28,9 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, Value *vp);
 };
 
-} // namespace abort
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::abort
+
+
 
 
 
