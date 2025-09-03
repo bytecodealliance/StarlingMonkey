@@ -49,8 +49,8 @@ jobs:
 
       - name: Build All Variants
         run: |
-          just mode=release builddir=build-release build
-          just mode=relwithdebinfo builddir=build-debug build
+          just mode=release builddir=build-release build starling
+          just mode=relwithdebinfo builddir=build-debug build starling
 
       - name: Prepare Artifacts
         run: |
