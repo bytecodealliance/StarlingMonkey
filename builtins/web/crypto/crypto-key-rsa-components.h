@@ -1,5 +1,6 @@
 #ifndef BUILTINS_WEB_CRYPTO_CRYPTO_KEY_RSA_COMPONENTS_H
 #define BUILTINS_WEB_CRYPTO_CRYPTO_KEY_RSA_COMPONENTS_H
+
 #include <optional>
 #include <string>
 #include <vector>
@@ -20,20 +21,20 @@ public:
     PrimeInfo(std::string_view primeFactor) : primeFactor{primeFactor} {};
   };
   enum class Type : uint8_t { Public, Private };
-  const Type type;
+  Type type;
 
   // Private and public keys.
-  const std::string modulus;
-  const std::string exponent;
+  std::string modulus;
+  std::string exponent;
 
   // Only private keys.
-  const std::string privateExponent;
-  const bool hasAdditionalPrivateKeyParameters = false;
-  const std::optional<PrimeInfo> firstPrimeInfo;
-  const std::optional<PrimeInfo> secondPrimeInfo;
+  std::string privateExponent;
+  bool hasAdditionalPrivateKeyParameters = false;
+  std::optional<PrimeInfo> firstPrimeInfo;
+  std::optional<PrimeInfo> secondPrimeInfo;
   // When three or more primes have been used, the number of array elements
   // is be the number of primes used minus two.
-  const std::vector<PrimeInfo> otherPrimeInfos;
+  std::vector<PrimeInfo> otherPrimeInfos;
   static std::unique_ptr<CryptoKeyRSAComponents> createPublic(std::string_view modulus,
                                                               std::string_view exponent);
 
@@ -43,8 +44,8 @@ public:
 
   static std::unique_ptr<CryptoKeyRSAComponents> createPrivateWithAdditionalData(
       std::string_view modulus, std::string_view exponent, std::string_view privateExponent,
-      std::optional<PrimeInfo> firstPrimeInfo, std::optional<PrimeInfo> secondPrimeInfo,
-      std::vector<PrimeInfo> otherPrimeInfos);
+      const std::optional<PrimeInfo>& firstPrimeInfo, const std::optional<PrimeInfo>& secondPrimeInfo,
+      const std::vector<PrimeInfo>& otherPrimeInfos);
 
   CryptoKeyRSAComponents(std::string_view modulus, std::string_view exponent);
 

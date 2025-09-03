@@ -1,6 +1,8 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <utility>
 
 #include "builtin.h"
 #include "extension-api.h"
@@ -12,13 +14,11 @@
 #include <string>
 #endif
 
-extern "C" void __wasm_call_ctors();
-
 api::Engine *engine;
 
 api::Engine* initialize(std::vector<std::string_view> args) {
   auto config_parser = starling::ConfigParser();
-  config_parser.apply_env()->apply_args(args);
+  config_parser.apply_env()->apply_args(std::move(args));
   return new api::Engine(config_parser.take());
 }
 
@@ -35,7 +35,7 @@ static uint64_t mono_clock_offset = 0;
 // This overrides wasi-libc's weakly linked implementation of clock_gettime to ensure that
 // monotonic clocks really are monotonic, even across resumptions of wizer snapshots.
 int clock_gettime(clockid_t clock, timespec * ts) {
-  __wasi_clockid_t clock_id;
+  __wasi_clockid_t clock_id = 0;
   if (clock == CLOCK_REALTIME) {
     clock_id = __WASI_CLOCKID_REALTIME;
   } else if (clock == CLOCK_MONOTONIC) {
@@ -43,7 +43,7 @@ int clock_gettime(clockid_t clock, timespec * ts) {
   } else {
     return EINVAL;
   }
-  __wasi_timestamp_t t;
+  __wasi_timestamp_t t = 0;
   auto errno = __wasi_clock_time_get(clock_id, 1, &t);
   if (errno != 0) {
     return EINVAL;
@@ -67,17 +67,13 @@ void wizen() {
   ENGINE->finish_pre_initialization();
 
   // Ensure that the monotonic clock is always increasing, even across multiple resumptions.
-  __wasi_timestamp_t t;
+  __wasi_timestamp_t t = 0;
   MOZ_RELEASE_ASSERT(!__wasi_clock_time_get(__WASI_CLOCKID_MONOTONIC, 1, &t));
-  if (mono_clock_offset < t) {
-    mono_clock_offset = t;
-  }
+  mono_clock_offset = std::max(mono_clock_offset, t);
   __wasilibc_deinitialize_environ();
 }
 
 WIZER_INIT(wizen);
-
-extern "C" void __wasm_call_ctors();
 
 /**
  * The main entry function for the runtime.
@@ -89,11 +85,11 @@ extern "C" void __wasm_call_ctors();
  *    load the file `./index.js` and run it as the top-level module script.
  */
 extern "C" bool exports_wasi_cli_run_run() {
-  __wasm_call_ctors();
-
   auto arg_strings = host_api::environment_get_arguments();
   std::vector<std::string_view> args;
-  for (auto& arg : arg_strings) args.push_back(arg);
+  args.reserve(arg_strings.size());
+  for (auto& arg : arg_strings) { args.push_back(arg);
+}
 
   auto config_parser = starling::ConfigParser();
   config_parser.apply_env()->apply_args(args);
@@ -109,8 +105,6 @@ extern "C" bool exports_wasi_cli_run_run() {
  * command line.
  */
 extern "C" bool init_from_environment() {
-  __wasm_call_ctors();
-
   auto config_parser = starling::ConfigParser();
   config_parser.apply_env();
   ENGINE = new api::Engine(config_parser.take());

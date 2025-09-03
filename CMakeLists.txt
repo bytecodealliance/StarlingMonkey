@@ -20,6 +20,10 @@ else()
 endif()
 message(STATUS "Using host API: ${HOST_API}")
 
+# Ensure that the CPM cache is created outside the build dir, even if no location is specified by the developer.
+if(NOT DEFINED ENV{CPM_SOURCE_CACHE})
+    set(ENV{CPM_SOURCE_CACHE} ${CMAKE_CURRENT_SOURCE_DIR}/deps/cpm_cache)
+endif()
 include("CPM")
 include("toolchain")
 
@@ -32,12 +36,13 @@ include("binaryen")
 include("wizer")
 include("weval")
 include("wasmtime")
+include("cbindgen")
 
-include("fmt")
 include("spidermonkey")
 include("openssl")
 include("${HOST_API}/host_api.cmake")
 include("build-crates")
+include("lint")
 
 option(ENABLE_JS_DEBUGGER "Enable support for debugging content via a socket connection" ON)
 
@@ -50,10 +55,7 @@ target_include_directories(extension_api INTERFACE include deps/include runtime)
 
 include("builtins")
 
-option(ENABLE_WPT "Enable WPT harness support" OFF)
-if (ENABLE_WPT)
-    include("tests/wpt-harness/wpt.cmake")
-endif()
+include("tests/wpt-harness/wpt.cmake")
 
 set(SOURCES
     runtime/js.cpp
@@ -64,11 +66,8 @@ set(SOURCES
     runtime/event_loop.cpp
     runtime/builtin.cpp
     runtime/script_loader.cpp
+    runtime/debugger.cpp
 )
-
-if (ENABLE_JS_DEBUGGER)
-    list(APPEND SOURCES runtime/debugger.cpp)
-endif()
 
 add_executable(starling-raw.wasm ${SOURCES})
 

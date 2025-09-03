@@ -5,6 +5,10 @@
 #include "extension-api.h"
 #include "host_api.h"
 
+#include "../event/event.h"
+
+#include <optional>
+
 namespace builtins::web::fetch::fetch_event {
 
 class FetchEvent final : public BuiltinNoConstructor<FetchEvent> {
@@ -15,7 +19,7 @@ class FetchEvent final : public BuiltinNoConstructor<FetchEvent> {
 public:
   static constexpr const char *class_name = "FetchEvent";
 
-  enum class State {
+  enum class State : uint8_t {
     unhandled,
     waitToRespond,
     responseStreaming,
@@ -23,10 +27,11 @@ public:
     respondedWithError,
   };
 
-  enum class Slots {
-    Dispatch,
-    Request,
-    State,
+  static constexpr int ParentSlots = event::Event::Slots::Count;
+
+  enum Slots : uint8_t {
+    Request = ParentSlots,
+    CurrentState,
     PendingPromiseCount,
     DecPendingPromiseCountFunc,
     ClientInfo,
@@ -54,11 +59,20 @@ public:
   static bool init_incoming_request(JSContext *cx, JS::HandleObject self,
                                     host_api::HttpIncomingRequest *req);
 
-  static bool respondWithError(JSContext *cx, JS::HandleObject self);
+  /**
+   * @brief Responds with an error that contains some text for the HTTP response body
+   *
+   * @param cx The Javascript context
+   * @param self A handle to the `FetchEvent` object
+   * @param body_text optional text to send as the body
+   *
+   * @return True if the response was sent successfully
+   * @throws None directly, but surfaces errors to JS via `HANDLE_ERROR`
+   */
+  static bool respondWithError(JSContext *cx, 
+                               JS::HandleObject self, 
+                               std::optional<std::string_view> body_text = std::nullopt);
   static bool is_active(JSObject *self);
-  static bool is_dispatching(JSObject *self);
-  static void start_dispatching(JSObject *self);
-  static void stop_dispatching(JSObject *self);
 
   static State state(JSObject *self);
   static void set_state(JSObject *self, State state);
@@ -68,6 +82,8 @@ public:
 
   static void increase_interest();
   static void decrease_interest();
+
+  static bool init_class(JSContext *cx, HandleObject global);
 };
 
 bool install(api::Engine *engine);

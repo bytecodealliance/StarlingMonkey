@@ -1,0 +1,15 @@
+.vscode/**/*
+.gitignore
+**/*.js.map
+build
+sampleWorkspace
+sampleWorkspace/out
+node_modules
+tsconfig.json
+out
+src
+tests
+**/*.ts
+!node_modules/source-map/**/*.js
+!node_modules/source-map/**/*.wasm
+!node_modules/source-map/package.json

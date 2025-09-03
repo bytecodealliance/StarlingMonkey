@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace form_data {
+
+
+namespace builtins::web::form_data {
 
 struct FormDataEntry {
   FormDataEntry(std::string_view name, HandleValue value) : name(name), value(value) {}
@@ -21,7 +21,7 @@ class FormDataIterator : public BuiltinNoConstructor<FormDataIterator> {
 public:
   static constexpr const char *class_name = "FormDataIterator";
 
-  enum Slots { Form, Type, Index, Count };
+  enum Slots : uint8_t { Form, Type, Index, Count };
 
   static bool next(JSContext *cx, unsigned argc, JS::Value *vp);
 
@@ -32,11 +32,11 @@ public:
 
   static const unsigned ctor_length = 0;
 
-  static JSObject *create(JSContext *cx, JS::HandleObject params, uint8_t type);
+  static JSObject *create(JSContext *cx, JS::HandleObject form, uint8_t type);
   static bool init_class(JSContext *cx, JS::HandleObject global);
 };
 
-class FormData : public TraceableBuiltinImpl<FormData> {
+class FormData : public BuiltinImpl<FormData, TraceableClassPolicy> {
   static bool append(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool remove(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool get(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -48,7 +48,7 @@ class FormData : public TraceableBuiltinImpl<FormData> {
   static bool keys(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool values(JSContext *cx, unsigned argc, JS::Value *vp);
 
-  static bool append(JSContext *cx, HandleObject self, std::string_view key, HandleValue val,
+  static bool append(JSContext *cx, HandleObject self, std::string_view name, HandleValue val,
                      HandleValue filename);
 
   using EntryList = JS::GCVector<FormDataEntry, 0, js::SystemAllocPolicy>;
@@ -69,7 +69,7 @@ public:
 
   static constexpr unsigned ctor_length = 0;
 
-  enum Slots { Entries, Count };
+  enum Slots : uint8_t { Entries, Count };
 
   static JSObject *create(JSContext *cx);
   static bool init_class(JSContext *cx, HandleObject global);
@@ -80,8 +80,8 @@ public:
 
 bool install(api::Engine *engine);
 
-} // namespace form_data
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::form_data
+
+
 
 #endif // BUILTINS_WEB_FORM_FDATA_H

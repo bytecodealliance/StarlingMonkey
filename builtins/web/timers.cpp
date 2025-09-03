@@ -2,6 +2,7 @@
 
 #include "event_loop.h"
 
+#include <algorithm>
 #include <ctime>
 #include <host_api.h>
 #include <iostream>
@@ -16,16 +17,16 @@ namespace {
 
 class TimersMap {
 public:
-  std::map<int32_t, api::AsyncTask*> timers_ = {};
+  std::map<int32_t, api::AsyncTask *> timers_;
   int32_t next_timer_id = 1;
   void trace(JSTracer *trc) {
-    for (auto& [id, timer] : timers_) {
+    for (auto &[id, timer] : timers_) {
       timer->trace(trc);
     }
   }
 };
 
-}
+} // namespace
 
 static PersistentRooted<js::UniquePtr<TimersMap>> TIMERS_MAP;
 static api::Engine *ENGINE;
@@ -44,16 +45,16 @@ class TimerTask final : public api::AsyncTask {
 public:
   explicit TimerTask(const int64_t delay_ns, const bool repeat, HandleObject callback,
                      JS::HandleValueVector args)
-      : delay_(delay_ns), repeat_(repeat), callback_(callback) {
-    deadline_ = host_api::MonotonicClock::now() + delay_ns;
+      : timer_id_(TIMERS_MAP->next_timer_id++), delay_(delay_ns), deadline_(host_api::MonotonicClock::now() + delay_ns), repeat_(repeat), callback_(callback) {
+    
 
     arguments_.reserve(args.length());
-    for (auto &arg : args) {
+    for (const auto &arg : args) {
       arguments_.emplace_back(arg);
     }
 
     handle_ = host_api::MonotonicClock::subscribe(deadline_, true);
-    timer_id_ = TIMERS_MAP->next_timer_id++;
+    
     TIMERS_MAP->timers_.emplace(timer_id_, this);
   }
 
@@ -104,13 +105,9 @@ public:
     return true;
   }
 
-  [[nodiscard]] uint64_t deadline() override {
-    return deadline_;
-  }
+  [[nodiscard]] uint64_t deadline() override { return deadline_; }
 
-  [[nodiscard]] int32_t timer_id() const {
-    return timer_id_;
-  }
+  [[nodiscard]] int32_t timer_id() const { return timer_id_; }
 
   void trace(JSTracer *trc) override {
     TraceEdge(trc, &callback_, "Timer callback");
@@ -132,6 +129,30 @@ public:
 
 namespace builtins::web::timers {
 
+template <bool repeat>
+bool set_timeout_or_interval(JSContext *cx, HandleObject handler, JS::HandleValueVector handle_args,
+                             int32_t delay_ms, int32_t *timer_id) {
+  delay_ms = std::max(delay_ms, 0);
+
+  // Convert delay from milliseconds to nanoseconds, as that's what Timers operate on.
+  const int64_t delay = static_cast<int64_t>(delay_ms) * 1000000;
+  auto *const timer = js_new<TimerTask>(delay, repeat, handler, handle_args);
+  ENGINE->queue_async_task(timer);
+
+  *timer_id = timer->timer_id();
+  return true;
+}
+
+bool set_timeout(JSContext *cx, HandleObject handler, JS::HandleValueVector handle_args,
+                 int32_t delay_ms, int32_t *timer_id) {
+  return set_timeout_or_interval<false>(cx, handler, handle_args, delay_ms, timer_id);
+}
+
+bool set_interval(JSContext *cx, HandleObject handler, JS::HandleValueVector handle_args,
+                  int32_t delay_ms, int32_t *timer_id) {
+  return set_timeout_or_interval<true>(cx, handler, handle_args, delay_ms, timer_id);
+}
+
 /**
  * The `setTimeout` and `setInterval` global functions
  * https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html#dom-settimeout
@@ -146,7 +167,7 @@ template <bool repeat> bool setTimeout_or_interval(JSContext *cx, const unsigned
 
   if (!(args[0].isObject() && JS::IsCallable(&args[0].toObject()))) {
     return api::throw_error(cx, api::Errors::TypeError, repeat ? "setInterval" : "setTimeout",
-      "first argument", "be a function");
+                            "first argument", "be a function");
   }
   const RootedObject handler(cx, &args[0].toObject());
 
@@ -154,12 +175,6 @@ template <bool repeat> bool setTimeout_or_interval(JSContext *cx, const unsigned
   if (args.length() > 1 && !JS::ToInt32(cx, args.get(1), &delay_ms)) {
     return false;
   }
-  if (delay_ms < 0) {
-    delay_ms = 0;
-  }
-
-  // Convert delay from milliseconds to nanoseconds, as that's what Timers operate on.
-  const int64_t delay = static_cast<int64_t>(delay_ms) * 1000000;
 
   JS::RootedValueVector handler_args(cx);
   if (args.length() > 2 && !handler_args.initCapacity(args.length() - 2)) {
@@ -170,10 +185,12 @@ template <bool repeat> bool setTimeout_or_interval(JSContext *cx, const unsigned
     handler_args.infallibleAppend(args[i]);
   }
 
-  const auto timer = new TimerTask(delay, repeat, handler, handler_args);
-  ENGINE->queue_async_task(timer);
-  args.rval().setInt32(timer->timer_id());
+  int32_t timer_id = 0;
+  if (!set_timeout_or_interval<repeat>(cx, handler, handler_args, delay_ms, &timer_id)) {
+    return false;
+  }
 
+  args.rval().setInt32(timer_id);
   return true;
 }
 
@@ -193,11 +210,12 @@ template <bool interval> bool clearTimeout_or_interval(JSContext *cx, unsigned a
     return false;
   }
 
-  TimerTask::clear(id);
-
+  clear_timeout_or_interval(id);
   args.rval().setUndefined();
   return true;
 }
+
+void clear_timeout_or_interval(int32_t timer_id) { TimerTask::clear(timer_id); }
 
 constexpr JSFunctionSpec methods[] = {
     JS_FN("setInterval", setTimeout_or_interval<true>, 1, JSPROP_ENUMERATE),

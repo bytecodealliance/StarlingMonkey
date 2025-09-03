@@ -25,9 +25,9 @@ bool read_last_modified(JSContext *cx, HandleValue initv, int64_t *last_modified
 
 } // namespace
 
-namespace builtins {
-namespace web {
-namespace file {
+
+
+namespace builtins::web::file {
 
 using blob::Blob;
 
@@ -57,7 +57,7 @@ bool File::name_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     return api::throw_error(cx, api::Errors::WrongReceiver, "name get", "File");
   }
 
-  auto name = JS::GetReservedSlot(self, static_cast<size_t>(Slots::Name)).toString();
+  auto *name = JS::GetReservedSlot(self, static_cast<size_t>(Slots::Name)).toString();
   args.rval().setString(name);
   return true;
 }
@@ -99,7 +99,7 @@ bool File::init(JSContext *cx, HandleObject self, HandleValue fileBits, HandleVa
   //  3. If the `lastModified` member is provided, let d be set to the lastModified dictionary
   //  member. If it is not provided, set d to the current date and time represented as the number of
   //  milliseconds since the Unix Epoch.
-  int64_t lastModified;
+  int64_t lastModified = 0;
   if (!read_last_modified(cx, opts, &lastModified)) {
     return false;
   }
@@ -153,11 +153,12 @@ bool File::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 }
 
 bool File::init_class(JSContext *cx, JS::HandleObject global) {
+  Blob::register_subclass(&class_);
   return init_class_impl(cx, global, Blob::proto_obj);
 }
 
 bool install(api::Engine *engine) { return File::init_class(engine->cx(), engine->global()); }
 
-} // namespace file
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::file
+
+

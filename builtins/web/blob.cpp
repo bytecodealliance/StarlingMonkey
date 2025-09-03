@@ -42,7 +42,7 @@ JSString *normalize_type(JSContext *cx, HandleValue value) {
     return JS_GetEmptyString(cx);
   }
 
-  auto str = JS::StringToLinearString(cx, value_str);
+  auto *str = JS::StringToLinearString(cx, value_str);
   if (!str) {
     return nullptr;
   }
@@ -50,13 +50,13 @@ JSString *normalize_type(JSContext *cx, HandleValue value) {
   std::string normalized;
   auto strlen = JS::GetLinearStringLength(str);
 
-  if (!strlen) {
+  if (strlen == 0U) {
     return JS_GetEmptyString(cx);
   }
 
   if (JS::LinearStringHasLatin1Chars(str)) {
     JS::AutoCheckCannotGC nogc(cx);
-    auto chars = JS::GetLatin1LinearStringChars(nogc, str);
+    const auto *chars = JS::GetLatin1LinearStringChars(nogc, str);
     if (!validate_type(chars, strlen)) {
       return JS_GetEmptyString(cx);
     }
@@ -64,7 +64,7 @@ JSString *normalize_type(JSContext *cx, HandleValue value) {
     normalized = std::string(reinterpret_cast<const char *>(chars), strlen);
   } else {
     JS::AutoCheckCannotGC nogc(cx);
-    auto chars = (JS::GetTwoByteLinearStringChars(nogc, str));
+    const auto *chars = (JS::GetTwoByteLinearStringChars(nogc, str));
     if (!validate_type(chars, strlen)) {
       return JS_GetEmptyString(cx);
     }
@@ -122,12 +122,11 @@ std::string convert_line_endings_to_native(std::string_view s) {
 
 } // anonymous namespace
 
-namespace builtins {
-namespace web {
-namespace blob {
+
+
+namespace builtins::web::blob {
 
 using js::Vector;
-using file::File;
 using streams::BufReader;
 using streams::NativeStreamSource;
 
@@ -168,7 +167,7 @@ const JSPropertySpec Blob::properties[] = {
 };
 
 JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self) {
-  auto src = Blob::blob(self);
+  auto *src = Blob::blob(self);
   auto size = src->length();
 
   auto buf = mozilla::MakeUnique<uint8_t[]>(size);
@@ -179,7 +178,7 @@ JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self) {
 
   std::copy_n(src->begin(), size, buf.get());
 
-  auto array_buffer = JS::NewArrayBufferWithContents(
+  auto *array_buffer = JS::NewArrayBufferWithContents(
       cx, size, buf.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory);
   if (!array_buffer) {
     JS_ReportOutOfMemory(cx);
@@ -193,7 +192,7 @@ JSObject *Blob::data_to_owned_array_buffer(JSContext *cx, HandleObject self) {
 
 bool Blob::read_blob_slice(JSContext *cx, HandleObject self, std::span<uint8_t> buf,
                            size_t start, size_t *read, bool *done) {
-  auto src = Blob::blob(self);
+  auto *src = Blob::blob(self);
 
   if (start >= src->length()) {
     *read = 0;
@@ -224,7 +223,7 @@ bool Blob::arrayBuffer(JSContext *cx, HandleObject self, MutableHandleValue rval
 
   rval.setObject(*promise);
 
-  auto buffer = data_to_owned_array_buffer(cx, self);
+  auto *buffer = data_to_owned_array_buffer(cx, self);
   if (!buffer) {
     return RejectPromiseWithPendingError(cx, promise);
   }
@@ -263,7 +262,7 @@ bool Blob::bytes(JSContext *cx, HandleObject self, MutableHandleValue rval) {
 }
 
 bool Blob::slice(JSContext *cx, HandleObject self, const CallArgs &args, MutableHandleValue rval) {
-  auto src = Blob::blob(self);
+  auto *src = Blob::blob(self);
   int64_t size = src->length();
   int64_t start = 0;
   int64_t end = size;
@@ -286,7 +285,7 @@ bool Blob::slice(JSContext *cx, HandleObject self, const CallArgs &args, Mutable
 
   if (args.hasDefined(2)) {
     HandleValue contentType_val = args.get(2);
-    if (!(contentType = normalize_type(cx, contentType_val))) {
+    if ((contentType = normalize_type(cx, contentType_val)) == nullptr) {
       return false;
     }
   }
@@ -332,9 +331,11 @@ bool Blob::text(JSContext *cx, HandleObject self, MutableHandleValue rval) {
 
   rval.setObject(*promise);
 
-  auto src = Blob::blob(self);
-  auto encoding = const_cast<jsencoding::Encoding *>(jsencoding::encoding_for_label_no_replacement(
-      reinterpret_cast<uint8_t *>(const_cast<char *>("UTF-8")), 5));
+  auto *src = Blob::blob(self);
+
+  const char* utf8_label = "UTF-8";
+  const auto *encoding =
+      jsencoding::encoding_for_label_no_replacement(reinterpret_cast<const uint8_t *>(utf8_label), 5);
 
   auto deleter = [&](jsencoding::Decoder *dec) { jsencoding::decoder_free(dec); };
   std::unique_ptr<jsencoding::Decoder, decltype(deleter)> decoder(
@@ -345,14 +346,14 @@ bool Blob::text(JSContext *cx, HandleObject self, MutableHandleValue rval) {
   auto src_len = src->length();
   auto dst_len = jsencoding::decoder_max_utf16_buffer_length(decoder.get(), src_len);
 
-  JS::UniqueTwoByteChars dst(new char16_t[dst_len + 1]);
+  JS::UniqueTwoByteChars dst(static_cast<char16_t *>(js_pod_malloc<char16_t>(dst_len + 1)));
   if (!dst) {
     JS_ReportOutOfMemory(cx);
     return false;
   }
 
-  bool had_replacements;
-  auto dst_data = reinterpret_cast<uint16_t *>(dst.get());
+  bool had_replacements = false;
+  auto *dst_data = reinterpret_cast<uint16_t *>(dst.get());
 
   jsencoding::decoder_decode_to_utf16(decoder.get(), src->begin(), &src_len, dst_data, &dst_len,
                                       true, &had_replacements);
@@ -388,14 +389,14 @@ bool Blob::type_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     return api::throw_error(cx, api::Errors::WrongReceiver, "type get", "Blob");
   }
 
-  auto type = Blob::type(self);
+  auto *type = Blob::type(self);
   args.rval().setString(type);
   return true;
 }
 
 Blob::ByteBuffer *Blob::blob(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  auto blob = static_cast<ByteBuffer *>(
+  auto *blob = static_cast<ByteBuffer *>(
       JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Data)).toPrivate());
 
   MOZ_ASSERT(blob);
@@ -417,33 +418,26 @@ Blob::LineEndings Blob::line_endings(JSObject *self) {
       JS::GetReservedSlot(self, static_cast<size_t>(Blob::Slots::Endings)).toInt32());
 }
 
-bool Blob::is_instance(const JSObject *obj) {
-  return obj != nullptr &&
-    (JS::GetClass(obj) == &Blob::class_ || JS::GetClass(obj) == &File::class_);
-}
-
-bool Blob::is_instance(const Value val) {
-  return val.isObject() && is_instance(&val.toObject());
-}
-
 bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
-  auto blob = Blob::blob(self);
+  auto *blob = Blob::blob(self);
 
   if (val.isObject()) {
     RootedObject obj(cx, &val.toObject());
 
     if (Blob::is_instance(obj)) {
-      auto src = Blob::blob(obj);
+      auto *src = Blob::blob(obj);
       return blob->append(src->begin(), src->end());
-    } else if (JS_IsArrayBufferViewObject(obj) || JS::IsArrayBufferObject(obj)) {
+    }
+
+    if (JS_IsArrayBufferViewObject(obj) || JS::IsArrayBufferObject(obj)) {
       auto span = value_to_buffer(cx, val, "Blob Parts");
       if (span.has_value()) {
-        auto src = span->data();
+        auto *src = span->data();
         auto len = span->size();
         return blob->append(src, src + len);
-      } else {
-        return true;
       }
+
+      return true;
     }
   } else if (val.isString()) {
     auto chars = core::encode(cx, val);
@@ -453,19 +447,16 @@ bool Blob::append_value(JSContext *cx, HandleObject self, HandleValue val) {
 
     if (line_endings(self) == LineEndings::Native) {
       auto converted = convert_line_endings_to_native(chars);
-      auto src = converted.data();
+      auto *src = converted.data();
       auto len = converted.length();
       return blob->append(src, src + len);
-
-    } else {
-      auto src = chars.ptr.get();
-      auto len = chars.len;
-      return blob->append(src, src + len);
     }
+
+    return blob->append(chars.ptr.get(), chars.ptr.get() + chars.len);
   }
 
   // FALLBACK: if we ever get here convert, to string and call append again
-  auto str = JS::ToString(cx, val);
+  auto *str = JS::ToString(cx, val);
   if (!str) {
     return false;
   }
@@ -486,7 +477,7 @@ bool Blob::init_blob_parts(JSContext *cx, HandleObject self, HandleValue value) 
     // if the object is an iterable, walk over its elements...
     JS::Rooted<JS::Value> item(cx);
     while (true) {
-      bool done;
+      bool done = false;
 
       if (!it.next(&item, &done)) {
         return false;
@@ -501,10 +492,9 @@ bool Blob::init_blob_parts(JSContext *cx, HandleObject self, HandleValue value) 
     }
 
     return true;
-  } else {
-    // non-objects are not allowed for the blobParts
-    return api::throw_error(cx, api::Errors::TypeError, "Blob.constructor", "blobParts", "be an object");
   }
+  // non-objects are not allowed for the blobParts
+  return api::throw_error(cx, api::Errors::TypeError, "Blob.constructor", "blobParts", "be an object");
 }
 
 bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
@@ -518,7 +508,8 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
   // - `type`: the MIME type of the data that will be stored into the blob,
   // - `endings`: how to interpret newline characters (\n) within the contents.
   JS::RootedObject opts(cx, init_val.toObjectOrNull());
-  bool has_endings, has_type;
+  bool has_endings = false;
+  bool has_type = false;
 
   if (!JS_HasProperty(cx, opts, "endings", &has_endings) ||
       !JS_HasProperty(cx, opts, "type", &has_type)) {
@@ -532,12 +523,13 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
 
   if (has_endings) {
     JS::RootedValue endings_val(cx);
-    bool is_transparent, is_native;
+    bool is_transparent = false;
+    bool is_native = false;
     if (!JS_GetProperty(cx, opts, "endings", &endings_val)) {
       return false;
     }
 
-    auto endings_str = JS::ToString(cx, endings_val);
+    auto *endings_str = JS::ToString(cx, endings_val);
     if (!JS_StringEqualsLiteral(cx, endings_str, "transparent", &is_transparent) ||
         !JS_StringEqualsLiteral(cx, endings_str, "native", &is_native)) {
       return false;
@@ -555,7 +547,7 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
       return false;
     }
 
-    auto type_str = normalize_type(cx, type);
+    auto *type_str = normalize_type(cx, type);
     if (!type_str) {
       return false;
     }
@@ -571,22 +563,33 @@ JSObject *Blob::create(JSContext *cx, UniqueChars data, size_t data_len, HandleS
     return nullptr;
   }
 
-  auto blob = new ByteBuffer;
+  auto blob = js::MakeUnique<ByteBuffer>();
+  if (!blob) {
+    JS_ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
   if (data != nullptr) {
     // Take the ownership of given data.
     blob->replaceRawBuffer(reinterpret_cast<uint8_t *>(data.release()), data_len);
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(blob));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(blob.release()));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS::StringValue(type));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
   return self;
 }
 
 bool Blob::init(JSContext *cx, HandleObject self, HandleValue blobParts, HandleValue opts) {
+  auto blob = js::MakeUnique<ByteBuffer>();
+  if (blob == nullptr) {
+    JS_ReportOutOfMemory(cx);
+    return false;
+  }
+
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS_GetEmptyStringValue(cx));
   SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(new ByteBuffer));
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(blob.release()));
 
   // Walk the blob parts and append them to the blob's buffer.
   if (blobParts.isNull()) {
@@ -629,9 +632,9 @@ bool Blob::init_class(JSContext *cx, JS::HandleObject global) {
 
 void Blob::finalize(JS::GCContext *gcx, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  auto blob = Blob::blob(self);
+  auto *blob = Blob::blob(self);
   if (blob) {
-    free(blob);
+    js_delete(blob);
   }
 }
 
@@ -639,6 +642,6 @@ bool install(api::Engine *engine) {
   return Blob::init_class(engine->cx(), engine->global());
 }
 
-} // namespace blob
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::blob
+
+

@@ -1,31 +1,21 @@
 #include "extension-api.h"
-
-#include <cassert>
-#include <chrono>
-#include <cstdlib>
-#include <iostream>
-
-// TODO: remove these once the warnings are fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winvalid-offsetof"
-#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #include "allocator.h"
+#include "debugger.h"
 #include "encode.h"
 #include "event_loop.h"
+#include "script_loader.h"
+
 #include "js/CompilationAndEvaluation.h"
 #include "js/Modules.h"
 #include "js/ForOfIterator.h"
 #include "js/Initialization.h"
 #include "js/Promise.h"
 #include "jsfriendapi.h"
-#pragma clang diagnostic pop
 
-#ifdef JS_DEBUGGER
-  #include "debugger.h"
-#endif
-#include "script_loader.h"
-
-#include <decode.h>
+#include <cassert>
+#include <chrono>
+#include <cstdlib>
+#include <utility>
 
 #ifdef MEM_STATS
 #include <string>
@@ -58,13 +48,12 @@ static bool dump_mem_stats(JSContext *cx) {
 
 #define TRACE(...)                                                                                 \
   if (config_->verbose) {                                                                          \
-    std::cout << "trace(" << __func__ << ":" << __LINE__ << "): " << __VA_ARGS__ << std::endl;     \
+    fmt::print("trace({}:{}): {}\n", __func__, __LINE__, fmt::format(__VA_ARGS__));                \
     fflush(stdout);                                                                                \
-  }
+}
 
-using std::chrono::duration_cast;
+
 using std::chrono::microseconds;
-using std::chrono::system_clock;
 
 using JS::Value;
 
@@ -84,8 +73,9 @@ bool debug_logging_enabled() { return DEBUG_LOGGING; }
 
 JS::UniqueChars stringify_value(JSContext *cx, JS::HandleValue value) {
   JS::RootedString str(cx, JS_ValueToSource(cx, value));
-  if (!str)
+  if (!str) {
     return nullptr;
+  }
 
   return JS_EncodeStringToUTF8(cx, str);
 }
@@ -118,8 +108,9 @@ bool print_stack(JSContext *cx, HandleObject stack, FILE *fp) {
 
 bool print_stack(JSContext *cx, FILE *fp) {
   RootedObject stackp(cx);
-  if (!JS::CaptureCurrentStack(cx, &stackp))
+  if (!JS::CaptureCurrentStack(cx, &stackp)) {
     return false;
+  }
   return print_stack(cx, stackp, fp);
 }
 
@@ -140,7 +131,7 @@ void print_cause(JSContext *cx, HandleValue error, FILE *fp) {
 
       fprintf(stderr, "Caused by: ");
 
-      bool has_stack;
+      bool has_stack = false;
       dump_error(cx, cause_val, &has_stack, fp);
     }
   }
@@ -179,7 +170,7 @@ void dump_error(JSContext *cx, HandleValue error, bool *has_stack, FILE *fp) {
 }
 
 void dump_promise_rejection(JSContext *cx, HandleValue reason, HandleObject promise, FILE *fp) {
-  bool has_stack;
+  bool has_stack = false;
   dump_error(cx, reason, &has_stack, fp);
 
   // If the rejection reason isn't an `Error` object, we can't get an exception
@@ -196,7 +187,7 @@ void dump_promise_rejection(JSContext *cx, HandleValue reason, HandleObject prom
 }
 
 /* The class of the global object. */
-static JSClass global_class = {"global", JSCLASS_GLOBAL_FLAGS, &JS::DefaultGlobalClassOps};
+static JSClass global_class = {.name="global", .flags=JSCLASS_GLOBAL_FLAGS, .cOps=&JS::DefaultGlobalClassOps};
 
 JS::PersistentRootedObject GLOBAL;
 JS::PersistentRootedObject INIT_SCRIPT_GLOBAL;
@@ -261,7 +252,8 @@ bool create_content_global(JSContext * cx) {
   JS::RealmOptions options;
   options.creationOptions().setStreamsEnabled(true);
 
-  JS::DisableIncrementalGC(cx);
+  // TODO: restore
+  // JS::DisableIncrementalGC(cx);
   // JS_SetGCParameter(cx, JSGC_MAX_EMPTY_CHUNK_COUNT, 1);
 
   RootedObject global(
@@ -282,14 +274,14 @@ bool create_content_global(JSContext * cx) {
 static bool define_builtin_module(JSContext *cx, unsigned argc, Value *vp);
 
 bool create_initializer_global(Engine *engine) {
-  auto cx = engine->cx();
+  auto *cx = engine->cx();
 
   JS::RealmOptions options;
   options.creationOptions()
       .setStreamsEnabled(true)
       .setExistingCompartment(engine->global());
 
-  static JSClass global_class = {"global", JSCLASS_GLOBAL_FLAGS, &JS::DefaultGlobalClassOps};
+  static JSClass global_class = {.name="global", .flags=JSCLASS_GLOBAL_FLAGS, .cOps=&JS::DefaultGlobalClassOps};
   RootedObject global(cx);
   global = JS_NewGlobalObject(cx, &global_class, nullptr, JS::DontFireOnNewGlobalHook, options);
   if (!global) {
@@ -299,15 +291,10 @@ bool create_initializer_global(Engine *engine) {
   JSAutoRealm ar(cx, global);
 
   if (!JS_DefineFunction(cx, global, "defineBuiltinModule", ::define_builtin_module, 2, 0) ||
-      !JS_DefineProperty(cx, global, "contentGlobal", ENGINE->global(), JSPROP_READONLY)) {
+      !JS_DefineProperty(cx, global, "contentGlobal", ENGINE->global(), JSPROP_READONLY) ||
+      !JS_DefineFunction(cx, global, "print", content_debugger::dbg_print, 1, 0)) {
     return false;
   }
-
-#ifdef JS_DEBUGGER
-  if (!JS_DefineFunction(cx, global, "print", content_debugger::dbg_print, 1, 0)) {
-    return false;
-  }
-#endif
 
   INIT_SCRIPT_GLOBAL.init(cx, global);
   return true;
@@ -347,7 +334,7 @@ bool init_js(const EngineConfig& config) {
     return false;
   }
 
-  auto opts = new JS::CompileOptions(cx);
+  auto *opts = new JS::CompileOptions(cx);
 
   // This ensures that we're eagerly loading the sript, and not lazily
   // generating bytecode for functions.
@@ -364,22 +351,26 @@ bool init_js(const EngineConfig& config) {
 
 static bool report_unhandled_promise_rejections(JSContext *cx) {
   RootedValue iterable(cx);
-  if (!JS::SetValues(cx, unhandledRejectedPromises, &iterable))
+  if (!JS::SetValues(cx, unhandledRejectedPromises, &iterable)) {
     return false;
+  }
 
   JS::ForOfIterator it(cx);
-  if (!it.init(iterable))
+  if (!it.init(iterable)) {
     return false;
+  }
 
   RootedValue promise_val(cx);
   RootedObject promise(cx);
   while (true) {
-    bool done;
-    if (!it.next(&promise_val, &done))
+    bool done = false;
+    if (!it.next(&promise_val, &done)) {
       return false;
+    }
 
-    if (done)
+    if (done) {
       break;
+    }
 
     promise = &promise_val.toObject();
     // Note: we unconditionally print these, since they almost always indicate
@@ -451,7 +442,7 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
 
   TRACE("StarlingMonkey engine initializing");
 
-  if (!init_js(*config_.get())) {
+  if (!init_js(*config_)) {
     abort("Initializing JS Engine");
   }
 
@@ -477,10 +468,10 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
     }
   }
 
-  TRACE("Module mode: " << config_->module_mode);
+  TRACE("Module mode: ", config_->module_mode);
   scriptLoader->enable_module_mode(config_->module_mode);
 
-  mozilla::Maybe<std::string_view> content_script_path = config_->content_script_path;
+  auto content_script_path = config_->content_script_path;
 
   if (config_->pre_initialize) {
     state_ = EngineState::ScriptPreInitializing;
@@ -489,19 +480,17 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
     // Debugging isn't supported during wizening, so only try it when doing runtime evaluation.
     // The debugger can be initialized at runtime by whatever export is invoked on the
     // resumed wizer snapshot.
-#ifdef JS_DEBUGGER
-      content_debugger::maybe_init_debugger(this, false);
+    content_debugger::maybe_init_debugger(this, false);
     if (auto replacement_script_path = content_debugger::replacement_script_path()) {
-      TRACE("Using replacement script path received from debugger: " << *replacement_script_path);
+      TRACE("Using replacement script path received from debugger: ", *replacement_script_path);
       content_script_path = replacement_script_path;
     }
-#endif
   }
 
   if (content_script_path) {
-    TRACE("Evaluating initial script from file " << content_script_path.value());
+    TRACE("Evaluating initial script from file ", content_script_path.value());
     RootedValue result(cx());
-    if (!eval_toplevel(content_script_path.value().data(), &result)) {
+    if (!eval_toplevel(content_script_path.value(), &result)) {
       abort("evaluating top-level script");
     }
   }
@@ -513,7 +502,7 @@ Engine::Engine(std::unique_ptr<EngineConfig> config) {
     const std::string& script = config_->content_script.value();
     RootedValue result(cx());
     if (!source.init(cx(), script.c_str(), script.size(), JS::SourceOwnership::Borrowed)
-        || !eval_toplevel(source, path.data(), &result)) {
+        || !eval_toplevel(source, path, &result)) {
       abort("evaluating top-level inline script");
     }
   }
@@ -530,6 +519,7 @@ EngineState Engine::state() { return state_; }
 bool Engine::debugging_enabled() {
   return config_->debugging;
 }
+bool Engine::wpt_mode() { return config_->wpt_mode; }
 
 void Engine::finish_pre_initialization() {
   MOZ_ASSERT(state_ == EngineState::ScriptPreInitializing);
@@ -547,7 +537,7 @@ void Engine::abort(const char *reason) {
 }
 
 bool Engine::define_builtin_module(const char* id, HandleValue builtin) {
-  TRACE("Defining builtin module '" << id << "'");
+  TRACE("Defining builtin module '", id, "'");
   return scriptLoader->define_builtin_module(id, builtin);
 }
 
@@ -570,17 +560,17 @@ static bool define_builtin_module(JSContext *cx, unsigned argc, Value *vp) {
 }
 
 bool Engine::run_initialization_script() {
-  auto cx = this->cx();
+  auto *cx = this->cx();
 
   JSAutoRealm ar(cx, INIT_SCRIPT_GLOBAL);
 
   auto path = config_->initializer_script_path.value();
-  TRACE("Running initialization script from file " << path);
+  TRACE("Running initialization script from file ", path);
   JS::SourceText<mozilla::Utf8Unit> source;
-  if (!scriptLoader->load_resolved_script(CONTEXT, path.c_str(), path.c_str(), source)) {
+  if (!scriptLoader->load_resolved_script(CONTEXT, path, path, source)) {
     return false;
   }
-  auto opts = new JS::CompileOptions(cx);
+  auto *opts = new JS::CompileOptions(cx);
   opts->setDiscardSource();
   opts->setFile(path.c_str());
   JS::RootedScript script(cx, Compile(cx, *opts, source));
@@ -593,7 +583,7 @@ bool Engine::run_initialization_script() {
 
 HandleObject Engine::init_script_global() { return INIT_SCRIPT_GLOBAL; }
 
-bool Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char *path,
+bool Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, std::string_view path,
                            MutableHandleValue result) {
   MOZ_ASSERT(state() > EngineState::EngineInitializing, "Engine must be done initializing");
   MOZ_ASSERT(state() != EngineState::Aborted, "Engine state is aborted");
@@ -658,7 +648,7 @@ bool Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, const char
   return true;
 }
 
-bool Engine::eval_toplevel(const char *path, MutableHandleValue result) {
+bool Engine::eval_toplevel(std::string_view path, MutableHandleValue result) {
   JS::SourceText<mozilla::Utf8Unit> source;
   if (!scriptLoader->load_script(CONTEXT, path, source)) {
     return false;
@@ -672,11 +662,11 @@ bool Engine::run_event_loop() {
 }
 
 void Engine::incr_event_loop_interest() {
-  return core::EventLoop::incr_event_loop_interest();
+  core::EventLoop::incr_event_loop_interest();
 }
 
 void Engine::decr_event_loop_interest() {
-  return core::EventLoop::decr_event_loop_interest();
+  core::EventLoop::decr_event_loop_interest();
 }
 
 bool Engine::dump_value(JS::Value val, FILE *fp) { return ::dump_value(CONTEXT, val, fp); }
@@ -687,7 +677,7 @@ void Engine::dump_pending_exception(const char *description, FILE *fp) {
 }
 
 void Engine::dump_error(JS::HandleValue err, FILE *fp) {
-  bool has_stack;
+  bool has_stack = false;
   ::dump_error(CONTEXT, err, &has_stack, fp);
   fflush(fp);
 }
@@ -700,8 +690,11 @@ bool Engine::debug_logging_enabled() { return ::debug_logging_enabled(); }
 
 bool Engine::has_pending_async_tasks() { return core::EventLoop::has_pending_async_tasks(); }
 
-void Engine::queue_async_task(AsyncTask *task) { core::EventLoop::queue_async_task(task); }
-bool Engine::cancel_async_task(AsyncTask *task) {
+void Engine::queue_async_task(const RefPtr<AsyncTask>& task) {
+  core::EventLoop::queue_async_task(task);
+}
+
+bool Engine::cancel_async_task(const RefPtr<AsyncTask>& task) {
   return core::EventLoop::cancel_async_task(this, task);
 }
 

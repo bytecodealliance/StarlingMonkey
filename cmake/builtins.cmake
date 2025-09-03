@@ -21,6 +21,20 @@ add_builtin(builtins/web/blob.cpp)
 add_builtin(builtins/web/file.cpp)
 
 add_builtin(
+    builtins::web::event
+    SRC
+        builtins/web/event/event.cpp
+        builtins/web/event/event-target.cpp
+        builtins/web/event/custom-event.cpp
+        builtins/web/event/global-event-target.cpp)
+
+add_builtin(
+    builtins::web::abort
+    SRC
+        builtins/web/abort/abort-signal.cpp
+        builtins/web/abort/abort-controller.cpp)
+
+add_builtin(
     builtins::web::form_data
     SRC
         builtins/web/form-data/form-data.cpp
@@ -28,7 +42,7 @@ add_builtin(
         builtins/web/form-data/form-data-parser.cpp
     DEPENDENCIES
         multipart
-        fmt)
+)
 
 add_builtin(
     builtins::web::dom_exception
@@ -88,7 +102,7 @@ add_builtin(
         builtins/web/fetch/headers.cpp
         builtins/web/fetch/request-response.cpp
     DEPENDENCIES
-        fmt)
+)
 
 add_builtin(
     builtins::web::fetch::fetch_event
@@ -110,6 +124,5 @@ add_builtin(
         builtins/web/crypto/uuid.cpp
     DEPENDENCIES
         OpenSSL::Crypto
-        fmt
     INCLUDE_DIRS
         runtime)

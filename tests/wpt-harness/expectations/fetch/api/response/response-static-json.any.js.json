@@ -1,21 +1,21 @@
 {
   "Check response returned by static json() with init undefined": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check response returned by static json() with init {\"status\":400}": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check response returned by static json() with init {\"statusText\":\"foo\"}": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check response returned by static json() with init {\"headers\":{}}": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check response returned by static json() with init {\"headers\":{\"content-type\":\"foo/bar\"}}": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check response returned by static json() with init {\"headers\":{\"x-foo\":\"bar\"}}": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Throws TypeError when calling static json() with a status of 204": {
     "status": "PASS"
@@ -27,7 +27,7 @@
     "status": "PASS"
   },
   "Check static json() encodes JSON objects correctly": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check static json() throws when data is not encodable": {
     "status": "PASS"
@@ -36,15 +36,15 @@
     "status": "PASS"
   },
   "Check static json() propagates JSON serializer errors": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check response returned by static json() with input 𝌆": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check response returned by static json() with input U+df06U+d834": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Check response returned by static json() with input U+dead": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }

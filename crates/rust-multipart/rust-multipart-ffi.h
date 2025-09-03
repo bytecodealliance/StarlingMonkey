@@ -15,7 +15,7 @@
 
 namespace jsmultipart {
 
-enum class RetCode {
+enum class RetCode : uint8_t {
   Ok = 0,
   Eos = 1,
   Error = 2,

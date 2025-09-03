@@ -1,8 +1,8 @@
 #include "queue-microtask.h"
 
-namespace builtins {
-namespace web {
-namespace queue_microtask {
+
+
+namespace builtins::web::queue_microtask {
 
 /**
  * The `queueMicrotask` global function
@@ -41,6 +41,6 @@ bool install(api::Engine *engine) {
   return JS_DefineFunctions(engine->cx(), engine->global(), methods);
 }
 
-} // namespace queue_microtask
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::queue_microtask
+
+

@@ -3,16 +3,16 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace streams {
+
+
+namespace builtins::web::streams {
 
 class NativeStreamSink : public BuiltinNoConstructor<NativeStreamSink> {
 private:
 public:
   static constexpr const char *class_name = "NativeStreamSink";
 
-  enum Slots {
+  enum Slots : uint8_t {
     Owner,          // TransformStream.
     Controller,     // The WritableStreamDefaultController.
     InternalWriter, // Only used to lock the stream if it's consumed internally.
@@ -25,14 +25,9 @@ public:
     Count
   };
 
-  typedef bool WriteAlgorithmImplementation(JSContext *cx, JS::CallArgs args,
-                                            JS::HandleObject stream, JS::HandleObject owner,
-                                            JS::HandleValue chunk);
-  typedef bool AbortAlgorithmImplementation(JSContext *cx, JS::CallArgs args,
-                                            JS::HandleObject stream, JS::HandleObject owner,
-                                            JS::HandleValue reason);
-  typedef bool CloseAlgorithmImplementation(JSContext *cx, JS::CallArgs args,
-                                            JS::HandleObject stream, JS::HandleObject owner);
+  using WriteAlgorithmImplementation = bool (JSContext *, JS::CallArgs, JS::HandleObject, JS::HandleObject, JS::HandleValue);
+  using AbortAlgorithmImplementation = bool (JSContext *, JS::CallArgs, JS::HandleObject, JS::HandleObject, JS::HandleValue);
+  using CloseAlgorithmImplementation = bool (JSContext *, JS::CallArgs, JS::HandleObject, JS::HandleObject);
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -62,7 +57,7 @@ public:
                           AbortAlgorithmImplementation *abort);
 };
 
-} // namespace streams
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::streams
+
+
 #endif

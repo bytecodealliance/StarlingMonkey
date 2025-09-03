@@ -4,9 +4,9 @@
 
 DEF_ERR(InvalidCharacterError, JSEXN_RANGEERR, "String contains an invalid character", 0)
 
-namespace builtins {
-namespace web {
-namespace base64 {
+
+
+namespace builtins::web::base64 {
 
 JS::Result<std::string> valueToJSByteString(JSContext *cx, JS::Handle<JS::Value> v) {
   JS::RootedString s(cx);
@@ -22,7 +22,7 @@ JS::Result<std::string> valueToJSByteString(JSContext *cx, JS::Handle<JS::Value>
 
   // Conversion from JavaScript string to ByteString is only valid if all
   // characters < 256. This is always the case for Latin1 strings.
-  size_t length;
+  size_t length = 0;
   UniqueChars result = nullptr;
   if (!JS::StringHasLatin1Chars(s)) {
     JS::AutoCheckCannotGC nogc(cx);
@@ -57,7 +57,7 @@ JS::Result<std::string> valueToJSByteString(JSContext *cx, JS::Handle<JS::Value>
   return byteString;
 }
 
-JS::Result<std::string> stringToJSByteString(JSContext *cx, std::string v) {
+JS::Result<std::string> stringToJSByteString(JSContext *cx, const std::string& v) {
   JS::RootedValue s(cx);
   s.setString(JS_NewStringCopyN(cx, v.c_str(), v.length()));
   return valueToJSByteString(cx, s);
@@ -116,9 +116,9 @@ const char base64EncodeTable[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 bool base64CharacterToValue(char character, uint8_t *value, const uint8_t *decodeTable) {
   static const size_t mask = 127;
-  auto index = static_cast<size_t>(character);
+  auto index = static_cast<uint8_t>(character);
 
-  if (index & ~mask) {
+  if ((index & ~mask) != 0U) {
     return false;
   }
   *value = decodeTable[index & mask];
@@ -128,7 +128,10 @@ bool base64CharacterToValue(char character, uint8_t *value, const uint8_t *decod
 
 inline JS::Result<mozilla::Ok> base64Decode4to3(std::string_view input, std::string &output,
                                                 const uint8_t *decodeTable) {
-  uint8_t w, x, y, z;
+  uint8_t w = 0;
+  uint8_t x = 0;
+  uint8_t y = 0;
+  uint8_t z = 0;
   // 8.1 Find the code point pointed to by position in the second column of
   // Table 1: The Base 64 Alphabet of RFC 4648. Let n be the number given in the
   // first cell of the same row. [RFC4648]
@@ -150,7 +153,9 @@ inline JS::Result<mozilla::Ok> base64Decode4to3(std::string_view input, std::str
 
 inline JS::Result<mozilla::Ok> base64Decode3to2(std::string_view input, std::string &output,
                                                 const uint8_t *decodeTable) {
-  uint8_t w, x, y;
+  uint8_t w = 0;
+  uint8_t x = 0;
+  uint8_t y = 0;
   // 8.1 Find the code point pointed to by position in the second column of
   // Table 1: The Base 64 Alphabet of RFC 4648. Let n be the number given in the
   // first cell of the same row. [RFC4648]
@@ -172,7 +177,8 @@ inline JS::Result<mozilla::Ok> base64Decode3to2(std::string_view input, std::str
 
 inline JS::Result<mozilla::Ok> base64Decode2to1(std::string_view input, std::string &output,
                                                 const uint8_t *decodeTable) {
-  uint8_t w, x;
+  uint8_t w = 0;
+  uint8_t x = 0;
   // 8.1 Find the code point pointed to by position in the second column of
   // Table 1: The Base 64 Alphabet of RFC 4648. Let n be the number given in the
   // first cell of the same row. [RFC4648]
@@ -212,7 +218,7 @@ JS::Result<std::string> forgivingBase64Decode(std::string_view data,
   auto hasWhitespace = std::find_if(data.begin(), data.end(), &isAsciiWhitespace);
   std::string dataWithoutAsciiWhitespace;
 
-  if (hasWhitespace) {
+  if (*hasWhitespace != 0) {
     dataWithoutAsciiWhitespace = data;
     dataWithoutAsciiWhitespace.erase(std::remove_if(dataWithoutAsciiWhitespace.begin() +
                                                         std::distance(data.begin(), hasWhitespace),
@@ -225,7 +231,7 @@ JS::Result<std::string> forgivingBase64Decode(std::string_view data,
   size_t length = data_view.length();
 
   // 2. If data’s code point length divides by 4 leaving no remainder, then:
-  if (length && (length % 4 == 0)) {
+  if ((length != 0U) && (length % 4 == 0)) {
     // 2.1 If data ends with one or two U+003D (=) code points, then remove them
     // from data.
     if (data_view.at(length - 1) == '=') {
@@ -253,7 +259,7 @@ JS::Result<std::string> forgivingBase64Decode(std::string_view data,
   // base64Decode4to3, base64Decode3to2, and base64Decode2to1
 
   // 5. Let output be an empty byte sequence.
-  std::string output = "";
+  std::string output;
   output.reserve(data_view.length() / 3);
 
   // 6. Let buffer be an empty buffer that can have bits appended to it.
@@ -326,7 +332,8 @@ bool atob(JSContext *cx, unsigned argc, Value *vp) {
 inline uint8_t CharTo8Bit(char character) { return uint8_t(character); }
 inline void base64Encode3to4(std::string_view data, std::string &output, const char *encodeTable) {
   uint32_t b32 = 0;
-  int i, j = 18;
+  int i = 0;
+  int j = 18;
 
   for (i = 0; i < 3; ++i) {
     b32 <<= 8;
@@ -364,7 +371,7 @@ inline void base64Encode1to4(std::string_view data, std::string &output, const c
 // handling for certain inputs.
 std::string forgivingBase64Encode(std::string_view data, const char *encodeTable) {
   int length = data.length();
-  std::string output = "";
+  std::string output;
   // The Base64 version of a string will be at least 133% the size of the
   // string.
   output.reserve(length * 1.33);
@@ -430,6 +437,6 @@ bool install(api::Engine *engine) {
   return JS_DefineFunctions(engine->cx(), engine->global(), methods);
 }
 
-} // namespace base64
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::base64
+
+

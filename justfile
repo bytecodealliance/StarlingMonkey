@@ -17,7 +17,7 @@ default:
     @just --list
 
 # Build specified target or all otherwise
-build target="all" flags="":
+build target="all" *flags:
     #!/usr/bin/env bash
     set -euo pipefail
     echo 'Setting build directory to {{ builddir }}, build type {{ mode }}'
@@ -30,7 +30,7 @@ build target="all" flags="":
     fi
 
     # Build target
-    cmake --build {{ builddir }} --parallel {{ ncpus }} {{ if target == "" { target } else { "--target " + target } }}
+    cmake --build {{ builddir }} --parallel {{ ncpus }} {{ if target == "" { "" } else { "--target " + target } }}
 
 # Run clean target
 clean:
@@ -45,6 +45,12 @@ do_clean:
 clean-all: && do_clean
     @echo "This will remove {{builddir}}"
 
+# Run clang-tidy
+lint: (build "clang-tidy")
+
+# Run clang-tidy and apply offered fixes
+lint-fix: (build "clang-tidy-fix")
+
 # Componentize js script
 componentize script="" outfile="starling.wasm": build
     {{ builddir }}/componentize.sh {{ script }} -o {{ outfile }}
@@ -58,26 +64,22 @@ format *ARGS:
     {{ justdir }}/scripts/clang-format.sh {{ ARGS }}
 
 # Run integration test
-test regex="": (build "integration-test-server")
-    ctest --test-dir {{ builddir }} -j {{ ncpus }} --output-on-failure -R {{ regex }}
-
-# Build web platform test suite
-[group('wpt')]
-wpt-build: (build "wpt-runtime" "-DENABLE_WPT:BOOL=ON")
+test regex="": (build "integration-test-server") (build "wpt-runtime")
+    ctest --test-dir {{ builddir }} -j {{ ncpus }} --output-on-failure {{ if regex == "" { regex } else { "-R " + regex } }}
 
 # Run web platform test suite
 [group('wpt')]
-wpt-test filter="": wpt-build
+wpt-test filter="": (build "wpt-runtime")
     WPT_FILTER={{ filter }} ctest --test-dir {{ builddir }} -R wpt --verbose
 
 # Update web platform test expectations
 [group('wpt')]
-wpt-update filter="": wpt-build
+wpt-update filter="": (build "wpt-runtime")
     WPT_FLAGS="--update-expectations" WPT_FILTER={{ filter }} ctest --test-dir {{ builddir }} -R wpt --verbose
 
 # Run wpt server
 [group('wpt')]
-wpt-server: wpt-build
+wpt-server: (build "wpt-runtime")
     #!/usr/bin/env bash
     set -euo pipefail
     cd {{ builddir }}

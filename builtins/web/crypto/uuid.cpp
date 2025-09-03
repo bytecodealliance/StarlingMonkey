@@ -1,11 +1,9 @@
 #include "uuid.h"
 #include "host_api.h"
 
-#include <fmt/core.h>
 
-namespace builtins {
-namespace web {
-namespace crypto {
+
+namespace builtins::web::crypto {
 
 // FROM RFC 4122
 // The formal definition of the UUID string representation is
@@ -64,11 +62,11 @@ struct UUID {
 //                                   specified in this document
 //                                   that uses SHA-1 hashing.
 std::optional<std::string> random_uuid_v4(JSContext *cx) {
-  UUID id;
+  UUID id{};
 
   {
     auto res = host_api::Random::get_bytes(sizeof(id));
-    if (auto *err = res.to_err()) {
+    if (const auto *err = res.to_err()) {
       HANDLE_ERROR(cx, *err);
       return std::nullopt;
     }
@@ -96,5 +94,5 @@ std::optional<std::string> random_uuid_v4(JSContext *cx) {
 }
 
 } // namespace uuid
-} // namespace web
-} // namespace builtins
+
+

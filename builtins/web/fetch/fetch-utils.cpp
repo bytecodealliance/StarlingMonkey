@@ -1,37 +1,39 @@
 #include "fetch-utils.h"
+#include "request-response.h"
 
+#include "js/Stream.h"
 #include "mozilla/ResultVariant.h"
 
 #include <charconv>
-#include <string>
-#include <ranges>
-#include <string_view>
 #include <fmt/format.h>
+#include <ranges>
+#include <string>
+#include <string_view>
 
 namespace builtins::web::fetch {
 
 std::string MimeType::to_string() {
   std::string result = essence;
 
-  for (const auto& [key, value] : params) {
-      result += fmt::format(";{}={}", key, value);
+  for (const auto &[key, value] : params) {
+    result += fmt::format(";{}={}", key, value);
   }
 
   return result;
 }
 
 std::string_view trim(std::string_view input) {
-    auto trim_size = input.find_first_not_of(" \t");
-    if (trim_size == std::string_view::npos) {
-        return {};
-    }
+  auto trim_size = input.find_first_not_of(" \t");
+  if (trim_size == std::string_view::npos) {
+    return {};
+  }
 
-    input.remove_prefix(trim_size);
+  input.remove_prefix(trim_size);
 
-    trim_size = input.find_last_not_of(" \t");
-    input.remove_suffix(input.size() - trim_size - 1);
+  trim_size = input.find_last_not_of(" \t");
+  input.remove_suffix(input.size() - trim_size - 1);
 
-    return input;
+  return input;
 }
 
 std::optional<MimeType> parse_mime_type(std::string_view str) {
@@ -62,9 +64,7 @@ std::optional<MimeType> parse_mime_type(std::string_view str) {
     return mime;
   }
 
-  auto as_string = [](std::string_view v) -> std::string {
-    return {v.data(), v.size()};
-  };
+  auto as_string = [](std::string_view v) -> std::string { return {v.data(), v.size()}; };
 
   for (const auto view : std::views::split(params, ';')) {
     auto param = std::string_view(view.begin(), view.end());
@@ -74,7 +74,7 @@ std::optional<MimeType> parse_mime_type(std::string_view str) {
       auto value = trim(param.substr(pos + 1));
 
       if (!key.empty()) {
-        mime.params.push_back({ as_string(key), as_string(value) });
+        mime.params.emplace_back(as_string(key), as_string(value));
       }
     }
   }
@@ -116,7 +116,7 @@ mozilla::Result<MimeType, InvalidMimeType> extract_mime_type(std::string_view qu
       // 2. If mimeTypes parameters["charset"] exists, then set charset to mimeType's
       // parameters["charset"].
       auto it = std::find_if(mime.params.begin(), mime.params.end(),
-          [&](const auto &kv) { return std::get<0>(kv) == "charset"; });
+                             [&](const auto &kv) { return std::get<0>(kv) == "charset"; });
 
       if (it != mime.params.end()) {
         charset = std::get<1>(*it);
@@ -129,17 +129,17 @@ mozilla::Result<MimeType, InvalidMimeType> extract_mime_type(std::string_view qu
       // 5. Otherwise, if mimeTypes parameters["charset"] does not exist, and charset is non-null,
       //    set mimeType's parameters["charset"] to charset.
       auto it = std::find_if(mime.params.begin(), mime.params.end(),
-          [&](const auto &kv) { return std::get<0>(kv) == "charset"; });
+                             [&](const auto &kv) { return std::get<0>(kv) == "charset"; });
 
       if (it == mime.params.end() && !charset.empty()) {
-        mime.params.push_back({"charset", charset});
+        mime.params.emplace_back("charset", charset);
       }
     }
   }
 
   // 7. If mimeType is null, then return failure.
   // 8. Return mimeType.
-  return found ? mime : mozilla::Result<MimeType, InvalidMimeType>(InvalidMimeType {});
+  return found ? mime : mozilla::Result<MimeType, InvalidMimeType>(InvalidMimeType{});
 }
 
 std::optional<std::tuple<size_t, size_t>> extract_range(std::string_view range_query,
@@ -159,8 +159,8 @@ std::optional<std::tuple<size_t, size_t>> extract_range(std::string_view range_q
   auto end_str = range_query.substr(dash_pos + 1);
 
   auto to_size = [](std::string_view s) -> std::optional<size_t> {
-    size_t v;
-    auto [ptr, ec] = std::from_chars(s.begin(), s.end(), v);
+    size_t v = 0;
+    auto [ptr, ec] = std::from_chars(&*s.begin(), &*s.end(), v);
     return ec == std::errc() ? std::optional<size_t>(v) : std::nullopt;
   };
 
@@ -195,6 +195,44 @@ std::optional<std::tuple<size_t, size_t>> extract_range(std::string_view range_q
   }
 
   return std::optional<std::tuple<size_t, size_t>>{{start_range, end_range}};
+}
+
+// https://fetch.spec.whatwg.org/#abort-fetch
+bool abort_fetch(JSContext *cx, HandleObject promise, HandleObject request, HandleObject response, HandleValue error) {
+  // 1. Reject promise with error.
+  // This is a no-op if promise has already fulfilled.
+  JS_SetPendingException(cx, error);
+
+  if (!RejectPromiseWithPendingError(cx, promise)) {
+    return false;
+  }
+
+  // 2. If request's body is non-null and is readable, then cancel request's body with error.
+  if (request && RequestOrResponse::has_body(request)) {
+    RootedObject body(cx, RequestOrResponse::body_stream(request));
+    if (body && IsReadableStream(body) && !ReadableStreamCancel(cx, body, error)) {
+      return false;
+    }
+  }
+
+  // 3. If responseObject is null, then return.
+  if (!response) {
+    return true;
+  }
+
+  // 4. Let response be responseObject's response.
+  // (Implicit)
+
+  // 5. If response's body is non-null and is readable, then error response's body with error.
+  if (response && RequestOrResponse::has_body(response)) {
+    RootedObject body(cx, RequestOrResponse::body_stream(response));
+    if (body && IsReadableStream(body) && !ReadableStreamError(cx, body, error)) {
+      return false;
+    }
+  }
+
+  Response::set_aborted(response, error);
+  return true;
 }
 
 } // namespace builtins::web::fetch

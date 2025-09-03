@@ -13,14 +13,11 @@
 
 namespace {
 
-using builtins::web::form_data::FormData;
 using builtins::web::form_data::FormDataEntry;
 
 } // namespace
 
-namespace builtins {
-namespace web {
-namespace form_data {
+namespace builtins::web::form_data {
 
 using blob::Blob;
 using file::File;
@@ -30,13 +27,14 @@ bool FormDataIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
   JS::RootedObject form_obj(cx, &JS::GetReservedSlot(self, Slots::Form).toObject());
 
-  const auto entries = FormData::entry_list(form_obj);
+  auto *const entries = FormData::entry_list(form_obj);
   size_t index = JS::GetReservedSlot(self, Slots::Index).toInt32();
   uint8_t type = JS::GetReservedSlot(self, Slots::Type).toInt32();
 
   JS::RootedObject result(cx, JS_NewPlainObject(cx));
-  if (!result)
+  if (!result) {
     return false;
+  }
 
   if (index == entries->length()) {
     JS_DefineProperty(cx, result, "done", JS::TrueHandleValue, JSPROP_ENUMERATE);
@@ -65,8 +63,9 @@ bool FormDataIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
   switch (type) {
   case ITER_TYPE_ENTRIES: {
     JS::RootedObject pair(cx, JS::NewArrayObject(cx, 2));
-    if (!pair)
+    if (!pair) {
       return false;
+    }
     JS_DefineElement(cx, pair, 0, key_val, JSPROP_ENUMERATE);
     JS_DefineElement(cx, pair, 1, val_val, JSPROP_ENUMERATE);
     result_val = JS::ObjectValue(*pair);
@@ -110,11 +109,13 @@ const JSPropertySpec FormDataIterator::properties[] = {
 
 bool FormDataIterator::init_class(JSContext *cx, JS::HandleObject global) {
   JS::RootedObject iterator_proto(cx, JS::GetRealmIteratorPrototype(cx));
-  if (!iterator_proto)
+  if (!iterator_proto) {
     return false;
+  }
 
-  if (!init_class_impl(cx, global, iterator_proto))
+  if (!init_class_impl(cx, global, iterator_proto)) {
     return false;
+  }
 
   // Delete both the `FormDataIterator` global property and the
   // `constructor` property on `FormDataIterator.prototype`. The latter
@@ -127,8 +128,9 @@ JSObject *FormDataIterator::create(JSContext *cx, JS::HandleObject form, uint8_t
   MOZ_RELEASE_ASSERT(type <= ITER_TYPE_VALUES);
 
   JS::RootedObject self(cx, JS_NewObjectWithGivenProto(cx, &class_, proto_obj));
-  if (!self)
+  if (!self) {
     return nullptr;
+  }
 
   JS::SetReservedSlot(self, Slots::Form, JS::ObjectValue(*form));
   JS::SetReservedSlot(self, Slots::Type, JS::Int32Value(type));
@@ -169,8 +171,8 @@ BUILTIN_ITERATOR_METHODS(FormData)
 FormData::EntryList *FormData::entry_list(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
 
-  auto entries = static_cast<EntryList *>(
-      JS::GetReservedSlot(self, static_cast<size_t>(FormData::Slots::Entries)).toPrivate());
+  auto *entries = static_cast<EntryList *>(
+      JS::GetReservedSlot(self, static_cast<size_t>(Slots::Entries)).toPrivate());
 
   MOZ_ASSERT(entries);
   return entries;
@@ -185,7 +187,7 @@ JSObject *create_opts(JSContext *cx, HandleObject blob) {
   }
 
   RootedString type(cx, Blob::type(blob));
-  if (JS_GetStringLength(type)) {
+  if (JS_GetStringLength(type) != 0U) {
     RootedValue type_val(cx, JS::StringValue(type));
     if (!JS_DefineProperty(cx, opts, "type", type_val, JSPROP_ENUMERATE)) {
       return nullptr;
@@ -210,7 +212,7 @@ JSObject *create_opts(JSContext *cx, HandleObject blob) {
 // Note: all uses of `create-an-entry` immediately append it, too, so that part is folded in here.
 bool FormData::append(JSContext *cx, HandleObject self, std::string_view name, HandleValue value,
                       HandleValue filename) {
-  auto entries = entry_list(self);
+  auto *entries = entry_list(self);
 
   // To create an entry given a string name, a string or Blob object value,
   // and optionally a scalar value string filename:
@@ -258,7 +260,7 @@ bool FormData::append(JSContext *cx, HandleObject self, std::string_view name, H
     filename_val = filename;
   }
 
-  HandleValueArray arr = HandleValueArray(value);
+  auto arr = HandleValueArray(value);
   RootedObject file_bits(cx, NewArrayObject(cx, arr));
   if (!file_bits) {
     return false;
@@ -319,8 +321,8 @@ bool FormData::get(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  auto entries = entry_list(self);
-  auto it = std::find_if(entries->begin(), entries->end(), [&](const FormDataEntry &entry) {
+  auto *entries = entry_list(self);
+  auto *it = std::find_if(entries->begin(), entries->end(), [&](const FormDataEntry &entry) {
     return entry.name == std::string_view(name);
   });
 
@@ -341,7 +343,7 @@ bool FormData::getAll(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  auto entries = entry_list(self);
+  auto *entries = entry_list(self);
 
   JS::RootedObject array(cx, JS::NewArrayObject(cx, 0));
   if (!array) {
@@ -370,8 +372,8 @@ bool FormData::has(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  auto entries = entry_list(self);
-  auto it = std::find_if(entries->begin(), entries->end(), [&](const FormDataEntry &entry) {
+  auto *entries = entry_list(self);
+  auto *it = std::find_if(entries->begin(), entries->end(), [&](const FormDataEntry &entry) {
     return entry.name == std::string_view(name);
   });
 
@@ -390,17 +392,17 @@ bool FormData::set(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  auto entries = entry_list(self);
-  auto it = std::find_if(entries->begin(), entries->end(), [&](const FormDataEntry &entry) {
+  auto *entries = entry_list(self);
+  auto *it = std::find_if(entries->begin(), entries->end(), [&](const FormDataEntry &entry) {
     return entry.name == std::string_view(name);
   });
 
   if (it != entries->end()) {
     it->value = value;
     return true;
-  } else {
-    return append(cx, self, name, value, filename);
   }
+
+  return append(cx, self, name, value, filename);
 }
 
 JSObject *FormData::create(JSContext *cx) {
@@ -409,7 +411,13 @@ JSObject *FormData::create(JSContext *cx) {
     return nullptr;
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Entries), JS::PrivateValue(new EntryList));
+  auto entries = js::MakeUnique<EntryList>();
+  if (entries == nullptr) {
+    JS_ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  SetReservedSlot(self, static_cast<uint32_t>(Slots::Entries), JS::PrivateValue(entries.release()));
   return self;
 }
 
@@ -439,15 +447,22 @@ bool FormData::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 void FormData::finalize(JS::GCContext *gcx, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  auto entries = entry_list(self);
-  if (entries) {
-    free(entries);
+  auto *entries = entry_list(self);
+  if (!entries) {
+    js_delete(entries);
   }
 }
 
 void FormData::trace(JSTracer *trc, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  auto entries = entry_list(self);
+
+  const JS::Value val = JS::GetReservedSlot(self, static_cast<size_t>(Slots::Entries));
+  if (val.isNullOrUndefined()) {
+    // Nothing to trace
+    return;
+  }
+
+  auto *entries = entry_list(self);
   entries->trace(trc);
 }
 
@@ -480,6 +495,4 @@ bool install(api::Engine *engine) {
   return true;
 }
 
-} // namespace form_data
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::form_data

@@ -1,0 +1,14 @@
+{
+  "Fetch ../resources/top.txt with no-cors mode": {
+    "status": "PASS"
+  },
+  "Fetch http://web-platform.test:8000/fetch/api/resources/top.txt with no-cors mode": {
+    "status": "PASS"
+  },
+  "Fetch https://web-platform.test:8443/fetch/api/resources/top.txt with no-cors mode": {
+    "status": "FAIL"
+  },
+  "Fetch http://web-platform.test:47413/fetch/api/resources/top.txt with no-cors mode": {
+    "status": "FAIL"
+  }
+}

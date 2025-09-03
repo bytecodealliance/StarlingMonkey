@@ -3,9 +3,9 @@
 
 #include "builtin.h"
 
-namespace builtins {
-namespace web {
-namespace crypto {
+
+
+namespace builtins::web::crypto {
 
 // FROM RFC 4122
 // The version 4 UUID is meant for generating UUIDs from truly-random or
@@ -22,8 +22,8 @@ namespace crypto {
 // Set all the other bits to randomly (or pseudo-randomly) chosen values.
 std::optional<std::string> random_uuid_v4(JSContext *cx);
 
-} // namespace crypto
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::crypto
+
+
 
 #endif // BUILTINS_WEB_CRYPTO_UUID_H

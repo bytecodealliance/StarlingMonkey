@@ -4,15 +4,15 @@
 #include "builtin.h"
 #include "rust-url.h"
 
-namespace builtins {
-namespace web {
-namespace url {
+
+
+namespace builtins::web::url {
 
 class URLSearchParamsIterator : public BuiltinNoConstructor<URLSearchParamsIterator> {
 public:
   static constexpr const char *class_name = "URLSearchParamsIterator";
 
-  enum Slots { Params, Type, Index, Count };
+  enum Slots : uint8_t { Params, Type, Index, Count };
 
   static bool next(JSContext *cx, unsigned argc, JS::Value *vp);
 
@@ -44,7 +44,7 @@ class URLSearchParams : public BuiltinNoConstructor<URLSearchParams> {
 public:
   static constexpr const char *class_name = "URLSearchParams";
 
-  enum Slots { Url, Params, Count };
+  enum Slots : uint8_t { Url, Params, Count };
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -64,7 +64,7 @@ public:
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
 };
 
-class URL : public FinalizableBuiltinImpl<URL> {
+class URL : public BuiltinImpl<URL, FinalizableClassPolicy> {
   static bool hash_set(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool host_set(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool hostname_set(JSContext *cx, unsigned argc, JS::Value *vp);
@@ -97,7 +97,7 @@ class URL : public FinalizableBuiltinImpl<URL> {
 public:
   static constexpr const char *class_name = "URL";
 
-  enum Slots { Url, Params, Count };
+  enum Slots : uint8_t { Url, Params, Count };
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
@@ -106,6 +106,7 @@ public:
   static const unsigned ctor_length = 1;
 
   static const jsurl::JSUrl *url(JSObject *self);
+  static jsurl::JSUrl *url_mut(JSObject *self);
   static jsurl::SpecString origin(JSContext *cx, JS::HandleObject self);
 
   static bool origin(JSContext *cx, JS::HandleObject self, JS::MutableHandleValue rval);
@@ -136,13 +137,13 @@ public:
 
   static bool init_class(JSContext *cx, JS::HandleObject global);
   static bool constructor(JSContext *cx, unsigned argc, JS::Value *vp);
-  static void finalize(JS::GCContext *gcx, JSObject *obj);
+  static void finalize(JS::GCContext *gcx, JSObject *self);
 };
 
 bool install(api::Engine *engine);
 
-} // namespace url
-} // namespace web
-} // namespace builtins
+} // namespace builtins::web::url
+
+
 
 #endif
