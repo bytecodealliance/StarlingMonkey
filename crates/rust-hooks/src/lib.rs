@@ -11,10 +11,7 @@ use std::ops::Deref;
 use std::os::raw::c_char;
 use std::os::raw::c_int;
 use std::panic;
-#[cfg(feature = "panic_hook")]
 use std::panic::PanicHookInfo;
-#[cfg(not(feature = "panic_hook"))]
-use std::panic::PanicInfo as PanicHookInfo;
 
 #[link(name = "wrappers")]
 extern "C" {
