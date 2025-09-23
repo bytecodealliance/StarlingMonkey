@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/bytecodealliance/StarlingMonkey/compare/v0.2.0...v0.2.1) (2025-09-23)
+
+
+### Bug Fixes
+
+* **ci:** build starling target in release job ([#271](https://github.com/bytecodealliance/StarlingMonkey/issues/271)) ([d360913](https://github.com/bytecodealliance/StarlingMonkey/commit/d360913a650b0f25ce52459008dca352948d89db))
+* deprecation warning in panic hook ([#272](https://github.com/bytecodealliance/StarlingMonkey/issues/272)) ([66dd74c](https://github.com/bytecodealliance/StarlingMonkey/commit/66dd74c5e60fec833ede4d6ffaa84d2a7b6962f6))
+
 ## [0.2.0](https://github.com/bytecodealliance/StarlingMonkey/compare/v0.1.0...v0.2.0) (2025-08-29)
 
 
