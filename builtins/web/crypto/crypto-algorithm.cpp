@@ -1742,8 +1742,97 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
       auto ecKey = CryptoKeyECComponents::createPrivate(x_sv, y_sv, d_sv);
       return CryptoKey::createECDSA(cx, this, std::move(ecKey), extractable, usages);
     }
-    case CryptoKeyFormat::Raw:
     case CryptoKeyFormat::Spki: {
+      if (!usages.isEmpty() && !usages.canOnlyVerify()) {
+        DOMException::raise(cx, "SPKI public keys only support 'verify' operations", "SyntaxError");
+        return nullptr;
+      }
+
+      auto keyBytes = std::get<std::span<uint8_t>>(key_data);
+      const uint8_t *data = keyBytes.data();
+
+      EvpPkeyPtr pkey(d2i_PUBKEY(nullptr, &data, keyBytes.size()));
+      if (!pkey) {
+        DOMException::raise(cx, "Invalid SPKI key data", "DataError");
+        return nullptr;
+      }
+
+      if (EVP_PKEY_id(pkey.get()) != EVP_PKEY_EC) {
+        DOMException::raise(cx, "SPKI key is not an EC key", "DataError");
+        return nullptr;
+      }
+
+      char curve_name[64];
+      size_t curve_name_len = sizeof(curve_name);
+      if (EVP_PKEY_get_utf8_string_param(pkey.get(), OSSL_PKEY_PARAM_GROUP_NAME, curve_name,
+                                          sizeof(curve_name), &curve_name_len) == 0) {
+        DOMException::raise(cx, "Failed to get EC curve name", "DataError");
+        return nullptr;
+      }
+
+      std::string curveName(curve_name, curve_name_len);
+      NamedCurve actualCurve;
+      if (curveName == "prime256v1") {
+        actualCurve = NamedCurve::P256;
+      } else if (curveName == "secp384r1") {
+        actualCurve = NamedCurve::P384;
+      } else if (curveName == "secp521r1") {
+        actualCurve = NamedCurve::P521;
+      } else {
+        DOMException::raise(cx, "Unsupported curve in SPKI key", "DataError");
+        return nullptr;
+      }
+
+      if (actualCurve != this->namedCurve) {
+        DOMException::raise(cx, "SPKI curve does not match expected curve", "DataError");
+        return nullptr;
+      }
+
+      BIGNUM *x_raw = nullptr;
+      BIGNUM *y_raw = nullptr;
+
+      if ((EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_EC_PUB_X, &x_raw) == 0) ||
+          (EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_EC_PUB_Y, &y_raw) == 0)) {
+        DOMException::raise(cx, "Failed to extract EC parameters", "DataError");
+        return nullptr;
+      }
+
+      BignumPtr x(x_raw);
+      BignumPtr y(y_raw);
+
+      if (!x || !y) {
+        DOMException::raise(cx, "Invalid EC public key", "DataError");
+        return nullptr;
+      }
+
+      size_t coordSize = 0;
+      switch (actualCurve) {
+      case NamedCurve::P256:
+        coordSize = 32;
+        break;
+      case NamedCurve::P384:
+        coordSize = 48;
+        break;
+      case NamedCurve::P521:
+        coordSize = 66;
+        break;
+      }
+
+      auto [x_bytes, x_size] = to_bytes_expand(cx, x.get(), coordSize);
+      auto [y_bytes, y_size] = to_bytes_expand(cx, y.get(), coordSize);
+
+      if (!x_bytes || !y_bytes) {
+        JS_ReportOutOfMemory(cx);
+        return nullptr;
+      }
+
+      std::string_view x_sv(reinterpret_cast<const char *>(x_bytes.get()), x_size);
+      std::string_view y_sv(reinterpret_cast<const char *>(y_bytes.get()), y_size);
+
+      auto ecKey = CryptoKeyECComponents::createPublic(x_sv, y_sv);
+      return CryptoKey::createECDSA(cx, this, std::move(ecKey), extractable, usages);
+    }
+    case CryptoKeyFormat::Raw: {
       MOZ_ASSERT(false);
       // TODO finish this
     }
@@ -1766,7 +1855,8 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
       data = jwk.release();
       break;
     }
-    case CryptoKeyFormat::Pkcs8: {
+    case CryptoKeyFormat::Pkcs8:
+    case CryptoKeyFormat::Spki: {
       std::optional<std::span<uint8_t>> buffer = value_to_buffer(cx, key_data, "");
       if (!buffer.has_value()) {
         return nullptr;
@@ -1774,8 +1864,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
       data = buffer.value();
       break;
     }
-    case CryptoKeyFormat::Raw:
-    case CryptoKeyFormat::Spki: {
+    case CryptoKeyFormat::Raw: {
       // TODO finish this
       DOMException::raise(cx, "Supplied format is not yet supported", "NotSupportedError");
       return nullptr;
@@ -2113,8 +2202,58 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
     return CryptoKey::createRSA(cx, this, std::move(rsa_key), extractable, usages);
   }
   case CryptoKeyFormat::Spki: {
-    // TODO: Add implementations for these
-    [[fallthrough]];
+    if (!usages.isEmpty() && !usages.canOnlyVerify()) {
+      DOMException::raise(cx, "SPKI public keys only support 'verify' operations", "SyntaxError");
+      return nullptr;
+    }
+
+    auto keyBytes = std::get<std::span<uint8_t>>(key_data);
+    const uint8_t *data = keyBytes.data();
+
+    EvpPkeyPtr pkey(d2i_PUBKEY(nullptr, &data, keyBytes.size()));
+    if (!pkey) {
+      DOMException::raise(cx, "Invalid SPKI key data", "DataError");
+      return nullptr;
+    }
+
+    if (EVP_PKEY_id(pkey.get()) != EVP_PKEY_RSA) {
+      DOMException::raise(cx, "SPKI key is not an RSA key", "DataError");
+      return nullptr;
+    }
+
+    // Extract RSA public key parameters (n and e)
+    BIGNUM *n_raw = nullptr;
+    BIGNUM *e_raw = nullptr;
+
+    if ((EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_N, &n_raw) == 0) ||
+        (EVP_PKEY_get_bn_param(pkey.get(), OSSL_PKEY_PARAM_RSA_E, &e_raw) == 0)) {
+      DOMException::raise(cx, "Failed to extract RSA parameters", "DataError");
+      return nullptr;
+    }
+
+    BignumPtr n(n_raw);
+    BignumPtr e(e_raw);
+
+    if (!n || !e) {
+      DOMException::raise(cx, "Invalid RSA public key", "DataError");
+      return nullptr;
+    }
+
+    // Convert parameters to byte arrays
+    auto [modulus_bytes, modulus_size] = to_bytes_expand(cx, n.get(), 0);
+    auto [exponent_bytes, exponent_size] = to_bytes_expand(cx, e.get(), 0);
+
+    if (!modulus_bytes || !exponent_bytes) {
+      JS_ReportOutOfMemory(cx);
+      return nullptr;
+    }
+
+    std::string_view modulus_sv(reinterpret_cast<const char *>(modulus_bytes.get()), modulus_size);
+    std::string_view exponent_sv(reinterpret_cast<const char *>(exponent_bytes.get()), exponent_size);
+
+    // Create RSA public key
+    auto rsa_key = CryptoKeyRSAComponents::createPublic(modulus_sv, exponent_sv);
+    return CryptoKey::createRSA(cx, this, std::move(rsa_key), extractable, usages);
   }
   default: {
     DOMException::raise(cx, "Supplied format is not supported", "DataError");
