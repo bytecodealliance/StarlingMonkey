@@ -1743,7 +1743,7 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
       return CryptoKey::createECDSA(cx, this, std::move(ecKey), extractable, usages);
     }
     case CryptoKeyFormat::Spki: {
-      if (!usages.isEmpty() && !usages.canOnlyVerify()) {
+      if (!usages.canOnlyVerify()) {
         DOMException::raise(cx, "SPKI public keys only support 'verify' operations", "SyntaxError");
         return nullptr;
       }
