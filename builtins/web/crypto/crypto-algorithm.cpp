@@ -979,8 +979,7 @@ JS::Result<bool> CryptoAlgorithmECDSA_Sign_Verify::verify(JSContext *cx, JS::Han
 
   size_t coordSize = num_bits_to_bytes(keySize.unwrap());
   if (signature.size() != coordSize * 2) {
-    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
-    return JS::Result<bool>(JS::Error());
+    return false;
   }
 
   BignumPtr r(BN_bin2bn(signature.data(), coordSize, nullptr));
