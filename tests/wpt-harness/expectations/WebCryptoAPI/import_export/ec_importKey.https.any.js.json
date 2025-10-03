@@ -63,10 +63,10 @@
     "status": "FAIL"
   },
   "Good parameters: P-256 bits (spki, buffer(91), {name: ECDSA, namedCurve: P-256}, false, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-256 bits (spki, buffer(59, compressed), {name: ECDSA, namedCurve: P-256}, false, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-256 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-256}, false, [verify])": {
     "status": "PASS"
@@ -93,10 +93,10 @@
     "status": "FAIL"
   },
   "Good parameters: P-256 bits (spki, buffer(91), {name: ECDSA, namedCurve: P-256}, false, [verify, verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-256 bits (spki, buffer(59, compressed), {name: ECDSA, namedCurve: P-256}, false, [verify, verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-256 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-256}, false, [verify, verify])": {
     "status": "PASS"
@@ -189,10 +189,10 @@
     "status": "FAIL"
   },
   "Good parameters: P-384 bits (spki, buffer(120), {name: ECDSA, namedCurve: P-384}, false, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-384 bits (spki, buffer(72, compressed), {name: ECDSA, namedCurve: P-384}, false, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-384 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-384}, false, [verify])": {
     "status": "PASS"
@@ -219,10 +219,10 @@
     "status": "FAIL"
   },
   "Good parameters: P-384 bits (spki, buffer(120), {name: ECDSA, namedCurve: P-384}, false, [verify, verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-384 bits (spki, buffer(72, compressed), {name: ECDSA, namedCurve: P-384}, false, [verify, verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-384 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-384}, false, [verify, verify])": {
     "status": "PASS"
@@ -315,10 +315,10 @@
     "status": "FAIL"
   },
   "Good parameters: P-521 bits (spki, buffer(158), {name: ECDSA, namedCurve: P-521}, false, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-521 bits (spki, buffer(90, compressed), {name: ECDSA, namedCurve: P-521}, false, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-521 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-521}, false, [verify])": {
     "status": "PASS"
@@ -345,10 +345,10 @@
     "status": "FAIL"
   },
   "Good parameters: P-521 bits (spki, buffer(158), {name: ECDSA, namedCurve: P-521}, false, [verify, verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-521 bits (spki, buffer(90, compressed), {name: ECDSA, namedCurve: P-521}, false, [verify, verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Good parameters: P-521 bits (jwk, object(kty, crv, x, y), {name: ECDSA, namedCurve: P-521}, false, [verify, verify])": {
     "status": "PASS"

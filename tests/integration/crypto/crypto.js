@@ -75,14 +75,26 @@ function base64ToArrayBuffer(b64) {
 const ecdsaP256Pkcs8 = base64ToArrayBuffer(
   `MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg9+kCK7f6pqJhDk71sqDp+c0R6Y8h5Zq1Yzk8l6aULSehRANCAATmqlo5vDVhxTExquFDjVFNDdjiODbfvZmruJQhJO9JIl/VYdSOlQtLcgEzShv+MJ88HqvxPNlkPrKLDMejB1BE`,
 );
+const ecdsaP256Spki = base64ToArrayBuffer(
+  `MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE4P7+DJBk6R8R6HRSDLaakl0k83D+MYGqLUEO2DcyB8cAZvGxJRYDakQZuQc/BpYgPTs/C4u4nGr2sQ08cV87xQ==`,
+);
 const ecdsaP384Pkcs8 = base64ToArrayBuffer(
   `MIG2AgEAMBAGByqGSM49AgEGBSuBBAAiBIGeMIGbAgEBBDBUiVVDYE7TA1iib5lEUReaejNpqSuv1hmYYRRsm9zHIslS+z9YjIjMe9UP9pwuOBOhZANiAATv3ew0tmfIjO4rcKB4CirOjvTO+cZBOQpizR+oNnMhhcaFGpewkUzpEQ/du893jA5kANEtzKsplaIAql16zDwr15e8YA73ChHv1RLzapqFHnmD3jbYTzYpEaWlkUDTTWI=`,
+);
+const ecdsaP384Spki = base64ToArrayBuffer(
+  `MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEsKinmo/3Ti72/i4papPRvi1DKCe+Cd1N+4osN3OeVYe7KmzfTBX7+deLI1bu9TzXm9VeIa7+omKPXBrLVBB3BN/U3eQW097jG9BX4+91rwW4i/vESlxCGSbb9FhLfxxw`,
 );
 const ecdsaP521Pkcs8 = base64ToArrayBuffer(
   `MIHuAgEAMBAGByqGSM49AgEGBSuBBAAjBIHWMIHTAgEBBEIAGBugOxmjib54TudV/c8teIoAKTC0lYPqgphDS1EEqpxp6IPKQFRBISB6GcxyXHBfqgDv4uVYy2BECzdgRmaEzKihgYkDgYYABAABos1qChbTBstc+4EBpivvNkVy9I1eVQAJhoFEail50sxob/1RMDBYO744Xa2MZz/gssUnVwvJpPmXhDa86omB5gEBLsJ77j3MaY7cZ3ZGL1X2fCWL5VjqxrMj9IQ7N+qrCD86WWnBHa49TnuLHkF+Dw0qe2S3QsmbM8zJ5+o7t1pWBA==`,
 );
+const ecdsaP521Spki = base64ToArrayBuffer(
+  `MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQBy8hKSiiCilqsLQc9/a2uzv9jVruRvz4T/+ftCXqTXPPtVzuVMOupiV92RUAP/1cbordlIbmRHcHESZ3PKENoSxQAajLUC+7f08O4kCc/hrwT5DYGuSJYEhXsFIVzszEOAOxgNo3KquhpQZetawTeiGBPoKAMe7DFvMQ7MbzvNIHEZhg=`,
+);
 const rsa2048Pkcs8 = base64ToArrayBuffer(
   `MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCRE7mySLjyeokRW/J5qFKc1HSNg/1sbk482ETmiiGUa+537x9H2WqBJ4/ZjQq05LwevKWYuwMW/pAImnwnnIetQ+VN5iAMmo3A1ksIKx+32gQV9DXmK9QI5mYzIH8CJOTEZUlljhrZ4j1yteFtRXD0D8Tr7z+54FO6qISaVGgrWLfGqcBehXmKrf0Iu4oQ3qa4QTDagQU+CVseD5dau5WG16UEJu9tbzQWjnKhuMPVo3vq0/c9pqsJjkGL2AhOBLgpnuWgsXEqhm7ztd5ueuHfbwQCeqjYOwk5j9Bcu6uvTQ8b3fjZhAv2mSnciyCjsl+oZ75fpTZ3ymsHDYXKKyszAgMBAAECggEAEMYoluIMrFCZr42jjAh3wNVZwpELyLE6T5Or58H53vjZwjk+MycCxvsliUBjCAZYb+9c8DtTQKHfUndWOphBIbnzdd3RP9PQ5wZ/92pRCQdmqIkrgDj6E6tcDrZHqR5N6x1Q7rKPDTk45J39+g3o4Pc/zA3GHv4+gBsC9fsjbjtvq5DCO0tqmzKWAe6CtX0JnHiumqv9WD2h5ApXqDfrNdwo+nqYzuA3spAk+yAsEssqGW+2+hK0wOhl/75Yo762sAkR+9W8KWRh2TDWyUSIokcKypjokAYdFkT4MCP7o3FZg/YShLgK6EsulrPBKtFkU28gP25w5OqcK/krsDTf/QKBgQDJxKVw5iE1u7EBAYHOCC/EgKL522HaDZEQa1g8mWYDvv0QohyPdR/om19Xcdyo4RpSXxJSZvO//hBwJ6h8gbF1fb0JducMCJKR8qxYgSdCs52EoQwtJkOnsCQ1L69TEDHW31hHTAvwtTPPyaKzoD47yh03Gv2Qtqw7O4dLnqr5LQKBgQC4EkCn6mQ8BHZQSRZXPRuhuQ1pvtPDAgRw8/IZPttkJUnaewV7vdQQfAReHwwFgN4Qz/1tkyh1lxUw+qHTP6tn4FcogH2NjRkI4yYSVKlrjiQy9LlcS4bO5noigwpK9VL3Dl65YXaQpPAoiH/M7KoJuadcftMvMYSVbpsrAUSx3wKBgAfYMWZ2TAw+w976JAXSo6jMJ4n3UZKcvGsbAU8515GFt2kSJHIfZ6IviEFqF94pAlD5iUjS398zDYiOwio1EKU0wki/6rO5EZnDCZhXTSN2wEULzeFjf3Xhj0bSF8ru8kEcZd4/wqcVJHKLsFuzezfv37rovbsGnyOeaOAzxwnxAoGANdkBGR40nGohwnLfGj5CKxlblyfAAzg/3FtA46nDvJQ7+rIqdHyf4QKmtHIYrjN4wypVVQzLtTqxdFadqJLjrcuvM6YDFLnGLRdmN86UkWZPqKh24U0m7rf12srC5BLIZoXJqCme6cmWiAUGfght5dJt510iope11ZE5y2bflbkCgYEApcgQs8TvOWxRGSPdgd7pz2TXtgs+J17T0X+h/RqP7S7CxFAJ01loFCswA1Gl/Kdw0ShdXEMXOHLXTyVOy2q1suBfT5bb5nQh9GnYr96Cs4qPqbK/MwniREeJLpGLW3COHPhNQIZG2L4mSpkA+07UOMcQF+BwuoVnDOhUs8cNEuo=`,
+);
+const rsa2048Spki = base64ToArrayBuffer(
+  `MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvuj+4WNu+G/s+90tjtLBEXpaVQHFOvVBzZ/vMplfYMF1hI5X0iFJlyV06qNCCTaEtNzbzueJfKWzoar6cxzGCumvquXXLIZ/Gg9y9hOwotakJBoE5imhZ12Z37SgRUUC8TkCKyh1C+PCwcf8W9cOFT0RUg82ed5ByRM0VEV4TvUngZH61nu02zUg/fr7HUDIj7e6N/0wjtqIiQuc9dzAk1lt7qo47w35w0njGwhE/VuVrSTILmdRvroMt2nZ1O+c054DbiBlqSsXeaW99YGewT0d2RKdLnf0myvDBuQcFqZUnt26nD2Q2DDI17Mo8MaOmQzgrZ5iVufZ8lC86t18iwIDAQAB`,
 );
 const rsa3072Pkcs8 = base64ToArrayBuffer(
   `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`,
@@ -1668,6 +1680,102 @@ export const handler = serveTest(async (t) => {
         strictEqual(keyP256.algorithm.name, "ECDSA", "P-256 algorithm");
         strictEqual(keyP384.algorithm.name, "ECDSA", "P-384 algorithm");
         strictEqual(keyP521.algorithm.name, "ECDSA", "P-521 algorithm");
+      });
+
+      // SPKI ECDSA Tests
+      await t.test("spki-ecdsa-p256", async () => {
+        const key = await crypto.subtle.importKey(
+          "spki",
+          ecdsaP256Spki,
+          ecdsaP256Algorithm,
+          true,
+          ["verify"],
+        );
+
+        strictEqual(key instanceof CryptoKey, true, "key instanceof CryptoKey");
+        deepStrictEqual(
+          key.algorithm,
+          {
+            name: "ECDSA",
+            namedCurve: "P-256",
+          },
+          "key.algorithm",
+        );
+        strictEqual(key.extractable, true, "key.extractable");
+        strictEqual(key.type, "public", "key.type");
+        deepStrictEqual(key.usages, ["verify"], "key.usages");
+      });
+
+      await t.test("spki-ecdsa-p384", async () => {
+        const key = await crypto.subtle.importKey(
+          "spki",
+          ecdsaP384Spki,
+          ecdsaP384Algorithm,
+          true,
+          ["verify"],
+        );
+
+        strictEqual(key instanceof CryptoKey, true, "key instanceof CryptoKey");
+        deepStrictEqual(
+          key.algorithm,
+          {
+            name: "ECDSA",
+            namedCurve: "P-384",
+          },
+          "key.algorithm",
+        );
+        strictEqual(key.extractable, true, "key.extractable");
+        strictEqual(key.type, "public", "key.type");
+        deepStrictEqual(key.usages, ["verify"], "key.usages");
+      });
+
+      await t.test("spki-ecdsa-p521", async () => {
+        const key = await crypto.subtle.importKey(
+          "spki",
+          ecdsaP521Spki,
+          ecdsaP521Algorithm,
+          true,
+          ["verify"],
+        );
+
+        strictEqual(key instanceof CryptoKey, true, "key instanceof CryptoKey");
+        deepStrictEqual(
+          key.algorithm,
+          {
+            name: "ECDSA",
+            namedCurve: "P-521",
+          },
+          "key.algorithm",
+        );
+        strictEqual(key.extractable, true, "key.extractable");
+        strictEqual(key.type, "public", "key.type");
+        deepStrictEqual(key.usages, ["verify"], "key.usages");
+      });
+
+      // SPKI RSA Test
+      await t.test("spki-rsa-2048-pkcs1-sha256", async () => {
+        const key = await crypto.subtle.importKey(
+          "spki",
+          rsa2048Spki,
+          rsaPkcs1Sha256Algorithm,
+          true,
+          ["verify"],
+        );
+
+        strictEqual(key instanceof CryptoKey, true, "key instanceof CryptoKey");
+        deepStrictEqual(
+          key.algorithm,
+          {
+            name: "RSASSA-PKCS1-v1_5",
+            hash: { name: "SHA-256" },
+            modulusLength: 2048,
+            publicExponent: new Uint8Array([1, 0, 1]),
+          },
+          "key.algorithm",
+        );
+        strictEqual(key.extractable, true, "key.extractable");
+        strictEqual(key.type, "public", "key.type");
+        deepStrictEqual(key.usages, ["verify"], "key.usages");
       });
     }
   }
