@@ -619,16 +619,11 @@ export class SourceMap {
 
     // use source-map utilities to normalize sources entries
     this._sources = sm.sources.map(util.normalize).map((source: any) => {
-      if (this._sourceRoot && util.isAbsolute(this._sourceRoot) && util.isAbsolute(source)) {
+      if (this._sourceRoot && PathUtils.isAbsolutePath(this._sourceRoot) && PathUtils.isAbsolutePath(source)) {
         return util.relative(this._sourceRoot, source);
       } else {
         return source;
       }
-      // return this._sourceRoot &&
-      //   util.isAbsolute(this._sourceRoot) &&
-      //   util.isAbsolute(source)
-      //   ? util.relative(this._sourceRoot, source)
-      //   : source;
     });
 
 		return new SM.SourceMapConsumer(sm).then(x => {
@@ -650,7 +645,7 @@ export class SourceMap {
   public allSourcePaths(): string[] {
     const paths = new Array<string>();
     for (let name of this._sources!) {
-      if (!util.isAbsolute(name)) {
+      if (!PathUtils.isAbsolutePath(name)) {
         name = util.join(this._sourceRoot, name);
       }
       paths.push(name);

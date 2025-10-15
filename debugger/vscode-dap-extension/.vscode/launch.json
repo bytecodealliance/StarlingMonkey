@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Extension",
+      "name": "Extension test (JS)",
       "type": "extensionHost",
       "request": "launch",
       "args": [
@@ -15,19 +15,18 @@
       "preLaunchTask": "npm: watch"
     },
     {
-      "name": "Web Extension",
+      "name": "Extension test (TS)",
       "type": "extensionHost",
       "debugWebWorkerHost": true,
       "request": "launch",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionDevelopmentKind=web",
         "${workspaceFolder}/tests/ts"
       ],
       "outFiles": [
         "${workspaceFolder}/dist/**/*.js"
       ],
-      "preLaunchTask": "npm: watch web"
+      "preLaunchTask": "npm: watch"
     },
     // TODO: enable the server configuration, once passing the required arguments is figured out
     // {
