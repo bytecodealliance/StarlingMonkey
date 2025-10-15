@@ -520,6 +520,9 @@ bool Engine::debugging_enabled() {
   return config_->debugging;
 }
 bool Engine::wpt_mode() { return config_->wpt_mode; }
+const mozilla::Maybe<std::string> &Engine::init_location() const {
+  return config_->init_location;
+}
 
 void Engine::finish_pre_initialization() {
   MOZ_ASSERT(state_ == EngineState::ScriptPreInitializing);

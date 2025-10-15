@@ -32,6 +32,7 @@ struct EngineConfig {
   mozilla::Maybe<std::string> content_script_path = mozilla::Nothing();
   mozilla::Maybe<std::string> content_script = mozilla::Nothing();
   mozilla::Maybe<std::string> path_prefix = mozilla::Nothing();
+  mozilla::Maybe<std::string> init_location = mozilla::Nothing();
   bool module_mode = true;
 
   /**
@@ -84,6 +85,7 @@ public:
   EngineState state();
   bool debugging_enabled();
   bool wpt_mode();
+  const mozilla::Maybe<std::string> &init_location() const;
 
   void finish_pre_initialization();
 

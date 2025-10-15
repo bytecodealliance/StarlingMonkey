@@ -99,6 +99,11 @@ public:
         }
       } else if (args[i] == "--wpt-mode") {
         config_->wpt_mode = true;
+      } else if (args[i] == "--init-location") {
+        if (i + 1 < args.size()) {
+          config_->init_location = mozilla::Some(args[i + 1]);
+          i++;
+        }
       } else if (args[i].starts_with("--")) {
         std::cerr << "Unknown option: " << args[i] << std::endl;
         exit(1);

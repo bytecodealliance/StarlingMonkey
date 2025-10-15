@@ -17,6 +17,7 @@ usage() {
   echo "       Specifying '--strip-path-prefix' will cause the provided prefix to be stripped from paths in stack traces and the debugger"
   echo "       Specifying '--legacy-script' causes evaluation as a legacy JS script instead of a module"
   echo "       Specifying '--wpt-mode' enables WPT compatibility mode"
+  echo "       Specifying '--init-location url' allows setting the URL to use for 'globalThis.location' during initialization"
   exit 1
 }
 
@@ -52,6 +53,10 @@ do
             shift 2
             ;;
         --wpt-mode)
+            STARLING_ARGS="$STARLING_ARGS $1 $2"
+            shift 2
+            ;;
+          --init-location)
             STARLING_ARGS="$STARLING_ARGS $1 $2"
             shift 2
             ;;

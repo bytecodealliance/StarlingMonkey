@@ -12,6 +12,25 @@ namespace builtins::web::worker_location {
 
 JS::PersistentRooted<JSObject *> WorkerLocation::url;
 
+namespace {
+DEF_ERR(LocationNotSetError, JSEXN_TYPEERR, "{0} can only be used during request handling, "
+                                            "or if an initialization-time location was set "
+                                            "using `--init-location`", 1)
+bool ensure_location_access(JSContext *cx, const char *name) {
+  auto *engine = api::Engine::get(cx);
+
+  if (engine->state() == api::EngineState::Initialized) {
+    return true;
+  }
+
+  if (engine->state() == api::EngineState::ScriptPreInitializing && WorkerLocation::url.get()) {
+    return true;
+  }
+
+  return api::throw_error(cx, LocationNotSetError, name);
+}
+} // namespace
+
 #define WorkerLocation_ACCESSOR_GET(field)                                                         \
   bool field##_get(JSContext *cx, unsigned argc, JS::Value *vp) {                                  \
     auto result = WorkerLocation::MethodHeaderWithName(0, cx, argc, vp, __func__);                 \
@@ -19,7 +38,9 @@ JS::PersistentRooted<JSObject *> WorkerLocation::url;
       return false;                                                                                \
     }                                                                                              \
     auto [args, self] = result.unwrap();                                                           \
-    REQUEST_HANDLER_ONLY("location." #field)                                                       \
+    if (!ensure_location_access(cx, "location." #field)) {                                         \
+      return false;                                                                                \
+    }                                                                                              \
     return url::URL::field(cx, WorkerLocation::url, args.rval());                                  \
   }
 
@@ -80,7 +101,28 @@ bool WorkerLocation::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 bool install(api::Engine *engine) {
-  return WorkerLocation::init_class(engine->cx(), engine->global());
+  if (!WorkerLocation::init_class(engine->cx(), engine->global())) {
+    return false;
+  }
+
+  const auto &init_location = engine->init_location();
+  if (init_location) {
+    // Set the URL for `globalThis.location` to the configured value.
+    JSContext *cx = engine->cx();
+    JS::RootedObject url_instance(
+        cx, JS_NewObjectWithGivenProto(cx, &url::URL::class_, url::URL::proto_obj));
+    if (!url_instance) {
+      return false;
+    }
+
+    auto *uri_bytes = new uint8_t[init_location->size() + 1];
+    std::copy(init_location->begin(), init_location->end(), uri_bytes);
+    jsurl::SpecString spec(uri_bytes, init_location->size(), init_location->size());
+
+    WorkerLocation::url = url::URL::create(cx, url_instance, spec);
+  }
+
+  return true;
 }
 
 } // namespace builtins::web::worker_location
