@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.1](https://github.com/bytecodealliance/StarlingMonkey/compare/v0.2.0...v0.2.1) (2025-10-15)
+
+
+### Features
+
+* add support for setting initialization-time script location ([176ccdd](https://github.com/bytecodealliance/StarlingMonkey/commit/176ccddf25787ea2e24fceb225bc0935719ce55b))
+* **crypto:** Add SPKI format support for ECDSA and RSA keys ([#277](https://github.com/bytecodealliance/StarlingMonkey/issues/277)) ([0a64399](https://github.com/bytecodealliance/StarlingMonkey/commit/0a643990a5664623c0f56d36ee5f2060df340ca4))
+
+
+### Bug Fixes
+
+* **ci:** build starling target in release job ([#271](https://github.com/bytecodealliance/StarlingMonkey/issues/271)) ([d360913](https://github.com/bytecodealliance/StarlingMonkey/commit/d360913a650b0f25ce52459008dca352948d89db))
+* deprecation warning in panic hook ([#272](https://github.com/bytecodealliance/StarlingMonkey/issues/272)) ([66dd74c](https://github.com/bytecodealliance/StarlingMonkey/commit/66dd74c5e60fec833ede4d6ffaa84d2a7b6962f6))
+
 ## [0.2.0](https://github.com/bytecodealliance/StarlingMonkey/compare/v0.1.0...v0.2.0) (2025-08-29)
 
 
