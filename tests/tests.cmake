@@ -56,6 +56,8 @@ test_e2e(stream-forwarding)
 test_e2e(multi-stream-forwarding)
 test_e2e(teed-stream-as-outgoing-body)
 test_e2e(init-script)
+test_e2e(no-init-location)
+test_e2e(init-location)
 
 integration_tests(
     blob

@@ -1,0 +1,2 @@
+Exception while evaluating top-level script
+e2e/no-init-location/no-init-location.js:1:9 TypeError: location.href can only be used during request handling, or if an initialization-time location was set using `--init-location`
