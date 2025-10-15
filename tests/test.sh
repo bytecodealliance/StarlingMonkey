@@ -6,6 +6,7 @@ test_component="${3:-}"
 test_name="$(basename $test_dir)"
 test_serve_path="${4:-}"
 componentize_flags="${COMPONENTIZE_FLAGS:-}"
+runtime_args_file="$test_dir/runtime-args"
 
 wasmtime="${WASMTIME:-wasmtime}"
 
@@ -42,6 +43,10 @@ if [ -z "$test_component" ]; then
 
    runtime_args="--strip-path-prefix $test_top_level $runtime_args"
 
+   if [ -f "$runtime_args_file" ]; then
+      runtime_args="$runtime_args $(cat $runtime_args_file)"
+   fi
+
    # Run Wizer
    set +e
    PREOPEN_DIR="$test_top_level" "$test_runtime/componentize.sh" $componentize_flags $runtime_args "$test_component" 1> "$stdout_log" 2> "$stderr_log"
@@ -64,6 +69,10 @@ if [ -z "$test_component" ]; then
    fi
 
    if [ -f "$test_wizer_stdout_expectation" ]; then
+      # Strip $test_top_level from stdout and stderr logs if present
+      mv "$stdout_log" "$stdout_log.orig"
+      cat "$stdout_log.orig" | sed "s|$test_top_level||g" > "$stdout_log"
+      rm "$stdout_log.orig"
       cmp -b "$stdout_log" "$test_wizer_stdout_expectation"
    fi
 
@@ -86,7 +95,7 @@ if [ -z "$test_component" ]; then
             rm "$test_component"
          fi
          exit 0
-      fi   
+      fi
    fi
 fi
 
