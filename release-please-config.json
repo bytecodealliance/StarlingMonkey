@@ -2,8 +2,14 @@
   "release-type": "simple",
   "bump-minor-pre-major": false,
   "bump-patch-for-minor-pre-major": false,
+  "include-v-in-tag": true,
   "packages": {
     ".": {
+      "exclude-paths": ["debugger/vscode-dap-extension/**"]
+    },
+    "debugger/vscode-dap-extension": {
+      "package-name": "starlingmonkey-debugger",
+      "release-type": "node",
       "include-v-in-tag": true
     }
   }
