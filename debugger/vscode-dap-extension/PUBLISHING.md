@@ -8,7 +8,7 @@ The VS Code extension is published automatically to the VS Code Marketplace when
 
 ## Workflow
 
-The publishing process uses two GitHub Actions jobs:
+The [publishing process](../../.github/workflows/vscode-extension-release.yml) uses two GitHub Actions jobs:
 
 1. **release-please**: Creates or updates a release PR when changes are detected. When this PR is merged, it creates a GitHub release with an appropriate version tag (e.g., `v0.3.0`).
 
