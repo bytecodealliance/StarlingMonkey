@@ -72,3 +72,4 @@ jobs:
         with:
           tag_name: ${{ needs.release-please.outputs.tag_name }}
           files: debugger/vscode-dap-extension/*.vsix
+          make_latest: false
