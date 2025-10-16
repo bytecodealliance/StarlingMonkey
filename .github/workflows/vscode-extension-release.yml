@@ -34,8 +34,7 @@ jobs:
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          config-file: debugger/vscode-dap-extension/release-please-config.json
-          manifest-file: debugger/vscode-dap-extension/.release-please-manifest.json
+          path: debugger/vscode-dap-extension/
 
   publish-extension:
     needs: release-please
