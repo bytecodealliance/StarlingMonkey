@@ -1,0 +1,74 @@
+# This workflow publishes the StarlingMonkey VS Code debugger extension to the VS Code Marketplace.
+# It uses release-please to manage versioning and changelog, and only triggers when files
+# in the debugger/vscode-dap-extension folder are changed.
+#
+# Prerequisites:
+# - A VSCE_PAT secret must be configured in the repository settings
+#   (get a Personal Access Token from https://dev.azure.com with Marketplace publisher access)
+# - The publisher 'bytecodealliance' must exist in the VS Code Marketplace
+#   (see https://code.visualstudio.com/api/working-with-extensions/publishing-extension)
+
+name: VS Code Debugger Extension Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'debugger/vscode-dap-extension/**'
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: googleapis/release-please-action@a02a34c4d625f9be7cb89156071d8567266a2445 #v4.2.0
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: debugger/vscode-dap-extension/release-please-config.json
+          manifest-file: debugger/vscode-dap-extension/.release-please-manifest.json
+
+  publish-extension:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 #v4.4.0
+        with:
+          node-version: 'lts/*'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        working-directory: debugger/vscode-dap-extension
+        run: npm ci
+
+      - name: Build extension
+        working-directory: debugger/vscode-dap-extension
+        run: npm run build
+
+      - name: Package extension
+        working-directory: debugger/vscode-dap-extension
+        run: npm run package
+
+      - name: Publish to VS Code Marketplace
+        working-directory: debugger/vscode-dap-extension
+        run: npm run publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Upload VSIX to Release
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 #2.3.2
+        with:
+          tag_name: ${{ needs.release-please.outputs.tag_name }}
+          files: debugger/vscode-dap-extension/*.vsix
