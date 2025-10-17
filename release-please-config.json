@@ -1,5 +1,5 @@
 {
-  "release-type": "simple",
+  "separate-pull-requests": true,
   "bump-minor-pre-major": false,
   "bump-patch-for-minor-pre-major": false,
   "include-v-in-tag": true,
@@ -7,6 +7,7 @@
   "packages": {
     ".": {
       "package-name": "starlingmonkey",
+      "release-type": "simple",
       "exclude-paths": ["debugger/vscode-dap-extension/**"]
     },
     "debugger/vscode-dap-extension": {
