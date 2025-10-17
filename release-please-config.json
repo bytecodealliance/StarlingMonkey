@@ -3,6 +3,7 @@
   "bump-minor-pre-major": false,
   "bump-patch-for-minor-pre-major": false,
   "include-v-in-tag": true,
+  "bootstrap-sha": "6cdcc0e8ba3cc8a80e026af3c0867a1f63e57d2a",
   "packages": {
     ".": {
       "package-name": "starlingmonkey",

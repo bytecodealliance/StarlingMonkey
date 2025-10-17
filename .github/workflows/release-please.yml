@@ -14,14 +14,17 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     outputs:
+      # StarlingMonkey outputs
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+      # Debugger Extension outputs
+      debugger_release_created: ${{ steps.release.outputs['debugger/vscode-dap-extension--release_created'] }}
+      debugger_tag_name: ${{ steps.release.outputs['debugger/vscode-dap-extension--tag_name'] }}
     steps:
       - uses: googleapis/release-please-action@a02a34c4d625f9be7cb89156071d8567266a2445 #v4.2.0
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: simple
 
   build-and-upload:
     needs: release-please
@@ -75,3 +78,39 @@ jobs:
         with:
           tag_name: ${{ needs.release-please.outputs.tag_name }}
           files: release-artifacts/*
+
+  publish-extension:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.debugger_release_created }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 #v4.4.0
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        working-directory: debugger/vscode-dap-extension
+        run: npm ci
+
+      - name: Build extension
+        working-directory: debugger/vscode-dap-extension
+        run: npm run build
+
+      - name: Package extension
+        working-directory: debugger/vscode-dap-extension
+        run: npm run package
+
+      - name: Publish to VS Code Marketplace
+        working-directory: debugger/vscode-dap-extension
+        run: npm run publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Upload VSIX to Release
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 #2.3.2
+        with:
+          tag_name: ${{ needs.release-please.outputs.debugger_tag_name }}
+          files: debugger/vscode-dap-extension/*.vsix
+          make_latest: false
