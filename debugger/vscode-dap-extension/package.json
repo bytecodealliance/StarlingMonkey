@@ -1,7 +1,7 @@
 {
   "name": "starlingmonkey-debugger",
   "displayName": "StarlingMonkey Debugger",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "preview": true,
   "publisher": "bytecodealliance",
   "description": "Debugger for the StarlingMonkey JS runtime",
@@ -82,10 +82,8 @@
     "request": "never"
   },
   "contributes": {
-    "menus": {
-    },
-    "commands": [
-    ],
+    "menus": {},
+    "commands": [],
     "breakpoints": [
       {
         "language": "javascript"
