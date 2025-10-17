@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.2](https://github.com/bytecodealliance/StarlingMonkey/compare/starlingmonkey-v0.2.1...starlingmonkey-v0.2.2) (2025-10-17)
+
+
+### Bug Fixes
+
+* **ci:** Fix release-please setup ([#282](https://github.com/bytecodealliance/StarlingMonkey/issues/282)) ([9d9a34b](https://github.com/bytecodealliance/StarlingMonkey/commit/9d9a34b9a1de6c5fedb65d0a44b77677bf02b9bc))
+* **ci:** Unify release-please CI workflows ([#284](https://github.com/bytecodealliance/StarlingMonkey/issues/284)) ([c5f80bd](https://github.com/bytecodealliance/StarlingMonkey/commit/c5f80bd82209913141723f14016ef4157daaf964))
+* **debugger:** Fix path normalization in debugger sourcemaps handling ([#279](https://github.com/bytecodealliance/StarlingMonkey/issues/279)) ([afcf222](https://github.com/bytecodealliance/StarlingMonkey/commit/afcf222f512eb211d1b29d7a427fc8db6dd27f84))
+
 ## [0.2.1](https://github.com/bytecodealliance/StarlingMonkey/compare/v0.2.0...v0.2.1) (2025-10-15)
 
 
