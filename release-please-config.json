@@ -8,7 +8,14 @@
     ".": {
       "package-name": "starlingmonkey",
       "release-type": "simple",
-      "exclude-paths": ["debugger/vscode-dap-extension/**"]
+      "exclude-paths": ["debugger/vscode-dap-extension/**"],
+      "changelog-sections": [
+        { "type": "feat", "section": "Features" },
+        { "type": "fix", "section": "Bug Fixes" },
+        { "type": "feat", "scope": "debugger", "hidden": true },
+        { "type": "fix", "scope": "debugger", "hidden": true },
+        { "type": "chore", "scope": "debugger", "hidden": true }
+      ]
     },
     "debugger/vscode-dap-extension": {
       "package-name": "starlingmonkey-debugger",
