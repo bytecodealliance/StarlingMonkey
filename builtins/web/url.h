@@ -32,6 +32,7 @@ class URLSearchParams : public BuiltinNoConstructor<URLSearchParams> {
   static bool has(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool getAll(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool sort(JSContext *cx, unsigned argc, JS::Value *vp);
+  static bool size_get(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool forEach(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool delete_(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool get(JSContext *cx, unsigned argc, JS::Value *vp);

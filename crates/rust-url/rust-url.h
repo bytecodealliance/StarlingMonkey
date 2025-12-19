@@ -185,6 +185,8 @@ CVec<SpecSlice> params_get_all(const JSUrlSearchParams *params, const SpecString
 
 void params_set(JSUrlSearchParams *params, SpecString name, SpecString value);
 
+size_t params_size(JSUrlSearchParams *params);
+
 void params_sort(JSUrlSearchParams *params);
 
 SpecSlice params_to_string(const JSUrlSearchParams *params);

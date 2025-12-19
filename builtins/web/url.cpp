@@ -174,6 +174,7 @@ const JSFunctionSpec URLSearchParams::methods[] = {
 };
 
 const JSPropertySpec URLSearchParams::properties[] = {
+    JS_PSG("size", URLSearchParams::size_get, JSPROP_ENUMERATE),
     JS_PS_END,
 };
 
@@ -344,6 +345,14 @@ bool URLSearchParams::set(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 
   args.rval().setUndefined();
+  return true;
+}
+
+bool URLSearchParams::size_get(JSContext *cx, unsigned argc, JS::Value *vp) {
+  METHOD_HEADER(0)
+  auto *params =
+      static_cast<jsurl::JSUrlSearchParams *>(JS::GetReservedSlot(self, Slots::Params).toPrivate());
+  args.rval().setNumber(jsurl::params_size(params));
   return true;
 }
 
@@ -831,5 +840,3 @@ bool install(api::Engine *engine) {
 }
 
 } // namespace builtins::web::url
-
-

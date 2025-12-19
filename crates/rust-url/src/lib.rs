@@ -409,6 +409,11 @@ pub extern "C" fn params_set(params: &mut JSUrlSearchParams, name: SpecString, v
 }
 
 #[no_mangle]
+pub extern "C" fn params_size(params: &JSUrlSearchParams) -> usize {
+    params.list.len()
+}
+
+#[no_mangle]
 pub extern "C" fn params_sort(params: &mut JSUrlSearchParams) {
     params
         .list

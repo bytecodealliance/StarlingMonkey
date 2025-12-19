@@ -1,14 +1,14 @@
 {
   "URLSearchParams's size and deletion": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams's size and addition": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams's size when obtained from a URL": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URLSearchParams's size when obtained from a URL and using .search": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }
