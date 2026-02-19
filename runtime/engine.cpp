@@ -15,6 +15,7 @@
 #include <cassert>
 #include <chrono>
 #include <cstdlib>
+#include <fmt/format.h>
 #include <utility>
 
 #ifdef MEM_STATS

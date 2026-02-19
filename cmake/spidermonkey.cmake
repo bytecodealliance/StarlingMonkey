@@ -1,4 +1,4 @@
-set(SM_TAG FIREFOX_140_0_4_RELEASE_STARLING)
+set(SM_TAG FIREFOX_147_0_4_RELEASE_STARLING)
 
 include("manage-git-source")
 
@@ -12,7 +12,6 @@ option(WEVAL "Build with a SpiderMonkey variant that supports weval-based AOT co
 
 if (WEVAL)
     set(SM_BUILD_TYPE "${SM_BUILD_TYPE}_weval")
-    set(SM_TAG WEVAL)
 endif()
 
 # If the developer has specified an alternate local set of SpiderMonkey

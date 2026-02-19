@@ -123,6 +123,8 @@ template <typename T> struct GCPolicy<RefPtr<T>> {
     }
     return true;
   }
+  static constexpr bool mightBeInNursery() { return false; }
+  static bool isTenured(const RefPtr<T> & /*unused*/) { return true; }
 };
 
 } // namespace JS
