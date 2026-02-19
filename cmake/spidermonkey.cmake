@@ -12,6 +12,7 @@ option(WEVAL "Build with a SpiderMonkey variant that supports weval-based AOT co
 
 if (WEVAL)
     set(SM_BUILD_TYPE "${SM_BUILD_TYPE}_weval")
+    set(SM_TAG WEVAL)
 endif()
 
 # If the developer has specified an alternate local set of SpiderMonkey
@@ -59,7 +60,7 @@ else()
 
     manage_git_source(
         NAME spidermonkey
-        REPO_URL https://github.com/bytecodealliance/firefox.git
+        REPO_URL https://github.com/andreiltd/firefox.git
         TAG ${SM_TAG}
         SOURCE_DIR ${SM_SOURCE_DIR}
     )
