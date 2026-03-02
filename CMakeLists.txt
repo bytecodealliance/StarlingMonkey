@@ -33,7 +33,6 @@ include("init-corrosion")
 
 include("wasm-tools")
 include("binaryen")
-include("wizer")
 include("weval")
 include("wasmtime")
 include("cbindgen")

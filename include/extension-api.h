@@ -204,7 +204,6 @@ public:
   virtual bool cancel(Engine *engine) = 0;
 
   [[nodiscard]] virtual PollableHandle id() {
-    MOZ_ASSERT(handle_ != INVALID_POLLABLE_HANDLE);
     return handle_;
   }
 

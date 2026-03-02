@@ -2839,6 +2839,7 @@ bool ResponseFutureTask::abort(api::Engine *engine) {
   }
 
   future_->unsubscribe();
+  handle_ = INVALID_POLLABLE_HANDLE;
   return true;
 }
 

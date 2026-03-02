@@ -15,6 +15,11 @@ size_t poll_handles(vector<WASIHandle<host_api::Pollable>::Borrowed> handles) {
 }
 
 size_t api::AsyncTask::select(std::vector<RefPtr<AsyncTask>> &tasks) {
+  // Remove tasks whose pollable handles have been invalidated (e.g. by abort).
+  std::erase_if(tasks, [](const RefPtr<AsyncTask> &task) {
+    return task->id() == INVALID_POLLABLE_HANDLE;
+  });
+
   auto count = tasks.size();
   std::vector<WASIHandle<host_api::Pollable>::Borrowed> handles;
 

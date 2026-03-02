@@ -2,7 +2,7 @@
 
 #set -euo pipefail
 
-wizer="${WIZER:-@WIZER_DIR@/wizer}"
+wizer="${WIZER:-@WASMTIME_DIR@/wasmtime wizer}"
 wasm_tools="${WASM_TOOLS:-@WASM_TOOLS_BIN@}"
 weval="${WEVAL:-@WEVAL_BIN@}"
 aot=@AOT@
@@ -117,9 +117,10 @@ if [[ -n "$IN_FILE" ]]; then
            -o "$OUT_FILE" \
            -i "$(dirname "$0")/starling-raw.wasm"
   else
-      echo "$STARLING_ARGS" | WASMTIME_BACKTRACE_DETAILS=1 $wizer --allow-wasi --wasm-bulk-memory true \
-           --inherit-stdio true --inherit-env true $preopen_dir -o "$OUT_FILE" \
-           -- "$(dirname "$0")/starling-raw.wasm"
+      echo "$STARLING_ARGS" | WASMTIME_BACKTRACE_DETAILS=1 $wizer -S cli -S inherit-env \
+           -W bulk-memory -W unknown-imports-trap \
+           $preopen_dir -o "$OUT_FILE" \
+           "$(dirname "$0")/starling-raw.wasm"
   fi
 else
   echo "Creating runtime-eval component $OUT_FILE"
