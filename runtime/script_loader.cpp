@@ -340,18 +340,11 @@ bool module_load_hook(JSContext *cx, JS::HandleScript referrer, JS::HandleObject
     ref_priv = JS::GetScriptPrivate(referrer);
   }
 
-  if (ref_priv.isUndefined() || !ref_priv.isObject()) {
-    JS_ReportErrorASCII(cx, "Module referrer has no private value");
-    return false;
-  }
+  MOZ_ASSERT(ref_priv.isObject(), "Module referrer must have an object private value");
 
   RootedObject info(cx, &ref_priv.toObject());
   RootedValue parent_path_val(cx);
-  if (!JS_GetProperty(cx, info, "id", &parent_path_val)) {
-    return false;
-  }
-  if (!parent_path_val.isString()) {
-    JS_ReportErrorASCII(cx, "Module referrer has no id property");
+  if (!JS_GetProperty(cx, info, "id", &parent_path_val) || !parent_path_val.isString()) {
     return false;
   }
 

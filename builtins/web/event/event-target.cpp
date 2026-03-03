@@ -123,6 +123,7 @@ template <typename T> struct GCPolicy<RefPtr<T>> {
     }
     return true;
   }
+  // RefPtr<T> is allocated on the C++ heap using MakeRefPtr, never in the GC nursery.
   static constexpr bool mightBeInNursery() { return false; }
   static bool isTenured(const RefPtr<T> & /*unused*/) { return true; }
 };
