@@ -59,7 +59,7 @@ else()
 
     manage_git_source(
         NAME spidermonkey
-        REPO_URL https://github.com/andreiltd/firefox.git
+        REPO_URL https://github.com/bytecodealliance/firefox.git
         TAG ${SM_TAG}
         SOURCE_DIR ${SM_SOURCE_DIR}
     )
