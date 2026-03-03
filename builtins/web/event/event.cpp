@@ -160,67 +160,67 @@ bool Event::composedPath(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 JSString *Event::type(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, Slots::Type).toString();
+  return JS::GetReservedSlot(self, std::to_underlying(Slots::Type)).toString();
 }
 
 JSObject *Event::target(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, Slots::Target).toObjectOrNull();
+  return JS::GetReservedSlot(self, std::to_underlying(Slots::Target)).toObjectOrNull();
 }
 
 JSObject *Event::current_target(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, Slots::CurrentTarget).toObjectOrNull();
+  return JS::GetReservedSlot(self, std::to_underlying(Slots::CurrentTarget)).toObjectOrNull();
 }
 
 JSObject *Event::related_target(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, Slots::RelatedTarget).toObjectOrNull();
+  return JS::GetReservedSlot(self, std::to_underlying(Slots::RelatedTarget)).toObjectOrNull();
 }
 
 bool Event::has_flag(JSObject* self, EventFlag flag) {
   MOZ_ASSERT(is_instance(self));
-  auto flags = JS::GetReservedSlot(self, Slots::Flags).toInt32();
+  auto flags = JS::GetReservedSlot(self, std::to_underlying(Slots::Flags)).toInt32();
   return (flags & static_cast<uint32_t>(flag)) != 0;
 }
 
 bool Event::set_flag(JSObject* self, EventFlag flag, bool val) {
   MOZ_ASSERT(is_instance(self));
-  auto flags = static_cast<uint32_t>(JS::GetReservedSlot(self, Slots::Flags).toInt32());
+  auto flags = static_cast<uint32_t>(JS::GetReservedSlot(self, std::to_underlying(Slots::Flags)).toInt32());
 
   set_event_flag(&flags, flag, val);
-  SetReservedSlot(self, Slots::Flags, JS::Int32Value(flags));
+  SetReservedSlot(self, std::to_underlying(Slots::Flags), JS::Int32Value(flags));
   return true;
 }
 
 Event::Phase Event::phase(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return static_cast<Phase>(JS::GetReservedSlot(self, Slots::EvtPhase).toInt32());
+  return static_cast<Phase>(JS::GetReservedSlot(self, std::to_underlying(Slots::EvtPhase)).toInt32());
 }
 
 double Event::timestamp(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, Slots::TimeStamp).toNumber();
+  return JS::GetReservedSlot(self, std::to_underlying(Slots::TimeStamp)).toNumber();
 }
 
 void Event::set_phase(JSObject *self, Event::Phase phase) {
   MOZ_ASSERT(is_instance(self));
-  SetReservedSlot(self, Slots::EvtPhase, JS::Int32Value(static_cast<uint32_t>(phase)));
+  SetReservedSlot(self, std::to_underlying(Slots::EvtPhase), JS::Int32Value(static_cast<uint32_t>(phase)));
 }
 
 void Event::set_target(JSObject *self, HandleObject target) {
   MOZ_ASSERT(is_instance(self));
-  SetReservedSlot(self, Slots::Target, JS::ObjectOrNullValue(target));
+  SetReservedSlot(self, std::to_underlying(Slots::Target), JS::ObjectOrNullValue(target));
 }
 
 void Event::set_current_target(JSObject *self, HandleObject target) {
   MOZ_ASSERT(is_instance(self));
-  SetReservedSlot(self, Slots::CurrentTarget, JS::ObjectOrNullValue(target));
+  SetReservedSlot(self, std::to_underlying(Slots::CurrentTarget), JS::ObjectOrNullValue(target));
 }
 
 void Event::set_related_target(JSObject *self, HandleObject target) {
   MOZ_ASSERT(is_instance(self));
-  SetReservedSlot(self, Slots::RelatedTarget, JS::ObjectOrNullValue(target));
+  SetReservedSlot(self, std::to_underlying(Slots::RelatedTarget), JS::ObjectOrNullValue(target));
 }
 
 void Event::set_canceled(JSObject *self, bool val) {
@@ -266,13 +266,13 @@ bool Event::init(JSContext *cx, HandleObject self, HandleValue type, HandleValue
   // Set event's type attribute to type.
   // Set event's bubbles attribute to bubbles.
   // Set event's cancelable attribute to cancelable.
-  SetReservedSlot(self, Slots::Flags, JS::Int32Value(flags));
-  SetReservedSlot(self, Slots::Target, JS::NullValue());
-  SetReservedSlot(self, Slots::CurrentTarget, JS::NullValue());
-  SetReservedSlot(self, Slots::RelatedTarget, JS::NullValue());
-  SetReservedSlot(self, Slots::Type, JS::StringValue(type_str));
-  SetReservedSlot(self, Slots::TimeStamp, JS::NumberValue(1.0)); // TODO: implement timestamp
-  SetReservedSlot(self, Slots::EvtPhase, JS::Int32Value(static_cast<uint32_t>(Event::Phase::NONE)));
+  SetReservedSlot(self, std::to_underlying(Slots::Flags), JS::Int32Value(flags));
+  SetReservedSlot(self, std::to_underlying(Slots::Target), JS::NullValue());
+  SetReservedSlot(self, std::to_underlying(Slots::CurrentTarget), JS::NullValue());
+  SetReservedSlot(self, std::to_underlying(Slots::RelatedTarget), JS::NullValue());
+  SetReservedSlot(self, std::to_underlying(Slots::Type), JS::StringValue(type_str));
+  SetReservedSlot(self, std::to_underlying(Slots::TimeStamp), JS::NumberValue(1.0)); // TODO: implement timestamp
+  SetReservedSlot(self, std::to_underlying(Slots::EvtPhase), JS::Int32Value(static_cast<uint32_t>(Event::Phase::NONE)));
 
   return true;
 }

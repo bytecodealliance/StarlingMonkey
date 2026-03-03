@@ -537,7 +537,7 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
 
     if (is_transparent || is_native) {
       auto endings = is_native ? LineEndings::Native : LineEndings::Transparent;
-      SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(endings));
+      SetReservedSlot(self, std::to_underlying(Slots::Endings), JS::Int32Value(std::to_underlying(endings)));
     }
   }
 
@@ -551,7 +551,7 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
     if (!type_str) {
       return false;
     }
-    SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS::StringValue(type_str));
+    SetReservedSlot(self, std::to_underlying(Slots::Type), JS::StringValue(type_str));
   }
 
   return true;
@@ -574,9 +574,9 @@ JSObject *Blob::create(JSContext *cx, UniqueChars data, size_t data_len, HandleS
     blob->replaceRawBuffer(reinterpret_cast<uint8_t *>(data.release()), data_len);
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(blob.release()));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS::StringValue(type));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
+  SetReservedSlot(self, std::to_underlying(Slots::Data), JS::PrivateValue(blob.release()));
+  SetReservedSlot(self, std::to_underlying(Slots::Type), JS::StringValue(type));
+  SetReservedSlot(self, std::to_underlying(Slots::Endings), JS::Int32Value(std::to_underlying(LineEndings::Transparent)));
   return self;
 }
 
@@ -587,9 +587,9 @@ bool Blob::init(JSContext *cx, HandleObject self, HandleValue blobParts, HandleV
     return false;
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS_GetEmptyStringValue(cx));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Endings), JS::Int32Value(LineEndings::Transparent));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Data), JS::PrivateValue(blob.release()));
+  SetReservedSlot(self, std::to_underlying(Slots::Type), JS_GetEmptyStringValue(cx));
+  SetReservedSlot(self, std::to_underlying(Slots::Endings), JS::Int32Value(std::to_underlying(LineEndings::Transparent)));
+  SetReservedSlot(self, std::to_underlying(Slots::Data), JS::PrivateValue(blob.release()));
 
   // Walk the blob parts and append them to the blob's buffer.
   if (blobParts.isNull()) {

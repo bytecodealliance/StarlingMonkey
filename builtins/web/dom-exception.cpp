@@ -11,7 +11,7 @@ bool DOMException::name_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (self == proto_obj) {
     return api::throw_error(cx, api::Errors::WrongReceiver, "name get", "DOMException");
   }
-  args.rval().setString(JS::GetReservedSlot(self, Slots::Name).toString());
+  args.rval().setString(JS::GetReservedSlot(self, std::to_underlying(Slots::Name)).toString());
   return true;
 }
 
@@ -21,7 +21,7 @@ bool DOMException::message_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (self == proto_obj) {
     return api::throw_error(cx, api::Errors::WrongReceiver, "message get", "DOMException");
   }
-  args.rval().setString(JS::GetReservedSlot(self, Slots::Message).toString());
+  args.rval().setString(JS::GetReservedSlot(self, std::to_underlying(Slots::Message)).toString());
   return true;
 }
 
@@ -31,7 +31,7 @@ bool DOMException::code_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (self == proto_obj) {
     return api::throw_error(cx, api::Errors::WrongReceiver, "code get", "DOMException");
   }
-  JS::RootedString name_string(cx, JS::GetReservedSlot(self, Slots::Name).toString());
+  JS::RootedString name_string(cx, JS::GetReservedSlot(self, std::to_underlying(Slots::Name)).toString());
   auto chars = core::encode(cx, name_string);
   if (!chars) {
     return false;
@@ -172,12 +172,12 @@ JSObject *DOMException::create(JSContext *cx, std::string_view message, std::str
   if (!message_str) {
     return nullptr;
   }
-  JS::SetReservedSlot(instance, Slots::Message, JS::StringValue(message_str));
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Message), JS::StringValue(message_str));
   auto *name_str = JS_NewStringCopyN(cx, name.data(), name.size());
   if (!name_str) {
     return nullptr;
   }
-  JS::SetReservedSlot(instance, Slots::Name, JS::StringValue(name_str));
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Name), JS::StringValue(name_str));
 
   return instance;
 }
@@ -203,18 +203,18 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     if (!message) {
       return false;
     }
-    JS::SetReservedSlot(instance, Slots::Message, JS::StringValue(message));
+    JS::SetReservedSlot(instance, std::to_underlying(Slots::Message), JS::StringValue(message));
   } else {
-    JS::SetReservedSlot(instance, Slots::Message, JS_GetEmptyStringValue(cx));
+    JS::SetReservedSlot(instance, std::to_underlying(Slots::Message), JS_GetEmptyStringValue(cx));
   }
   if (args.hasDefined(1)) {
     auto *name = JS::ToString(cx, args.get(1));
     if (!name) {
       return false;
     }
-    JS::SetReservedSlot(instance, Slots::Name, JS::StringValue(name));
+    JS::SetReservedSlot(instance, std::to_underlying(Slots::Name), JS::StringValue(name));
   } else {
-    JS::SetReservedSlot(instance, Slots::Name, JS::StringValue(JS_NewStringCopyZ(cx, "Error")));
+    JS::SetReservedSlot(instance, std::to_underlying(Slots::Name), JS::StringValue(JS_NewStringCopyZ(cx, "Error")));
   }
 
   args.rval().setObject(*instance);

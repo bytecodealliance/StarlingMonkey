@@ -219,7 +219,7 @@ private:
   static constexpr JSClassOps class_ops = ClassPolicy::template class_ops<Impl>();
 
   static constexpr uint32_t class_flags =
-      JSCLASS_HAS_RESERVED_SLOTS(static_cast<uint32_t>(Impl::Slots::Count)) |
+      JSCLASS_HAS_RESERVED_SLOTS(std::to_underlying(Impl::Slots::Count)) |
       ClassPolicy::class_flags();
 
 
@@ -237,19 +237,19 @@ public:
 
   static JS::PersistentRootedObject proto_obj;
 
-  static JS::Result<std::tuple<CallArgs, RootedObject *>>
+  static JS::Result<CallArgs>
   MethodHeaderWithName(const int required_argc, JSContext *cx, const unsigned argc, Value *vp,
                        const char *name) {
     CallArgs args = CallArgsFromVp(argc, vp);
     if (!check_receiver(cx, args.thisv(), name)) {
-      return JS::Result<std::tuple<CallArgs, RootedObject *>>(JS::Error());
+      return JS::Result<CallArgs>(JS::Error());
     }
     RootedObject self(cx, &args.thisv().toObject());
     if (!args.requireAtLeast(cx, name, required_argc)) {
-      return JS::Result<std::tuple<CallArgs, RootedObject *>>(JS::Error());
+      return JS::Result<CallArgs>(JS::Error());
     }
 
-    return {std::make_tuple(args, &self)};
+    return args;
   }
 
   static void register_subclass(const JSClass *cls) {

@@ -23,10 +23,10 @@ using worker_location::WorkerLocation;
 
 bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
-  JS::RootedObject params_obj(cx, &JS::GetReservedSlot(self, Slots::Params).toObject());
+  JS::RootedObject params_obj(cx, &JS::GetReservedSlot(self, std::to_underlying(Slots::Params)).toObject());
   auto *const params = URLSearchParams::get_params(params_obj);
-  size_t index = JS::GetReservedSlot(self, Slots::Index).toInt32();
-  uint8_t type = JS::GetReservedSlot(self, Slots::Type).toInt32();
+  size_t index = JS::GetReservedSlot(self, std::to_underlying(Slots::Index)).toInt32();
+  uint8_t type = JS::GetReservedSlot(self, std::to_underlying(Slots::Type)).toInt32();
 
   JS::RootedObject result(cx, JS_NewPlainObject(cx));
   if (!result) {
@@ -94,7 +94,7 @@ bool URLSearchParamsIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) 
 
   JS_DefineProperty(cx, result, "value", result_val, JSPROP_ENUMERATE);
 
-  JS::SetReservedSlot(self, Slots::Index, JS::Int32Value(index + 1));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Index), JS::Int32Value(index + 1));
   args.rval().setObject(*result);
   return true;
 }
@@ -141,9 +141,9 @@ JSObject *URLSearchParamsIterator::create(JSContext *cx, JS::HandleObject params
     return nullptr;
   }
 
-  JS::SetReservedSlot(self, Slots::Params, JS::ObjectValue(*params));
-  JS::SetReservedSlot(self, Slots::Type, JS::Int32Value(type));
-  JS::SetReservedSlot(self, Slots::Index, JS::Int32Value(0));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Params), JS::ObjectValue(*params));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Type), JS::Int32Value(type));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Index), JS::Int32Value(0));
 
   return self;
 }
@@ -180,7 +180,7 @@ const JSPropertySpec URLSearchParams::properties[] = {
 
 jsurl::JSUrlSearchParams *URLSearchParams::get_params(JSObject *self) {
   return static_cast<jsurl::JSUrlSearchParams *>(
-      JS::GetReservedSlot(self, Slots::Params).toPrivate());
+      JS::GetReservedSlot(self, std::to_underlying(Slots::Params)).toPrivate());
 }
 
 namespace {
@@ -232,7 +232,7 @@ bool URLSearchParams::delete_(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER_WITH_NAME(1, "delete");
 
   auto *params =
-      static_cast<jsurl::JSUrlSearchParams *>(JS::GetReservedSlot(self, Slots::Params).toPrivate());
+      static_cast<jsurl::JSUrlSearchParams *>(JS::GetReservedSlot(self, std::to_underlying(Slots::Params)).toPrivate());
 
   auto name = core::encode_spec_string(cx, args.get(0));
   if (!name.data) {
@@ -256,7 +256,7 @@ bool URLSearchParams::delete_(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool URLSearchParams::has(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
   auto *params =
-      static_cast<jsurl::JSUrlSearchParams *>(JS::GetReservedSlot(self, Slots::Params).toPrivate());
+      static_cast<jsurl::JSUrlSearchParams *>(JS::GetReservedSlot(self, std::to_underlying(Slots::Params)).toPrivate());
 
   auto name = core::encode_spec_string(cx, args.get(0));
   if (!name.data) {
@@ -279,7 +279,7 @@ bool URLSearchParams::has(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool URLSearchParams::get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1);
   const auto *params = static_cast<const jsurl::JSUrlSearchParams *>(
-      JS::GetReservedSlot(self, Slots::Params).toPrivate());
+      JS::GetReservedSlot(self, std::to_underlying(Slots::Params)).toPrivate());
 
   auto name = core::encode_spec_string(cx, args.get(0));
   if (!name.data) {
@@ -304,7 +304,7 @@ bool URLSearchParams::getAll(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1);
 
   const auto *params = static_cast<const jsurl::JSUrlSearchParams *>(
-      JS::GetReservedSlot(self, Slots::Params).toPrivate());
+      JS::GetReservedSlot(self, std::to_underlying(Slots::Params)).toPrivate());
 
   auto name = core::encode_spec_string(cx, args.get(0));
   if (!name.data) {
@@ -341,7 +341,7 @@ bool URLSearchParams::set(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(2);
 
   auto *params =
-      static_cast<jsurl::JSUrlSearchParams *>(JS::GetReservedSlot(self, Slots::Params).toPrivate());
+      static_cast<jsurl::JSUrlSearchParams *>(JS::GetReservedSlot(self, std::to_underlying(Slots::Params)).toPrivate());
 
   auto name = core::encode_spec_string(cx, args[0]);
   if (!name.data) {
@@ -363,7 +363,7 @@ bool URLSearchParams::set(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool URLSearchParams::size_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
   auto *params =
-      static_cast<jsurl::JSUrlSearchParams *>(JS::GetReservedSlot(self, Slots::Params).toPrivate());
+      static_cast<jsurl::JSUrlSearchParams *>(JS::GetReservedSlot(self, std::to_underlying(Slots::Params)).toPrivate());
   args.rval().setNumber(jsurl::params_size(params));
   return true;
 }
@@ -371,7 +371,7 @@ bool URLSearchParams::size_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool URLSearchParams::sort(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
   auto *params =
-      static_cast<jsurl::JSUrlSearchParams *>(JS::GetReservedSlot(self, Slots::Params).toPrivate());
+      static_cast<jsurl::JSUrlSearchParams *>(JS::GetReservedSlot(self, std::to_underlying(Slots::Params)).toPrivate());
   jsurl::params_sort(params);
   args.rval().setUndefined();
   return true;
@@ -424,7 +424,7 @@ bool URLSearchParams::init_class(JSContext *cx, JS::HandleObject global) {
 JSObject *URLSearchParams::create(JSContext *cx, JS::HandleObject self,
                                   JS::HandleValue params_val) {
   auto *params = jsurl::new_params();
-  JS::SetReservedSlot(self, Slots::Params, JS::PrivateValue(params));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Params), JS::PrivateValue(params));
 
   bool consumed = false;
   const char *alt_text = ", or a value that can be stringified";
@@ -452,8 +452,8 @@ JSObject *URLSearchParams::create(JSContext *cx, JS::HandleObject self, jsurl::J
     return nullptr;
   }
 
-  JS::SetReservedSlot(self, Slots::Params, JS::PrivateValue(params));
-  JS::SetReservedSlot(self, Slots::Url, JS::PrivateValue(url));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Params), JS::PrivateValue(params));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Url), JS::PrivateValue(url));
 
   return self;
 }
@@ -461,7 +461,7 @@ JSObject *URLSearchParams::create(JSContext *cx, JS::HandleObject self, jsurl::J
 #define ACCESSOR_GET(field)                                                                        \
   bool URL::field(JSContext *cx, JS::HandleObject self, JS::MutableHandleValue rval) {             \
     const jsurl::JSUrl *url =                                                                      \
-        static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(self, URL::Slots::Url).toPrivate());       \
+        static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(self, std::to_underlying(URL::Slots::Url)).toPrivate());       \
     const jsurl::SpecSlice slice = jsurl::field(url);                                              \
     JS::RootedString str(cx,                                                                       \
                          JS_NewStringCopyUTF8N(cx, JS::UTF8Chars((char *)slice.data, slice.len))); \
@@ -482,7 +482,7 @@ JSObject *URLSearchParams::create(JSContext *cx, JS::HandleObject self, jsurl::J
   bool URL::field##_set(JSContext *cx, unsigned argc, JS::Value *vp) {                             \
     METHOD_HEADER(1)                                                                               \
     jsurl::JSUrl *url =                                                                            \
-        static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(self, URL::Slots::Url).toPrivate());       \
+        static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(self, std::to_underlying(URL::Slots::Url)).toPrivate());       \
                                                                                                    \
     jsurl::SpecString str = core::encode_spec_string(cx, args.get(0));                             \
     if (!str.data) {                                                                               \
@@ -684,12 +684,12 @@ JSObject *URL::getObjectURL(std::string &url_str) {
 
 const jsurl::JSUrl *URL::url(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return static_cast<const jsurl::JSUrl *>(JS::GetReservedSlot(self, Url).toPrivate());
+  return static_cast<const jsurl::JSUrl *>(JS::GetReservedSlot(self, std::to_underlying(Slots::Url)).toPrivate());
 }
 
 jsurl::JSUrl *URL::url_mut(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(self, Url).toPrivate());
+  return static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(self, std::to_underlying(Slots::Url)).toPrivate());
 }
 
 jsurl::SpecString URL::origin(JSContext *cx, JS::HandleObject self) {
@@ -713,7 +713,7 @@ bool URL::origin_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 bool URL::searchParams_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
-  JS::Value params_val = JS::GetReservedSlot(self, Slots::Params);
+  JS::Value params_val = JS::GetReservedSlot(self, std::to_underlying(Slots::Params));
   JS::RootedObject params(cx);
   if (params_val.isNullOrUndefined()) {
     JS::RootedObject url_search_params_instance(
@@ -726,7 +726,7 @@ bool URL::searchParams_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     if (!params) {
       return false;
     }
-    JS::SetReservedSlot(self, Slots::Params, JS::ObjectValue(*params));
+    JS::SetReservedSlot(self, std::to_underlying(Slots::Params), JS::ObjectValue(*params));
   } else {
     params = &params_val.toObject();
   }
@@ -777,7 +777,7 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, jsurl::SpecString ur
     return nullptr;
   }
 
-  JS::SetReservedSlot(self, Slots::Url, JS::PrivateValue(url));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Url), JS::PrivateValue(url));
 
   return self;
 }
@@ -796,7 +796,7 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, JS::HandleValue url_
                       JS::HandleObject base_obj) {
   jsurl::JSUrl *base = nullptr;
   if (is_instance(base_obj)) {
-    base = static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(base_obj, Slots::Url).toPrivate());
+    base = static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(base_obj, std::to_underlying(Slots::Url)).toPrivate());
   }
 
   return create(cx, self, url_val, base);
@@ -804,7 +804,7 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, JS::HandleValue url_
 
 void URL::finalize(JS::GCContext *gcx, JSObject *self) {
   auto *url =
-      static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(self, Slots::Url).toPrivate());
+      static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(self, std::to_underlying(Slots::Url)).toPrivate());
   jsurl::free_jsurl(url);
 }
 

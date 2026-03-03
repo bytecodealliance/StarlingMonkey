@@ -160,7 +160,7 @@ class HeadersIterator final : public BuiltinNoConstructor<HeadersIterator> {
 public:
   static constexpr const char *class_name = "Headers Iterator";
 
-  enum Slots : uint8_t {
+  enum class Slots : uint8_t {
     Type,
     Cursor,
     Headers,

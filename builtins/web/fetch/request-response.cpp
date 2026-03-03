@@ -1,5 +1,7 @@
 #include "request-response.h"
 
+#include <print>
+
 #include "../abort/abort-signal.h"
 #include "../blob.h"
 #include "../form-data/form-data.h"
@@ -162,7 +164,7 @@ struct ReadResult {
 
 host_api::HttpRequestResponseBase *RequestOrResponse::maybe_handle(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
-  auto slot = JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::RequestOrResponse));
+  auto slot = JS::GetReservedSlot(obj, std::to_underlying(Slots::RequestOrResponse));
   return static_cast<host_api::HttpRequestResponseBase *>(slot.toPrivate());
 }
 
@@ -193,7 +195,7 @@ host_api::HttpHeadersReadOnly *RequestOrResponse::maybe_headers_handle(JSObject 
 
 bool RequestOrResponse::has_body(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
-  return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::HasBody)).toBoolean();
+  return JS::GetReservedSlot(obj, std::to_underlying(Slots::HasBody)).toBoolean();
 }
 
 host_api::HttpIncomingBody *RequestOrResponse::incoming_body_handle(JSObject *obj) {
@@ -214,18 +216,18 @@ host_api::HttpOutgoingBody *RequestOrResponse::outgoing_body_handle(JSObject *ob
 
 JSObject *RequestOrResponse::body_stream(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
-  return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::BodyStream)).toObjectOrNull();
+  return JS::GetReservedSlot(obj, std::to_underlying(Slots::BodyStream)).toObjectOrNull();
 }
 
 JSObject *RequestOrResponse::body_all_promise(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
-  return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::BodyAllPromise)).toObjectOrNull();
+  return JS::GetReservedSlot(obj, std::to_underlying(Slots::BodyAllPromise)).toObjectOrNull();
 }
 
 JSObject *RequestOrResponse::take_body_all_promise(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
   auto *promise = body_all_promise(obj);
-  JS::SetReservedSlot(obj, static_cast<uint32_t>(Slots::BodyAllPromise), JS::NullValue());
+  JS::SetReservedSlot(obj, std::to_underlying(Slots::BodyAllPromise), JS::NullValue());
   return promise;
 }
 
@@ -237,12 +239,12 @@ JSObject *RequestOrResponse::body_source(JSContext *cx, JS::HandleObject obj) {
 
 bool RequestOrResponse::body_used(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
-  return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::BodyUsed)).toBoolean();
+  return JS::GetReservedSlot(obj, std::to_underlying(Slots::BodyUsed)).toBoolean();
 }
 
 bool RequestOrResponse::mark_body_used(JSContext *cx, JS::HandleObject obj) {
   MOZ_ASSERT(!body_used(obj));
-  JS::SetReservedSlot(obj, static_cast<uint32_t>(Slots::BodyUsed), JS::BooleanValue(true));
+  JS::SetReservedSlot(obj, std::to_underlying(Slots::BodyUsed), JS::BooleanValue(true));
 
   JS::RootedObject stream(cx, body_stream(obj));
   if (stream && streams::NativeStreamSource::stream_is_body(cx, stream)) {
@@ -449,7 +451,7 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
       return false;
     }
 
-    JS_SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyStream), ObjectValue(*body_stream));
+    JS_SetReservedSlot(self, std::to_underlying(Slots::BodyStream), ObjectValue(*body_stream));
     content_length.emplace(length);
   }
 
@@ -473,13 +475,13 @@ bool RequestOrResponse::extract_body(JSContext *cx, JS::HandleObject self,
     }
   }
 
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::HasBody), JS::BooleanValue(true));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::HasBody), JS::BooleanValue(true));
   return true;
 }
 
 JSObject *RequestOrResponse::maybe_headers(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
-  return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::Headers)).toObjectOrNull();
+  return JS::GetReservedSlot(obj, std::to_underlying(Slots::Headers)).toObjectOrNull();
 }
 
 unique_ptr<host_api::HttpHeaders> RequestOrResponse::headers_handle_clone(JSContext *cx,
@@ -585,7 +587,7 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
       return nullptr;
     }
 
-    JS_SetReservedSlot(obj, static_cast<uint32_t>(Slots::Headers), JS::ObjectValue(*headers));
+    JS_SetReservedSlot(obj, std::to_underlying(Slots::Headers), JS::ObjectValue(*headers));
   }
 
   return headers;
@@ -931,7 +933,7 @@ bool RequestOrResponse::bodyAll(JSContext *cx, JS::CallArgs args, JS::HandleObje
   if (!bodyAll_promise) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyAllPromise),
+  JS::SetReservedSlot(self, std::to_underlying(Slots::BodyAllPromise),
                       JS::ObjectValue(*bodyAll_promise));
 
   // If the Request/Response doesn't have a body, empty default results need to
@@ -960,7 +962,7 @@ bool RequestOrResponse::bodyAll(JSContext *cx, JS::CallArgs args, JS::HandleObje
     return false;
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyUsed), JS::BooleanValue(true));
+  SetReservedSlot(self, std::to_underlying(Slots::BodyUsed), JS::BooleanValue(true));
   JS::RootedValue extra(cx, JS::ObjectValue(*stream));
   if (!enqueue_internal_method<consume_content_stream_for_bodyAll>(cx, self, extra)) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
@@ -1115,7 +1117,7 @@ bool reader_for_outgoing_body_then_handler(JSContext *cx, JS::HandleObject body_
 
     // TODO: should we also create a rejected promise if a response reads something that's not a
     // Uint8Array?
-    fprintf(stderr, "Error: read operation on body ReadableStream didn't respond with a "
+    std::print(stderr, "Error: read operation on body ReadableStream didn't respond with a "
                     "Uint8Array. Received value: ");
     ENGINE->dump_value(val, stderr);
     return false;
@@ -1177,7 +1179,7 @@ bool reader_for_outgoing_body_catch_handler(JSContext *cx, JS::HandleObject body
   // in-content handler for unhandled rejections could deal with it. The body
   // stream errored during the streaming send. Not much we can do, but at least
   // close the stream, and warn.
-  fprintf(stderr, "Warning: body ReadableStream closed during body streaming. Exception: ");
+  std::print(stderr, "Warning: body ReadableStream closed during body streaming. Exception: ");
   ENGINE->dump_value(args.get(0), stderr);
 
   return finish_outgoing_body_streaming(cx, body_owner);
@@ -1280,7 +1282,7 @@ JSObject *RequestOrResponse::create_body_stream(JSContext *cx, JS::HandleObject 
     MOZ_RELEASE_ASSERT(streams::NativeStreamSource::lock_stream(cx, body_stream));
   }
 
-  JS_SetReservedSlot(owner, static_cast<uint32_t>(Slots::BodyStream),
+  JS_SetReservedSlot(owner, std::to_underlying(Slots::BodyStream),
                      JS::ObjectValue(*body_stream));
   return body_stream;
 }
@@ -1313,7 +1315,7 @@ JSObject *Request::response_promise(JSObject *obj) {
 
 JSString *Request::method(HandleObject obj) {
   MOZ_ASSERT(is_instance(obj));
-  return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::Method)).toString();
+  return JS::GetReservedSlot(obj, std::to_underlying(Slots::Method)).toString();
 }
 
 JSObject *Request::signal(JSObject *obj) {
@@ -1408,18 +1410,18 @@ bool Request::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
     cloned_headers_val.set(ObjectValue(*cloned_headers));
   }
 
-  SetReservedSlot(new_request, static_cast<uint32_t>(Slots::Headers), cloned_headers_val);
-  Value url_val = GetReservedSlot(self, static_cast<uint32_t>(Slots::URL));
-  SetReservedSlot(new_request, static_cast<uint32_t>(Slots::URL), url_val);
+  SetReservedSlot(new_request, std::to_underlying(Slots::Headers), cloned_headers_val);
+  Value url_val = GetReservedSlot(self, std::to_underlying(Slots::URL));
+  SetReservedSlot(new_request, std::to_underlying(Slots::URL), url_val);
   Value method_val = JS::StringValue(method(self));
-  SetReservedSlot(new_request, static_cast<uint32_t>(Slots::Method), method_val);
+  SetReservedSlot(new_request, std::to_underlying(Slots::Method), method_val);
 
   // Assert: this's signal is non-null.
   MOZ_ASSERT(Request::signal(self));
 
   // Let clonedSignal be the result of creating a dependent abort signal from « this's signal »,
   // using AbortSignal and this's relevant realm.
-  RootedValue signal_val(cx, GetReservedSlot(self, static_cast<uint32_t>(Slots::Signal)));
+  RootedValue signal_val(cx, GetReservedSlot(self, std::to_underlying(Slots::Signal)));
   RootedValueArray<1> signals(cx);
   signals[0].set(signal_val);
 
@@ -1427,7 +1429,7 @@ bool Request::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!signal) {
     return false;
   }
-  SetReservedSlot(new_request, static_cast<uint32_t>(Slots::Signal), ObjectValue(*signal));
+  SetReservedSlot(new_request, std::to_underlying(Slots::Signal), ObjectValue(*signal));
 
   // clone operation step 2.
   // If request’s body is non-null, set newRequest’s body to the result of cloning request’s body.
@@ -1459,9 +1461,9 @@ bool Request::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::BodyStream), ObjectValue(*self_body));
-  SetReservedSlot(new_request, static_cast<uint32_t>(Slots::BodyStream), ObjectValue(*new_body));
-  SetReservedSlot(new_request, static_cast<uint32_t>(Slots::HasBody), JS::BooleanValue(true));
+  SetReservedSlot(self, std::to_underlying(Slots::BodyStream), ObjectValue(*self_body));
+  SetReservedSlot(new_request, std::to_underlying(Slots::BodyStream), ObjectValue(*new_body));
+  SetReservedSlot(new_request, std::to_underlying(Slots::HasBody), JS::BooleanValue(true));
 
   args.rval().setObject(*new_request);
   return true;
@@ -1509,15 +1511,15 @@ bool Request::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 void Request::init_slots(JSObject *requestInstance) {
-  JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::Request),
+  JS::SetReservedSlot(requestInstance, std::to_underlying(Slots::Request),
                       JS::PrivateValue(nullptr));
-  JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::Headers), JS::NullValue());
-  JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::BodyStream), JS::NullValue());
-  JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::BodyAllPromise), JS::NullValue());
-  JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::Signal), JS::NullValue());
-  JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::HasBody), JS::FalseValue());
-  JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::BodyUsed), JS::FalseValue());
-  JS::SetReservedSlot(requestInstance, static_cast<uint32_t>(Slots::Method),
+  JS::SetReservedSlot(requestInstance, std::to_underlying(Slots::Headers), JS::NullValue());
+  JS::SetReservedSlot(requestInstance, std::to_underlying(Slots::BodyStream), JS::NullValue());
+  JS::SetReservedSlot(requestInstance, std::to_underlying(Slots::BodyAllPromise), JS::NullValue());
+  JS::SetReservedSlot(requestInstance, std::to_underlying(Slots::Signal), JS::NullValue());
+  JS::SetReservedSlot(requestInstance, std::to_underlying(Slots::HasBody), JS::FalseValue());
+  JS::SetReservedSlot(requestInstance, std::to_underlying(Slots::BodyUsed), JS::FalseValue());
+  JS::SetReservedSlot(requestInstance, std::to_underlying(Slots::Method),
                       JS::StringValue(GET_atom));
 }
 
@@ -1805,7 +1807,7 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
     return false;
   }
 
-  SetReservedSlot(request, static_cast<uint32_t>(Slots::Signal), ObjectValue(*signal));
+  SetReservedSlot(request, std::to_underlying(Slots::Signal), ObjectValue(*signal));
 
   // 31.  Set this’s headers to a new `Headers` object with this’s relevant
   // Realm, whose header list is `request`’s header list and guard is
@@ -1877,9 +1879,9 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
   if (!is_get) {
     // Only store the method if it's not the default `GET`, because in that case
     // `method_str` might not be initialized.
-    JS::SetReservedSlot(request, static_cast<uint32_t>(Slots::Method), JS::StringValue(method_str));
+    JS::SetReservedSlot(request, std::to_underlying(Slots::Method), JS::StringValue(method_str));
   }
-  JS::SetReservedSlot(request, static_cast<uint32_t>(Slots::Headers),
+  JS::SetReservedSlot(request, std::to_underlying(Slots::Headers),
                       JS::ObjectOrNullValue(headers));
 
   // 37.  If `init["body"]` exists and is non-null, then:
@@ -1942,11 +1944,11 @@ bool Request::initialize(JSContext *cx, JS::HandleObject request, JS::HandleValu
       }
 
       streams::TransformStream::set_readable_used_as_body(cx, inputBody, request);
-      JS::SetReservedSlot(request, static_cast<uint32_t>(Slots::BodyStream),
+      JS::SetReservedSlot(request, std::to_underlying(Slots::BodyStream),
                           JS::ObjectValue(*inputBody));
     }
 
-    JS::SetReservedSlot(request, static_cast<uint32_t>(Slots::HasBody), JS::BooleanValue(true));
+    JS::SetReservedSlot(request, std::to_underlying(Slots::HasBody), JS::BooleanValue(true));
   }
 
   // 42.  Set this’s requests body to `finalBody`.
@@ -1988,37 +1990,37 @@ host_api::HttpResponse *Response::maybe_response_handle(JSObject *obj) {
 
 Response::Type Response::type(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
-  return (Type)JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::Type)).toInt32();
+  return static_cast<Type>(JS::GetReservedSlot(obj, std::to_underlying(Slots::Type)).toInt32());
 }
 
 void Response::set_type(JSObject *obj, Response::Type type) {
   MOZ_ASSERT(is_instance(obj));
-  JS::SetReservedSlot(obj, static_cast<uint32_t>(Slots::Type), JS::Int32Value(type));
+  JS::SetReservedSlot(obj, std::to_underlying(Slots::Type), JS::Int32Value(std::to_underlying(type)));
 }
 
 uint16_t Response::status(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
-  return (uint16_t)JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::Status)).toInt32();
+  return (uint16_t)JS::GetReservedSlot(obj, std::to_underlying(Slots::Status)).toInt32();
 }
 
 void Response::set_status(JSObject *obj, uint16_t status) {
   MOZ_ASSERT(is_instance(obj));
-  SetReservedSlot(obj, static_cast<uint32_t>(Slots::Status), JS::Int32Value(status));
+  SetReservedSlot(obj, std::to_underlying(Slots::Status), JS::Int32Value(status));
 }
 
 JSString *Response::status_message(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
-  return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::StatusMessage)).toString();
+  return JS::GetReservedSlot(obj, std::to_underlying(Slots::StatusMessage)).toString();
 }
 
 void Response::set_aborted(JSObject *obj, HandleValue reason) {
   MOZ_ASSERT(is_instance(obj));
-  JS::SetReservedSlot(obj, static_cast<uint32_t>(Slots::Aborted), reason);
+  JS::SetReservedSlot(obj, std::to_underlying(Slots::Aborted), reason);
 }
 
 Value Response::aborted(JSObject *obj) {
   MOZ_ASSERT(is_instance(obj));
-  return JS::GetReservedSlot(obj, static_cast<uint32_t>(Slots::Aborted));
+  return JS::GetReservedSlot(obj, std::to_underlying(Slots::Aborted));
 }
 
 // TODO(jake): Remove this when the reason phrase host-call is implemented
@@ -2213,7 +2215,7 @@ void Response::set_status_message_from_code(JSContext *cx, JSObject *obj, uint16
 
   MOZ_ASSERT(phrase);
 
-  JS::SetReservedSlot(obj, static_cast<uint32_t>(Slots::StatusMessage),
+  JS::SetReservedSlot(obj, std::to_underlying(Slots::StatusMessage),
                       JS::StringValue(JS_NewStringCopyN(cx, phrase, strlen(phrase))));
 }
 
@@ -2280,7 +2282,7 @@ bool Response::redirected_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
 
   args.rval().setBoolean(
-      JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::Redirected)).toBoolean());
+      JS::GetReservedSlot(self, std::to_underlying(Slots::Redirected)).toBoolean());
   return true;
 }
 
@@ -2378,8 +2380,8 @@ bool Response::redirect(JSContext *cx, unsigned argc, Value *vp) {
   }
 
   // 5. Set responseObject’s response’s status to status.
-  SetReservedSlot(responseObject, static_cast<uint32_t>(Slots::Status), JS::Int32Value(status));
-  SetReservedSlot(responseObject, static_cast<uint32_t>(Slots::StatusMessage),
+  SetReservedSlot(responseObject, std::to_underlying(Slots::Status), JS::Int32Value(status));
+  SetReservedSlot(responseObject, std::to_underlying(Slots::StatusMessage),
                   JS::StringValue(JS_GetEmptyString(cx)));
 
   // 6. Let value be parsedURL, serialized and isomorphic encoded.
@@ -2613,7 +2615,7 @@ bool Response::initialize(JSContext *cx, JS::HandleObject response, JS::HandleVa
 
   init_slots(response);
 
-  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Headers), JS::ObjectValue(*headers));
+  JS::SetReservedSlot(response, std::to_underlying(Slots::Headers), JS::ObjectValue(*headers));
 
   // TODO: move this into the create function, given that it must not be called again later.
   RequestOrResponse::set_url(response, JS_GetEmptyStringValue(cx));
@@ -2633,10 +2635,10 @@ bool Response::initialize(JSContext *cx, JS::HandleObject response, JS::HandleVa
   // }
   // status = get_res.unwrap();
 
-  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Status), JS::Int32Value(status));
+  JS::SetReservedSlot(response, std::to_underlying(Slots::Status), JS::Int32Value(status));
 
   // 6.  Set `this`’s `response`’s `status message` to `init`["statusText"].
-  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::StatusMessage),
+  JS::SetReservedSlot(response, std::to_underlying(Slots::StatusMessage),
                       JS::StringValue(statusText));
 
   // 8.  If `body` is non-null, then:
@@ -2716,15 +2718,15 @@ JSObject *Response::create(JSContext *cx) {
 JSObject *Response::init_slots(HandleObject response) {
   MOZ_ASSERT(is_instance(response));
 
-  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Response), JS::PrivateValue(nullptr));
-  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Headers), JS::NullValue());
-  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::BodyStream), JS::NullValue());
-  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::BodyAllPromise), JS::NullValue());
-  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::HasBody), JS::FalseValue());
-  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::BodyUsed), JS::FalseValue());
-  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Redirected), JS::FalseValue());
-  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Type), JS::Int32Value(Type::Default));
-  JS::SetReservedSlot(response, static_cast<uint32_t>(Slots::Aborted), JS::UndefinedValue());
+  JS::SetReservedSlot(response, std::to_underlying(Slots::Response), JS::PrivateValue(nullptr));
+  JS::SetReservedSlot(response, std::to_underlying(Slots::Headers), JS::NullValue());
+  JS::SetReservedSlot(response, std::to_underlying(Slots::BodyStream), JS::NullValue());
+  JS::SetReservedSlot(response, std::to_underlying(Slots::BodyAllPromise), JS::NullValue());
+  JS::SetReservedSlot(response, std::to_underlying(Slots::HasBody), JS::FalseValue());
+  JS::SetReservedSlot(response, std::to_underlying(Slots::BodyUsed), JS::FalseValue());
+  JS::SetReservedSlot(response, std::to_underlying(Slots::Redirected), JS::FalseValue());
+  JS::SetReservedSlot(response, std::to_underlying(Slots::Type), JS::Int32Value(std::to_underlying(Type::Default)));
+  JS::SetReservedSlot(response, std::to_underlying(Slots::Aborted), JS::UndefinedValue());
 
   return response;
 }
@@ -2735,17 +2737,17 @@ JSObject *Response::create_incoming(JSContext *cx, host_api::HttpIncomingRespons
     return nullptr;
   }
 
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::Response), PrivateValue(response));
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::Type), JS::Int32Value(Type::Basic));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Response), PrivateValue(response));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Type), JS::Int32Value(std::to_underlying(Type::Basic)));
 
   auto res = response->status();
   MOZ_ASSERT(!res.is_err(), "TODO: proper error handling");
   auto status = res.unwrap();
-  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::Status), JS::Int32Value(status));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Status), JS::Int32Value(status));
   set_status_message_from_code(cx, self, status);
 
   if (!(status == 204 || status == 205 || status == 304)) {
-    JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::HasBody), JS::TrueValue());
+    JS::SetReservedSlot(self, std::to_underlying(Slots::HasBody), JS::TrueValue());
   }
 
   return self;

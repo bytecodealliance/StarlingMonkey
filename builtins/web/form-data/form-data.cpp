@@ -26,11 +26,11 @@ using host_api::HostString;
 
 bool FormDataIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
-  JS::RootedObject form_obj(cx, &JS::GetReservedSlot(self, Slots::Form).toObject());
+  JS::RootedObject form_obj(cx, &JS::GetReservedSlot(self, std::to_underlying(Slots::Form)).toObject());
 
   auto *const entries = FormData::entry_list(form_obj);
-  size_t index = JS::GetReservedSlot(self, Slots::Index).toInt32();
-  uint8_t type = JS::GetReservedSlot(self, Slots::Type).toInt32();
+  size_t index = JS::GetReservedSlot(self, std::to_underlying(Slots::Index)).toInt32();
+  uint8_t type = JS::GetReservedSlot(self, std::to_underlying(Slots::Type)).toInt32();
 
   JS::RootedObject result(cx, JS_NewPlainObject(cx));
   if (!result) {
@@ -86,7 +86,7 @@ bool FormDataIterator::next(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   JS_DefineProperty(cx, result, "value", result_val, JSPROP_ENUMERATE);
 
-  JS::SetReservedSlot(self, Slots::Index, JS::Int32Value(index + 1));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Index), JS::Int32Value(index + 1));
   args.rval().setObject(*result);
   return true;
 }
@@ -133,9 +133,9 @@ JSObject *FormDataIterator::create(JSContext *cx, JS::HandleObject form, uint8_t
     return nullptr;
   }
 
-  JS::SetReservedSlot(self, Slots::Form, JS::ObjectValue(*form));
-  JS::SetReservedSlot(self, Slots::Type, JS::Int32Value(type));
-  JS::SetReservedSlot(self, Slots::Index, JS::Int32Value(0));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Form), JS::ObjectValue(*form));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Type), JS::Int32Value(type));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Index), JS::Int32Value(0));
 
   return self;
 }
@@ -418,7 +418,7 @@ JSObject *FormData::create(JSContext *cx) {
     return nullptr;
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Entries), JS::PrivateValue(entries.release()));
+  SetReservedSlot(self, std::to_underlying(Slots::Entries), JS::PrivateValue(entries.release()));
   return self;
 }
 
@@ -440,7 +440,7 @@ bool FormData::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Entries), JS::PrivateValue(new EntryList));
+  SetReservedSlot(self, std::to_underlying(Slots::Entries), JS::PrivateValue(new EntryList));
 
   args.rval().setObject(*self);
   return true;

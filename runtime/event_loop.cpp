@@ -5,6 +5,7 @@
 #include "jsfriendapi.h"
 
 #include <iostream>
+#include <print>
 #include <vector>
 
 struct TaskQueue {
@@ -55,7 +56,7 @@ inline void exit_event_loop() { queue.get().event_loop_running = false; }
 
 bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
   if (queue.get().event_loop_running) {
-    fprintf(stderr, "cannot run event loop as it is already running");
+    std::print(stderr, "cannot run event loop as it is already running");
     return false;
   }
   queue.get().event_loop_running = true;

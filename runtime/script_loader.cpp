@@ -79,7 +79,7 @@ static std::string resolve_extension(std::string resolved_path) {
     return resolved_path;
   }
 
-  if (resolved_path.size() >= 3 && resolved_path.compare(resolved_path.size() - 3, 3, ".js") == 0) {
+  if (resolved_path.ends_with(".js")) {
     return resolved_path;
   }
 

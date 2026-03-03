@@ -594,13 +594,13 @@ JSObject *EventTarget::create(JSContext *cx) {
   }
 
   auto list = js::MakeUnique<ListenerList>();
-  SetReservedSlot(self, Slots::Listeners, JS::PrivateValue(list.release()));
+  SetReservedSlot(self, std::to_underlying(Slots::Listeners), JS::PrivateValue(list.release()));
   return self;
 }
 
 bool EventTarget::init(JSContext *cx, HandleObject self) {
   auto list = js::MakeUnique<ListenerList>();
-  SetReservedSlot(self, Slots::Listeners, JS::PrivateValue(list.release()));
+  SetReservedSlot(self, std::to_underlying(Slots::Listeners), JS::PrivateValue(list.release()));
   return true;
 }
 
@@ -613,7 +613,7 @@ bool EventTarget::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   auto list = js::MakeUnique<ListenerList>();
-  SetReservedSlot(self, Slots::Listeners, JS::PrivateValue(list.release()));
+  SetReservedSlot(self, std::to_underlying(Slots::Listeners), JS::PrivateValue(list.release()));
 
   args.rval().setObject(*self);
   return true;

@@ -12,7 +12,7 @@ class URLSearchParamsIterator : public BuiltinNoConstructor<URLSearchParamsItera
 public:
   static constexpr const char *class_name = "URLSearchParamsIterator";
 
-  enum Slots : uint8_t { Params, Type, Index, Count };
+  enum class Slots : uint8_t { Params, Type, Index, Count };
 
   static bool next(JSContext *cx, unsigned argc, JS::Value *vp);
 
@@ -45,7 +45,7 @@ class URLSearchParams : public BuiltinNoConstructor<URLSearchParams> {
 public:
   static constexpr const char *class_name = "URLSearchParams";
 
-  enum Slots : uint8_t { Url, Params, Count };
+  enum class Slots : uint8_t { Url, Params, Count };
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -98,7 +98,7 @@ class URL : public BuiltinImpl<URL, FinalizableClassPolicy> {
 public:
   static constexpr const char *class_name = "URL";
 
-  enum Slots : uint8_t { Url, Params, Count };
+  enum class Slots : uint8_t { Url, Params, Count };
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
