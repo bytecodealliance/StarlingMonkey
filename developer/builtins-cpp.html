@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Devoloping Builtins in C++ - StarlingMonkey Developer Documentation</title>
+        <title>Developing Builtins in C++ - StarlingMonkey Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -513,9 +513,9 @@ called during engine initialization.</p>
 <h2 id="providing-a-custom-host-api-implementation"><a class="header" href="#providing-a-custom-host-api-implementation">Providing a custom host API implementation</a></h2>
 <p>The <code>host-apis</code> directory can contain implementations of the host API for different
 versions of WASI—or in theory any other host interface. Those can be selected by setting the
-<code>HOST_API</code> environment variable to the name of one of the directories. Currently, implementations in terms of wasi-0.2.0, wasi-0.2.2, and wasi-0.2.3 are provided, with the latter <a href="https://github.com/bytecodealliance/StarlingMonkey/blob/1f5f81f6954c8c08a4d3bcec40488c29347d539c/CMakeLists.txt#L19">used by default</a>.</p>
+<code>HOST_API</code> environment variable to the name of one of the directories. Currently, implementations in terms of wasi-0.2.0, wasi-0.2.2, wasi-0.2.3, and wasi-0.2.10 are provided, with the latter <a href="https://github.com/bytecodealliance/StarlingMonkey/blob/main/CMakeLists.txt#L19">used by default</a>.</p>
 <p>To provide a custom host API implementation, you can set <code>HOST_API</code> to the (absolute) path of a
-directory containing that implementation. As is done in the implementations for <code>wasi-0.2.{2,3}</code>, it’s possible to extend existing implementations instead of duplicating any shared implementation.</p>
+directory containing that implementation. As is done in the implementations for <code>wasi-0.2.{2,3,10}</code>, it’s possible to extend existing implementations instead of duplicating any shared implementation.</p>
 
                     </main>
 
