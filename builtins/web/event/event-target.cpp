@@ -123,7 +123,11 @@ template <typename T> struct GCPolicy<RefPtr<T>> {
     }
     return true;
   }
-  // RefPtr<T> is allocated on the C++ heap using MakeRefPtr, never in the GC nursery.
+  // The GC policy here is for RefPtr<EventListener>, which is used for storing event
+  // listeners in EventTarget. The EventListener objects are allocated on the C++ heap
+  // and are reference counted so their lifetime is managed by RefPtr. The listener
+  // internally stores JS::Value callback, which is traced but the EventListener itself
+  // is not a GC thing.
   static constexpr bool mightBeInNursery() { return false; }
   static bool isTenured(const RefPtr<T> & /*unused*/) { return true; }
 };
