@@ -45,7 +45,7 @@ bool AbortSignal::aborted_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool AbortSignal::reason_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
 
-  args.rval().set(JS::GetReservedSlot(self, Slots::Reason));
+  args.rval().set(JS::GetReservedSlot(self, std::to_underlying(Slots::Reason)));
   return true;
 }
 
@@ -53,7 +53,7 @@ bool AbortSignal::reason_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 bool AbortSignal::onabort_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
 
-  args.rval().set(JS::GetReservedSlot(self, Slots::OnAbort));
+  args.rval().set(JS::GetReservedSlot(self, std::to_underlying(Slots::OnAbort)));
   return true;
 }
 
@@ -62,7 +62,7 @@ bool AbortSignal::onabort_set(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1);
 
   RootedValue new_callback(cx, args.get(0));
-  RootedValue curr_callback(cx, JS::GetReservedSlot(self, Slots::OnAbort));
+  RootedValue curr_callback(cx, JS::GetReservedSlot(self, std::to_underlying(Slots::OnAbort)));
 
   RootedValue opts(cx, JS::FalseValue());
   RootedValue type(cx, JS::StringValue(abort_type_atom));
@@ -140,7 +140,7 @@ bool AbortSignal::throwIfAborted(JSContext *cx, unsigned argc, JS::Value *vp) {
    // Steps: Throw this's abort reason, if this's AbortController has signaled
    // to abort; otherwise, does nothing.
   if (is_aborted(self)) {
-    RootedValue reason(cx, JS::GetReservedSlot(self, Slots::Reason));
+    RootedValue reason(cx, JS::GetReservedSlot(self, std::to_underlying(Slots::Reason)));
     JS_SetPendingException(cx, reason);
   }
 
@@ -165,23 +165,23 @@ bool AbortSignal::on_timeout(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 AbortSignal::AlgorithmList *AbortSignal::algorithms(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return static_cast<AlgorithmList *>(JS::GetReservedSlot(self, Slots::Algorithms).toPrivate());
+  return static_cast<AlgorithmList *>(JS::GetReservedSlot(self, std::to_underlying(Slots::Algorithms)).toPrivate());
 }
 
 WeakIndexSet *AbortSignal::source_signals(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return static_cast<WeakIndexSet *>(JS::GetReservedSlot(self, Slots::SourceSignals).toPrivate());
+  return static_cast<WeakIndexSet *>(JS::GetReservedSlot(self, std::to_underlying(Slots::SourceSignals)).toPrivate());
 }
 
 WeakIndexSet *AbortSignal::dependent_signals(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   return static_cast<WeakIndexSet *>(
-      JS::GetReservedSlot(self, Slots::DependentSignals).toPrivate());
+      JS::GetReservedSlot(self, std::to_underlying(Slots::DependentSignals)).toPrivate());
 }
 
 Value AbortSignal::reason(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, Slots::Reason);
+  return JS::GetReservedSlot(self, std::to_underlying(Slots::Reason));
 }
 
 // https://dom.spec.whatwg.org/#abortsignal-add
@@ -201,14 +201,14 @@ bool AbortSignal::add_algorithm(JSObject *self, js::UniquePtr<AbortAlgorithm> al
 
 bool AbortSignal::is_dependent(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, Slots::Dependent).toBoolean();
+  return JS::GetReservedSlot(self, std::to_underlying(Slots::Dependent)).toBoolean();
 }
 
 // https://dom.spec.whatwg.org/#abortsignal-aborted
 bool AbortSignal::is_aborted(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   // An AbortSignal object is aborted when its abort reason is not undefined.
-  return !JS::GetReservedSlot(self, Slots::Reason).isUndefined();
+  return !JS::GetReservedSlot(self, std::to_underlying(Slots::Reason)).isUndefined();
 }
 
 // https://dom.spec.whatwg.org/#abortsignal-signal-abort
@@ -282,14 +282,14 @@ bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {
 // Set signal's abort reason to reason if it is given; otherwise to a new "AbortError" DOMException.
 bool AbortSignal::set_reason(JSContext *cx, HandleObject self, HandleValue reason) {
   if (!reason.isUndefined()) {
-    SetReservedSlot(self, Slots::Reason, reason);
+    SetReservedSlot(self, std::to_underlying(Slots::Reason), reason);
   } else {
     RootedObject exception(cx, dom_exception::DOMException::create(cx, "AbortError", "AbortError"));
     if (!exception) {
       return false;
     }
 
-    SetReservedSlot(self, Slots::Reason, JS::ObjectValue(*exception));
+    SetReservedSlot(self, std::to_underlying(Slots::Reason), JS::ObjectValue(*exception));
   }
 
   return true;
@@ -303,17 +303,17 @@ JSObject *AbortSignal::create(JSContext *cx) {
   }
 
   // An AbortSignal object has an associated abort reason, which is initially undefined.
-  SetReservedSlot(self, Slots::Reason, JS::UndefinedValue());
+  SetReservedSlot(self, std::to_underlying(Slots::Reason), JS::UndefinedValue());
   // An AbortSignal object has associated abort algorithms, which is initially empty.
-  SetReservedSlot(self, Slots::Algorithms, JS::PrivateValue(new AlgorithmList));
+  SetReservedSlot(self, std::to_underlying(Slots::Algorithms), JS::PrivateValue(new AlgorithmList));
   // An AbortSignal object has a dependent (a boolean), which is initially false.
-  SetReservedSlot(self, Slots::Dependent, JS::FalseValue());
+  SetReservedSlot(self, std::to_underlying(Slots::Dependent), JS::FalseValue());
   // An AbortSignal object has associated source signals, which is initially empty.
-  SetReservedSlot(self, Slots::SourceSignals, JS::PrivateValue(new WeakIndexSet));
+  SetReservedSlot(self, std::to_underlying(Slots::SourceSignals), JS::PrivateValue(new WeakIndexSet));
   // An AbortSignal object has associated dependent signals, which is initially empty.
-  SetReservedSlot(self, Slots::DependentSignals, JS::PrivateValue(new WeakIndexSet));
+  SetReservedSlot(self, std::to_underlying(Slots::DependentSignals), JS::PrivateValue(new WeakIndexSet));
   // cache the onabort handler
-  SetReservedSlot(self, Slots::OnAbort, JS::NullValue());
+  SetReservedSlot(self, std::to_underlying(Slots::OnAbort), JS::NullValue());
 
   if (!EventTarget::init(cx, self)) {
     return nullptr;
@@ -411,13 +411,13 @@ JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signa
     RootedObject signal(cx, &signals[i].toObject());
 
     if (is_aborted(signal)) {
-      SetReservedSlot(self, Slots::Reason, reason(signal));
+      SetReservedSlot(self, std::to_underlying(Slots::Reason), reason(signal));
       return self;
     }
   }
 
   // 3. Set resultSignal's dependent to true.
-  SetReservedSlot(self, Slots::Dependent, JS::TrueValue());
+  SetReservedSlot(self, std::to_underlying(Slots::Dependent), JS::TrueValue());
   auto *our_signals = source_signals(self);
 
   // 4. For each signal of signals:
@@ -465,21 +465,21 @@ void AbortSignal::trace(JSTracer *trc, JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   EventTarget::trace(trc, self);
 
-  auto has_sources = !JS::GetReservedSlot(self, Slots::SourceSignals).isNullOrUndefined();
+  auto has_sources = !JS::GetReservedSlot(self, std::to_underlying(Slots::SourceSignals)).isNullOrUndefined();
   if (has_sources) {
     auto *srcsig = source_signals(self);
     srcsig->trace(trc);
     srcsig->traceWeak(trc);
   }
 
-  auto has_deps = !JS::GetReservedSlot(self, Slots::DependentSignals).isNullOrUndefined();
+  auto has_deps = !JS::GetReservedSlot(self, std::to_underlying(Slots::DependentSignals)).isNullOrUndefined();
   if (has_deps) {
     auto *depsig = dependent_signals(self);
     depsig->trace(trc);
     depsig->traceWeak(trc);
   }
 
-  auto has_algorithms = !JS::GetReservedSlot(self, Slots::Algorithms).isNullOrUndefined();
+  auto has_algorithms = !JS::GetReservedSlot(self, std::to_underlying(Slots::Algorithms)).isNullOrUndefined();
   if (has_algorithms) {
     auto *algorithms = AbortSignal::algorithms(self);
     algorithms->trace(trc);

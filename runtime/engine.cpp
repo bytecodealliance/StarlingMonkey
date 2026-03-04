@@ -15,6 +15,8 @@
 #include <cassert>
 #include <chrono>
 #include <cstdlib>
+#include <fmt/format.h>
+#include <print>
 #include <utility>
 
 #ifdef MEM_STATS
@@ -48,7 +50,7 @@ static bool dump_mem_stats(JSContext *cx) {
 
 #define TRACE(...)                                                                                 \
   if (config_->verbose) {                                                                          \
-    fmt::print("trace({}:{}): {}\n", __func__, __LINE__, fmt::format(__VA_ARGS__));                \
+    fmt::print("trace({}:{}): {}\n", __func__, __LINE__, fmt::format(__VA_ARGS__));                 \
     fflush(stdout);                                                                                \
 }
 
@@ -67,8 +69,7 @@ __attribute__((weak))
 bool debug_logging_enabled() { return DEBUG_LOGGING; }
 #define LOG(...)                                                                                   \
   if (debug_logging_enabled()) {                                                                   \
-    printf(__VA_ARGS__);                                                                           \
-    fflush(stdout);                                                                                \
+    std::println(__VA_ARGS__);                                                                     \
   }
 
 JS::UniqueChars stringify_value(JSContext *cx, JS::HandleValue value) {
@@ -87,7 +88,7 @@ bool dump_value(JSContext *cx, JS::Value val, FILE *fp) {
     return false;
   }
 
-  fprintf(fp, "%s\n", utf8chars.get());
+  std::println(fp, "{}", utf8chars.get());
   return true;
 }
 
@@ -102,7 +103,7 @@ bool print_stack(JSContext *cx, HandleObject stack, FILE *fp) {
     return false;
   }
 
-  fprintf(fp, "%s\n", utf8chars.begin());
+  std::println(fp, "{}", utf8chars.begin());
   return true;
 }
 
@@ -129,7 +130,7 @@ void print_cause(JSContext *cx, HandleValue error, FILE *fp) {
         return;
       }
 
-      fprintf(stderr, "Caused by: ");
+      std::print(stderr, "Caused by: ");
 
       bool has_stack = false;
       dump_error(cx, cause_val, &has_stack, fp);
@@ -145,7 +146,7 @@ void dump_error(JSContext *cx, HandleValue error, bool *has_stack, FILE *fp) {
     RootedObject err(cx, &error.toObject());
     JSErrorReport *report = JS_ErrorFromException(cx, err);
     if (report) {
-      fprintf(stderr, "%s\n", report->message().c_str());
+      std::println(stderr, "{}", report->message().c_str());
       reported = true;
     }
 
@@ -160,7 +161,7 @@ void dump_error(JSContext *cx, HandleValue error, bool *has_stack, FILE *fp) {
 
   if (stack) {
     *has_stack = true;
-    fprintf(stderr, "Stack:\n");
+    std::println(stderr, "Stack:");
     print_stack(cx, stack, stderr);
   } else {
     *has_stack = false;
@@ -181,7 +182,7 @@ void dump_promise_rejection(JSContext *cx, HandleValue reason, HandleObject prom
   // it as a last resort.
   if (!has_stack) {
     RootedObject stack(cx, JS::GetPromiseResolutionSite(promise));
-    fprintf(stderr, "Stack:\n");
+    std::println(stderr, "Stack:");
     print_stack(cx, stack, stderr);
   }
 }
@@ -195,7 +196,7 @@ static ScriptLoader* scriptLoader;
 JS::PersistentRootedObject unhandledRejectedPromises;
 
 void gc_callback(JSContext *cx, JSGCStatus status, JS::GCReason reason, void *data) {
-  LOG("gc for reason %s, %s\n", JS::ExplainGCReason(reason), status ? "end" : "start");
+  LOG("gc for reason {}, {}", JS::ExplainGCReason(reason), status ? "end" : "start");
 }
 
 static void rejection_tracker(JSContext *cx, bool mutedErrors, JS::HandleObject promise,
@@ -207,7 +208,7 @@ static void rejection_tracker(JSContext *cx, bool mutedErrors, JS::HandleObject 
     if (!JS::SetAdd(cx, unhandledRejectedPromises, promiseVal)) {
       // Note: we unconditionally print these, since they almost always indicate
       // serious bugs.
-      fprintf(stderr, "Adding an unhandled rejected promise to the promise "
+      std::print(stderr, "Adding an unhandled rejected promise to the promise "
                       "rejection tracker failed");
     }
     return;
@@ -217,7 +218,7 @@ static void rejection_tracker(JSContext *cx, bool mutedErrors, JS::HandleObject 
     if (!JS::SetDelete(cx, unhandledRejectedPromises, promiseVal, &deleted)) {
       // Note: we unconditionally print these, since they almost always indicate
       // serious bugs.
-      fprintf(stderr, "Removing an handled rejected promise from the promise "
+      std::print(stderr, "Removing an handled rejected promise from the promise "
                       "rejection tracker failed");
     }
   }
@@ -375,7 +376,7 @@ static bool report_unhandled_promise_rejections(JSContext *cx) {
     promise = &promise_val.toObject();
     // Note: we unconditionally print these, since they almost always indicate
     // serious bugs.
-    fprintf(stderr, "Promise rejected but never handled: ");
+    std::print(stderr, "Promise rejected but never handled: ");
     RootedValue result(cx, JS::GetPromiseResult(promise));
     dump_promise_rejection(cx, result, promise, stderr);
   }
@@ -386,15 +387,14 @@ static bool report_unhandled_promise_rejections(JSContext *cx) {
 static void DumpPendingException(JSContext *cx, const char *description, FILE *fp) {
   JS::ExceptionStack exception(cx);
   if (!JS::StealPendingExceptionStack(cx, &exception)) {
-    fprintf(fp,
-            "Error: exception pending after %s, but got another error "
-            "when trying to retrieve it. Aborting.\n",
+    std::println(fp,
+            "Error: exception pending after {}, but got another error when trying to retrieve it. Aborting.",
             description);
   } else {
-      fprintf(fp, "Exception while %s\n", description);
+      std::println(fp, "Exception while {}", description);
     JS::ErrorReportBuilder report(cx);
     if (!report.init(cx, exception, JS::ErrorReportBuilder::WithSideEffects)) {
-      fprintf(fp, "unable to build error report");
+      std::print(fp, "unable to build error report");
     } else {
       JS::PrintError(fp, report, false);
     }
@@ -407,15 +407,13 @@ static void abort(JSContext *cx, const char *description) {
   if (JS_IsExceptionPending(cx)) {
     DumpPendingException(cx, description, stderr);
   } else {
-    fprintf(stderr,
-            "Error while %s, but no exception is pending. "
-            "Aborting, since that doesn't seem recoverable at all.\n",
+    std::println(stderr,
+            "Error while {}, but no exception is pending. Aborting, since that doesn't seem recoverable at all.",
             description);
   }
 
   if (JS::SetSize(cx, unhandledRejectedPromises) > 0) {
-    fprintf(stderr, "Additionally, some promises were rejected, but the "
-                    "rejection never handled:\n");
+    std::println(stderr, "Additionally, some promises were rejected, but the rejection never handled:");
     report_unhandled_promise_rejections(cx);
   }
 
@@ -573,10 +571,10 @@ bool Engine::run_initialization_script() {
   if (!scriptLoader->load_resolved_script(CONTEXT, path, path, source)) {
     return false;
   }
-  auto *opts = new JS::CompileOptions(cx);
-  opts->setDiscardSource();
-  opts->setFile(path.c_str());
-  JS::RootedScript script(cx, Compile(cx, *opts, source));
+  JS::CompileOptions opts(cx);
+  opts.setDiscardSource();
+  opts.setFile(path.c_str());
+  JS::RootedScript script(cx, Compile(cx, opts, source));
   if (!script) {
     return false;
   }

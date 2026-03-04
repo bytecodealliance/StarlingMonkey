@@ -23,19 +23,19 @@ constexpr size_t BUFFER_SIZE = 16384;
 
 JSObject *transform(JSObject *self) {
   MOZ_ASSERT(DecompressionStream::is_instance(self));
-  return &JS::GetReservedSlot(self, DecompressionStream::Slots::Transform).toObject();
+  return &JS::GetReservedSlot(self, std::to_underlying(DecompressionStream::Slots::Transform)).toObject();
 }
 
 z_stream *state(JSObject *self) {
   MOZ_ASSERT(DecompressionStream::is_instance(self));
-  void *ptr = JS::GetReservedSlot(self, DecompressionStream::Slots::State).toPrivate();
+  void *ptr = JS::GetReservedSlot(self, std::to_underlying(DecompressionStream::Slots::State)).toPrivate();
   MOZ_ASSERT(ptr);
   return (z_stream *)ptr;
 }
 
 uint8_t *output_buffer(JSObject *self) {
   MOZ_ASSERT(DecompressionStream::is_instance(self));
-  void *ptr = JS::GetReservedSlot(self, DecompressionStream::Slots::Buffer).toPrivate();
+  void *ptr = JS::GetReservedSlot(self, std::to_underlying(DecompressionStream::Slots::Buffer)).toPrivate();
   MOZ_ASSERT(ptr);
   return (uint8_t *)ptr;
 }
@@ -168,8 +168,8 @@ bool DecompressionStream::flushAlgorithm(JSContext *cx, unsigned argc, JS::Value
 // These fields shouldn't ever be accessed again, but we should be able to
 // assert that.
 #ifdef DEBUG
-  JS::SetReservedSlot(self, DecompressionStream::Slots::State, JS::PrivateValue(nullptr));
-  JS::SetReservedSlot(self, DecompressionStream::Slots::Buffer, JS::PrivateValue(nullptr));
+  JS::SetReservedSlot(self, std::to_underlying(DecompressionStream::Slots::State), JS::PrivateValue(nullptr));
+  JS::SetReservedSlot(self, std::to_underlying(DecompressionStream::Slots::Buffer), JS::PrivateValue(nullptr));
 #endif
 
   args.rval().setUndefined();
@@ -214,7 +214,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   JS::RootedValue stream_val(cx, JS::ObjectValue(*stream));
 
   // 2.  Set this's format to _format_.
-  JS::SetReservedSlot(stream, DecompressionStream::Slots::Format, JS::Int32Value((int32_t)format));
+  JS::SetReservedSlot(stream, std::to_underlying(DecompressionStream::Slots::Format), JS::Int32Value((int32_t)format));
 
   // 3.  Let _transformAlgorithm_ be an algorithm which takes a _chunk_ argument
   // and runs the
@@ -235,7 +235,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   }
 
   TransformStream::set_used_as_mixin(transform);
-  JS::SetReservedSlot(stream, DecompressionStream::Slots::Transform, JS::ObjectValue(*transform));
+  JS::SetReservedSlot(stream, std::to_underlying(DecompressionStream::Slots::Transform), JS::ObjectValue(*transform));
 
   // The remainder of the function deals with setting up the inflate state used
   // for decompressing chunks.
@@ -247,7 +247,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
   }
 
   memset(zstream, 0, sizeof(z_stream));
-  JS::SetReservedSlot(stream, DecompressionStream::Slots::State, JS::PrivateValue(zstream));
+  JS::SetReservedSlot(stream, std::to_underlying(DecompressionStream::Slots::State), JS::PrivateValue(zstream));
 
   auto *buffer = (uint8_t *)JS_malloc(cx, BUFFER_SIZE);
   if (!buffer) {
@@ -255,7 +255,7 @@ JSObject *create(JSContext *cx, JS::HandleObject stream, Format format) {
     return nullptr;
   }
 
-  JS::SetReservedSlot(stream, DecompressionStream::Slots::Buffer, JS::PrivateValue(buffer));
+  JS::SetReservedSlot(stream, std::to_underlying(DecompressionStream::Slots::Buffer), JS::PrivateValue(buffer));
 
   // Using the same window bits as Chromium's Compression stream, see
   // https://chromium.googlesource.com/chromium/src/+/457f48d3d8635c8bca077232471228d75290cc29/third_party/blink/renderer/modules/compression/inflate_transformer.cc#31

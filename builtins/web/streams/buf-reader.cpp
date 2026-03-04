@@ -103,28 +103,28 @@ bool pull(JSContext *cx, JS::CallArgs args, HandleObject source, HandleObject ow
 
 JSObject *BufReader::user(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return &JS::GetReservedSlot(self, Slots::User).toObject();
+  return &JS::GetReservedSlot(self, std::to_underlying(Slots::User)).toObject();
 }
 
 JSObject *BufReader::stream(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return &JS::GetReservedSlot(self, Slots::Stream).toObject();
+  return &JS::GetReservedSlot(self, std::to_underlying(Slots::Stream)).toObject();
 }
 
 BufReader::ReadFn* BufReader::read_fn(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return reinterpret_cast<ReadFn *>(JS::GetReservedSlot(self, Slots::Read).toPrivate());
+  return reinterpret_cast<ReadFn *>(JS::GetReservedSlot(self, std::to_underlying(Slots::Read)).toPrivate());
 }
 
 size_t BufReader::position(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return reinterpret_cast<size_t>(JS::GetReservedSlot(self, Slots::Position).toPrivate());
+  return reinterpret_cast<size_t>(JS::GetReservedSlot(self, std::to_underlying(Slots::Position)).toPrivate());
 }
 
 void BufReader::set_position(JSObject *self, size_t pos) {
   MOZ_ASSERT(is_instance(self));
   // NOLINTNEXTLINE(performance-no-int-to-ptr): we use a private slot to store the position, not a pointer.
-  JS::SetReservedSlot(self, Slots::Position, JS::PrivateValue(reinterpret_cast<void *>(pos)));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Position), JS::PrivateValue(reinterpret_cast<void *>(pos)));
 }
 
 JSObject *BufReader::create(JSContext *cx, JS::HandleObject user, BufReader::ReadFn *read) {
@@ -139,10 +139,10 @@ JSObject *BufReader::create(JSContext *cx, JS::HandleObject user, BufReader::Rea
     return nullptr;
   }
 
-  JS::SetReservedSlot(self, Slots::User, JS::ObjectValue(*user));
-  JS::SetReservedSlot(self, Slots::Stream, JS::ObjectValue(*stream));
-  JS::SetReservedSlot(self, Slots::Read, JS::PrivateValue(reinterpret_cast<void *>(read)));
-  JS::SetReservedSlot(self, Slots::Position, JS::PrivateValue(reinterpret_cast<void *>(0)));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::User), JS::ObjectValue(*user));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Stream), JS::ObjectValue(*stream));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Read), JS::PrivateValue(reinterpret_cast<void *>(read)));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Position), JS::PrivateValue(reinterpret_cast<void *>(0)));
 
   return self;
 }

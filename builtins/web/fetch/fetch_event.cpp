@@ -16,6 +16,7 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <print>
 
 using builtins::web::event::Event;
 using builtins::web::event::EventTarget;
@@ -37,25 +38,25 @@ constexpr const std::string_view DEFAULT_NO_HANDLER_ERROR_MSG = "ERROR: no fetch
 
 void inc_pending_promise_count(JSObject *self) {
   MOZ_ASSERT(FetchEvent::is_instance(self));
-  auto count = JS::GetReservedSlot(self, FetchEvent::Slots::PendingPromiseCount).toInt32();
+  auto count = JS::GetReservedSlot(self, std::to_underlying(FetchEvent::Slots::PendingPromiseCount)).toInt32();
   count++;
   MOZ_ASSERT(count > 0);
   if (count == 1) {
     ENGINE->incr_event_loop_interest();
   }
 
-  JS::SetReservedSlot(self, FetchEvent::Slots::PendingPromiseCount, JS::Int32Value(count));
+  JS::SetReservedSlot(self, std::to_underlying(FetchEvent::Slots::PendingPromiseCount), JS::Int32Value(count));
 }
 
 void dec_pending_promise_count(JSObject *self) {
   MOZ_ASSERT(FetchEvent::is_instance(self));
-  auto count = JS::GetReservedSlot(self, FetchEvent::Slots::PendingPromiseCount).toInt32();
+  auto count = JS::GetReservedSlot(self, std::to_underlying(FetchEvent::Slots::PendingPromiseCount)).toInt32();
   MOZ_ASSERT(count > 0);
   count--;
   if (count == 0) {
     ENGINE->decr_event_loop_interest();
   }
-  JS::SetReservedSlot(self, FetchEvent::Slots::PendingPromiseCount, JS::Int32Value(count));
+  JS::SetReservedSlot(self, std::to_underlying(FetchEvent::Slots::PendingPromiseCount), JS::Int32Value(count));
 }
 
 // Step 5 of https://w3c.github.io/ServiceWorker/#wait-until-method
@@ -75,8 +76,7 @@ bool dec_pending_promise_count(JSContext *cx, JS::HandleObject event, JS::Handle
 /// doesn't ever see it, because adding it to `waitUntil` marks it as handled.
 bool handle_wait_until_rejection(JSContext *cx, JS::HandleObject event, JS::HandleValue promiseVal,
                                  JS::CallArgs args) {
-  fprintf(stderr, "Warning: Promise passed to FetchEvent#waitUntil was rejected with error. "
-                  "Pending tasks after that error might not run. Error details:\n");
+  std::println(stderr, "Warning: Promise passed to FetchEvent#waitUntil was rejected with error. Pending tasks after that error might not run. Error details:");
   RootedObject promise(cx, &promiseVal.toObject());
   ENGINE->dump_promise_rejection(args.get(0), promise, stderr);
   return dec_pending_promise_count(cx, event, promiseVal, args);
@@ -127,7 +127,7 @@ bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
   builtins::web::performance::Performance::timeOrigin.emplace(
       std::chrono::high_resolution_clock::now());
   JS::RootedObject request(
-      cx, &JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::Request)).toObject());
+      cx, &JS::GetReservedSlot(self, std::to_underlying(Slots::Request)).toObject());
 
   MOZ_ASSERT(!RequestOrResponse::maybe_handle(request));
   JS::SetReservedSlot(request, static_cast<uint32_t>(Request::Slots::Request),
@@ -183,7 +183,7 @@ bool FetchEvent::init_incoming_request(JSContext *cx, JS::HandleObject self,
 bool FetchEvent::request_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
 
-  args.rval().set(JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::Request)));
+  args.rval().set(JS::GetReservedSlot(self, std::to_underlying(Slots::Request)));
   return true;
 }
 
@@ -269,7 +269,7 @@ bool response_promise_catch_handler(JSContext *cx, JS::HandleObject event,
                                     JS::HandleValue promise_val, JS::CallArgs args) {
   JS::RootedObject promise(cx, &promise_val.toObject());
 
-  fprintf(stderr, "Error while running request handler: ");
+  std::print(stderr, "Error while running request handler: ");
   ENGINE->dump_promise_rejection(args.get(0), promise, stderr);
 
   // TODO: verify that this is the right behavior.
@@ -430,10 +430,10 @@ JSObject *FetchEvent::create(JSContext *cx) {
     return nullptr;
   }
 
-  JS::SetReservedSlot(self, Slots::Request, JS::ObjectValue(*request));
-  JS::SetReservedSlot(self, Slots::CurrentState, JS::Int32Value((int)State::unhandled));
-  JS::SetReservedSlot(self, Slots::PendingPromiseCount, JS::Int32Value(0));
-  JS::SetReservedSlot(self, Slots::DecPendingPromiseCountFunc, JS::ObjectValue(*dec_count_handler));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Request), JS::ObjectValue(*request));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::CurrentState), JS::Int32Value((int)State::unhandled));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::PendingPromiseCount), JS::Int32Value(0));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::DecPendingPromiseCountFunc), JS::ObjectValue(*dec_count_handler));
 
   INSTANCE.init(cx, self);
   self = INSTANCE;
@@ -453,19 +453,19 @@ bool FetchEvent::is_active(JSObject *self) {
   // the spec this is achieved using individual promise counts for the body read
   // operations.
   return Event::has_flag(self, EventFlag::Dispatch) || state(self) == State::responseStreaming ||
-         JS::GetReservedSlot(self, Slots::PendingPromiseCount).toInt32() > 0;
+         JS::GetReservedSlot(self, std::to_underlying(Slots::PendingPromiseCount)).toInt32() > 0;
 }
 
 FetchEvent::State FetchEvent::state(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return static_cast<FetchEvent::State>(JS::GetReservedSlot(self, Slots::CurrentState).toInt32());
+  return static_cast<FetchEvent::State>(JS::GetReservedSlot(self, std::to_underlying(Slots::CurrentState)).toInt32());
 }
 
 void FetchEvent::set_state(JSObject *self, FetchEvent::State new_state) {
   MOZ_ASSERT(is_instance(self));
   auto current_state = state(self);
   MOZ_ASSERT((uint8_t)new_state > (uint8_t)current_state);
-  JS::SetReservedSlot(self, Slots::CurrentState, JS::Int32Value(static_cast<int32_t>(new_state)));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::CurrentState), JS::Int32Value(static_cast<int32_t>(new_state)));
 
   if (current_state == State::responseStreaming &&
     (new_state == State::responseDone || new_state == State::respondedWithError)) {
@@ -494,7 +494,7 @@ static void dispatch_fetch_event(HandleObject event, double *total_compute) {
 
 bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
 #ifdef DEBUG
-  fprintf(stderr, "Warning: Using a DEBUG build. Expect things to be SLOW.\n");
+  std::println(stderr, "Warning: Using a DEBUG build. Expect things to be SLOW.");
 #endif
   MOZ_ASSERT(ENGINE->state() == api::EngineState::Initialized);
 
@@ -518,13 +518,11 @@ bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
   }
 
   if (!success) {
-    fprintf(stderr, "Warning: JS event loop terminated without completing the request.\n");
+    std::println(stderr, "Warning: JS event loop terminated without completing the request.");
   }
 
   if (ENGINE->debug_logging_enabled() && ENGINE->has_pending_async_tasks()) {
-    fprintf(stderr, "Event loop terminated with async tasks pending. "
-                    "Use FetchEvent#waitUntil to extend the component's "
-                    "lifetime if needed.\n");
+    std::println(stderr, "Event loop terminated with async tasks pending. Use FetchEvent#waitUntil to extend the component's lifetime if needed.");
   }
 
   if (!FetchEvent::response_started(fetch_event)) {
@@ -539,7 +537,7 @@ bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
   }
 
   if (ENGINE->has_unhandled_promise_rejections()) {
-    fprintf(stderr, "Warning: Unhandled promise rejections detected after handling incoming request.\n");
+    std::println(stderr, "Warning: Unhandled promise rejections detected after handling incoming request.");
     ENGINE->report_unhandled_promise_rejections();
   }
 

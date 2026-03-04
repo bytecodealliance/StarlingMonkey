@@ -94,7 +94,7 @@ public:
   static void set_related_target(JSObject *self, HandleObject target);
 
   static constexpr unsigned ctor_length = 1;
-  enum Slots : uint8_t {
+  enum class Slots : uint8_t {
     Flags,
     Target,
     RelatedTarget,

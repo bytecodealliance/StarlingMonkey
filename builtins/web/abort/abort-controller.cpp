@@ -26,7 +26,7 @@ const JSPropertySpec AbortController::properties[] = {
 bool AbortController::signal_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
 
-  args.rval().set(JS::GetReservedSlot(self, Slots::Signal));
+  args.rval().set(JS::GetReservedSlot(self, std::to_underlying(Slots::Signal)));
   return true;
 }
 
@@ -34,7 +34,7 @@ bool AbortController::abort(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0);
 
   RootedValue reason(cx, args.get(0));
-  RootedObject signal(cx, JS::GetReservedSlot(self, Slots::Signal).toObjectOrNull());
+  RootedObject signal(cx, JS::GetReservedSlot(self, std::to_underlying(Slots::Signal)).toObjectOrNull());
   if (!signal) {
     return false;
   }
@@ -55,7 +55,7 @@ bool AbortController::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  SetReservedSlot(self, Slots::Signal, JS::ObjectValue(*signal));
+  SetReservedSlot(self, std::to_underlying(Slots::Signal), JS::ObjectValue(*signal));
 
   args.rval().setObject(*self);
   return true;

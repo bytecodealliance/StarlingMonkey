@@ -60,7 +60,7 @@ public:
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
 
-  enum Slots : uint8_t { Listeners, Count };
+  enum class Slots : uint8_t { Listeners, Count };
 
   static bool add_listener(JSContext *cx, HandleObject self, HandleValue type, HandleValue callback,
                            HandleValue opts);

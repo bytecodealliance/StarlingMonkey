@@ -12,7 +12,7 @@ private:
 public:
   static constexpr const char *class_name = "WorkerLocation";
   static const int ctor_length = 1;
-  enum Slots : uint8_t { Count };
+  enum class Slots : uint8_t { Count };
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];

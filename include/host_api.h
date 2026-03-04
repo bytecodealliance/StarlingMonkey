@@ -218,7 +218,7 @@ class HandleState;
 
 class Resource {
 protected:
-  std::unique_ptr<HandleState> handle_state_ = nullptr;
+  std::unique_ptr<HandleState> handle_state_;
 
 public:
   virtual ~Resource();

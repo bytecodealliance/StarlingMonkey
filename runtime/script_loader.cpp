@@ -4,14 +4,15 @@
 #include <cstdio>
 #include <js/CompilationAndEvaluation.h>
 #include <js/MapAndSet.h>
+#include <js/ScriptPrivate.h>
 #include <js/Value.h>
 #include <jsfriendapi.h>
 #include <sys/stat.h>
 
 namespace {
 
-api::Engine* ENGINE;
-ScriptLoader* SCRIPT_LOADER;
+api::Engine *ENGINE;
+ScriptLoader *SCRIPT_LOADER;
 bool MODULE_MODE = true;
 std::string BASE_PATH;
 
@@ -29,16 +30,14 @@ namespace ScriptLoaderErrors {
 DEF_ERR(ModuleLoadingError, JSEXN_REFERENCEERR,
         "Error loading module \"{0}\" (resolved path \"{1}\"): {2}", 3)
 DEF_ERR(BuiltinModuleExists, JSEXN_TYPEERR, "Builtin module \"{0}\" already exists", 1)
-};
+}; // namespace ScriptLoaderErrors
 
 class AutoCloseFile {
-  FILE* file;
+  FILE *file;
 
 public:
   explicit AutoCloseFile(FILE *f) : file(f) {}
-  ~AutoCloseFile() {
-    release();
-  }
+  ~AutoCloseFile() { release(); }
 
   AutoCloseFile(const AutoCloseFile &) = default;
   AutoCloseFile(AutoCloseFile &&) = delete;
@@ -65,7 +64,7 @@ static std::string strip_prefix(std::string_view resolved_path,
     return std::string(resolved_path);
   }
 
-  const auto& base = *path_prefix;
+  const auto &base = *path_prefix;
   if (!resolved_path.starts_with(base)) {
     return std::string(resolved_path);
   }
@@ -75,14 +74,12 @@ static std::string strip_prefix(std::string_view resolved_path,
 
 struct stat s;
 
-
 static std::string resolve_extension(std::string resolved_path) {
   if (stat(resolved_path.c_str(), &s) == 0) {
     return resolved_path;
   }
 
-  if (resolved_path.size() >= 3 &&
-      resolved_path.compare(resolved_path.size() - 3, 3, ".js") == 0) {
+  if (resolved_path.ends_with(".js")) {
     return resolved_path;
   }
 
@@ -159,7 +156,7 @@ static std::string resolve_path(std::string_view path, std::string_view base) {
   return resolve_extension(std::move(resolved_path));
 }
 
-static JSObject* get_module(JSContext* cx, JS::SourceText<mozilla::Utf8Unit> &source,
+static JSObject *get_module(JSContext *cx, JS::SourceText<mozilla::Utf8Unit> &source,
                             std::string_view resolved_path, const JS::CompileOptions &opts) {
   RootedObject module(cx, JS::CompileModule(cx, opts, source));
   if (!module) {
@@ -216,7 +213,7 @@ static JSObject *get_module(JSContext *cx, std::string_view specifier,
   return get_module(cx, source, resolved_path, opts);
 }
 
-static JSObject* get_builtin_module(JSContext* cx, HandleValue id, HandleObject builtin) {
+static JSObject *get_builtin_module(JSContext *cx, HandleValue id, HandleObject builtin) {
   RootedValue module_val(cx);
   MOZ_ASSERT(id.isString());
   if (!JS::MapGet(cx, moduleRegistry, id, &module_val)) {
@@ -238,7 +235,7 @@ static JSObject* get_builtin_module(JSContext* cx, HandleValue id, HandleObject 
   bool firstValue = true;
   for (size_t i = 0; i < length; ++i) {
     if (firstValue) {
-      firstValue = false;  
+      firstValue = false;
     } else {
       code += ", ";
     }
@@ -262,14 +259,14 @@ static JSObject* get_builtin_module(JSContext* cx, HandleValue id, HandleObject 
   firstValue = true;
   for (size_t i = 0; i < length; ++i) {
     if (firstValue) {
-      firstValue = false;  
+      firstValue = false;
     } else {
       code += ", ";
     }
 
     code += "e";
     code += std::to_string(i);
-    
+
     code += " as '";
     const auto &prop = props[i];
     JS::RootedValue key(cx, js::IdToValue(prop));
@@ -310,36 +307,45 @@ static JSObject* get_builtin_module(JSContext* cx, HandleValue id, HandleObject 
   return module;
 }
 
-JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
-                              HandleObject moduleRequest) {
-  RootedString specifier(cx, GetModuleRequestSpecifier(cx, moduleRequest));
+bool module_load_hook(JSContext *cx, JS::HandleScript referrer, JS::HandleObject module_reques,
+                      JS::HandleValue hostDefined, JS::HandleValue payload, uint32_t lineNumber,
+                      JS::ColumnNumberOneOrigin columnNumber) {
+  RootedString specifier(cx, GetModuleRequestSpecifier(cx, module_reques));
   if (!specifier) {
-    return nullptr;
+    return false;
   }
 
   RootedValue path_val(cx, StringValue(specifier));
   auto path = JS_EncodeStringToUTF8(cx, specifier);
   if (!path) {
-    return nullptr;
+    return false;
   }
 
   RootedValue builtin_val(cx);
   if (!MapGet(cx, builtinModules, path_val, &builtin_val)) {
-    return nullptr; 
+    return false;
   }
   if (!builtin_val.isUndefined()) {
     RootedValue specifier_val(cx, StringValue(specifier));
     RootedObject builtin_obj(cx, &builtin_val.toObject());
-    return get_builtin_module(cx, specifier_val, builtin_obj);
+    RootedObject result(cx, get_builtin_module(cx, specifier_val, builtin_obj));
+    if (!result) {
+      return false;
+    }
+    return FinishLoadingImportedModule(cx, referrer, module_reques, payload, result, false);
   }
 
-  RootedObject info(cx, &referencingPrivate.toObject());
-  RootedValue parent_path_val(cx);
-  if (!JS_GetProperty(cx, info, "id", &parent_path_val)) {
-    return nullptr;
+  RootedValue ref_priv(cx);
+  if (referrer) {
+    ref_priv = JS::GetScriptPrivate(referrer);
   }
-  if (!parent_path_val.isString()) {
-    return nullptr;
+
+  MOZ_ASSERT(ref_priv.isObject(), "Module referrer must have an object private value");
+
+  RootedObject info(cx, &ref_priv.toObject());
+  RootedValue parent_path_val(cx);
+  if (!JS_GetProperty(cx, info, "id", &parent_path_val) || !parent_path_val.isString()) {
+    return false;
   }
 
   HostString str = core::encode(cx, parent_path_val);
@@ -348,11 +354,15 @@ JSObject* module_resolve_hook(JSContext* cx, HandleValue referencingPrivate,
   JS::CompileOptions opts(cx, *COMPILE_OPTS);
   auto stripped = strip_prefix(resolved_path, PATH_PREFIX);
   opts.setFileAndLine(stripped.c_str(), 1);
-  return get_module(cx, path.get(), resolved_path, opts);
+  RootedObject result(cx, get_module(cx, path.get(), resolved_path, opts));
+  if (!result) {
+    return false;
+  }
+  return FinishLoadingImportedModule(cx, referrer, module_reques, payload, result, false);
 }
 
-bool module_metadata_hook(JSContext* cx, HandleValue referencingPrivate, HandleObject metaObject) {
-  RootedObject info(cx, &referencingPrivate.toObject());
+bool module_metadata_hook(JSContext *cx, HandleValue ref_priv, HandleObject meta_obj) {
+  RootedObject info(cx, &ref_priv.toObject());
   RootedValue parent_id_val(cx);
   if (!JS_GetProperty(cx, info, "id", &parent_id_val)) {
     return false;
@@ -367,29 +377,29 @@ bool module_metadata_hook(JSContext* cx, HandleValue referencingPrivate, HandleO
   if (builtin_val.isUndefined()) {
     return false;
   }
-  JS_SetProperty(cx, metaObject, "builtin", builtin_val);
+  JS_SetProperty(cx, meta_obj, "builtin", builtin_val);
   return true;
 }
 
-ScriptLoader::ScriptLoader(api::Engine* engine, JS::CompileOptions *opts,
+ScriptLoader::ScriptLoader(api::Engine *engine, JS::CompileOptions *opts,
                            mozilla::Maybe<std::string> path_prefix) {
   MOZ_ASSERT(!SCRIPT_LOADER);
   ENGINE = engine;
   SCRIPT_LOADER = this;
   COMPILE_OPTS = opts;
   PATH_PREFIX = std::move(path_prefix);
-  JSContext* cx = engine->cx();
+  JSContext *cx = engine->cx();
   moduleRegistry.init(cx, JS::NewMapObject(cx));
   builtinModules.init(cx, JS::NewMapObject(cx));
   MOZ_RELEASE_ASSERT(moduleRegistry);
   MOZ_RELEASE_ASSERT(builtinModules);
   JSRuntime *rt = JS_GetRuntime(cx);
-  SetModuleResolveHook(rt, module_resolve_hook);
+  SetModuleLoadHook(rt, module_load_hook);
   SetModuleMetadataHook(rt, module_metadata_hook);
 }
 
-bool ScriptLoader::define_builtin_module(const char* id, HandleValue builtin) {
-  JSContext* cx = ENGINE->cx();
+bool ScriptLoader::define_builtin_module(const char *id, HandleValue builtin) {
+  JSContext *cx = ENGINE->cx();
   RootedString id_str(cx, JS_NewStringCopyZ(cx, id));
   if (!id_str) {
     return false;
@@ -409,9 +419,7 @@ bool ScriptLoader::define_builtin_module(const char* id, HandleValue builtin) {
   return true;
 }
 
-void ScriptLoader::enable_module_mode(bool enable) {
-  MODULE_MODE = enable;
-}
+void ScriptLoader::enable_module_mode(bool enable) { MODULE_MODE = enable; }
 
 bool ScriptLoader::load_resolved_script(JSContext *cx, std::string_view specifier_sv,
                                         std::string_view resolved_path_sv,
@@ -424,30 +432,30 @@ bool ScriptLoader::load_resolved_script(JSContext *cx, std::string_view specifie
 
   FILE *file = fopen(resolved_path, "r");
   if (!file) {
-    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError,
-      specifier, resolved_path, std::strerror(errno));
+    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError, specifier, resolved_path,
+                            std::strerror(errno));
   }
 
   AutoCloseFile autoclose(file);
   if (fseek(file, 0, SEEK_END) != 0) {
-    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError,
-      specifier, resolved_path, "can't read from file");
+    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError, specifier, resolved_path,
+                            "can't read from file");
   }
   size_t len = ftell(file);
   if (fseek(file, 0, SEEK_SET) != 0) {
-    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError,
-      specifier, resolved_path, "can't read from file");
+    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError, specifier, resolved_path,
+                            "can't read from file");
   }
 
   UniqueChars buf(js_pod_malloc<char>(len + 1));
   if (!buf) {
-    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError,
-      specifier, resolved_path, "out of memory while reading file");
+    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError, specifier, resolved_path,
+                            "out of memory while reading file");
   }
   size_t cc = fread(buf.get(), sizeof(char), len, file);
   if (cc != len) {
-    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError,
-      specifier, resolved_path, "error reading file");
+    return api::throw_error(cx, ScriptLoaderErrors::ModuleLoadingError, specifier, resolved_path,
+                            "error reading file");
   }
 
   return script.init(cx, std::move(buf), len);
@@ -471,8 +479,10 @@ bool ScriptLoader::load_script(JSContext *cx, std::string_view path,
   return load_resolved_script(cx, path, resolved, script);
 }
 
-bool ScriptLoader::eval_top_level_script(std::string_view path, JS::SourceText<mozilla::Utf8Unit> &source,
-                                         MutableHandleValue result, MutableHandleValue tla_promise) {
+bool ScriptLoader::eval_top_level_script(std::string_view path,
+                                         JS::SourceText<mozilla::Utf8Unit> &source,
+                                         MutableHandleValue result,
+                                         MutableHandleValue tla_promise) {
   JSContext *cx = ENGINE->cx();
 
   JS::CompileOptions opts(cx, *COMPILE_OPTS);
@@ -491,7 +501,20 @@ bool ScriptLoader::eval_top_level_script(std::string_view path, JS::SourceText<m
     if (!module) {
       return false;
     }
-    if (!ModuleLink(cx, module)) {
+    RootedValue hostDefined(cx, ObjectValue(*module));
+    if (!LoadRequestedModules(
+            cx, module, hostDefined,
+            [](JSContext *cx, JS::Handle<JS::Value> hd) {
+              JS::RootedObject mod(cx, &hd.toObject());
+              return JS::ModuleLink(cx, mod);
+            },
+            [](JSContext *cx, JS::Handle<JS::Value>, JS::Handle<JS::Value> error) {
+              JS_SetPendingException(cx, error);
+              return true;
+            })) {
+      return false;
+    }
+    if (JS_IsExceptionPending(cx)) {
       return false;
     }
   } else {

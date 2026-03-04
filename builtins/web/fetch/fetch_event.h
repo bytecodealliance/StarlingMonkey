@@ -27,9 +27,9 @@ public:
     respondedWithError,
   };
 
-  static constexpr int ParentSlots = event::Event::Slots::Count;
+  static constexpr int ParentSlots = std::to_underlying(event::Event::Slots::Count);
 
-  enum Slots : uint8_t {
+  enum class Slots : uint8_t {
     Request = ParentSlots,
     CurrentState,
     PendingPromiseCount,

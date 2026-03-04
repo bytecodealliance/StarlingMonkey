@@ -29,7 +29,7 @@ bool CustomEvent::detail_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     return api::throw_error(cx, api::Errors::WrongReceiver, "name get", "CustomEvent");
   }
 
-  args.rval().set(JS::GetReservedSlot(self, Slots::Detail));
+  args.rval().set(JS::GetReservedSlot(self, std::to_underlying(Slots::Detail)));
   return true;
 }
 
@@ -57,7 +57,7 @@ bool CustomEvent::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     }
   }
 
-  SetReservedSlot(self, Slots::Detail, detail);
+  SetReservedSlot(self, std::to_underlying(Slots::Detail), detail);
 
   args.rval().setObject(*self);
   return true;

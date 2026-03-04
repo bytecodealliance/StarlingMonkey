@@ -1,6 +1,8 @@
 #include "uuid.h"
 #include "host_api.h"
 
+#include <fmt/format.h>
+
 
 
 namespace builtins::web::crypto {

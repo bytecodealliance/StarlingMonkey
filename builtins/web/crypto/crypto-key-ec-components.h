@@ -1,6 +1,7 @@
 #ifndef BUILTINS_WEB_CRYPTO_CRYPTO_KEY_EC_COMPONENTS_H
 #define BUILTINS_WEB_CRYPTO_CRYPTO_KEY_EC_COMPONENTS_H
 
+#include <memory>
 #include <string>
 #include <vector>
 

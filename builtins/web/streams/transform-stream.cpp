@@ -41,7 +41,7 @@ bool pipeTo(JSContext *cx, unsigned argc, JS::Value *vp) {
     if (auto *ts = TransformStream::ts_from_writable(cx, target)) {
       bool streamHasTransformer = false;
       auto streamHasTransformerVal =
-          JS::GetReservedSlot(ts, TransformStream::Slots::HasTransformer);
+          JS::GetReservedSlot(ts, std::to_underlying(TransformStream::Slots::HasTransformer));
       if (streamHasTransformerVal.isBoolean()) {
         streamHasTransformer = streamHasTransformerVal.toBoolean();
       }
@@ -261,21 +261,21 @@ namespace builtins::web::streams {
  */
 JSObject *TransformStream::owner(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return &JS::GetReservedSlot(self, TransformStream::Slots::Owner).toObject();
+  return &JS::GetReservedSlot(self, std::to_underlying(TransformStream::Slots::Owner)).toObject();
 }
 
 void TransformStream::set_owner(JSObject *self, JSObject *owner) {
   MOZ_ASSERT(is_instance(self));
-  MOZ_ASSERT(JS::GetReservedSlot(self, TransformStream::Slots::Owner).isUndefined());
-  JS::SetReservedSlot(self, TransformStream::Slots::Owner, JS::ObjectValue(*owner));
+  MOZ_ASSERT(JS::GetReservedSlot(self, std::to_underlying(TransformStream::Slots::Owner)).isUndefined());
+  JS::SetReservedSlot(self, std::to_underlying(TransformStream::Slots::Owner), JS::ObjectValue(*owner));
 }
 
 JSObject *TransformStream::readable(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  if (!JS::GetReservedSlot(self, TransformStream::Slots::Readable).isObject()) {
+  if (!JS::GetReservedSlot(self, std::to_underlying(TransformStream::Slots::Readable)).isObject()) {
     return nullptr;
   }
-  return &JS::GetReservedSlot(self, TransformStream::Slots::Readable).toObject();
+  return &JS::GetReservedSlot(self, std::to_underlying(TransformStream::Slots::Readable)).toObject();
 }
 
 bool TransformStream::is_ts_readable(JSContext *cx, JS::HandleObject readable) {
@@ -297,7 +297,7 @@ bool TransformStream::readable_used_as_body(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   // For now the owner can only be a RequestOrResponse, so no further checks are
   // needed.
-  return JS::GetReservedSlot(self, TransformStream::Slots::Owner).isObject();
+  return JS::GetReservedSlot(self, std::to_underlying(TransformStream::Slots::Owner)).isObject();
 }
 
 /**
@@ -318,10 +318,10 @@ void TransformStream::set_readable_used_as_body(JSContext *cx, JS::HandleObject 
 
 JSObject *TransformStream::writable(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  if (!JS::GetReservedSlot(self, TransformStream::Slots::Writable).isObject()) {
+  if (!JS::GetReservedSlot(self, std::to_underlying(TransformStream::Slots::Writable)).isObject()) {
     return nullptr;
   }
-  return &JS::GetReservedSlot(self, TransformStream::Slots::Writable).toObject();
+  return &JS::GetReservedSlot(self, std::to_underlying(TransformStream::Slots::Writable)).toObject();
 }
 
 JSObject *TransformStream::ts_from_writable(JSContext *cx, JS::HandleObject writable) {
@@ -344,28 +344,28 @@ bool TransformStream::is_ts_writable(JSContext *cx, JS::HandleObject writable) {
 
 JSObject *TransformStream::controller(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return &JS::GetReservedSlot(self, TransformStream::Slots::Controller).toObject();
+  return &JS::GetReservedSlot(self, std::to_underlying(TransformStream::Slots::Controller)).toObject();
 }
 
 bool TransformStream::backpressure(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, TransformStream::Slots::Backpressure).toBoolean();
+  return JS::GetReservedSlot(self, std::to_underlying(TransformStream::Slots::Backpressure)).toBoolean();
 }
 
 JSObject *TransformStream::backpressureChangePromise(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, TransformStream::Slots::BackpressureChangePromise)
+  return JS::GetReservedSlot(self, std::to_underlying(TransformStream::Slots::BackpressureChangePromise))
       .toObjectOrNull();
 }
 
 bool TransformStream::used_as_mixin(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, TransformStream::Slots::UsedAsMixin).toBoolean();
+  return JS::GetReservedSlot(self, std::to_underlying(TransformStream::Slots::UsedAsMixin)).toBoolean();
 }
 
 void TransformStream::set_used_as_mixin(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  JS::SetReservedSlot(self, TransformStream::Slots::UsedAsMixin, JS::TrueValue());
+  JS::SetReservedSlot(self, std::to_underlying(TransformStream::Slots::UsedAsMixin), JS::TrueValue());
 }
 
 bool TransformStream::readable_get(JSContext *cx, unsigned argc, JS::Value *vp) {
@@ -492,7 +492,7 @@ bool TransformStream::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  JS::SetReservedSlot(self, TransformStream::Slots::HasTransformer,
+  JS::SetReservedSlot(self, std::to_underlying(TransformStream::Slots::HasTransformer),
                       JS::BooleanValue(JS::ToBoolean(transformer)));
 
   args.rval().setObject(*self);
@@ -806,11 +806,11 @@ bool TransformStream::SetBackpressure(JSContext *cx, JS::HandleObject stream, bo
   if (!changePromise) {
     return false;
   }
-  JS::SetReservedSlot(stream, TransformStream::Slots::BackpressureChangePromise,
+  JS::SetReservedSlot(stream, std::to_underlying(TransformStream::Slots::BackpressureChangePromise),
                       JS::ObjectValue(*changePromise));
 
   // 4.  Set stream.[backpressure] to backpressure.
-  JS::SetReservedSlot(stream, TransformStream::Slots::Backpressure, JS::BooleanValue(backpressure));
+  JS::SetReservedSlot(stream, std::to_underlying(TransformStream::Slots::Backpressure), JS::BooleanValue(backpressure));
 
   return true;
 }
@@ -847,7 +847,7 @@ bool TransformStream::Initialize(JSContext *cx, JS::HandleObject stream,
     return false;
   }
 
-  JS::SetReservedSlot(stream, TransformStream::Slots::Writable, JS::ObjectValue(*writable));
+  JS::SetReservedSlot(stream, std::to_underlying(TransformStream::Slots::Writable), JS::ObjectValue(*writable));
 
   // Step 6.  Let pullAlgorithm be the following steps:
   auto pullAlgorithm = DefaultSourcePullAlgorithm;
@@ -872,17 +872,17 @@ bool TransformStream::Initialize(JSContext *cx, JS::HandleObject stream,
     return false;
   }
 
-  JS::SetReservedSlot(stream, TransformStream::Slots::Readable, JS::ObjectValue(*readable));
+  JS::SetReservedSlot(stream, std::to_underlying(TransformStream::Slots::Readable), JS::ObjectValue(*readable));
 
   // Step 9.  Set stream.[backpressure] and stream.[backpressureChangePromise]
   // to undefined. As the note in the spec says, it's valid to instead set
   // `backpressure` to a boolean value early, which makes implementing
   // SetBackpressure easier.
-  JS::SetReservedSlot(stream, TransformStream::Slots::Backpressure, JS::FalseValue());
+  JS::SetReservedSlot(stream, std::to_underlying(TransformStream::Slots::Backpressure), JS::FalseValue());
 
   // For similar reasons, ensure that the backpressureChangePromise slot is
   // null.
-  JS::SetReservedSlot(stream, TransformStream::Slots::BackpressureChangePromise, JS::NullValue());
+  JS::SetReservedSlot(stream, std::to_underlying(TransformStream::Slots::BackpressureChangePromise), JS::NullValue());
 
   // Step 10. Perform ! [TransformStreamSetBackpressure](stream, true).
   if (!SetBackpressure(cx, stream, true)) {
@@ -890,11 +890,11 @@ bool TransformStream::Initialize(JSContext *cx, JS::HandleObject stream,
   }
 
   // Step 11. Set stream.[controller] to undefined.
-  JS::SetReservedSlot(stream, TransformStream::Slots::Controller, JS::UndefinedValue());
+  JS::SetReservedSlot(stream, std::to_underlying(TransformStream::Slots::Controller), JS::UndefinedValue());
 
   // Some transform streams are used as mixins in other builtins, which set
   // this to `true` as part of their construction.
-  JS::SetReservedSlot(stream, TransformStream::Slots::UsedAsMixin, JS::FalseValue());
+  JS::SetReservedSlot(stream, std::to_underlying(TransformStream::Slots::UsedAsMixin), JS::FalseValue());
 
   return true;
 }

@@ -29,8 +29,8 @@ public:
   static const JSPropertySpec properties[];
 
   static constexpr unsigned ctor_length = 0;
-  enum Slots : uint8_t { Data, Type, Endings, Readers, Count };
-  enum LineEndings : uint8_t { Transparent, Native };
+  enum class Slots : uint8_t { Data, Type, Endings, Readers, Count };
+  enum class LineEndings : uint8_t { Transparent, Native };
 
   using ByteBuffer = js::Vector<uint8_t, 0, js::SystemAllocPolicy>;
 
