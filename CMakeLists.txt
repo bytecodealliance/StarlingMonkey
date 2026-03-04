@@ -16,7 +16,7 @@ if (DEFINED ENV{HOST_API})
             folder of StarlingMonkey, or be an absolute path pointing to custom host API implementation.")
     endif()
 else()
-    set(HOST_API ${CMAKE_CURRENT_SOURCE_DIR}/host-apis/wasi-0.2.3)
+    set(HOST_API ${CMAKE_CURRENT_SOURCE_DIR}/host-apis/wasi-0.2.10)
 endif()
 message(STATUS "Using host API: ${HOST_API}")
 
