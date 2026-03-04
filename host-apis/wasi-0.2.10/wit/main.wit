@@ -1,0 +1,6 @@
+package local:bindings;
+
+world bindings {
+  include wasi:cli/command@0.2.10;
+  include wasi:http/proxy@0.2.10;
+}

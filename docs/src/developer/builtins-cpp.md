@@ -291,10 +291,10 @@ StarlingMonkey provides macros and helper functions to simplify native class imp
 
 The `host-apis` directory can contain implementations of the host API for different
 versions of WASI—or in theory any other host interface. Those can be selected by setting the
-`HOST_API` environment variable to the name of one of the directories. Currently, implementations in terms of wasi-0.2.0, wasi-0.2.2, and wasi-0.2.3 are provided, with the latter [used by default](https://github.com/bytecodealliance/StarlingMonkey/blob/1f5f81f6954c8c08a4d3bcec40488c29347d539c/CMakeLists.txt#L19).
+`HOST_API` environment variable to the name of one of the directories. Currently, implementations in terms of wasi-0.2.0, wasi-0.2.2, wasi-0.2.3, and wasi-0.2.10 are provided, with the latter [used by default](https://github.com/bytecodealliance/StarlingMonkey/blob/main/CMakeLists.txt#L19).
 
 To provide a custom host API implementation, you can set `HOST_API` to the (absolute) path of a
-directory containing that implementation. As is done in the implementations for `wasi-0.2.{2,3}`, it's possible to extend existing implementations instead of duplicating any shared implementation.
+directory containing that implementation. As is done in the implementations for `wasi-0.2.{2,3,10}`, it's possible to extend existing implementations instead of duplicating any shared implementation.
 
 [spidermonkey-rooting]:
   https://github.com/mozilla-spidermonkey/spidermonkey-embedding-examples/blob/next/docs/GC%20Rooting%20Guide.md
