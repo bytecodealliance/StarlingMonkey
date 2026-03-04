@@ -12,8 +12,8 @@ class CustomEvent : public BuiltinImpl<CustomEvent> {
   static bool detail_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
 public:
-  static constexpr int ParentSlots = Event::Slots::Count;
-  enum Slots : uint8_t { Detail = ParentSlots, Count };
+  static constexpr int ParentSlots = std::to_underlying(Event::Slots::Count);
+  enum class Slots : uint8_t { Detail = ParentSlots, Count };
 
   static constexpr const char *class_name = "CustomEvent";
   static constexpr unsigned ctor_length = 2;

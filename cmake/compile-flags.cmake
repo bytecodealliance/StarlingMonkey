@@ -1,5 +1,5 @@
 set(WASI 1)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 add_compile_definitions("$<$<CONFIG:DEBUG>:DEBUG=1>")
 
 list(APPEND CMAKE_EXE_LINKER_FLAGS
@@ -12,7 +12,7 @@ list(APPEND CMAKE_EXE_LINKER_FLAGS
 list(JOIN CMAKE_EXE_LINKER_FLAGS " " CMAKE_EXE_LINKER_FLAGS)
 
 list(APPEND CMAKE_CXX_FLAGS
-        -std=gnu++20 -Wall -Werror -Qunused-arguments
+        -std=gnu++23 -Wall -Werror -Qunused-arguments
         -Wimplicit-fallthrough -Wno-unknown-warning-option -Wno-invalid-offsetof
         -fno-sized-deallocation -fno-aligned-new -mthread-model single
         -fPIC -fno-rtti -fno-exceptions -fno-math-errno -pipe

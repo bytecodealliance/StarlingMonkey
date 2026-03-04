@@ -37,7 +37,7 @@ bool ensure_location_access(JSContext *cx, const char *name) {
     if (result.isErr()) {                                                                          \
       return false;                                                                                \
     }                                                                                              \
-    auto [args, self] = result.unwrap();                                                           \
+    auto args = result.unwrap();                                                                   \
     if (!ensure_location_access(cx, "location." #field)) {                                         \
       return false;                                                                                \
     }                                                                                              \

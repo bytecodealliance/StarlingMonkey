@@ -20,11 +20,13 @@ default:
 build target="all" *flags:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo 'Setting build directory to {{ builddir }}, build type {{ mode }}'
+    echo 'Setting build directory to {{ builddir }}, build type {{ if mode == "weval" { "Release (weval)" } else { capitalize(mode) } }}'
 
     # Only run configure step if build directory doesn't exist yet
     if ! {{ path_exists(builddir) }} || {{ reconfigure }} = 'true'; then
-        cmake -S . -B {{ builddir }} {{ flags }} -DCMAKE_BUILD_TYPE={{ capitalize(mode) }}
+        cmake -S . -B {{ builddir }} {{ flags }} \
+            -DCMAKE_BUILD_TYPE={{ if mode == "weval" { "Release" } else { capitalize(mode) } }} \
+            {{ if mode == "weval" { "-DUSE_WASM_OPT=OFF -DWEVAL=ON" } else { "" } }}
     else
         echo 'build directory already exists, skipping cmake configure'
     fi

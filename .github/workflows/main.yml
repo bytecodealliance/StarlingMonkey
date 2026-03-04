@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build: [release, debug]
+        build: [release, debug, weval]
         os: [ubuntu-latest]
     outputs:
       SM_TAG_EXISTS: ${{ steps.check-sm-release.outputs.SM_TAG_EXISTS }}

@@ -1,4 +1,4 @@
-set(SM_TAG FIREFOX_140_0_4_RELEASE_STARLING)
+set(SM_TAG FIREFOX_147_0_4_RELEASE_STARLING)
 
 include("manage-git-source")
 

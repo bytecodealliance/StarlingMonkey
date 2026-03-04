@@ -11,6 +11,7 @@ Checks: >
   misc-unused-alias-decls,
   misc-unused-using-decls,
   -clang-analyzer-optin.core.EnumCastOutOfRange,
+  -clang-analyzer-optin.cplusplus.UninitializedObject,
   -cppcoreguidelines-avoid-do-while,
   -cppcoreguidelines-avoid-c-arrays,
   -cppcoreguidelines-pro-type-reinterpret-cast,

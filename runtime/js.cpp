@@ -8,6 +8,7 @@
 #include "extension-api.h"
 #include "config-parser.h"
 #include "host_api.h"
+#include "wasi/api.h"
 #include "wasi/libc-environ.h"
 #include "wizer.h"
 #ifdef MEM_STATS

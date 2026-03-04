@@ -9,30 +9,30 @@
 namespace builtins::web::streams {
 
 JSObject *NativeStreamSink::owner(JSObject *self) {
-  return &JS::GetReservedSlot(self, Slots::Owner).toObject();
+  return &JS::GetReservedSlot(self, std::to_underlying(Slots::Owner)).toObject();
 }
 
 JS::Value NativeStreamSink::startPromise(JSObject *self) {
-  return JS::GetReservedSlot(self, Slots::StartPromise);
+  return JS::GetReservedSlot(self, std::to_underlying(Slots::StartPromise));
 }
 
 NativeStreamSink::WriteAlgorithmImplementation *NativeStreamSink::writeAlgorithm(JSObject *self) {
-  return (WriteAlgorithmImplementation *)JS::GetReservedSlot(self, Slots::WriteAlgorithm)
+  return (WriteAlgorithmImplementation *)JS::GetReservedSlot(self, std::to_underlying(Slots::WriteAlgorithm))
       .toPrivate();
 }
 
 NativeStreamSink::AbortAlgorithmImplementation *NativeStreamSink::abortAlgorithm(JSObject *self) {
-  return (AbortAlgorithmImplementation *)JS::GetReservedSlot(self, Slots::AbortAlgorithm)
+  return (AbortAlgorithmImplementation *)JS::GetReservedSlot(self, std::to_underlying(Slots::AbortAlgorithm))
       .toPrivate();
 }
 
 NativeStreamSink::CloseAlgorithmImplementation *NativeStreamSink::closeAlgorithm(JSObject *self) {
-  return (CloseAlgorithmImplementation *)JS::GetReservedSlot(self, Slots::CloseAlgorithm)
+  return (CloseAlgorithmImplementation *)JS::GetReservedSlot(self, std::to_underlying(Slots::CloseAlgorithm))
       .toPrivate();
 }
 
 JSObject *NativeStreamSink::controller(JSObject *self) {
-  return &JS::GetReservedSlot(self, Slots::Controller).toObject();
+  return &JS::GetReservedSlot(self, std::to_underlying(Slots::Controller)).toObject();
 }
 
 /**
@@ -63,7 +63,7 @@ bool NativeStreamSink::start(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::RootedObject controller(cx, &args[0].toObject());
   MOZ_ASSERT(get_controller_sink(cx, controller) == self);
 
-  JS::SetReservedSlot(self, Slots::Controller, args[0]);
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Controller), args[0]);
 
   // For TransformStream, StartAlgorithm returns the same Promise for both the
   // readable and writable stream. All other native initializations of
@@ -129,11 +129,11 @@ JSObject *NativeStreamSink::create(JSContext *cx, JS::HandleObject owner,
     return nullptr;
   }
 
-  JS::SetReservedSlot(sink, Slots::Owner, JS::ObjectValue(*owner));
-  JS::SetReservedSlot(sink, Slots::StartPromise, startPromise);
-  JS::SetReservedSlot(sink, Slots::WriteAlgorithm, JS::PrivateValue((void *)write));
-  JS::SetReservedSlot(sink, Slots::AbortAlgorithm, JS::PrivateValue((void *)abort));
-  JS::SetReservedSlot(sink, Slots::CloseAlgorithm, JS::PrivateValue((void *)close));
+  JS::SetReservedSlot(sink, std::to_underlying(Slots::Owner), JS::ObjectValue(*owner));
+  JS::SetReservedSlot(sink, std::to_underlying(Slots::StartPromise), startPromise);
+  JS::SetReservedSlot(sink, std::to_underlying(Slots::WriteAlgorithm), JS::PrivateValue((void *)write));
+  JS::SetReservedSlot(sink, std::to_underlying(Slots::AbortAlgorithm), JS::PrivateValue((void *)abort));
+  JS::SetReservedSlot(sink, std::to_underlying(Slots::CloseAlgorithm), JS::PrivateValue((void *)close));
   return sink;
 }
 } // namespace builtins::web::streams

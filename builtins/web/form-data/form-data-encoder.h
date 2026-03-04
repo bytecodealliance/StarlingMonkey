@@ -25,7 +25,7 @@ public:
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
 
-  enum Slots : uint8_t { Form, Inner, Count };
+  enum class Slots : uint8_t { Form, Inner, Count };
 
   static JSObject *form_data(JSObject *self);
   static std::string boundary(JSObject *self);

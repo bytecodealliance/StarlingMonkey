@@ -9,6 +9,7 @@
 #include <js/CompilationAndEvaluation.h>
 #include <js/SourceText.h>
 
+#include <print>
 #include <string_view>
 #include <wasi/libc-environ.h>
 
@@ -40,7 +41,7 @@ bool print_location(JSContext *cx, FILE *fp = stdout) {
   if (!DescribeScriptedCaller(&filename, cx, &lineno, &column)) {
     return false;
   }
-  fprintf(fp, "%s@%u:%u: ", filename.get(), lineno, column.oneOriginValue());
+  std::print(fp, "{}@{}:{}: ", filename.get(), lineno, column.oneOriginValue());
   return true;
 }
 
@@ -53,10 +54,10 @@ bool dbg_assert(JSContext *cx, unsigned argc, Value *vp) {
 
     if (args.length() > 1) {
       auto message = core::encode(cx, args.get(1));
-      fprintf(stderr, "Assert failed in debugger: %.*s", static_cast<int>(message.len),
-              message.begin());
+      std::print(stderr, "Assert failed in debugger: {:.{}}", message.begin(),
+              static_cast<int>(message.len));
     } else {
-      fprintf(stderr, "Assert failed in debugger");
+      std::print(stderr, "Assert failed in debugger");
     }
     MOZ_ASSERT(false);
   }
@@ -73,7 +74,7 @@ class TCPSocket : public builtins::BuiltinNoConstructor<TCPSocket> {
 
 public:
   static constexpr const char *class_name = "TCPSocket";
-  enum Slots : uint8_t { TCPSocketHandle, Count };
+  enum class Slots : uint8_t { TCPSocketHandle, Count };
 
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
@@ -84,7 +85,7 @@ public:
 };
 
 host_api::TCPSocket *TCPSocket::socket(JSObject *self) {
-  auto socket_val = JS::GetReservedSlot(self, TCPSocketHandle);
+  auto socket_val = JS::GetReservedSlot(self, std::to_underlying(Slots::TCPSocketHandle));
   return static_cast<host_api::TCPSocket *>(socket_val.toPrivate());
 }
 
@@ -117,7 +118,7 @@ JSObject *TCPSocket::FromSocket(JSContext *cx, host_api::TCPSocket *socket) {
   if (!instance) {
     return nullptr;
   }
-  SetReservedSlot(instance, TCPSocketHandle, PrivateValue(socket));
+  SetReservedSlot(instance, std::to_underlying(Slots::TCPSocketHandle), PrivateValue(socket));
   return instance;
 }
 
@@ -158,14 +159,14 @@ bool initialize_debugger(JSContext *cx, uint16_t port, bool content_already_init
   MOZ_RELEASE_ASSERT(socket, "Failed to create debugging socket");
 
   if (!socket->connect({127, 0, 0, 1}, port) || !socket->send("get-session-port")) {
-    printf("Couldn't connect to debugging socket at port %u, continuing without debugging ...\n",
+    std::println("Couldn't connect to debugging socket at port {}, continuing without debugging ...",
            port);
     return true;
   }
 
   auto response = socket->receive(128);
   if (!response) {
-    printf("Couldn't get debugging session port, continuing without debugging ...\n");
+    std::println("Couldn't get debugging session port, continuing without debugging ...");
     return true;
   }
 
@@ -178,8 +179,8 @@ bool initialize_debugger(JSContext *cx, uint16_t port, bool content_already_init
   char *end = nullptr;
   uint16_t session_port = std::strtoul(response.begin(), &end, 10);
   if (session_port < 1024 || session_port > 65535) {
-    printf("Invalid debugging session port '%*s' received, continuing without debugging ...\n",
-           static_cast<int>(response.len), response.begin());
+    std::println("Invalid debugging session port '{:>{}}' received, continuing without debugging ...",
+           response.begin(), static_cast<int>(response.len));
     return true;
   }
   socket->close();
@@ -188,15 +189,14 @@ bool initialize_debugger(JSContext *cx, uint16_t port, bool content_already_init
   MOZ_RELEASE_ASSERT(socket, "Failed to create debugging session socket");
 
   if (!socket->connect({127, 0, 0, 1}, session_port) || !socket->send("get-debugger")) {
-    printf("Couldn't connect to debugging session socket at port %u, "
-           "continuing without debugging ...\n",
+    std::println("Couldn't connect to debugging session socket at port {}, continuing without debugging ...",
            session_port);
     return true;
   }
 
   auto debugging_script = debugging_socket::read_message(cx, socket);
   if (!debugging_script) {
-    printf("Couldn't get debugger script, continuing without debugging ...\n");
+    std::println("Couldn't get debugger script, continuing without debugging ...");
     return true;
   }
 
@@ -275,10 +275,10 @@ bool dbg_print(JSContext *cx, unsigned argc, Value *vp) {
     if (!str) {
       return false;
     }
-    printf("%.*s", static_cast<int>(str.len), str.begin());
+    std::print("{:.{}}", str.begin(), static_cast<int>(str.len));
   }
 
-  printf("\n");
+  std::println("");
   fflush(stdout);
   args.rval().setUndefined();
   return true;
@@ -297,7 +297,7 @@ void maybe_init_debugger(api::Engine *engine, bool content_already_initialized) 
   if (port_str) {
     uint32_t port = std::stoi(port_str);
     if (!initialize_debugger(engine->cx(), port, content_already_initialized)) {
-      fprintf(stderr, "Error evaluating debugger script\n");
+      std::println(stderr, "Error evaluating debugger script");
       exit(1);
     }
   }

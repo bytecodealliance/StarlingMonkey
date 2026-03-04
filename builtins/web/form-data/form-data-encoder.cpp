@@ -618,12 +618,12 @@ std::string MultipartFormData::boundary(JSObject *self) {
 MultipartFormDataImpl *MultipartFormData::as_impl(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   return reinterpret_cast<MultipartFormDataImpl *>(
-      JS::GetReservedSlot(self, Slots::Inner).toPrivate());
+      JS::GetReservedSlot(self, std::to_underlying(Slots::Inner)).toPrivate());
 }
 
 JSObject *MultipartFormData::form_data(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return &JS::GetReservedSlot(self, Slots::Form).toObject();
+  return &JS::GetReservedSlot(self, std::to_underlying(Slots::Form)).toObject();
 }
 
 mozilla::Result<size_t, OutOfMemory> MultipartFormData::query_length(JSContext *cx, HandleObject self) {
@@ -683,8 +683,8 @@ JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
     return nullptr;
   }
 
-  JS::SetReservedSlot(self, Slots::Form, JS::ObjectValue(*form_data));
-  JS::SetReservedSlot(self, Slots::Inner, JS::PrivateValue(reinterpret_cast<void *>(impl.release())));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Form), JS::ObjectValue(*form_data));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Inner), JS::PrivateValue(reinterpret_cast<void *>(impl.release())));
 
   return self;
 }

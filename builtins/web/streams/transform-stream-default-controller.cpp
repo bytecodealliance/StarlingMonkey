@@ -20,21 +20,21 @@
 namespace builtins::web::streams {
 JSObject *TransformStreamDefaultController::stream(JSObject *controller) {
   MOZ_ASSERT(is_instance(controller));
-  return &JS::GetReservedSlot(controller, Slots::Stream).toObject();
+  return &JS::GetReservedSlot(controller, std::to_underlying(Slots::Stream)).toObject();
 }
 
 TransformStreamDefaultController::TransformAlgorithmImplementation *
 TransformStreamDefaultController::transformAlgorithm(JSObject *controller) {
   MOZ_ASSERT(is_instance(controller));
   return (TransformAlgorithmImplementation *)JS::GetReservedSlot(controller,
-                                                                 Slots::TransformAlgorithm)
+                                                                 std::to_underlying(Slots::TransformAlgorithm))
       .toPrivate();
 }
 
 TransformStreamDefaultController::FlushAlgorithmImplementation *
 TransformStreamDefaultController::flushAlgorithm(JSObject *controller) {
   MOZ_ASSERT(is_instance(controller));
-  return (FlushAlgorithmImplementation *)JS::GetReservedSlot(controller, Slots::FlushAlgorithm)
+  return (FlushAlgorithmImplementation *)JS::GetReservedSlot(controller, std::to_underlying(Slots::FlushAlgorithm))
       .toPrivate();
 }
 
@@ -140,20 +140,20 @@ JSObject *TransformStreamDefaultController::create(
   MOZ_ASSERT(TransformStream::is_instance(stream));
 
   // 2.  Assert: stream.[controller] is undefined.
-  MOZ_ASSERT(JS::GetReservedSlot(stream, TransformStream::Slots::Controller).isUndefined());
+  MOZ_ASSERT(JS::GetReservedSlot(stream, std::to_underlying(TransformStream::Slots::Controller)).isUndefined());
 
   // 3.  Set controller.[stream] to stream.
-  JS::SetReservedSlot(controller, Slots::Stream, JS::ObjectValue(*stream));
+  JS::SetReservedSlot(controller, std::to_underlying(Slots::Stream), JS::ObjectValue(*stream));
 
   // 4.  Set stream.[controller] to controller.
-  JS::SetReservedSlot(stream, TransformStream::Slots::Controller, JS::ObjectValue(*controller));
+  JS::SetReservedSlot(stream, std::to_underlying(TransformStream::Slots::Controller), JS::ObjectValue(*controller));
 
   // 5.  Set controller.[transformAlgorithm] to transformAlgorithm.
-  JS::SetReservedSlot(controller, Slots::TransformAlgorithm,
+  JS::SetReservedSlot(controller, std::to_underlying(Slots::TransformAlgorithm),
                       JS::PrivateValue((void *)transformAlgo));
 
   // 6.  Set controller.[flushAlgorithm] to flushAlgorithm.
-  JS::SetReservedSlot(controller, Slots::FlushAlgorithm, JS::PrivateValue((void *)flushAlgo));
+  JS::SetReservedSlot(controller, std::to_underlying(Slots::FlushAlgorithm), JS::PrivateValue((void *)flushAlgo));
 
   return controller;
 }
@@ -161,9 +161,9 @@ JSObject *TransformStreamDefaultController::create(
 void TransformStreamDefaultController::set_transformer(JSObject *controller, JS::Value transformer,
                                                        JSObject *transformFunction,
                                                        JSObject *flushFunction) {
-  JS::SetReservedSlot(controller, Slots::Transformer, transformer);
-  JS::SetReservedSlot(controller, Slots::TransformInput, JS::ObjectOrNullValue(transformFunction));
-  JS::SetReservedSlot(controller, Slots::FlushInput, JS::ObjectOrNullValue(flushFunction));
+  JS::SetReservedSlot(controller, std::to_underlying(Slots::Transformer), transformer);
+  JS::SetReservedSlot(controller, std::to_underlying(Slots::TransformInput), JS::ObjectOrNullValue(transformFunction));
+  JS::SetReservedSlot(controller, std::to_underlying(Slots::FlushInput), JS::ObjectOrNullValue(flushFunction));
 }
 
 /**
@@ -307,7 +307,7 @@ JSObject *TransformStreamDefaultController::transform_algorithm_transformer(
   // Step 2.  Let transformAlgorithm be the following steps, taking a chunk
   // argument:
   JS::RootedValue transformFunction(cx);
-  transformFunction = JS::GetReservedSlot(controller, Slots::TransformInput);
+  transformFunction = JS::GetReservedSlot(controller, std::to_underlying(Slots::TransformInput));
   if (!transformFunction.isObject()) {
     // 2.1.  Let result be TransformStreamDefaultControllerEnqueue(controller,
     // chunk).
@@ -325,7 +325,7 @@ JSObject *TransformStreamDefaultController::transform_algorithm_transformer(
   // algorithm which takes an argument chunk and returns the result of invoking
   // transformerDict[transform] with argument list « chunk, controller » and
   // callback this value transformer.
-  JS::RootedValue transformer(cx, JS::GetReservedSlot(controller, Slots::Transformer));
+  JS::RootedValue transformer(cx, JS::GetReservedSlot(controller, std::to_underlying(Slots::Transformer)));
   JS::RootedValueArray<2> newArgs(cx);
   newArgs[0].set(chunk);
   newArgs[1].setObject(*controller);
@@ -345,7 +345,7 @@ TransformStreamDefaultController::flush_algorithm_transformer(JSContext *cx,
 
   // Step 3.  Let flushAlgorithm be an algorithm which returns a promise
   // resolved with undefined.
-  JS::RootedValue flushFunction(cx, JS::GetReservedSlot(controller, Slots::FlushInput));
+  JS::RootedValue flushFunction(cx, JS::GetReservedSlot(controller, std::to_underlying(Slots::FlushInput)));
   if (!flushFunction.isObject()) {
     return JS::CallOriginalPromiseResolve(cx, JS::UndefinedHandleValue);
   }
@@ -353,7 +353,7 @@ TransformStreamDefaultController::flush_algorithm_transformer(JSContext *cx,
   // Step 5.  If transformerDict[flush] exists, set flushAlgorithm to an
   // algorithm which returns the result of invoking transformerDict[flush] with
   // argument list « controller » and callback this value transformer.
-  JS::RootedValue transformer(cx, JS::GetReservedSlot(controller, Slots::Transformer));
+  JS::RootedValue transformer(cx, JS::GetReservedSlot(controller, std::to_underlying(Slots::Transformer)));
   JS::RootedValueArray<1> newArgs(cx);
   newArgs[0].setObject(*controller);
   return InvokePromiseReturningCallback(cx, transformer, flushFunction, newArgs);
@@ -456,11 +456,11 @@ void TransformStreamDefaultController::ClearAlgorithms(JSObject *controller) {
   MOZ_ASSERT(is_instance(controller));
 
   // 1.  Set controller.[transformAlgorithm] to undefined.
-  JS::SetReservedSlot(controller, Slots::TransformAlgorithm, JS::PrivateValue(nullptr));
-  JS::SetReservedSlot(controller, Slots::TransformInput, JS::UndefinedValue());
+  JS::SetReservedSlot(controller, std::to_underlying(Slots::TransformAlgorithm), JS::PrivateValue(nullptr));
+  JS::SetReservedSlot(controller, std::to_underlying(Slots::TransformInput), JS::UndefinedValue());
 
   // 2.  Set controller.[flushAlgorithm] to undefined.
-  JS::SetReservedSlot(controller, Slots::FlushAlgorithm, JS::PrivateValue(nullptr));
-  JS::SetReservedSlot(controller, Slots::FlushInput, JS::UndefinedValue());
+  JS::SetReservedSlot(controller, std::to_underlying(Slots::FlushAlgorithm), JS::PrivateValue(nullptr));
+  JS::SetReservedSlot(controller, std::to_underlying(Slots::FlushInput), JS::UndefinedValue());
 }
 } // namespace builtins::web::streams

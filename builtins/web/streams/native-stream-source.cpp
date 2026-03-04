@@ -14,29 +14,29 @@ namespace builtins::web::streams {
 
 JSObject *NativeStreamSource::owner(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return &JS::GetReservedSlot(self, Slots::Owner).toObject();
+  return &JS::GetReservedSlot(self, std::to_underlying(Slots::Owner)).toObject();
 }
 
 JS::Value NativeStreamSource::startPromise(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, Slots::StartPromise);
+  return JS::GetReservedSlot(self, std::to_underlying(Slots::StartPromise));
 }
 
 NativeStreamSource::PullAlgorithmImplementation *NativeStreamSource::pullAlgorithm(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return (PullAlgorithmImplementation *)JS::GetReservedSlot(self, Slots::PullAlgorithm).toPrivate();
+  return (PullAlgorithmImplementation *)JS::GetReservedSlot(self, std::to_underlying(Slots::PullAlgorithm)).toPrivate();
 }
 
 NativeStreamSource::CancelAlgorithmImplementation *
 NativeStreamSource::cancelAlgorithm(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return (CancelAlgorithmImplementation *)JS::GetReservedSlot(self, Slots::CancelAlgorithm)
+  return (CancelAlgorithmImplementation *)JS::GetReservedSlot(self, std::to_underlying(Slots::CancelAlgorithm))
       .toPrivate();
 }
 
 JSObject *NativeStreamSource::stream(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, NativeStreamSource::Slots::Stream).toObjectOrNull();
+  return JS::GetReservedSlot(self, std::to_underlying(NativeStreamSource::Slots::Stream)).toObjectOrNull();
 }
 
 /**
@@ -68,12 +68,12 @@ void NativeStreamSource::set_stream_piped_to_ts_writable(JSContext *cx, JS::Hand
   JS::RootedObject sink(cx, NativeStreamSink::get_stream_sink(cx, writable));
   JS::RootedObject transform_stream(cx, NativeStreamSink::owner(sink));
   MOZ_ASSERT(transform_stream);
-  JS::SetReservedSlot(source, Slots::PipedToTransformStream, JS::ObjectValue(*transform_stream));
+  JS::SetReservedSlot(source, std::to_underlying(Slots::PipedToTransformStream), JS::ObjectValue(*transform_stream));
 }
 
 JSObject *NativeStreamSource::piped_to_transform_stream(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  return JS::GetReservedSlot(self, Slots::PipedToTransformStream).toObjectOrNull();
+  return JS::GetReservedSlot(self, std::to_underlying(Slots::PipedToTransformStream)).toObjectOrNull();
 }
 
 bool NativeStreamSource::lock_stream(JSContext *cx, JS::HandleObject stream) {
@@ -94,7 +94,7 @@ bool NativeStreamSource::lock_stream(JSContext *cx, JS::HandleObject stream) {
     return false;
   }
 
-  JS::SetReservedSlot(self, Slots::InternalReader, JS::ObjectValue(*reader));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::InternalReader), JS::ObjectValue(*reader));
   return true;
 }
 
@@ -163,18 +163,18 @@ JSObject *NativeStreamSource::create(JSContext *cx, JS::HandleObject owner, JS::
   }
 
   // Initialize source slots before creating `ReadableDefaultStreamObject`.
-  JS::SetReservedSlot(source, Slots::Owner, JS::ObjectValue(*owner));
-  JS::SetReservedSlot(source, Slots::StartPromise, startPromise);
-  JS::SetReservedSlot(source, Slots::PullAlgorithm, JS::PrivateValue((void *)pull));
-  JS::SetReservedSlot(source, Slots::CancelAlgorithm, JS::PrivateValue((void *)cancel));
-  JS::SetReservedSlot(source, Slots::PipedToTransformStream, JS::NullValue());
+  JS::SetReservedSlot(source, std::to_underlying(Slots::Owner), JS::ObjectValue(*owner));
+  JS::SetReservedSlot(source, std::to_underlying(Slots::StartPromise), startPromise);
+  JS::SetReservedSlot(source, std::to_underlying(Slots::PullAlgorithm), JS::PrivateValue((void *)pull));
+  JS::SetReservedSlot(source, std::to_underlying(Slots::CancelAlgorithm), JS::PrivateValue((void *)cancel));
+  JS::SetReservedSlot(source, std::to_underlying(Slots::PipedToTransformStream), JS::NullValue());
 
   JS::RootedObject stream(cx, JS::NewReadableDefaultStreamObject(cx, source, size, highWaterMark));
   if (!stream) {
     return nullptr;
   }
 
-  JS::SetReservedSlot(source, Slots::Stream, JS::ObjectValue(*stream));
+  JS::SetReservedSlot(source, std::to_underlying(Slots::Stream), JS::ObjectValue(*stream));
   return source;
 }
 } // namespace builtins::web::streams

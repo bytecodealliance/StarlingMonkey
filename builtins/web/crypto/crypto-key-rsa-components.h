@@ -1,6 +1,7 @@
 #ifndef BUILTINS_WEB_CRYPTO_CRYPTO_KEY_RSA_COMPONENTS_H
 #define BUILTINS_WEB_CRYPTO_CRYPTO_KEY_RSA_COMPONENTS_H
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>

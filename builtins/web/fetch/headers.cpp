@@ -607,14 +607,14 @@ JSObject *Headers::create(JSContext *cx, HeadersGuard guard) {
     return nullptr;
   }
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Guard),
+  SetReservedSlot(self, std::to_underlying(Slots::Guard),
                   JS::Int32Value(static_cast<int32_t>(guard)));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Mode),
+  SetReservedSlot(self, std::to_underlying(Slots::Mode),
                   JS::Int32Value(static_cast<int32_t>(Mode::Uninitialized)));
 
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::HeadersList), PrivateValue(nullptr));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::HeadersSortList), PrivateValue(nullptr));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Gen), JS::Int32Value(0));
+  SetReservedSlot(self, std::to_underlying(Slots::HeadersList), PrivateValue(nullptr));
+  SetReservedSlot(self, std::to_underlying(Slots::HeadersSortList), PrivateValue(nullptr));
+  SetReservedSlot(self, std::to_underlying(Slots::Gen), JS::Int32Value(0));
   return self;
 }
 
@@ -1083,11 +1083,11 @@ bool Headers::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!self) {
     return false;
   }
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Guard),
+  SetReservedSlot(self, std::to_underlying(Slots::Guard),
                   JS::Int32Value(static_cast<int32_t>(HeadersGuard::None)));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::HeadersList), PrivateValue(nullptr));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::HeadersSortList), PrivateValue(nullptr));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Gen), JS::Int32Value(0));
+  SetReservedSlot(self, std::to_underlying(Slots::HeadersList), PrivateValue(nullptr));
+  SetReservedSlot(self, std::to_underlying(Slots::HeadersSortList), PrivateValue(nullptr));
+  SetReservedSlot(self, std::to_underlying(Slots::Gen), JS::Int32Value(0));
 
   // walk the headers list writing in the ordered normalized case headers (distinct from the wire)
   if (!init_entries(cx, self, headersInit)) {
@@ -1193,10 +1193,10 @@ JSObject *HeadersIterator::create(JSContext *cx, HandleObject headers, uint8_t t
   if (!self) {
     return nullptr;
   }
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Type),
+  SetReservedSlot(self, std::to_underlying(Slots::Type),
                   JS::Int32Value(static_cast<int32_t>(type)));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Cursor), JS::Int32Value(0));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Headers), JS::ObjectValue(*headers));
+  SetReservedSlot(self, std::to_underlying(Slots::Cursor), JS::Int32Value(0));
+  SetReservedSlot(self, std::to_underlying(Slots::Headers), JS::ObjectValue(*headers));
   return self;
 }
 
@@ -1265,13 +1265,13 @@ std::optional<size_t> Headers::lookup(JSContext *cx, HandleObject self, string_v
 
 bool HeadersIterator::next(JSContext *cx, unsigned argc, Value *vp) {
   METHOD_HEADER(0)
-  JS::RootedObject headers(cx, &JS::GetReservedSlot(self, Slots::Headers).toObject());
+  JS::RootedObject headers(cx, &JS::GetReservedSlot(self, std::to_underlying(Slots::Headers)).toObject());
 
   Headers::HeadersList *list = Headers::get_list(cx, headers);
 
-  size_t index = JS::GetReservedSlot(self, Slots::Cursor).toInt32();
+  size_t index = JS::GetReservedSlot(self, std::to_underlying(Slots::Cursor)).toInt32();
   size_t len = list->size();
-  auto type = static_cast<uint8_t>(JS::GetReservedSlot(self, Slots::Type).toInt32());
+  auto type = static_cast<uint8_t>(JS::GetReservedSlot(self, std::to_underlying(Slots::Type)).toInt32());
 
   JS::RootedObject result(cx, JS_NewPlainObject(cx));
   if (!result) {
@@ -1295,7 +1295,7 @@ bool HeadersIterator::next(JSContext *cx, unsigned argc, Value *vp) {
     const host_api::HostString *key = &std::get<0>(*Headers::get_index(cx, headers, index));
     size_t len = key->len;
     auto chars = JS::UniqueLatin1Chars(static_cast<JS::Latin1Char *>(js_malloc(len)));
-    for (int i = 0; i < len; ++i) {
+    for (size_t i = 0; i < len; ++i) {
       const unsigned char ch = key->ptr[i];
       // headers should already be validated by here
       MOZ_ASSERT(ch <= 127 && VALID_NAME_CHARS.at(ch));
@@ -1344,7 +1344,7 @@ bool HeadersIterator::next(JSContext *cx, unsigned argc, Value *vp) {
 
   JS_DefineProperty(cx, result, "value", result_val, JSPROP_ENUMERATE);
 
-  JS::SetReservedSlot(self, Slots::Cursor, JS::Int32Value(index + 1));
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Cursor), JS::Int32Value(index + 1));
   args.rval().setObject(*result);
   return true;
 }

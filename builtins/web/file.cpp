@@ -113,8 +113,8 @@ bool File::init(JSContext *cx, HandleObject self, HandleValue fileBits, HandleVa
   //
   //  Steps 2, 3 and 5 are handled by Blob. We extend the Blob by adding a `name`
   //  and the `lastModified` properties.
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::Name), JS::StringValue(name));
-  SetReservedSlot(self, static_cast<uint32_t>(Slots::LastModified), JS::NumberValue(lastModified));
+  SetReservedSlot(self, std::to_underlying(Slots::Name), JS::StringValue(name));
+  SetReservedSlot(self, std::to_underlying(Slots::LastModified), JS::NumberValue(lastModified));
 
   return true;
 }

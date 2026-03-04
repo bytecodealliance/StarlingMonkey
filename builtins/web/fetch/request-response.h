@@ -206,7 +206,7 @@ public:
     Count = 12,
   };
 
-  enum Type : uint8_t { Basic, Cors, Default, Error, Opaque, OpaqueRedirect };
+  enum class Type : uint8_t { Basic, Cors, Default, Error, Opaque, OpaqueRedirect };
   using Type = enum Type;
 
   static const JSFunctionSpec static_methods[];

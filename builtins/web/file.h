@@ -12,8 +12,8 @@ class File : public BuiltinImpl<File> {
   static bool lastModified_get(JSContext *cx, unsigned argc, JS::Value *vp);
 
 public:
-  static constexpr int ParentSlots = blob::Blob::Slots::Count;
-  enum Slots : uint8_t { Name = ParentSlots, LastModified, Count };
+  static constexpr int ParentSlots = std::to_underlying(blob::Blob::Slots::Count);
+  enum class Slots : uint8_t { Name = ParentSlots, LastModified, Count };
 
   static constexpr const char *class_name = "File";
   static constexpr unsigned ctor_length = 2;

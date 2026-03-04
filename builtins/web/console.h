@@ -9,14 +9,14 @@ class Console : public BuiltinNoConstructor<Console> {
 private:
 public:
   static constexpr const char *class_name = "Console";
-  enum LogType : uint8_t {
+  enum class LogType : uint8_t {
     Log,
     Info,
     Debug,
     Warn,
     Error,
   };
-  enum Slots : uint8_t { Count };
+  enum class Slots : uint8_t { Count };
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
 };

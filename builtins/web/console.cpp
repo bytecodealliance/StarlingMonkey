@@ -2,6 +2,7 @@
 #include "encode.h"
 #include <chrono>
 #include <map>
+#include <print>
 
 #include <js/Array.h>
 #include <js/experimental/TypedData.h>
@@ -153,7 +154,7 @@ JS::Result<mozilla::Ok> ArrayToSource(JSContext *cx, std::string &sourceOut, JS:
     return JS::Result<mozilla::Ok>(JS::Error());
   }
 
-  for (int i = 0; i < len; i++) {
+  for (uint32_t i = 0; i < len; i++) {
     JS::RootedValue entry_val(cx);
     JS_GetElement(cx, obj, i, &entry_val);
     if (i > 0) {
@@ -430,7 +431,7 @@ void builtin_impl_console_log(Console::LogType log_ty, const char *msg) {
   }
   MOZ_ASSERT(prefix);
 
-  fprintf(stdout, "%s: %s\n", prefix, msg);
+  std::println(stdout, "{}: {}", prefix, msg);
   fflush(stdout);
 }
 
@@ -440,7 +441,7 @@ static bool console_out(JSContext *cx, unsigned argc, JS::Value *vp) {
   std::string fullLogLine;
   auto length = args.length();
   JS::RootedObjectVector visitedObjects(cx);
-  for (int i = 0; i < length; i++) {
+  for (unsigned i = 0; i < length; i++) {
     JS::HandleValue arg = args.get(i);
     std::string source;
     auto result = ToSource(cx, source, arg, &visitedObjects);
@@ -490,7 +491,7 @@ static bool assert_(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (length > 1) {
     message += ": ";
     JS::RootedObjectVector visitedObjects(cx);
-    for (int i = 0; i < length; i++) {
+    for (unsigned i = 0; i < length; i++) {
       JS::HandleValue arg = args.get(i);
       std::string source;
       auto result = ToSource(cx, source, arg, &visitedObjects);
@@ -656,7 +657,7 @@ static bool timeLog(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (args.length() > 1) {
     auto length = args.length();
     JS::RootedObjectVector visitedObjects(cx);
-    for (int i = 1; i < length; i++) {
+    for (unsigned i = 1; i < length; i++) {
       JS::HandleValue arg = args.get(i);
       std::string source;
       auto result = ToSource(cx, source, arg, &visitedObjects);
@@ -782,7 +783,7 @@ static bool trace(JSContext *cx, unsigned argc, JS::Value *vp) {
   // incorporate formattedData as a label for trace.
   std::string fullLogLine;
   JS::RootedObjectVector visitedObjects(cx);
-  for (int i = 0; i < args.length(); i++) {
+  for (unsigned i = 0; i < args.length(); i++) {
     JS::HandleValue arg = args.get(i);
     std::string source;
     auto result = ToSource(cx, source, arg, &visitedObjects);

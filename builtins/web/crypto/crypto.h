@@ -15,7 +15,7 @@ public:
 
   static JS::PersistentRooted<JSObject *> subtle;
 
-  enum Slots : uint8_t { Count };
+  enum class Slots : uint8_t { Count };
   static const JSFunctionSpec static_methods[];
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
