@@ -31,6 +31,7 @@ jobs:
       SM_TAG: ${{ steps.check-sm-release.outputs.SM_TAG }}
       SM_CACHE_KEY_debug: ${{ steps.check-sm-release.outputs.SM_CACHE_KEY_debug }}
       SM_CACHE_KEY_release: ${{ steps.check-sm-release.outputs.SM_CACHE_KEY_release }}
+      SM_CACHE_KEY_weval: ${{ steps.check-sm-release.outputs.SM_CACHE_KEY_weval }}
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -144,12 +145,21 @@ jobs:
           spidermonkey-dist-release
         key: ${{ needs.test.outputs.SM_CACHE_KEY_release }}
         fail-on-cache-miss: true
+    - name: Restore SpiderMonkey Weval Cache
+      uses: actions/cache/restore@v4
+      id: sm-cache-weval
+      with:
+        path: |
+          spidermonkey-dist-weval
+        key: ${{ needs.test.outputs.SM_CACHE_KEY_weval }}
+        fail-on-cache-miss: true
 
     - name: Create SpiderMonkey Tar Balls
       run: |
         mkdir -p release-artifacts
         tar -a -cf release-artifacts/spidermonkey-static-debug.tar.gz spidermonkey-dist-debug/*
         tar -a -cf release-artifacts/spidermonkey-static-release.tar.gz spidermonkey-dist-release/*
+        tar -a -cf release-artifacts/spidermonkey-static-release_weval.tar.gz spidermonkey-dist-weval/*
         tree release-artifacts
 
     - name: Do the Release
