@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.0](https://github.com/bytecodealliance/StarlingMonkey/compare/starlingmonkey-v0.2.1...starlingmonkey-v0.3.0) (2026-03-05)
+
+
+### Features
+
+* reenable weval patches ([#303](https://github.com/bytecodealliance/StarlingMonkey/issues/303)) ([643aa45](https://github.com/bytecodealliance/StarlingMonkey/commit/643aa451947694ba8cbf2e51cb2b63d7bc972d92))
+* update wasi to 0.2.10 ([#300](https://github.com/bytecodealliance/StarlingMonkey/issues/300)) ([c0873b7](https://github.com/bytecodealliance/StarlingMonkey/commit/c0873b74b728898dc91311fc75ea2f27c154f5ae))
+* **url:** implement `URLSearchParams.size` property ([#296](https://github.com/bytecodealliance/StarlingMonkey/issues/296)) ([27d1d5d](https://github.com/bytecodealliance/StarlingMonkey/commit/27d1d5d5126c475d948aaadffed6c543758e3b73))
+
+
+### Bug Fixes
+
+* aarch64-&gt;arm64 in wasi-sdk download url ([#302](https://github.com/bytecodealliance/StarlingMonkey/issues/302)) ([6ff0d0d](https://github.com/bytecodealliance/StarlingMonkey/commit/6ff0d0d0bdf08192ecb7826a9f27cf3098980a80))
+* **ci:** add weval artifacts to the release ([#304](https://github.com/bytecodealliance/StarlingMonkey/issues/304)) ([1614930](https://github.com/bytecodealliance/StarlingMonkey/commit/161493015f735195d4795cf07f025e44d26a5396))
+* **ci:** Fix release-please setup ([#282](https://github.com/bytecodealliance/StarlingMonkey/issues/282)) ([9d9a34b](https://github.com/bytecodealliance/StarlingMonkey/commit/9d9a34b9a1de6c5fedb65d0a44b77677bf02b9bc))
+* **ci:** Unify release-please CI workflows ([#284](https://github.com/bytecodealliance/StarlingMonkey/issues/284)) ([c5f80bd](https://github.com/bytecodealliance/StarlingMonkey/commit/c5f80bd82209913141723f14016ef4157daaf964))
+* **debugger:** Fix path normalization in debugger sourcemaps handling ([#279](https://github.com/bytecodealliance/StarlingMonkey/issues/279)) ([afcf222](https://github.com/bytecodealliance/StarlingMonkey/commit/afcf222f512eb211d1b29d7a427fc8db6dd27f84))
+* Prevent `URLSearchParams.toString()` from returning unencoded params when not modified ([#292](https://github.com/bytecodealliance/StarlingMonkey/issues/292)) ([a2ddae3](https://github.com/bytecodealliance/StarlingMonkey/commit/a2ddae3d463c61437fafc490308016fbc2a53cdd))
+* **url:** allow `SpecSlice` to hold empty strings ([#293](https://github.com/bytecodealliance/StarlingMonkey/issues/293)) ([faa9114](https://github.com/bytecodealliance/StarlingMonkey/commit/faa9114ac16b3ba665d7863915f7edb866b91248))
+* **url:** fix leaky `Drop`s for `SpecString` and `CVec` ([#294](https://github.com/bytecodealliance/StarlingMonkey/issues/294)) ([51d5388](https://github.com/bytecodealliance/StarlingMonkey/commit/51d5388c48811688329bb5fd2a13384574ac6cfd))
+* **url:** make URLSearchParams record constructor spec compliant ([#295](https://github.com/bytecodealliance/StarlingMonkey/issues/295)) ([d591115](https://github.com/bytecodealliance/StarlingMonkey/commit/d59111599472cf2cd921cde323847824bea4a8a8))
+
 ## [0.2.1](https://github.com/bytecodealliance/StarlingMonkey/compare/v0.2.0...v0.2.1) (2025-10-15)
 
 
