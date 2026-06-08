@@ -6,6 +6,6 @@
     "status": "PASS"
   },
   "Consume multipart/form-data headers case-insensitively": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }
