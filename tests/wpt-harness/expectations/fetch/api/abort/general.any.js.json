@@ -84,7 +84,7 @@
     "status": "PASS"
   },
   "Request is still 'used' if signal is aborted before fetching": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "response.arrayBuffer() rejects if already aborted": {
     "status": "PASS"
@@ -147,7 +147,7 @@
     "status": "FAIL"
   },
   "Stream will not error if body is empty. It's closed with an empty queue before it errors.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Readable stream synchronously cancels with AbortError if aborted before reading": {
     "status": "PASS"

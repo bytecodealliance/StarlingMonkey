@@ -15,7 +15,7 @@
     "status": "PASS"
   },
   "Input request used for creating new request became disturbed": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Input request used for creating new request became disturbed even if body is not used": {
     "status": "FAIL"

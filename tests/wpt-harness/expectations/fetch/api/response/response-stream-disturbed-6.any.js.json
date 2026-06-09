@@ -1,17 +1,17 @@
 {
   "A non-closed stream on which read() has been called": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "A non-closed stream on which cancel() has been called": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "A closed stream on which read() has been called": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "An errored stream on which read() has been called": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "An errored stream on which cancel() has been called": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }
