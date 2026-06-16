@@ -26,60 +26,6 @@ template <typename T> bool validate_type(T *chars, size_t strlen) {
   return true;
 }
 
-// 1. If type contains any characters outside the range U+0020 to U+007E, then set t to the empty string.
-// 2. Convert every character in type to ASCII lowercase.
-JSString *normalize_type(JSContext *cx, HandleValue value) {
-  JS::RootedString value_str(cx);
-
-  if (value.isObject() || value.isString()) {
-    value_str = JS::ToString(cx, value);
-    if (!value_str) {
-      return nullptr;
-    }
-  } else if (value.isNull()) {
-    return JS::ToString(cx, value);
-  } else {
-    return JS_GetEmptyString(cx);
-  }
-
-  auto *str = JS::StringToLinearString(cx, value_str);
-  if (!str) {
-    return nullptr;
-  }
-
-  std::string normalized;
-  auto strlen = JS::GetLinearStringLength(str);
-
-  if (strlen == 0U) {
-    return JS_GetEmptyString(cx);
-  }
-
-  if (JS::LinearStringHasLatin1Chars(str)) {
-    JS::AutoCheckCannotGC nogc(cx);
-    const auto *chars = JS::GetLatin1LinearStringChars(nogc, str);
-    if (!validate_type(chars, strlen)) {
-      return JS_GetEmptyString(cx);
-    }
-
-    normalized = std::string(reinterpret_cast<const char *>(chars), strlen);
-  } else {
-    JS::AutoCheckCannotGC nogc(cx);
-    const auto *chars = (JS::GetTwoByteLinearStringChars(nogc, str));
-    if (!validate_type(chars, strlen)) {
-      return JS_GetEmptyString(cx);
-    }
-
-    normalized.reserve(strlen);
-    for (size_t i = 0; i < strlen; ++i) {
-      normalized += static_cast<unsigned char>(chars[i]);
-    }
-  }
-
-  std::transform(normalized.begin(), normalized.end(), normalized.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
-
-  return JS_NewStringCopyN(cx, normalized.c_str(), normalized.length());
-}
 
 // https://w3c.github.io/FileAPI/#convert-line-endings-to-native
 std::string convert_line_endings_to_native(std::string_view s) {
@@ -125,6 +71,60 @@ std::string convert_line_endings_to_native(std::string_view s) {
 
 
 namespace builtins::web::blob {
+
+// https://w3c.github.io/FileAPI/#dfn-type
+// 1. If type contains any characters outside the range U+0020 to U+007E, then set t to the empty string.
+// 2. Convert every character in type to ASCII lowercase.
+JSString *Blob::normalize_type(JSContext *cx, JS::HandleValue value) {
+  JS::RootedString value_str(cx);
+
+  if (value.isObject() || value.isString()) {
+    value_str = JS::ToString(cx, value);
+    if (!value_str) {
+      return nullptr;
+    }
+  } else if (value.isNull()) {
+    return JS::ToString(cx, value);
+  } else {
+    return JS_GetEmptyString(cx);
+  }
+
+  auto *str = JS::StringToLinearString(cx, value_str);
+  if (!str) {
+    return nullptr;
+  }
+
+  std::string normalized;
+  auto strlen = JS::GetLinearStringLength(str);
+
+  if (strlen == 0U) {
+    return JS_GetEmptyString(cx);
+  }
+
+  if (JS::LinearStringHasLatin1Chars(str)) {
+    JS::AutoCheckCannotGC nogc(cx);
+    const auto *chars = JS::GetLatin1LinearStringChars(nogc, str);
+    if (!validate_type(chars, strlen)) {
+      return JS_GetEmptyString(cx);
+    }
+    normalized = std::string(reinterpret_cast<const char *>(chars), strlen);
+  } else {
+    JS::AutoCheckCannotGC nogc(cx);
+    const auto *chars = JS::GetTwoByteLinearStringChars(nogc, str);
+    if (!validate_type(chars, strlen)) {
+      return JS_GetEmptyString(cx);
+    }
+    normalized.reserve(strlen);
+    for (size_t i = 0; i < strlen; ++i) {
+      normalized += static_cast<unsigned char>(chars[i]);
+    }
+  }
+
+  std::transform(normalized.begin(), normalized.end(), normalized.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+
+  return JS_NewStringCopyN(cx, normalized.c_str(), normalized.length());
+}
 
 using js::Vector;
 using streams::BufReader;
@@ -285,7 +285,7 @@ bool Blob::slice(JSContext *cx, HandleObject self, const CallArgs &args, Mutable
 
   if (args.hasDefined(2)) {
     HandleValue contentType_val = args.get(2);
-    if ((contentType = normalize_type(cx, contentType_val)) == nullptr) {
+    if ((contentType = Blob::normalize_type(cx, contentType_val)) == nullptr) {
       return false;
     }
   }
@@ -547,7 +547,7 @@ bool Blob::init_options(JSContext *cx, HandleObject self, HandleValue initv) {
       return false;
     }
 
-    auto *type_str = normalize_type(cx, type);
+    auto *type_str = Blob::normalize_type(cx, type);
     if (!type_str) {
       return false;
     }
