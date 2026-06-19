@@ -1197,7 +1197,14 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
   // First, handle direct forwarding of incoming bodies.
   // Those can be handled by direct use of async tasks and the host API, without needing
   // to use JS streams at all.
-  if (is_incoming(body_owner)) {
+  //
+  // This fast path is only valid while the body has *not* been reified into a JS
+  // ReadableStream. Once a `BodyStream` exists, JS is the authoritative source of the
+  // body bytes and must be honored. In particular `clone()` tees the body and installs
+  // a tee branch into this object's `BodyStream`; if we forwarded the raw incoming
+  // handle here we would bypass that branch and double-read the single host body
+  // (the other tee branch reads the same handle), corrupting both consumers.
+  if (is_incoming(body_owner) && !body_stream(body_owner)) {
     auto *source_body = incoming_body_handle(body_owner);
     auto *dest_body = destination->body().unwrap();
     auto res = dest_body->append(ENGINE, source_body, finish_outgoing_body_streaming, nullptr);
