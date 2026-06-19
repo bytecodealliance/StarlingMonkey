@@ -54,6 +54,7 @@ public:
   static bool read_blob_slice(JSContext *cx, HandleObject self, std::span<uint8_t> buf,
                               size_t start, size_t *read, bool *done);
 
+  static JSString *normalize_type(JSContext *cx, JS::HandleValue value);
   static JSObject *create(JSContext *cx, UniqueChars data, size_t data_len, HandleString type);
 
   static bool init_class(JSContext *cx, HandleObject global);

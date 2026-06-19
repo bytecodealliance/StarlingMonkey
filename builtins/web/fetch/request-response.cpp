@@ -612,8 +612,32 @@ bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::Uni
     result.setObject(*array_buffer);
   } else if constexpr (result_type == RequestOrResponse::BodyReadResult::Blob) {
     JS::RootedString contentType(cx, JS_GetEmptyString(cx));
-    JS::RootedObject blob(cx, blob::Blob::create(cx, std::move(buf), len, contentType));
 
+    RootedObject headers(cx, RequestOrResponse::headers(cx, self));
+    if (!headers) {
+      return RejectPromiseWithPendingError(cx, result_promise);
+    }
+    auto content_type_key = host_api::HostString("Content-Type");
+    auto idx = Headers::lookup(cx, headers, content_type_key);
+    if (idx) {
+      auto *values = Headers::get_index(cx, headers, idx.value());
+      auto maybe_mime = extract_mime_type(std::get<1>(*values));
+      if (!maybe_mime.isErr()) {
+        auto mime_str = maybe_mime.unwrap().to_string();
+        JS::RootedString mime_js_str(cx, JS_NewStringCopyN(cx, mime_str.c_str(), mime_str.size()));
+        if (!mime_js_str) {
+          return RejectPromiseWithPendingError(cx, result_promise);
+        }
+        JS::RootedValue mime_val(cx, JS::StringValue(mime_js_str));
+        auto *normalized = blob::Blob::normalize_type(cx, mime_val);
+        if (!normalized) {
+          return RejectPromiseWithPendingError(cx, result_promise);
+        }
+        contentType = normalized;
+      }
+    }
+
+    JS::RootedObject blob(cx, blob::Blob::create(cx, std::move(buf), len, contentType));
     if (!blob) {
       return RejectPromiseWithPendingError(cx, result_promise);
     }
