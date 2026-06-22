@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/bytecodealliance/StarlingMonkey/compare/starlingmonkey-v0.3.0...starlingmonkey-v0.4.0) (2026-06-22)
+
+
+### Features
+
+* implement Response.clone() ([#312](https://github.com/bytecodealliance/StarlingMonkey/issues/312)) ([5c671dd](https://github.com/bytecodealliance/StarlingMonkey/commit/5c671dd86db596ac2ea88a60bebf8d4505b4b8fa))
+
+
+### Bug Fixes
+
+* **fetch:** body.blob() sets Blob.type from Content-Type header ([#313](https://github.com/bytecodealliance/StarlingMonkey/issues/313)) ([04721e3](https://github.com/bytecodealliance/StarlingMonkey/commit/04721e3ab946bd77e9ad9de055efa1ef809b545d))
+
 ## [0.3.0](https://github.com/bytecodealliance/StarlingMonkey/compare/starlingmonkey-v0.2.1...starlingmonkey-v0.3.0) (2026-03-05)
 
 
