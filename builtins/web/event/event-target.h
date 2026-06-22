@@ -67,7 +67,7 @@ public:
   static bool remove_listener(JSContext *cx, HandleObject self, HandleValue type,
                               HandleValue callback, HandleValue opts);
   static bool dispatch_event(JSContext *cx, HandleObject self, HandleValue event,
-                             MutableHandleValue rval);
+                             MutableHandleValue rval, bool trusted = false);
 
   static JSObject *create(JSContext *cx);
 

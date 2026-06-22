@@ -5,6 +5,7 @@
 #include "../event/event.h"
 #include "../timers.h"
 
+#include "js/ForOfIterator.h"
 
 
 namespace builtins::web::abort {
@@ -102,9 +103,6 @@ bool AbortSignal::timeout(JSContext *cx, unsigned argc, JS::Value *vp) {
 // https://dom.spec.whatwg.org/#dom-abortsignal-abort
 bool AbortSignal::abort(JSContext *cx, unsigned argc, JS::Value *vp) {
   CallArgs args = JS::CallArgsFromVp(argc, vp);
-  if (!args.requireAtLeast(cx, "abort", 1)) {
-    return false;
-  }
 
   // The abort() method steps are inlined in the AbortSignal::create_with_reason method.
   RootedObject self(cx, create_with_reason(cx, args.get(0)));
@@ -123,8 +121,35 @@ bool AbortSignal::any(JSContext *cx, unsigned argc, JS::Value *vp) {
     return false;
   }
 
-  // The any() method steps are inlined in the AbortSignal::create_with_signals method.
-  RootedObject self(cx, create_with_signals(cx, args));
+  RootedValue iterable(cx, args.get(0));
+  JS::ForOfIterator it(cx);
+  if (!it.init(iterable)) {
+    return false;
+  }
+
+  JS::RootedValueVector signals(cx);
+  RootedValue signal(cx);
+  while (true) {
+    bool done = false;
+    if (!it.next(&signal, &done)) {
+      return false;
+    }
+
+    if (done) {
+      break;
+    }
+
+    if (!is_instance(signal)) {
+      return api::throw_error(cx, api::Errors::TypeError, "AbortSignal.any", "signals",
+                              "contain only AbortSignal objects");
+    }
+
+    if (!signals.append(signal)) {
+      return false;
+    }
+  }
+
+  RootedObject self(cx, create_with_signals(cx, signals));
   if (!self) {
     return false;
   }
@@ -142,6 +167,7 @@ bool AbortSignal::throwIfAborted(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (is_aborted(self)) {
     RootedValue reason(cx, JS::GetReservedSlot(self, std::to_underlying(Slots::Reason)));
     JS_SetPendingException(cx, reason);
+    return false;
   }
 
   return true;
@@ -222,7 +248,10 @@ bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
 
   // 2. Set signal's abort reason to reason if it is given;
   // otherwise to a new "AbortError" DOMException.
-  set_reason(cx, self, reason);
+  if (!set_reason(cx, self, reason)) {
+    return false;
+  }
+  RootedValue abort_reason(cx, AbortSignal::reason(self));
 
   // 3. Let dependentSignalsToAbort be a new list.
   JS::RootedObjectVector dep_signals_to_abort(cx);
@@ -234,7 +263,9 @@ bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
     // 1. If dependentSignal is not aborted:
     if (!is_aborted(signal)) {
       // 1. Set dependentSignal's abort reason to signal's abort reason.
-      set_reason(cx, signal, reason);
+      if (!set_reason(cx, signal, abort_reason)) {
+        return false;
+      }
       // 2. Append dependentSignal to dependentSignalsToAbort.
       if (!dep_signals_to_abort.append(signal)) {
         return false;
@@ -276,7 +307,7 @@ bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {
   RootedObject event(cx, Event::create(cx, type_val, JS::NullHandleValue));
   RootedValue event_val(cx, JS::ObjectValue(*event));
 
-  return EventTarget::dispatch_event(cx, self, event_val, &res_val);
+  return EventTarget::dispatch_event(cx, self, event_val, &res_val, true);
 }
 
 // Set signal's abort reason to reason if it is given; otherwise to a new "AbortError" DOMException.
@@ -408,7 +439,9 @@ JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signa
   // 2. For each signal of signals: if signal is aborted, then set resultSignal's abort reason to
   // signal's abort reason and return resultSignal.
   for (size_t i = 0; i < signals.length(); ++i) {
-    RootedObject signal(cx, &signals[i].toObject());
+    RootedValue signal_val(cx, signals[i]);
+    MOZ_ASSERT(is_instance(signal_val));
+    RootedObject signal(cx, &signal_val.toObject());
 
     if (is_aborted(signal)) {
       SetReservedSlot(self, std::to_underlying(Slots::Reason), reason(signal));
@@ -422,7 +455,8 @@ JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signa
 
   // 4. For each signal of signals:
   for (size_t i = 0; i < signals.length(); ++i) {
-    RootedObject signal(cx, &signals[i].toObject());
+    RootedValue signal_val(cx, signals[i]);
+    RootedObject signal(cx, &signal_val.toObject());
 
     // 1. If signal's dependent is false:
     if (!is_dependent(signal)) {
@@ -514,5 +548,3 @@ bool install(api::Engine *engine) {
 JSString *AbortSignal::abort_type_atom = nullptr;
 
 } // namespace builtins::web::abort
-
-
