@@ -23,6 +23,7 @@
 #include "js/Conversions.h"
 #include "js/JSON.h"
 #include "js/Stream.h"
+#include "js/StructuredClone.h"
 #include "js/experimental/TypedData.h"
 #include "mozilla/ResultVariant.h"
 
@@ -1220,7 +1221,14 @@ bool RequestOrResponse::maybe_stream_body(JSContext *cx, JS::HandleObject body_o
   // First, handle direct forwarding of incoming bodies.
   // Those can be handled by direct use of async tasks and the host API, without needing
   // to use JS streams at all.
-  if (is_incoming(body_owner)) {
+  //
+  // This fast path is only valid while the body has *not* been reified into a JS
+  // ReadableStream. Once a `BodyStream` exists, JS is the authoritative source of the
+  // body bytes and must be honored. In particular `clone()` tees the body and installs
+  // a tee branch into this object's `BodyStream`; if we forwarded the raw incoming
+  // handle here we would bypass that branch and double-read the single host body
+  // (the other tee branch reads the same handle), corrupting both consumers.
+  if (is_incoming(body_owner) && !body_stream(body_owner)) {
     auto *source_body = incoming_body_handle(body_owner);
     auto *dest_body = destination->body().unwrap();
     auto res = dest_body->append(ENGINE, source_body, finish_outgoing_body_streaming, nullptr);
@@ -1386,7 +1394,19 @@ bool Request::body_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 bool Request::bodyUsed_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
-  args.rval().setBoolean(RequestOrResponse::body_used(self));
+  bool used = RequestOrResponse::body_used(self);
+  if (!used) {
+    JSObject *stream = RequestOrResponse::body_stream(self);
+    if (stream) {
+      JS::RootedObject body(cx, stream);
+      bool disturbed = false;
+      if (!JS::ReadableStreamIsDisturbed(cx, body, &disturbed)) {
+        return false;
+      }
+      used = disturbed;
+    }
+  }
+  args.rval().setBoolean(used);
   return true;
 }
 
@@ -2351,7 +2371,420 @@ bool Response::body_get(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 bool Response::bodyUsed_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(0)
-  args.rval().setBoolean(RequestOrResponse::body_used(self));
+  bool used = RequestOrResponse::body_used(self);
+  if (!used) {
+    JSObject *stream = RequestOrResponse::body_stream(self);
+    if (stream) {
+      JS::RootedObject body(cx, stream);
+      bool disturbed = false;
+      if (!JS::ReadableStreamIsDisturbed(cx, body, &disturbed)) {
+        return false;
+      }
+      used = disturbed;
+    }
+  }
+  args.rval().setBoolean(used);
+  return true;
+}
+
+// --- Response::clone tee ---
+//
+// Implements the WHATWG Streams `ReadableStreamDefaultTee` algorithm with
+// `cloneForBranch2` set to true, as required by the Fetch "clone a body" steps.
+//
+// branch1 (the original response's body) receives each source chunk *unchanged*,
+// preserving object identity — WPT asserts the being-cloned stream yields the
+// same object that was enqueued. branch2 (the clone's body) receives an
+// independent structured clone of each chunk.
+//
+// The clone is taken *eagerly*, in the single read of the shared source reader,
+// before either branch's consumer observes the chunk. This is what keeps the
+// clone correct even if branch1's chunk is read and then mutated in place: the
+// native ReadableStreamTee shares one chunk object between both branches and a
+// lazy clone (taken only when branch2 is later pulled) would copy the
+// already-mutated bytes. Cloning at source-read time mirrors ReadableByteStreamTee
+// and matches browser behaviour.
+
+// Element indices on the shared tee-state object.
+enum class CloneTeeSlot : uint8_t {
+  Reader = 0,    // ReadableStreamDefaultReader on the source body stream.
+  Branch1 = 1,   // Original response's body stream.
+  Branch2 = 2,   // Clone's body stream.
+  Reading = 3,   // bool: a source read is in flight.
+  ReadAgain = 4, // bool: a branch pulled while a read was in flight.
+  Canceled1 = 5, // bool: branch1's consumer canceled.
+  Canceled2 = 6, // bool: branch2's consumer canceled.
+};
+
+// Element index on each branch source: which branch it backs (1 or 2). Element 0
+// holds the shared tee-state object.
+static constexpr uint32_t CLONE_TEE_SOURCE_BRANCH_SLOT = 1;
+
+static bool clone_tee_get_bool(JSContext *cx, JS::HandleObject state, CloneTeeSlot slot, bool *out) {
+  JS::RootedValue v(cx);
+  if (!JS_GetElement(cx, state, std::to_underlying(slot), &v)) {
+    return false;
+  }
+  *out = v.toBoolean();
+  return true;
+}
+
+static bool clone_tee_set_bool(JSContext *cx, JS::HandleObject state, CloneTeeSlot slot, bool value) {
+  JS::RootedValue v(cx, JS::BooleanValue(value));
+  return JS_SetElement(cx, state, std::to_underlying(slot), v);
+}
+
+static bool clone_tee_get_branch(JSContext *cx, JS::HandleObject state, CloneTeeSlot slot,
+                                 JS::MutableHandleObject out) {
+  JS::RootedValue v(cx);
+  if (!JS_GetElement(cx, state, std::to_underlying(slot), &v)) {
+    return false;
+  }
+  out.set(&v.toObject());
+  return true;
+}
+
+static bool clone_tee_pump(JSContext *cx, JS::HandleObject state);
+
+static bool clone_tee_read_catch_handler(JSContext *cx, JS::HandleObject state,
+                                         JS::HandleValue /*extra*/, JS::CallArgs args) {
+  JS::RootedValue error(cx, args.get(0));
+  bool canceled1 = false;
+  bool canceled2 = false;
+  if (!clone_tee_get_bool(cx, state, CloneTeeSlot::Canceled1, &canceled1) ||
+      !clone_tee_get_bool(cx, state, CloneTeeSlot::Canceled2, &canceled2)) {
+    return false;
+  }
+  if (!clone_tee_set_bool(cx, state, CloneTeeSlot::Reading, false)) {
+    return false;
+  }
+
+  bool ok = true;
+  if (!canceled1) {
+    JS::RootedObject branch1(cx);
+    if (!clone_tee_get_branch(cx, state, CloneTeeSlot::Branch1, &branch1)) {
+      return false;
+    }
+    ok = JS::ReadableStreamError(cx, branch1, error) && ok;
+  }
+  if (!canceled2) {
+    JS::RootedObject branch2(cx);
+    if (!clone_tee_get_branch(cx, state, CloneTeeSlot::Branch2, &branch2)) {
+      return false;
+    }
+    ok = JS::ReadableStreamError(cx, branch2, error) && ok;
+  }
+  return ok;
+}
+
+static bool clone_tee_read_then_handler(JSContext *cx, JS::HandleObject state,
+                                        JS::HandleValue /*extra*/, JS::CallArgs args) {
+  JS::RootedObject result_obj(cx, &args[0].toObject());
+  JS::RootedValue done_val(cx);
+  JS::RootedValue chunk(cx);
+  if (!JS_GetProperty(cx, result_obj, "done", &done_val)) {
+    return false;
+  }
+  if (!JS_GetProperty(cx, result_obj, "value", &chunk)) {
+    return false;
+  }
+
+  bool canceled1 = false;
+  bool canceled2 = false;
+  if (!clone_tee_get_bool(cx, state, CloneTeeSlot::Canceled1, &canceled1) ||
+      !clone_tee_get_bool(cx, state, CloneTeeSlot::Canceled2, &canceled2)) {
+    return false;
+  }
+
+  JS::RootedObject branch1(cx);
+  JS::RootedObject branch2(cx);
+  if (!canceled1 && !clone_tee_get_branch(cx, state, CloneTeeSlot::Branch1, &branch1)) {
+    return false;
+  }
+  if (!canceled2 && !clone_tee_get_branch(cx, state, CloneTeeSlot::Branch2, &branch2)) {
+    return false;
+  }
+
+  if (done_val.toBoolean()) {
+    if (!clone_tee_set_bool(cx, state, CloneTeeSlot::Reading, false)) {
+      return false;
+    }
+    bool ok = true;
+    if (!canceled1) {
+      ok = JS::ReadableStreamClose(cx, branch1) && ok;
+    }
+    if (!canceled2) {
+      ok = JS::ReadableStreamClose(cx, branch2) && ok;
+    }
+    return ok;
+  }
+
+  // Re-entrant pulls during the enqueues below may set ReadAgain again.
+  if (!clone_tee_set_bool(cx, state, CloneTeeSlot::ReadAgain, false)) {
+    return false;
+  }
+
+  // branch1 receives the original chunk unchanged (preserves object identity).
+  if (!canceled1 && !JS::ReadableStreamEnqueue(cx, branch1, chunk)) {
+    return false;
+  }
+
+  // branch2 receives an independent structured clone, copied now — before any
+  // consumer can mutate the shared chunk.
+  if (!canceled2) {
+    JSAutoStructuredCloneBuffer clone_buf(JS::StructuredCloneScope::SameProcess, nullptr, nullptr);
+    JS::CloneDataPolicy policy;
+    if (!clone_buf.write(cx, chunk, JS::UndefinedHandleValue, policy)) {
+      JS::RootedValue exn(cx);
+      if (JS_GetPendingException(cx, &exn)) {
+        JS_ClearPendingException(cx);
+      }
+      return JS::ReadableStreamError(cx, branch2, exn);
+    }
+    JS::RootedValue cloned_chunk(cx);
+    if (!clone_buf.read(cx, &cloned_chunk)) {
+      JS::RootedValue exn(cx);
+      if (JS_GetPendingException(cx, &exn)) {
+        JS_ClearPendingException(cx);
+      }
+      return JS::ReadableStreamError(cx, branch2, exn);
+    }
+    if (!JS::ReadableStreamEnqueue(cx, branch2, cloned_chunk)) {
+      return false;
+    }
+  }
+
+  if (!clone_tee_set_bool(cx, state, CloneTeeSlot::Reading, false)) {
+    return false;
+  }
+
+  bool read_again = false;
+  if (!clone_tee_get_bool(cx, state, CloneTeeSlot::ReadAgain, &read_again)) {
+    return false;
+  }
+  if (read_again) {
+    return clone_tee_pump(cx, state);
+  }
+  return true;
+}
+
+// Read one chunk from the shared source reader and distribute it to both branches.
+// Guarded by the Reading flag so concurrent pulls from the two branches never
+// issue overlapping reads on the single source reader.
+static bool clone_tee_pump(JSContext *cx, JS::HandleObject state) {
+  bool reading = false;
+  if (!clone_tee_get_bool(cx, state, CloneTeeSlot::Reading, &reading)) {
+    return false;
+  }
+  if (reading) {
+    return clone_tee_set_bool(cx, state, CloneTeeSlot::ReadAgain, true);
+  }
+  if (!clone_tee_set_bool(cx, state, CloneTeeSlot::Reading, true)) {
+    return false;
+  }
+
+  JS::RootedObject reader(cx);
+  if (!clone_tee_get_branch(cx, state, CloneTeeSlot::Reader, &reader)) {
+    return false;
+  }
+
+  JS::RootedObject read_promise(cx, JS::ReadableStreamDefaultReaderRead(cx, reader));
+  if (!read_promise) {
+    return false;
+  }
+
+  JS::RootedValue no_extra(cx, JS::UndefinedValue());
+  JS::RootedObject then_handler(cx,
+      create_internal_method<clone_tee_read_then_handler>(cx, state, no_extra));
+  if (!then_handler) {
+    return false;
+  }
+  JS::RootedObject catch_handler(cx,
+      create_internal_method<clone_tee_read_catch_handler>(cx, state, no_extra));
+  if (!catch_handler) {
+    return false;
+  }
+
+  return JS::AddPromiseReactions(cx, read_promise, then_handler, catch_handler);
+}
+
+// Records that this branch's consumer canceled so the read loop stops feeding
+// it (enqueueing into a canceled — and therefore non-readable — branch would
+// assert). The other branch keeps receiving data; when both are canceled no
+// consumer pulls, so the source read loop naturally quiesces.
+static bool clone_tee_cancel_algorithm(JSContext *cx, JS::CallArgs args,
+                                       JS::HandleObject source, JS::HandleObject /*owner*/,
+                                       JS::HandleValue /*reason*/) {
+  JS::RootedValue state_val(cx);
+  if (!JS_GetElement(cx, source, 0, &state_val)) {
+    return false;
+  }
+  JS::RootedObject state(cx, &state_val.toObject());
+
+  JS::RootedValue branch_val(cx);
+  if (!JS_GetElement(cx, source, CLONE_TEE_SOURCE_BRANCH_SLOT, &branch_val)) {
+    return false;
+  }
+  CloneTeeSlot slot =
+      branch_val.toInt32() == 1 ? CloneTeeSlot::Canceled1 : CloneTeeSlot::Canceled2;
+  if (!clone_tee_set_bool(cx, state, slot, true)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+// Pull algorithm shared by both branch sources: each branch's controller invokes
+// it on demand, and it drives a single read of the shared source reader.
+static bool clone_tee_pull_algorithm(JSContext *cx, JS::CallArgs args, JS::HandleObject source,
+                                     JS::HandleObject /*owner*/, JS::HandleObject /*controller*/) {
+  JS::RootedValue state_val(cx);
+  if (!JS_GetElement(cx, source, 0, &state_val)) {
+    return false;
+  }
+  JS::RootedObject state(cx, &state_val.toObject());
+  if (!clone_tee_pump(cx, state)) {
+    return false;
+  }
+  args.rval().setUndefined();
+  return true;
+}
+
+/// https://fetch.spec.whatwg.org/#dom-response-clone
+bool Response::clone(JSContext *cx, unsigned argc, JS::Value *vp) {
+  METHOD_HEADER(0);
+
+  if (RequestOrResponse::body_used(self)) {
+    return api::throw_error(cx, FetchErrors::BodyStreamUnusable);
+  }
+
+  RootedObject new_response(cx, create(cx));
+  if (!new_response) {
+    return false;
+  }
+  init_slots(new_response);
+
+  // Clone headers via the header handle. Cloning through the handle preserves every header
+  // (including multiple Set-Cookie) and avoids replaying them through a guarded append —
+  // cloning an incoming response (Immutable guard) after its headers were materialised would
+  // otherwise throw "Headers are immutable". headers_handle_clone covers all cases: a
+  // materialised wrapper (any Mode), an unmaterialised host handle, or neither (empty handle).
+  RootedValue cloned_headers_val(cx, JS::NullValue());
+  if (RequestOrResponse::maybe_headers(self) || RequestOrResponse::maybe_handle(self)) {
+    auto handle = RequestOrResponse::headers_handle_clone(cx, self);
+    if (!handle) {
+      return false;
+    }
+    JSObject *cloned_headers = Headers::create(
+        cx, handle.release(),
+        RequestOrResponse::is_incoming(self) ? Headers::HeadersGuard::Immutable
+                                              : Headers::HeadersGuard::Response);
+    if (!cloned_headers) {
+      return false;
+    }
+    cloned_headers_val.set(ObjectValue(*cloned_headers));
+  }
+  SetReservedSlot(new_response, std::to_underlying(Slots::Headers), cloned_headers_val);
+
+  // Copy response-specific slots
+  SetReservedSlot(new_response, std::to_underlying(Slots::Status),
+      GetReservedSlot(self, std::to_underlying(Slots::Status)));
+  SetReservedSlot(new_response, std::to_underlying(Slots::StatusMessage),
+      GetReservedSlot(self, std::to_underlying(Slots::StatusMessage)));
+  SetReservedSlot(new_response, std::to_underlying(Slots::Redirected),
+      GetReservedSlot(self, std::to_underlying(Slots::Redirected)));
+  SetReservedSlot(new_response, std::to_underlying(Slots::Type),
+      GetReservedSlot(self, std::to_underlying(Slots::Type)));
+  SetReservedSlot(new_response, std::to_underlying(RequestOrResponse::Slots::URL),
+      GetReservedSlot(self, std::to_underlying(RequestOrResponse::Slots::URL)));
+
+  if (!RequestOrResponse::has_body(self)) {
+    args.rval().setObject(*new_response);
+    return true;
+  }
+
+  JS::RootedObject body_stream(cx, RequestOrResponse::body_stream(self));
+  if (!body_stream) {
+    body_stream = RequestOrResponse::create_body_stream(cx, self);
+    if (!body_stream) {
+      return false;
+    }
+  }
+
+  if (RequestOrResponse::body_unusable(cx, body_stream)) {
+    return api::throw_error(cx, FetchErrors::BodyStreamUnusable);
+  }
+
+  // Tee the body ourselves (ReadableStreamDefaultTee with cloneForBranch2 = true).
+  // A single reader drains the source; each chunk is handed unchanged to branch1
+  // (the original) and structure-cloned into branch2 (the clone) at read time.
+  JS::RootedObject reader(cx,
+      JS::ReadableStreamGetReader(cx, body_stream, JS::ReadableStreamReaderMode::Default));
+  if (!reader) {
+    return false;
+  }
+
+  JS::RootedValue undefined_val(cx, JS::UndefinedValue());
+  JS::RootedObject source1(cx, streams::NativeStreamSource::create(
+      cx, self, undefined_val, clone_tee_pull_algorithm, clone_tee_cancel_algorithm));
+  if (!source1) {
+    return false;
+  }
+  JS::RootedObject source2(cx, streams::NativeStreamSource::create(
+      cx, new_response, undefined_val, clone_tee_pull_algorithm, clone_tee_cancel_algorithm));
+  if (!source2) {
+    return false;
+  }
+
+  JS::RootedObject branch1(cx, streams::NativeStreamSource::stream(source1));
+  JS::RootedObject branch2(cx, streams::NativeStreamSource::stream(source2));
+
+  // Shared tee state, referenced by both branch sources at element 0.
+  JS::RootedObject state(cx, JS_NewPlainObject(cx));
+  if (!state) {
+    return false;
+  }
+  JS::RootedValue slot_val(cx);
+  slot_val.setObject(*reader);
+  if (!JS_SetElement(cx, state, std::to_underlying(CloneTeeSlot::Reader), slot_val)) {
+    return false;
+  }
+  slot_val.setObject(*branch1);
+  if (!JS_SetElement(cx, state, std::to_underlying(CloneTeeSlot::Branch1), slot_val)) {
+    return false;
+  }
+  slot_val.setObject(*branch2);
+  if (!JS_SetElement(cx, state, std::to_underlying(CloneTeeSlot::Branch2), slot_val)) {
+    return false;
+  }
+  if (!clone_tee_set_bool(cx, state, CloneTeeSlot::Reading, false) ||
+      !clone_tee_set_bool(cx, state, CloneTeeSlot::ReadAgain, false) ||
+      !clone_tee_set_bool(cx, state, CloneTeeSlot::Canceled1, false) ||
+      !clone_tee_set_bool(cx, state, CloneTeeSlot::Canceled2, false)) {
+    return false;
+  }
+
+  // Each source references the shared state at element 0 and records its branch
+  // number (1 or 2) so the cancel algorithm knows which branch was canceled.
+  slot_val.setObject(*state);
+  if (!JS_SetElement(cx, source1, 0, slot_val) || !JS_SetElement(cx, source2, 0, slot_val)) {
+    return false;
+  }
+  slot_val.setInt32(1);
+  if (!JS_SetElement(cx, source1, CLONE_TEE_SOURCE_BRANCH_SLOT, slot_val)) {
+    return false;
+  }
+  slot_val.setInt32(2);
+  if (!JS_SetElement(cx, source2, CLONE_TEE_SOURCE_BRANCH_SLOT, slot_val)) {
+    return false;
+  }
+
+  SetReservedSlot(self, std::to_underlying(Slots::BodyStream), ObjectValue(*branch1));
+  SetReservedSlot(new_response, std::to_underlying(Slots::BodyStream), ObjectValue(*branch2));
+  SetReservedSlot(new_response, std::to_underlying(Slots::HasBody), JS::BooleanValue(true));
+
+  args.rval().setObject(*new_response);
   return true;
 }
 
@@ -2569,6 +3002,7 @@ const JSFunctionSpec Response::methods[] = {
     JS_FN("formData", bodyAll<RequestOrResponse::BodyReadResult::FormData>, 0, JSPROP_ENUMERATE),
     JS_FN("json", bodyAll<RequestOrResponse::BodyReadResult::JSON>, 0, JSPROP_ENUMERATE),
     JS_FN("text", bodyAll<RequestOrResponse::BodyReadResult::Text>, 0, JSPROP_ENUMERATE),
+    JS_FN("clone", Response::clone, 0, JSPROP_ENUMERATE),
     JS_FS_END,
 };
 

@@ -1,0 +1,65 @@
+{
+  "Check Response's clone with default values, without body": {
+    "status": "PASS"
+  },
+  "Check Response's clone has the expected attribute values": {
+    "status": "PASS"
+  },
+  "Check orginal response's body after cloning": {
+    "status": "PASS"
+  },
+  "Check cloned response's body": {
+    "status": "PASS"
+  },
+  "Cannot clone a disturbed response": {
+    "status": "PASS"
+  },
+  "Cloned responses should provide the same data": {
+    "status": "PASS"
+  },
+  "Cancelling stream should not affect cloned one": {
+    "status": "PASS"
+  },
+  "Check response clone use structureClone for teed ReadableStreams (Int8Arraychunk)": {
+    "status": "PASS"
+  },
+  "Check response clone use structureClone for teed ReadableStreams (Int16Arraychunk)": {
+    "status": "PASS"
+  },
+  "Check response clone use structureClone for teed ReadableStreams (Int32Arraychunk)": {
+    "status": "PASS"
+  },
+  "Check response clone use structureClone for teed ReadableStreams (ArrayBufferchunk)": {
+    "status": "PASS"
+  },
+  "Check response clone use structureClone for teed ReadableStreams (Uint8Arraychunk)": {
+    "status": "PASS"
+  },
+  "Check response clone use structureClone for teed ReadableStreams (Uint8ClampedArraychunk)": {
+    "status": "PASS"
+  },
+  "Check response clone use structureClone for teed ReadableStreams (Uint16Arraychunk)": {
+    "status": "PASS"
+  },
+  "Check response clone use structureClone for teed ReadableStreams (Uint32Arraychunk)": {
+    "status": "PASS"
+  },
+  "Check response clone use structureClone for teed ReadableStreams (BigInt64Arraychunk)": {
+    "status": "PASS"
+  },
+  "Check response clone use structureClone for teed ReadableStreams (BigUint64Arraychunk)": {
+    "status": "PASS"
+  },
+  "Check response clone use structureClone for teed ReadableStreams (Float16Arraychunk)": {
+    "status": "PASS"
+  },
+  "Check response clone use structureClone for teed ReadableStreams (Float32Arraychunk)": {
+    "status": "PASS"
+  },
+  "Check response clone use structureClone for teed ReadableStreams (Float64Arraychunk)": {
+    "status": "PASS"
+  },
+  "Check response clone use structureClone for teed ReadableStreams (DataViewchunk)": {
+    "status": "PASS"
+  }
+}
