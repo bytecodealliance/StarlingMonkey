@@ -142,6 +142,7 @@ bool AbortSignal::throwIfAborted(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (is_aborted(self)) {
     RootedValue reason(cx, JS::GetReservedSlot(self, std::to_underlying(Slots::Reason)));
     JS_SetPendingException(cx, reason);
+    return false;
   }
 
   return true;

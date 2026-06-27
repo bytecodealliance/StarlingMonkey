@@ -62,6 +62,7 @@ test_e2e(no-init-location)
 test_e2e(init-location)
 
 integration_tests(
+    abort
     blob
     btoa
     crypto
