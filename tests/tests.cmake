@@ -46,6 +46,7 @@ function(integration_tests)
 endfunction()
 
 test_e2e(blob)
+test_e2e(console-assert)
 test_e2e(eventloop-stall)
 test_e2e(headers)
 test_e2e(runtime-err)
