@@ -68,5 +68,6 @@ integration_tests(
     event
     fetch
     performance
+    structuredclone
     timers
 )

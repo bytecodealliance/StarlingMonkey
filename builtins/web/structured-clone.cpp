@@ -1,5 +1,7 @@
 #include "structured-clone.h"
 #include "blob.h"
+#include "decode.h"
+#include "encode.h"
 
 #include "dom-exception.h"
 #include "mozilla/Assertions.h"
@@ -51,8 +53,32 @@ JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r,
 
   }
   case SCTAG_DOM_BLOB: {
-    JS::RootedString contentType(cx, JS_GetEmptyString(cx));
     UniqueChars chars(reinterpret_cast<char *>(bytes));
+
+    // Read back the Blob's `type` written after the byte data.
+    uint32_t type_len = 0;
+    uint32_t unused = 0;
+    if (!JS_ReadUint32Pair(r, &type_len, &unused)) {
+      return nullptr;
+    }
+
+    JS::RootedString contentType(cx);
+    if (type_len > 0) {
+      JS::UniqueChars type_bytes(static_cast<char *>(JS_malloc(cx, type_len)));
+      if (!type_bytes) {
+        JS_ReportOutOfMemory(cx);
+        return nullptr;
+      }
+      if (!JS_ReadBytes(r, type_bytes.get(), type_len)) {
+        return nullptr;
+      }
+      contentType = core::decode(cx, std::string_view(type_bytes.get(), type_len));
+    } else {
+      contentType = JS_GetEmptyString(cx);
+    }
+    if (!contentType) {
+      return nullptr;
+    }
 
     RootedObject blob(cx, blob::Blob::create(cx, std::move(chars), len, contentType));
     return blob;
@@ -82,8 +108,17 @@ bool WriteStructuredClone(JSContext *cx, JSStructuredCloneWriter *w, JS::HandleO
     }
   } else if (blob::Blob::is_instance(obj)) {
     auto *data = blob::Blob::blob(obj);
+    // A Blob's `type` is part of its serialized state and must be preserved, so
+    // it is written after the byte data as a length-prefixed UTF-8 string.
+    RootedString type_str(cx, blob::Blob::type(obj));
+    auto type = core::encode(cx, type_str);
+    if (!type) {
+      return false;
+    }
     if (!JS_WriteUint32Pair(w, SCTAG_DOM_BLOB, data->length()) ||
-        !JS_WriteBytes(w, (void *)data->begin(), data->length())) {
+        !JS_WriteBytes(w, (void *)data->begin(), data->length()) ||
+        !JS_WriteUint32Pair(w, static_cast<uint32_t>(type.len), 0) ||
+        !JS_WriteBytes(w, (void *)type.begin(), type.len)) {
       return false;
     }
   } else {
