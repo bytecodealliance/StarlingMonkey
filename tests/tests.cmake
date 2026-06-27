@@ -67,6 +67,7 @@ integration_tests(
     crypto
     event
     fetch
+    formdata
     performance
     timers
 )
