@@ -219,8 +219,11 @@ jsurl::SpecSlice URLSearchParams::serialize(JSContext *cx, JS::HandleObject self
 
 bool URLSearchParams::append(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(2)
-  auto value = validate(cx, args[0], "append");
-  if (!append_impl(cx, self, value, args[1], "append")) {
+  auto name = validate(cx, args[0], "append");
+  if (!name.data) {
+    return false;
+  }
+  if (!append_impl(cx, self, name, args[1], "append")) {
     return false;
   }
 
