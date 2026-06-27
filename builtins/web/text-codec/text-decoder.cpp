@@ -39,7 +39,9 @@ bool TextDecoder::decode(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
 
   bool stream = false;
-  if (args.hasDefined(1)) {
+  // `options` is a WebIDL dictionary: `null` (like `undefined`) means use the
+  // defaults, matching how the constructor treats it.
+  if (args.hasDefined(1) && !args.get(1).isNull()) {
     auto options_value = args.get(1);
     if (!options_value.isObject()) {
       return api::throw_error(cx, api::Errors::TypeError, "TextDecoder.decode",

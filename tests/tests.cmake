@@ -68,5 +68,7 @@ integration_tests(
     event
     fetch
     performance
+    textdecoder
     timers
+    urlsearchparams
 )
