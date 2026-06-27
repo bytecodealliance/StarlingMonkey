@@ -1,3 +1,4 @@
+export { handler as abort } from './abort/abort.js';
 export { handler as blob } from './blob/blob.js';
 export { handler as btoa } from './btoa/btoa.js';
 export { handler as performance } from './performance/performance.js';
