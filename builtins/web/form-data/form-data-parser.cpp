@@ -93,9 +93,12 @@ JSObject *MultipartParser::parse(JSContext *cx, std::string_view body) {
     return nullptr;
   }
 
+  // Per the Fetch spec, a part's value is the "UTF-8 decode without BOM" of its
+  // content, which preserves a leading BOM (U+FEFF) rather than stripping it.
+  // That corresponds to a decoder with BOM handling disabled.
   auto deleter2 = [&](auto *dec) { jsencoding::decoder_free(dec); };
   std::unique_ptr<jsencoding::Decoder, decltype(deleter2)> decoder(
-      jsencoding::encoding_new_decoder_with_bom_removal(encoding), deleter2);
+      jsencoding::encoding_new_decoder_without_bom_handling(encoding), deleter2);
 
   if (!decoder) {
     JS_ReportOutOfMemory(cx);
