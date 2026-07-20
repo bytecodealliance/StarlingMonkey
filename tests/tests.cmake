@@ -70,5 +70,7 @@ integration_tests(
     fetch
     formdata
     performance
+    textdecoder
     timers
+    urlsearchparams
 )
