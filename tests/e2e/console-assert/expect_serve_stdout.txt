@@ -1,0 +1,7 @@
+stdout [0] :: Log: a
+stdout [0] :: Log: b
+stdout [0] :: Error: Assertion failed
+stdout [0] :: Log: c
+stdout [0] :: Log: d
+stdout [0] :: Error: Assertion failed
+stdout [0] :: Log: e

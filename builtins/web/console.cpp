@@ -471,9 +471,9 @@ static bool console_out(JSContext *cx, unsigned argc, JS::Value *vp) {
 static bool assert_(JSContext *cx, unsigned argc, JS::Value *vp) {
   JS::CallArgs args = CallArgsFromVp(argc, vp);
   args.rval().setUndefined();
-  auto condition = args.get(0).toBoolean();
+  auto condition = JS::ToBoolean(args.get(0));
   // 1. If condition is true, return.
-  if (!condition) {
+  if (condition) {
     return true;
   }
 
