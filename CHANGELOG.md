@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.0](https://github.com/bytecodealliance/StarlingMonkey/compare/starlingmonkey-v0.3.0...starlingmonkey-v0.4.0) (2026-07-20)
+
+
+### Features
+
+* implement Response.clone() ([#312](https://github.com/bytecodealliance/StarlingMonkey/issues/312)) ([5c671dd](https://github.com/bytecodealliance/StarlingMonkey/commit/5c671dd86db596ac2ea88a60bebf8d4505b4b8fa))
+
+
+### Bug Fixes
+
+* **console:** console.assert() logs on failure, not on success ([#318](https://github.com/bytecodealliance/StarlingMonkey/issues/318)) ([f5a7adc](https://github.com/bytecodealliance/StarlingMonkey/commit/f5a7adcae0f2864e53b1642d23eff8c401160922))
+* **fetch:** body.blob() sets Blob.type from Content-Type header ([#313](https://github.com/bytecodealliance/StarlingMonkey/issues/313)) ([04721e3](https://github.com/bytecodealliance/StarlingMonkey/commit/04721e3ab946bd77e9ad9de055efa1ef809b545d))
+* **form-data:** preserve leading BOM in multipart text parts ([#317](https://github.com/bytecodealliance/StarlingMonkey/issues/317)) ([17c0e12](https://github.com/bytecodealliance/StarlingMonkey/commit/17c0e12bcdb324b1b55445f10900c8326eee1aa8))
+* handle any sequence in AbortSignal ([#310](https://github.com/bytecodealliance/StarlingMonkey/issues/310)) ([f74fb25](https://github.com/bytecodealliance/StarlingMonkey/commit/f74fb2547e3bc6a275366ecbb4dc80e2f4121b4f))
+* **url:** validate name in URLSearchParams.append() ([#320](https://github.com/bytecodealliance/StarlingMonkey/issues/320)) ([fb47e0e](https://github.com/bytecodealliance/StarlingMonkey/commit/fb47e0e771fb8538b8cf2a41c24e534cca518e44))
+
 ## [0.3.0](https://github.com/bytecodealliance/StarlingMonkey/compare/starlingmonkey-v0.2.1...starlingmonkey-v0.3.0) (2026-03-05)
 
 
