@@ -1,0 +1,50 @@
+{
+  "AbortController abort() should fire event synchronously": {
+    "status": "PASS"
+  },
+  "controller.signal should always return the same object": {
+    "status": "PASS"
+  },
+  "controller.abort() should do nothing the second time it is called": {
+    "status": "PASS"
+  },
+  "event handler should not be called if added after controller.abort()": {
+    "status": "PASS"
+  },
+  "the abort event should have the right properties": {
+    "status": "PASS"
+  },
+  "AbortController abort(reason) should set signal.reason": {
+    "status": "PASS"
+  },
+  "aborting AbortController without reason creates an \"AbortError\" DOMException": {
+    "status": "PASS"
+  },
+  "AbortController abort(undefined) creates an \"AbortError\" DOMException": {
+    "status": "PASS"
+  },
+  "AbortController abort(null) should set signal.reason": {
+    "status": "PASS"
+  },
+  "static aborting signal should have right properties": {
+    "status": "PASS"
+  },
+  "static aborting signal with reason should set signal.reason": {
+    "status": "PASS"
+  },
+  "throwIfAborted() should throw abort.reason if signal aborted": {
+    "status": "PASS"
+  },
+  "throwIfAborted() should throw primitive abort.reason if signal aborted": {
+    "status": "PASS"
+  },
+  "throwIfAborted() should not throw if signal not aborted": {
+    "status": "PASS"
+  },
+  "AbortSignal.reason returns the same DOMException": {
+    "status": "PASS"
+  },
+  "AbortController.signal.reason returns the same DOMException": {
+    "status": "PASS"
+  }
+}

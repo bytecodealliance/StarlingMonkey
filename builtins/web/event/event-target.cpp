@@ -361,7 +361,7 @@ bool EventTarget::remove_listener(JSContext *cx, HandleObject self, HandleValue 
 
 // https://dom.spec.whatwg.org/#dom-eventtarget-dispatchevent
 bool EventTarget::dispatch_event(JSContext *cx, HandleObject self, HandleValue event_val,
-                                 MutableHandleValue rval) {
+                                 MutableHandleValue rval, bool trusted) {
   MOZ_ASSERT(is_instance(self));
 
   if (!Event::is_instance(event_val)) {
@@ -379,8 +379,8 @@ bool EventTarget::dispatch_event(JSContext *cx, HandleObject self, HandleValue e
                                "InvalidStateError");
   }
 
-  // 2. Initialize event's isTrusted attribute to false.
-  Event::set_flag(event, EventFlag::Trusted, false);
+  // 2. Initialize event's isTrusted attribute.
+  Event::set_flag(event, EventFlag::Trusted, trusted);
 
   // 3. Return the result of dispatching event to this.
   return dispatch(cx, self, event, nullptr, rval);
@@ -650,5 +650,4 @@ bool EventTarget::init_class(JSContext *cx, JS::HandleObject global) {
 }
 
 } // namespace builtins::web::event
-
 
