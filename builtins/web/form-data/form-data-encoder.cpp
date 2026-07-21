@@ -9,10 +9,12 @@
 #include "../streams/native-stream-source.h"
 
 #include "encode.h"
+#include "jstypes.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ResultVariant.h"
 
 #include <fmt/format.h>
+#include <optional>
 #include <string>
 
 namespace {
@@ -21,24 +23,57 @@ const char LF = '\n';
 const char CR = '\r';
 const char *CRLF = "\r\n";
 
+template<typename CH> 
+size_t compute_extra_characters(CH *chars, size_t len) {
+  size_t extra = 0;
+  for (size_t i = 0; i < len; i++) {
+    auto ch = chars[i];
+    if (ch == CR) {
+      if (i + 1 < len) {
+        char16_t next = chars[i + 1];
+        if (next == LF) {
+          i += 1;
+          // the character is already accounted for
+          continue;
+        }
+      }
+      extra += 1;
+    } else if (ch == LF) {
+      extra += 1;
+    }
+  }
+  return extra;
+}
+
 // Computes the length of a string after normalizing its newlines.
 // Converts CR, LF, and CRLF into a CRLF sequence.
 size_t compute_normalized_len(std::string_view src) {
-  size_t len = 0;
+  size_t len = src.size();
+  len += compute_extra_characters(src.data(), len);
+  return len;
+}
 
-  for (size_t i = 0; i < src.size(); i++) {
-    if (src[i] == CR) {
-      if (i + 1 < src.size() && src[i + 1] == LF) {
-        i++;
-      }
-      len += 2; // CRLF
-    } else if (src[i] == LF) {
-      len += 2; // CRLF
-    } else {
-      len += 1;
-    }
+std::optional<size_t> compute_unencoded_normalized_len(JSContext *cx, JS::HandleString value) {
+  auto linear = JS_EnsureLinearString(cx, value);
+  if (!linear) {
+      return std::nullopt;
   }
-
+  auto len = JS::GetDeflatedUTF8StringLength(linear);
+  size_t chars_len = JS::GetLinearStringLength(linear);
+  JS::AutoCheckCannotGC nogc;
+  if (JS::LinearStringHasLatin1Chars(linear)) {
+    auto chars = JS::GetLatin1LinearStringChars(nogc, linear);
+    if (!chars) {
+      return std::nullopt;
+    }
+    len += compute_extra_characters(chars, chars_len);
+  } else {
+    auto chars = JS::GetTwoByteLinearStringChars(nogc, linear);
+    if (!chars) {
+      return std::nullopt;
+    }
+    len += compute_extra_characters(chars, chars_len);
+  }
   return len;
 }
 
@@ -517,12 +552,15 @@ mozilla::Result<size_t, OutOfMemory> MultipartFormDataImpl::query_length(JSConte
       total += 2 * crlf_len;
 
       RootedValue value_str(cx, entry.value);
-      auto value = core::encode(cx, value_str);
+      JS::RootedString value(cx, JS::ToString(cx, value_str));
       if (!value) {
         return mozilla::Result<size_t, OutOfMemory>(OutOfMemory {});
       }
-
-      total += compute_normalized_len(value);
+      auto value_len = compute_unencoded_normalized_len(cx, value);
+      if (!value_len.has_value()) {
+        return mozilla::Result<size_t, OutOfMemory>(OutOfMemory {});
+      }
+      total += value_len.value();
     } else {
       MOZ_ASSERT(File::is_instance(entry.value));
       RootedObject obj(cx, &entry.value.toObject());
