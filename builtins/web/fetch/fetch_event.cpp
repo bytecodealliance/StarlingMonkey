@@ -12,6 +12,9 @@
 #include <allocator.h>
 #include <debugger.h>
 #include <js/SourceText.h>
+#ifdef ENABLE_JS_NIGHTMONKEY
+#  include <js/NightMonkey.h>
+#endif
 
 #include <iostream>
 #include <memory>
@@ -493,6 +496,11 @@ static void dispatch_fetch_event(HandleObject event, double *total_compute) {
 }
 
 bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
+#ifdef ENABLE_JS_NIGHTMONKEY
+  if (!JS::NightActivate(ENGINE->cx())) {
+    return false;
+  }
+#endif
 #ifdef DEBUG
   std::println(stderr, "Warning: Using a DEBUG build. Expect things to be SLOW.");
 #endif

@@ -55,6 +55,7 @@ jobs:
           just mode=release builddir=build-release build starling
           just mode=relwithdebinfo builddir=build-debug build starling
           just mode=weval builddir=build-weval build starling-ics.wevalcache
+          just mode=nightmonkey builddir=build-nightmonkey build starling
 
       - name: Prepare Artifacts
         run: |
@@ -64,6 +65,7 @@ jobs:
           cp build-release/starling-raw.wasm release-artifacts/starling-raw.wasm
           cp build-debug/starling-raw.wasm release-artifacts/starling-raw-debug.wasm
           cp build-weval/starling-raw.wasm release-artifacts/starling-raw-weval.wasm
+          cp build-nightmonkey/starling-raw.wasm release-artifacts/starling-raw-nightmonkey.wasm
 
           # Component-versions of the runtime
           cp build-release/starling.wasm release-artifacts/starling.wasm
@@ -72,6 +74,7 @@ jobs:
           # Supporting artifacts
           cp build-release/preview1-adapter.wasm release-artifacts
           cp build-weval/starling-ics.wevalcache release-artifacts
+          cp build-nightmonkey/componentize.sh release-artifacts
 
           echo "Release artifacts:"
           ls -la release-artifacts/
@@ -81,6 +84,53 @@ jobs:
         with:
           tag_name: ${{ needs.release-please.outputs.tag_name }}
           files: release-artifacts/*
+
+  build-nightmonkey-compilers:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: nightmonkey-x86_64-linux
+            binary: nightmonkey
+          - os: ubuntu-24.04-arm
+            artifact: nightmonkey-aarch64-linux
+            binary: nightmonkey
+          - os: macos-14
+            artifact: nightmonkey-aarch64-macos
+            binary: nightmonkey
+          - os: windows-2022
+            artifact: nightmonkey-x86_64-windows.exe
+            binary: nightmonkey.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read Firefox revision
+        id: firefox-revision
+        shell: bash
+        run: |
+          revision="$(awk '/^set\(SM_TAG / {gsub(/set\(SM_TAG |\)/, ""); print}' cmake/spidermonkey.cmake)"
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: bytecodealliance/firefox
+          ref: ${{ steps.firefox-revision.outputs.revision }}
+          path: firefox
+      - name: Build compiler
+        run: |
+          cargo build --release --manifest-path firefox/js/src/night/nightmonkey/Cargo.toml
+          compiler="firefox/js/src/night/nightmonkey/target/release/${{ matrix.binary }}"
+          "$compiler" --help
+          cp "$compiler" "${{ matrix.artifact }}"
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 #2.3.2
+        with:
+          tag_name: ${{ needs.release-please.outputs.tag_name }}
+          files: ${{ matrix.artifact }}
 
   publish-extension:
     needs: release-please

@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build: [release, debug, weval]
+        build: [release, debug, weval, nightmonkey]
         os: [ubuntu-latest]
     outputs:
       SM_TAG_EXISTS: ${{ steps.check-sm-release.outputs.SM_TAG_EXISTS }}
@@ -32,6 +32,7 @@ jobs:
       SM_CACHE_KEY_debug: ${{ steps.check-sm-release.outputs.SM_CACHE_KEY_debug }}
       SM_CACHE_KEY_release: ${{ steps.check-sm-release.outputs.SM_CACHE_KEY_release }}
       SM_CACHE_KEY_weval: ${{ steps.check-sm-release.outputs.SM_CACHE_KEY_weval }}
+      SM_CACHE_KEY_nightmonkey: ${{ steps.check-sm-release.outputs.SM_CACHE_KEY_nightmonkey }}
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -73,8 +74,9 @@ jobs:
     - name: Configure StarlingMonkey
       run: |
         cmake -S . -B cmake-build-${{ matrix.build }}\
-          -DCMAKE_BUILD_TYPE=${{ (matrix.build == 'release' || matrix.build == 'weval') && 'Release' || 'Debug' }}\
-          ${{matrix.build == 'weval' && '-DUSE_WASM_OPT=OFF -DWEVAL=ON' || ''}}
+          -DCMAKE_BUILD_TYPE=${{ (matrix.build == 'release' || matrix.build == 'weval' || matrix.build == 'nightmonkey') && 'Release' || 'Debug' }}\
+          ${{matrix.build == 'weval' && '-DUSE_WASM_OPT=OFF -DWEVAL=ON' || ''}}\
+          ${{matrix.build == 'nightmonkey' && '-DNIGHTMONKEY=ON' || ''}}
 
     - name: Build StarlingMonkey
       run: |
@@ -153,6 +155,14 @@ jobs:
           spidermonkey-dist-weval
         key: ${{ needs.test.outputs.SM_CACHE_KEY_weval }}
         fail-on-cache-miss: true
+    - name: Restore SpiderMonkey NightMonkey Cache
+      uses: actions/cache/restore@v4
+      id: sm-cache-nightmonkey
+      with:
+        path: |
+          spidermonkey-dist-nightmonkey
+        key: ${{ needs.test.outputs.SM_CACHE_KEY_nightmonkey }}
+        fail-on-cache-miss: true
 
     - name: Create SpiderMonkey Tar Balls
       run: |
@@ -160,6 +170,7 @@ jobs:
         tar -a -cf release-artifacts/spidermonkey-static-debug.tar.gz spidermonkey-dist-debug/*
         tar -a -cf release-artifacts/spidermonkey-static-release.tar.gz spidermonkey-dist-release/*
         tar -a -cf release-artifacts/spidermonkey-static-release_weval.tar.gz spidermonkey-dist-weval/*
+        tar -a -cf release-artifacts/spidermonkey-static-release_nightmonkey.tar.gz spidermonkey-dist-nightmonkey/*
         tree release-artifacts
 
     - name: Do the Release
@@ -171,3 +182,47 @@ jobs:
           stability or availability guarantees.
         tag_name: ${{ needs.test.outputs.SM_TAG }}
         files: release-artifacts/*
+
+  nightmonkey-compilers:
+    name: NightMonkey compiler (${{ matrix.artifact }})
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: nightmonkey-x86_64-linux
+            binary: nightmonkey
+          - os: ubuntu-24.04-arm
+            artifact: nightmonkey-aarch64-linux
+            binary: nightmonkey
+          - os: macos-14
+            artifact: nightmonkey-aarch64-macos
+            binary: nightmonkey
+          - os: windows-2022
+            artifact: nightmonkey-x86_64-windows.exe
+            binary: nightmonkey.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Read Firefox revision
+      id: firefox-revision
+      shell: bash
+      run: |
+        revision="$(awk '/^set\(SM_TAG / {gsub(/set\(SM_TAG |\)/, ""); print}' cmake/spidermonkey.cmake)"
+        echo "revision=$revision" >> "$GITHUB_OUTPUT"
+    - uses: actions/checkout@v4
+      with:
+        repository: bytecodealliance/firefox
+        ref: ${{ steps.firefox-revision.outputs.revision }}
+        path: firefox
+    - name: Build compiler
+      run: |
+        cargo build --release --manifest-path firefox/js/src/night/nightmonkey/Cargo.toml
+        compiler="firefox/js/src/night/nightmonkey/target/release/${{ matrix.binary }}"
+        "$compiler" --help
+        cp "$compiler" "${{ matrix.artifact }}"
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact }}
+        path: ${{ matrix.artifact }}

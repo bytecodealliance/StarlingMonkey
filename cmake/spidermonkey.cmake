@@ -1,4 +1,5 @@
-set(SM_TAG FIREFOX_147_0_4_RELEASE_STARLING)
+set(SM_TAG 9f1a4ce9a631039e6898985d842afaf16cebc89e)
+set(SM_REPO_URL https://github.com/bytecodealliance/firefox.git)
 
 include("manage-git-source")
 
@@ -9,9 +10,16 @@ else()
 endif()
 
 option(WEVAL "Build with a SpiderMonkey variant that supports weval-based AOT compilation" OFF)
+option(NIGHTMONKEY "Build with NightMonkey AOT compilation support" OFF)
+
+if (WEVAL AND NIGHTMONKEY)
+    message(FATAL_ERROR "WEVAL and NIGHTMONKEY cannot be enabled together")
+endif()
 
 if (WEVAL)
     set(SM_BUILD_TYPE "${SM_BUILD_TYPE}_weval")
+elseif (NIGHTMONKEY)
+    set(SM_BUILD_TYPE "${SM_BUILD_TYPE}_nightmonkey")
 endif()
 
 # If the developer has specified an alternate local set of SpiderMonkey
@@ -53,16 +61,20 @@ if (DEFINED SM_LIB_DIR)
     target_include_directories(spidermonkey INTERFACE ${SM_INCLUDE_DIR})
     target_link_libraries(spidermonkey INTERFACE ${SM_LIB_DIR}/libspidermonkey.a)
 else()
-    # Clone SpiderMonkey source using git directly for shallow clone
-    # Use deps folder in project root for shared access across build directories
-    set(SM_SOURCE_DIR ${CMAKE_SOURCE_DIR}/deps/spidermonkey-source)
-
-    manage_git_source(
-        NAME spidermonkey
-        REPO_URL https://github.com/bytecodealliance/firefox.git
-        TAG ${SM_TAG}
-        SOURCE_DIR ${SM_SOURCE_DIR}
-    )
+    set(SM_SOURCE_DIR "${CMAKE_SOURCE_DIR}/deps/spidermonkey-source" CACHE PATH
+        "Path to a local Firefox source checkout")
+    if (SM_SOURCE_DIR STREQUAL "${CMAKE_SOURCE_DIR}/deps/spidermonkey-source")
+        manage_git_source(
+            NAME spidermonkey
+            REPO_URL ${SM_REPO_URL}
+            TAG ${SM_TAG}
+            SOURCE_DIR ${SM_SOURCE_DIR}
+        )
+    elseif (NOT EXISTS "${SM_SOURCE_DIR}/mach")
+        message(FATAL_ERROR "SM_SOURCE_DIR does not contain a Firefox checkout: ${SM_SOURCE_DIR}")
+    else()
+        message(STATUS "Using SpiderMonkey source from ${SM_SOURCE_DIR}")
+    endif()
 
     # Each build configuration gets its own object directory
     set(SM_OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/spidermonkey-obj)
@@ -151,6 +163,8 @@ mk_add_options AUTOCLOBBER=1
         string(APPEND MOZCONFIG_CONTENT "ac_add_options --enable-aot-ics\n")
         string(APPEND MOZCONFIG_CONTENT "ac_add_options --enable-aot-ics-force\n")
         string(APPEND MOZCONFIG_CONTENT "ac_add_options --enable-pbl-weval\n")
+    elseif(NIGHTMONKEY)
+        string(APPEND MOZCONFIG_CONTENT "ac_add_options --enable-nightmonkey\n")
     endif()
 
     file(GENERATE OUTPUT ${MOZCONFIG} CONTENT "${MOZCONFIG_CONTENT}")
@@ -187,6 +201,11 @@ mk_add_options AUTOCLOBBER=1
         VERBATIM
     )
     add_custom_target(spidermonkey_build DEPENDS ${LIB_SM})
+
+    if(NIGHTMONKEY)
+        set(NIGHTMONKEY_BIN "${SM_OBJ_DIR}/dist/host/bin/nightmonkey" CACHE FILEPATH
+            "Path to the NightMonkey compiler" FORCE)
+    endif()
 
     add_library(spidermonkey INTERFACE)
     add_dependencies(spidermonkey spidermonkey_build)

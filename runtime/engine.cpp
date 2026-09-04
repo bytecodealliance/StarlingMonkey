@@ -7,6 +7,9 @@
 
 #include "js/CompilationAndEvaluation.h"
 #include "js/Modules.h"
+#ifdef ENABLE_JS_NIGHTMONKEY
+#  include "js/NightMonkey.h"
+#endif
 #include "js/ForOfIterator.h"
 #include "js/Initialization.h"
 #include "js/Promise.h"
@@ -524,6 +527,11 @@ const mozilla::Maybe<std::string> &Engine::init_location() const {
 
 void Engine::finish_pre_initialization() {
   MOZ_ASSERT(state_ == EngineState::ScriptPreInitializing);
+#ifdef ENABLE_JS_NIGHTMONKEY
+  if (!JS::NightCaptureSnapshotHeap(cx())) {
+    abort("capturing NightMonkey snapshot state");
+  }
+#endif
   js::ResetMathRandomSeed(ENGINE->cx());
   state_ = EngineState::Initialized;
 }
