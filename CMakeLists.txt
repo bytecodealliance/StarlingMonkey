@@ -121,6 +121,12 @@ else()
     set(AOT 0)
 endif()
 
+if(NIGHTMONKEY)
+    set(NIGHTMONKEY_AOT 1)
+else()
+    set(NIGHTMONKEY_AOT 0)
+endif()
+
 set(RUNTIME_FILE "starling-raw.wasm")
 set(ADAPTER_FILE "preview1-adapter.wasm")
 configure_file("componentize.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/componentize.sh" @ONLY)

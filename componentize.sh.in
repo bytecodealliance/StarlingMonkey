@@ -1,24 +1,50 @@
 #!/usr/bin/env bash
 
-#set -euo pipefail
+set -euo pipefail
 
 wizer="${WIZER:-@WASMTIME_DIR@/wasmtime wizer}"
 wasm_tools="${WASM_TOOLS:-@WASM_TOOLS_BIN@}"
 weval="${WEVAL:-@WEVAL_BIN@}"
+configured_nightmonkey="@NIGHTMONKEY_BIN@"
 aot=@AOT@
+nightmonkey_aot=@NIGHTMONKEY_AOT@
 preopen_dir="${PREOPEN_DIR:-}"
 
 usage() {
-  echo "Usage: $(basename "$0")  [--verbose] [-i,--initializer-script-path path] [--strip-path-prefix prefix] [--legacy-script] [input.js] [-o output.wasm]"
+  echo "Usage: $(basename "$0")  [--verbose] [--enable-nightmonkey] [-i,--initializer-script-path path] [--strip-path-prefix prefix] [--legacy-script] [input.js] [-o output.wasm]"
   echo "       Providing an input file but no output uses the input base name with a .wasm extension"
   echo "       Providing an output file but no input creates a component without running any top-level script"
   echo "       Specifying '--verbose' causes the detailed output during initialization and execution"
   echo "       Specifying '-i' or '--initializer-script-path' allows specifying an initializer script"
   echo "       Specifying '--strip-path-prefix' will cause the provided prefix to be stripped from paths in stack traces and the debugger"
   echo "       Specifying '--legacy-script' causes evaluation as a legacy JS script instead of a module"
+  echo "       Specifying '--enable-nightmonkey' AOT-compiles the wizened core module with NightMonkey"
   echo "       Specifying '--wpt-mode' enables WPT compatibility mode"
   echo "       Specifying '--init-location url' allows setting the URL to use for 'globalThis.location' during initialization"
   exit 1
+}
+
+find_nightmonkey() {
+  if [[ -n ${NIGHTMONKEY:-} ]]; then
+    printf '%s\n' "$NIGHTMONKEY"
+    return
+  fi
+  if [[ -n $configured_nightmonkey && -x $configured_nightmonkey ]]; then
+    printf '%s\n' "$configured_nightmonkey"
+    return
+  fi
+
+  local platform machine artifact
+  platform="$(uname -s)"
+  machine="$(uname -m)"
+  case "$platform:$machine" in
+    Linux:x86_64) artifact=nightmonkey-x86_64-linux ;;
+    Linux:aarch64|Linux:arm64) artifact=nightmonkey-aarch64-linux ;;
+    Darwin:arm64) artifact=nightmonkey-aarch64-macos ;;
+    MINGW*:x86_64|MSYS*:x86_64|CYGWIN*:x86_64) artifact=nightmonkey-x86_64-windows.exe ;;
+    *) echo "No released NightMonkey compiler is available for $platform/$machine; set NIGHTMONKEY" >&2; return 1 ;;
+  esac
+  printf '%s/%s\n' "$(dirname "$0")" "$artifact"
 }
 
 if [ $# -lt 1 ]
@@ -31,10 +57,15 @@ OUT_FILE=""
 LEGACY_SCRIPT_PARAM=""
 STARLING_ARGS=""
 VERBOSE=0
+ENABLE_NIGHTMONKEY=0
 
 while [ $# -gt 0 ]
 do
     case "$1" in
+        --enable-nightmonkey)
+            ENABLE_NIGHTMONKEY=1
+            shift
+            ;;
         --legacy-script)
             LEGACY_SCRIPT_PARAM="$1 "
             IN_FILE="$2"
@@ -83,6 +114,27 @@ then
   usage
 fi
 
+nightmonkey=""
+if [[ $ENABLE_NIGHTMONKEY -ne 0 ]]; then
+  if [[ $nightmonkey_aot -eq 0 ]]; then
+    echo "This runtime was not built with NightMonkey support" >&2
+    exit 1
+  fi
+  if [[ $aot -ne 0 ]]; then
+    echo "NightMonkey and weval cannot be enabled together" >&2
+    exit 1
+  fi
+  if [[ -z $IN_FILE ]]; then
+    echo "NightMonkey requires an input script to snapshot" >&2
+    exit 1
+  fi
+  nightmonkey="$(find_nightmonkey)"
+  if [[ ! -x $nightmonkey ]]; then
+    echo "NightMonkey compiler not found or not executable: $nightmonkey; set NIGHTMONKEY to the matching compiler from this StarlingMonkey release" >&2
+    exit 1
+  fi
+fi
+
 # Use the -o param as output file if provided, otherwise use the input base name with a .wasm
 # extension.
 if [ -z "$OUT_FILE" ]
@@ -121,6 +173,27 @@ if [[ -n "$IN_FILE" ]]; then
            -W bulk-memory -W unknown-imports-trap \
            $preopen_dir -o "$OUT_FILE" \
            "$(dirname "$0")/starling-raw.wasm"
+  fi
+
+  if [[ $ENABLE_NIGHTMONKEY -ne 0 ]]; then
+      SNAPSHOT_FILE="$(mktemp "${TMPDIR:-/tmp}/nightmonkey-snapshot.XXXXXX")"
+      COMPILED_FILE="$(mktemp "${TMPDIR:-/tmp}/nightmonkey-output.XXXXXX")"
+      cleanup_nightmonkey() {
+          rm -f "$SNAPSHOT_FILE" "$COMPILED_FILE"
+      }
+      trap cleanup_nightmonkey EXIT
+      NIGHTMONKEY_ARGS=()
+      if [[ $VERBOSE -ne 0 ]]; then
+          NIGHTMONKEY_ARGS+=(--stats --keep-names)
+      fi
+      cp "$OUT_FILE" "$SNAPSHOT_FILE"
+      if [[ -n ${NIGHTMONKEY_KEEP_SNAPSHOT:-} ]]; then
+          cp "$SNAPSHOT_FILE" "$NIGHTMONKEY_KEEP_SNAPSHOT"
+      fi
+      "$nightmonkey" "${NIGHTMONKEY_ARGS[@]}" "$SNAPSHOT_FILE" -o "$COMPILED_FILE"
+      mv "$COMPILED_FILE" "$OUT_FILE"
+      cleanup_nightmonkey
+      trap - EXIT
   fi
 else
   echo "Creating runtime-eval component $OUT_FILE"

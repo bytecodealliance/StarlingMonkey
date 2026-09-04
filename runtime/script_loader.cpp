@@ -1,4 +1,8 @@
 #include "script_loader.h"
+
+#ifdef ENABLE_JS_NIGHTMONKEY
+#  include "js/NightMonkey.h"
+#endif
 #include "encode.h"
 
 #include <cstdio>
@@ -542,6 +546,16 @@ bool ScriptLoader::eval_top_level_script(std::string_view path,
   }
 
   // Execute the top-level module script.
+#ifdef ENABLE_JS_NIGHTMONKEY
+  if (ENGINE->state() == api::EngineState::ScriptPreInitializing) {
+    JS::RootedScript root(cx, MODULE_MODE ? JS::GetModuleScript(module) : script.get());
+    if (!root || !JS::NightRegisterRoot(cx, root, true) ||
+        !JS::NightCaptureSnapshotExtras(cx, root)) {
+      return false;
+    }
+  }
+#endif
+
   if (!MODULE_MODE) {
     return JS_ExecuteScript(cx, script, result);
   }

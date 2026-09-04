@@ -11,6 +11,9 @@
 #include "wasi/api.h"
 #include "wasi/libc-environ.h"
 #include "wizer.h"
+#ifdef ENABLE_JS_NIGHTMONKEY
+#  include "js/NightMonkey.h"
+#endif
 #ifdef MEM_STATS
 #include <string>
 #endif
@@ -86,6 +89,11 @@ WIZER_INIT(wizen);
  *    load the file `./index.js` and run it as the top-level module script.
  */
 extern "C" bool exports_wasi_cli_run_run() {
+#ifdef ENABLE_JS_NIGHTMONKEY
+  if (ENGINE && !JS::NightActivate(ENGINE->cx())) {
+    return false;
+  }
+#endif
   auto arg_strings = host_api::environment_get_arguments();
   std::vector<std::string_view> args;
   args.reserve(arg_strings.size());
