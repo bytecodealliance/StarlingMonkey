@@ -12,7 +12,7 @@
 #include "wasi/libc-environ.h"
 #include "wizer.h"
 #ifdef ENABLE_JS_NIGHTMONKEY
-#  include "js/NightMonkey.h"
+#  include "runtime/NightRegistration.h"
 #endif
 #ifdef MEM_STATS
 #include <string>
