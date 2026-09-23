@@ -19,6 +19,7 @@ usage() {
   echo "       Specifying '--strip-path-prefix' will cause the provided prefix to be stripped from paths in stack traces and the debugger"
   echo "       Specifying '--legacy-script' causes evaluation as a legacy JS script instead of a module"
   echo "       Specifying '--enable-nightmonkey' AOT-compiles the wizened core module with NightMonkey"
+  echo "       Set NIGHTMONKEY_FLAGS (e.g. '--stats') to pass extra diagnostic options to the NightMonkey compiler"
   echo "       Specifying '--wpt-mode' enables WPT compatibility mode"
   echo "       Specifying '--init-location url' allows setting the URL to use for 'globalThis.location' during initialization"
   exit 1
@@ -184,7 +185,13 @@ if [[ -n "$IN_FILE" ]]; then
       trap cleanup_nightmonkey EXIT
       NIGHTMONKEY_ARGS=()
       if [[ $VERBOSE -ne 0 ]]; then
-          NIGHTMONKEY_ARGS+=(--stats --keep-names)
+          NIGHTMONKEY_ARGS+=(--keep-names)
+      fi
+      # Compiler diagnostics (e.g. `--stats`) are opt-in via NIGHTMONKEY_FLAGS
+      # rather than tied to --verbose, since they are very noisy.
+      if [[ -n ${NIGHTMONKEY_FLAGS:-} ]]; then
+          read -r -a NIGHTMONKEY_EXTRA_ARGS <<< "$NIGHTMONKEY_FLAGS"
+          NIGHTMONKEY_ARGS+=("${NIGHTMONKEY_EXTRA_ARGS[@]}")
       fi
       cp "$OUT_FILE" "$SNAPSHOT_FILE"
       if [[ -n ${NIGHTMONKEY_KEEP_SNAPSHOT:-} ]]; then
