@@ -1,4 +1,7 @@
-set(SM_TAG 9f1a4ce9a631039e6898985d842afaf16cebc89e)
+# A tag or full commit hash in SM_REPO_URL. The NightMonkey build needs a
+# revision that carries `--enable-external-compiler-hooks` (the `wasi-ff147`
+# branch).
+set(SM_TAG f0c060c52260d41fc631a14cda05372ad1c2cbe1)
 set(SM_REPO_URL https://github.com/bytecodealliance/firefox.git)
 
 include("manage-git-source")
@@ -10,7 +13,7 @@ else()
 endif()
 
 option(WEVAL "Build with a SpiderMonkey variant that supports weval-based AOT compilation" OFF)
-option(NIGHTMONKEY "Build with NightMonkey AOT compilation support" OFF)
+option(NIGHTMONKEY "Build with NightMonkey AOT compilation support (see cmake/nightmonkey.cmake)" OFF)
 
 if (WEVAL AND NIGHTMONKEY)
     message(FATAL_ERROR "WEVAL and NIGHTMONKEY cannot be enabled together")
@@ -56,6 +59,15 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/null.cpp "")
 
 if (DEFINED SM_LIB_DIR)
     set(SM_INCLUDE_DIR ${SM_LIB_DIR}/include)
+
+    # NightMonkey's runtime is compiled against the engine's private headers,
+    # which a `--enable-external-compiler-hooks` build exports next to the
+    # public ones (see cmake/nightmonkey.cmake).
+    if (NIGHTMONKEY AND NOT EXISTS ${SM_LIB_DIR}/include-private/js-build-config.json)
+        message(FATAL_ERROR "The pre-built SpiderMonkey artifacts in ${SM_LIB_DIR} do not include the \
+            private headers NightMonkey needs (include-private/). Use artifacts from a NightMonkey \
+            build, or unset SPIDERMONKEY_BINARIES to build SpiderMonkey from source.")
+    endif()
 
     add_library(spidermonkey INTERFACE)
     target_include_directories(spidermonkey INTERFACE ${SM_INCLUDE_DIR})
@@ -164,7 +176,10 @@ mk_add_options AUTOCLOBBER=1
         string(APPEND MOZCONFIG_CONTENT "ac_add_options --enable-aot-ics-force\n")
         string(APPEND MOZCONFIG_CONTENT "ac_add_options --enable-pbl-weval\n")
     elseif(NIGHTMONKEY)
-        string(APPEND MOZCONFIG_CONTENT "ac_add_options --enable-nightmonkey\n")
+        # The external compiler hook surface NightMonkey plugs into, plus the
+        # export of the engine's private headers and compile flags that its
+        # runtime is built against.
+        string(APPEND MOZCONFIG_CONTENT "ac_add_options --enable-external-compiler-hooks\n")
     endif()
 
     file(GENERATE OUTPUT ${MOZCONFIG} CONTENT "${MOZCONFIG_CONTENT}")
@@ -201,11 +216,6 @@ mk_add_options AUTOCLOBBER=1
         VERBATIM
     )
     add_custom_target(spidermonkey_build DEPENDS ${LIB_SM})
-
-    if(NIGHTMONKEY)
-        set(NIGHTMONKEY_BIN "${SM_OBJ_DIR}/dist/host/bin/nightmonkey" CACHE FILEPATH
-            "Path to the NightMonkey compiler" FORCE)
-    endif()
 
     add_library(spidermonkey INTERFACE)
     add_dependencies(spidermonkey spidermonkey_build)

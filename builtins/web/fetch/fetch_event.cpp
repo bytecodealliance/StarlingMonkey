@@ -13,7 +13,7 @@
 #include <debugger.h>
 #include <js/SourceText.h>
 #ifdef ENABLE_JS_NIGHTMONKEY
-#  include <js/NightMonkey.h>
+#  include "runtime/NightRegistration.h"
 #endif
 
 #include <iostream>

@@ -38,6 +38,7 @@ include("wasmtime")
 include("cbindgen")
 
 include("spidermonkey")
+include("nightmonkey")
 include("openssl")
 include("${HOST_API}/host_api.cmake")
 include("build-crates")
@@ -49,7 +50,7 @@ add_library(extension_api INTERFACE include/extension-api.h runtime/encode.h run
 if (ENABLE_JS_DEBUGGER)
     target_compile_definitions(extension_api INTERFACE ENABLE_JS_DEBUGGER)
 endif()
-target_link_libraries(extension_api INTERFACE rust-url spidermonkey)
+target_link_libraries(extension_api INTERFACE rust-url spidermonkey nightmonkey)
 target_include_directories(extension_api INTERFACE include deps/include runtime)
 
 include("builtins")
