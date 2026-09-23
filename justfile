@@ -25,7 +25,7 @@ build target="all" *flags:
     # Only run configure step if build directory doesn't exist yet
     if ! {{ path_exists(builddir) }} || {{ reconfigure }} = 'true'; then
         cmake -S . -B {{ builddir }} {{ flags }} \
-            -DCMAKE_BUILD_TYPE={{ if mode == "weval" || mode == "nightmonkey" { "Release" } else { capitalize(mode) } }} \
+            -DCMAKE_BUILD_TYPE={{ if mode == "weval" { "Release" } else if mode == "nightmonkey" { "Release" } else { capitalize(mode) } }} \
             {{ if mode == "weval" { "-DUSE_WASM_OPT=OFF -DWEVAL=ON" } else if mode == "nightmonkey" { "-DNIGHTMONKEY=ON" } else { "" } }}
     else
         echo 'build directory already exists, skipping cmake configure'
