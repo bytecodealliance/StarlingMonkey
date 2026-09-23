@@ -19,7 +19,7 @@
 # SpiderMonkey pin in cmake/spidermonkey.cmake move together. The compiler
 # carries a checked-in opcode table per engine version, and the build checks
 # the selected one against the engine's Opcodes.h (below).
-set(NIGHTMONKEY_TAG 9f9170b0b2faf12541f3f31048ce0264bd7b0b05)
+set(NIGHTMONKEY_TAG 751695b96cb77becbd8be5d2a5497f7ba1d54fe2)
 set(NIGHTMONKEY_REPO_URL https://github.com/bytecodealliance/nightmonkey.git)
 set(NIGHTMONKEY_ENGINE_VERSION "ff147" CACHE STRING
     "Engine version NightMonkey is built for (compiler/src/opcodes/<version>.rs in its tree)")
@@ -90,7 +90,7 @@ file(GLOB NIGHT_RUNTIME_SOURCES ${NIGHTMONKEY_SOURCE_DIR}/runtime/*.cpp)
 # The in-process compilation lane (the jit-test harness) is not part of the
 # snapshot flow.
 list(FILTER NIGHT_RUNTIME_SOURCES EXCLUDE REGEX "/NightInproc[A-Za-z]*\\.cpp$")
-set(NIGHT_RUNTIME_COMPILE_SCRIPT ${CMAKE_SOURCE_DIR}/cmake/night-runtime-compile.cmake)
+set(NIGHT_RUNTIME_COMPILE_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/night-runtime-compile.cmake)
 
 set(NIGHT_RUNTIME_OBJS)
 foreach(source ${NIGHT_RUNTIME_SOURCES})
@@ -139,8 +139,9 @@ add_custom_target(nightmonkey_compiler
         --manifest-path ${NIGHTMONKEY_SOURCE_DIR}/Cargo.toml
         --target-dir ${NIGHTMONKEY_CARGO_TARGET_DIR}
     BYPRODUCTS ${NIGHTMONKEY_BIN}
-    # Run from the StarlingMonkey tree so rustup picks up its rust-toolchain.toml.
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    # Run from the StarlingMonkey tree so rustup picks up its rust-toolchain.toml
+    # (which is not CMAKE_SOURCE_DIR when StarlingMonkey is a subproject).
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/..
     COMMENT "Building the NightMonkey compiler"
     VERBATIM
 )
