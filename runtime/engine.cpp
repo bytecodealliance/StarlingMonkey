@@ -7,6 +7,10 @@
 
 #include "js/CompilationAndEvaluation.h"
 #include "js/Modules.h"
+#ifdef ENABLE_JS_NIGHTMONKEY
+#  include "runtime/Night.h"
+#  include "runtime/NightHooks.h"
+#endif
 #include "js/ForOfIterator.h"
 #include "js/Initialization.h"
 #include "js/Promise.h"
@@ -308,6 +312,11 @@ bool init_js(const EngineConfig& config) {
   if (!cx) {
     return false;
   }
+#ifdef ENABLE_JS_NIGHTMONKEY
+  // NightMonkey plugs into the engine through its external compiler hook
+  // table, which has to be registered before any script runs.
+  js::night::NightInstallHooks(JS_GetRuntime(cx));
+#endif
   CONTEXT = cx;
   SCRIPT_VALUE.init(cx);
 
@@ -524,6 +533,11 @@ const mozilla::Maybe<std::string> &Engine::init_location() const {
 
 void Engine::finish_pre_initialization() {
   MOZ_ASSERT(state_ == EngineState::ScriptPreInitializing);
+#ifdef ENABLE_JS_NIGHTMONKEY
+  if (!js::NightSnapshotCaptureHeap(cx())) {
+    abort("capturing NightMonkey snapshot state");
+  }
+#endif
   js::ResetMathRandomSeed(ENGINE->cx());
   state_ = EngineState::Initialized;
 }
