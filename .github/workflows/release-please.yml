@@ -74,7 +74,6 @@ jobs:
           # Supporting artifacts
           cp build-release/preview1-adapter.wasm release-artifacts
           cp build-weval/starling-ics.wevalcache release-artifacts
-          cp build-nightmonkey/componentize.sh release-artifacts
 
           echo "Release artifacts:"
           ls -la release-artifacts/
