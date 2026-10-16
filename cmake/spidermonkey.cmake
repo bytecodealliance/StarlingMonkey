@@ -1,4 +1,8 @@
-set(SM_TAG FIREFOX_147_0_4_RELEASE_STARLING)
+# A tag or full commit hash in SM_REPO_URL. The NightMonkey build needs a
+# revision that carries `--enable-external-compiler-hooks` (the `wasi-ff147`
+# branch).
+set(SM_TAG f0c060c52260d41fc631a14cda05372ad1c2cbe1)
+set(SM_REPO_URL https://github.com/bytecodealliance/firefox.git)
 
 include("manage-git-source")
 
@@ -9,9 +13,16 @@ else()
 endif()
 
 option(WEVAL "Build with a SpiderMonkey variant that supports weval-based AOT compilation" OFF)
+option(NIGHTMONKEY "Build with NightMonkey AOT compilation support (see cmake/nightmonkey.cmake)" OFF)
+
+if (WEVAL AND NIGHTMONKEY)
+    message(FATAL_ERROR "WEVAL and NIGHTMONKEY cannot be enabled together")
+endif()
 
 if (WEVAL)
     set(SM_BUILD_TYPE "${SM_BUILD_TYPE}_weval")
+elseif (NIGHTMONKEY)
+    set(SM_BUILD_TYPE "${SM_BUILD_TYPE}_nightmonkey")
 endif()
 
 # If the developer has specified an alternate local set of SpiderMonkey
@@ -49,20 +60,33 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/null.cpp "")
 if (DEFINED SM_LIB_DIR)
     set(SM_INCLUDE_DIR ${SM_LIB_DIR}/include)
 
+    # NightMonkey's runtime is compiled against the engine's private headers,
+    # which a `--enable-external-compiler-hooks` build exports next to the
+    # public ones (see cmake/nightmonkey.cmake).
+    if (NIGHTMONKEY AND NOT EXISTS ${SM_LIB_DIR}/include-private/js-build-config.json)
+        message(FATAL_ERROR "The pre-built SpiderMonkey artifacts in ${SM_LIB_DIR} do not include the \
+            private headers NightMonkey needs (include-private/). Use artifacts from a NightMonkey \
+            build, or unset SPIDERMONKEY_BINARIES to build SpiderMonkey from source.")
+    endif()
+
     add_library(spidermonkey INTERFACE)
     target_include_directories(spidermonkey INTERFACE ${SM_INCLUDE_DIR})
     target_link_libraries(spidermonkey INTERFACE ${SM_LIB_DIR}/libspidermonkey.a)
 else()
-    # Clone SpiderMonkey source using git directly for shallow clone
-    # Use deps folder in project root for shared access across build directories
-    set(SM_SOURCE_DIR ${CMAKE_SOURCE_DIR}/deps/spidermonkey-source)
-
-    manage_git_source(
-        NAME spidermonkey
-        REPO_URL https://github.com/bytecodealliance/firefox.git
-        TAG ${SM_TAG}
-        SOURCE_DIR ${SM_SOURCE_DIR}
-    )
+    set(SM_SOURCE_DIR "${CMAKE_SOURCE_DIR}/deps/spidermonkey-source" CACHE PATH
+        "Path to a local Firefox source checkout")
+    if (SM_SOURCE_DIR STREQUAL "${CMAKE_SOURCE_DIR}/deps/spidermonkey-source")
+        manage_git_source(
+            NAME spidermonkey
+            REPO_URL ${SM_REPO_URL}
+            TAG ${SM_TAG}
+            SOURCE_DIR ${SM_SOURCE_DIR}
+        )
+    elseif (NOT EXISTS "${SM_SOURCE_DIR}/mach")
+        message(FATAL_ERROR "SM_SOURCE_DIR does not contain a Firefox checkout: ${SM_SOURCE_DIR}")
+    else()
+        message(STATUS "Using SpiderMonkey source from ${SM_SOURCE_DIR}")
+    endif()
 
     # Each build configuration gets its own object directory
     set(SM_OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/spidermonkey-obj)
@@ -151,6 +175,11 @@ mk_add_options AUTOCLOBBER=1
         string(APPEND MOZCONFIG_CONTENT "ac_add_options --enable-aot-ics\n")
         string(APPEND MOZCONFIG_CONTENT "ac_add_options --enable-aot-ics-force\n")
         string(APPEND MOZCONFIG_CONTENT "ac_add_options --enable-pbl-weval\n")
+    elseif(NIGHTMONKEY)
+        # The external compiler hook surface NightMonkey plugs into, plus the
+        # export of the engine's private headers and compile flags that its
+        # runtime is built against.
+        string(APPEND MOZCONFIG_CONTENT "ac_add_options --enable-external-compiler-hooks\n")
     endif()
 
     file(GENERATE OUTPUT ${MOZCONFIG} CONTENT "${MOZCONFIG_CONTENT}")

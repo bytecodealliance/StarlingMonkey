@@ -4,10 +4,16 @@ find_program(BASH_PROGRAM bash)
 include("wasmtime")
 include("weval")
 
+if(NIGHTMONKEY)
+    set(TEST_COMPONENTIZE_FLAGS "--enable-nightmonkey")
+else()
+    set(TEST_COMPONENTIZE_FLAGS "")
+endif()
+
 function(test_e2e TEST_NAME)
     get_target_property(RUNTIME_DIR starling-raw.wasm BINARY_DIR)
     add_test(e2e-${TEST_NAME} ${BASH_PROGRAM} ${CMAKE_SOURCE_DIR}/tests/test.sh ${RUNTIME_DIR} ${CMAKE_SOURCE_DIR}/tests/e2e/${TEST_NAME})
-    set_property(TEST e2e-${TEST_NAME} PROPERTY ENVIRONMENT "WASMTIME=${WASMTIME};WASM_TOOLS=${WASM_TOOLS_DIR}/wasm-tools")
+    set_property(TEST e2e-${TEST_NAME} PROPERTY ENVIRONMENT "WASMTIME=${WASMTIME};WASM_TOOLS=${WASM_TOOLS_DIR}/wasm-tools;COMPONENTIZE_FLAGS=${TEST_COMPONENTIZE_FLAGS}")
     set_tests_properties(e2e-${TEST_NAME} PROPERTIES TIMEOUT 120)
 endfunction()
 
@@ -31,7 +37,7 @@ function(integration_tests)
     add_custom_command(
             OUTPUT test-server.wasm
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            COMMAND ${CMAKE_COMMAND} -E env "WASM_TOOLS=${WASM_TOOLS_DIR}/wasm-tools" env "PREOPEN_DIR=${CMAKE_SOURCE_DIR}/tests" ${RUNTIME_DIR}/componentize.sh ${TESTS_DIR}/test-server.js test-server.wasm
+            COMMAND ${CMAKE_COMMAND} -E env "WASM_TOOLS=${WASM_TOOLS_DIR}/wasm-tools" env "PREOPEN_DIR=${CMAKE_SOURCE_DIR}/tests" ${RUNTIME_DIR}/componentize.sh ${TEST_COMPONENTIZE_FLAGS} ${TESTS_DIR}/test-server.js test-server.wasm
             DEPENDS ${DEPS}
             VERBATIM
     )
@@ -61,6 +67,7 @@ test_e2e(teed-stream-as-outgoing-body)
 test_e2e(init-script)
 test_e2e(no-init-location)
 test_e2e(init-location)
+test_e2e(nightmonkey-fallback)
 
 integration_tests(
     blob

@@ -8,6 +8,8 @@ include("manage-git-source")
 
 if(WEVAL)
     set(COMPONENTIZE_FLAGS "--aot")
+elseif(NIGHTMONKEY)
+    set(COMPONENTIZE_FLAGS "--enable-nightmonkey")
 else()
     set(COMPONENTIZE_FLAGS "")
 endif()
