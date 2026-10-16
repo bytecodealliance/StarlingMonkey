@@ -11,6 +11,17 @@ else()
     find_program(MAKE_COMMAND NAMES make gmake)
 endif()
 
+# CFLAGS below replaces OpenSSL's default optimization flags, so set them per build type.
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(OPENSSL_BUILD_FLAGS --debug -O0 -g)
+elseif (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    set(OPENSSL_BUILD_FLAGS --release -O2 -g)
+elseif (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+    set(OPENSSL_BUILD_FLAGS --release -Os)
+else()
+    set(OPENSSL_BUILD_FLAGS --release -O3)
+endif()
+
 CPMAddPackage(NAME
         OpenSSL
         URL https://openssl.org/source/old/3.0/openssl-${OPENSSL_VERSION}.tar.gz
@@ -36,8 +47,7 @@ ExternalProject_Add(
         -DNO_SYSLOG
         -DNO_CHMOD
         -DOPENSSL_NO_SECURE_MEMORY
-        # Setting CFLAGS above replaces OpenSSL's default optimization flags, so restore them here.
-        -O3
+        ${OPENSSL_BUILD_FLAGS}
         --with-rand-seed=getrandom
         --prefix=${OPENSSL_INSTALL_DIR}
         --cross-compile-prefix=${WASI_SDK_PREFIX}/bin/
