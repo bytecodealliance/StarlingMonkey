@@ -140,6 +140,12 @@
   "Parsing: <http://a:b@c:29/d> against <http://example.org/foo/bar>": {
     "status": "PASS"
   },
+  "Parsing: <http://é@é> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <http://é@example.com> without base": {
+    "status": "PASS"
+  },
   "Parsing: <http::@c:29> against <http://example.org/foo/bar>": {
     "status": "PASS"
   },
@@ -231,6 +237,9 @@
     "status": "PASS"
   },
   "Parsing: <http:/example.com/> against <http://example.org/foo/bar>": {
+    "status": "PASS"
+  },
+  "Parsing: <http:/> against <http://example.com/>": {
     "status": "PASS"
   },
   "Parsing: <ftp:/example.com/> against <http://example.org/foo/bar>": {
@@ -668,6 +677,9 @@
   "Parsing: <mailto:example.com/> without base": {
     "status": "PASS"
   },
+  "Parsing: <https://example.com/aaa/bbb/%2e%2e?query> without base": {
+    "status": "PASS"
+  },
   "Parsing: <http:@www.example.com> without base": {
     "status": "PASS"
   },
@@ -827,6 +839,30 @@
   "Parsing: <\u0000\u001b\u0004\u0012 http://example.com/\u001f \r > without base": {
     "status": "PASS"
   },
+  "Parsing: <non-special:opaque  > without base": {
+    "status": "PASS"
+  },
+  "Parsing: <non-special:opaque  ?hi> without base": {
+    "status": "FAIL"
+  },
+  "Parsing: <non-special:opaque  #hi> without base": {
+    "status": "FAIL"
+  },
+  "Parsing: <non-special:opaque  x?hi> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <non-special:opaque  x#hi> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <non-special:opaque \t\t  \t#hi> without base": {
+    "status": "FAIL"
+  },
+  "Parsing: <non-special:opaque \t\t  #hi> without base": {
+    "status": "FAIL"
+  },
+  "Parsing: <non-special:opaque\t\t  \r #hi> without base": {
+    "status": "FAIL"
+  },
   "Parsing: <http://www.foo。bar.com> against <http://other.com/>": {
     "status": "PASS"
   },
@@ -846,22 +882,22 @@
     "status": "PASS"
   },
   "Parsing: <http://a.b.c.xn--pokxncvks> without base": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "Parsing: <http://10.0.0.xn--pokxncvks> without base": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "Parsing: <http://a.b.c.XN--pokxncvks> without base": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "Parsing: <http://a.b.c.Xn--pokxncvks> without base": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "Parsing: <http://10.0.0.XN--pokxncvks> without base": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "Parsing: <http://10.0.0.xN--pokxncvks> without base": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "Parsing: <http://Ｇｏ.com> against <http://other.com/>": {
     "status": "PASS"
@@ -957,6 +993,21 @@
     "status": "PASS"
   },
   "Parsing: <http://foo:💩@example.com/bar> against <http://other.com/>": {
+    "status": "PASS"
+  },
+  "Parsing: <http://😀x@host/> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <http://a:😀x@host/> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <http://😀@host/> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <https://localhost?q=🔥> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <https://localhost#🔥> without base": {
     "status": "PASS"
   },
   "Parsing: <#> against <test:test>": {
@@ -1529,6 +1580,12 @@
   "Parsing: <http://4294967296> against <http://other.com/>": {
     "status": "PASS"
   },
+  "Parsing: <http://18446744073709551616> against <http://other.com/>": {
+    "status": "PASS"
+  },
+  "Parsing: <http://18446744075840258049> against <http://other.com/>": {
+    "status": "PASS"
+  },
   "Parsing: <http://0xffffffff> against <http://other.com/>": {
     "status": "PASS"
   },
@@ -1539,6 +1596,15 @@
     "status": "PASS"
   },
   "Parsing: <https://0x.0x.0> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <https://0x.0x.0x.0x> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <https://00.00.00.00> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <https://0000000000000000000000000000000000000000177.0.0.1> without base": {
     "status": "PASS"
   },
   "Parsing: <https://0x100000000/test> without base": {
@@ -1715,6 +1781,12 @@
   "Parsing: </c:/foo/bar> against <file://host/path>": {
     "status": "FAIL"
   },
+  "Parsing: <..> against <abc://x/y/z/C:/>": {
+    "status": "FAIL"
+  },
+  "Parsing: <..> against <file://x/C:/>": {
+    "status": "FAIL"
+  },
   "Parsing: <file://example.net/C:/> without base": {
     "status": "FAIL"
   },
@@ -1825,6 +1897,12 @@
   },
   "Parsing: <file:/.//p> without base": {
     "status": "FAIL"
+  },
+  "Parsing: <https://[0:1:2:3:4:5:192.0.02.1]/> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <https://[192.0.2.1::]/> without base": {
+    "status": "PASS"
   },
   "Parsing: <http://[1:0::]> against <http://example.net/>": {
     "status": "PASS"
@@ -2130,12 +2208,15 @@
     "status": "PASS"
   },
   "Parsing: <file://xn--/p> without base": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "Parsing: <#link> against <https://example.org/##link>": {
     "status": "PASS"
   },
   "Parsing: <non-special:cannot-be-a-base-url-\u0000\u0001\u001f\u001e~> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <non-special:cannot-be-a-base-url-!\"$%&'()*+,-.;<=>@[\\]^_`{|}~@/> without base": {
     "status": "PASS"
   },
   "Parsing: <https://www.example.com/path{path.html?query'=query#fragment<fragment> without base": {
@@ -2163,10 +2244,10 @@
     "status": "PASS"
   },
   "Parsing: <foo://host/ !\"$%&'()*+,-./:;<=>@[\\]^_`{|}~> without base": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "Parsing: <wss://host/ !\"$%&'()*+,-./:;<=>@[\\]^_`{|}~> without base": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "Parsing: <foo://host/dir/? !\"$%&'()*+,-./:;<=>?@[\\]^_`{|}~> without base": {
     "status": "PASS"
@@ -2352,6 +2433,15 @@
     "status": "PASS"
   },
   "Parsing: <https://xn--/> without base": {
+    "status": "FAIL"
+  },
+  "Parsing: <constructor:example> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <constructor:/example> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <constructor://HOST:80> without base": {
     "status": "PASS"
   },
   "Parsing: <data://example.com:8080/pathname?search#hash> without base": {
@@ -2556,6 +2646,48 @@
     "status": "FAIL"
   },
   "Parsing: <//a/../> against <file:///>": {
+    "status": "PASS"
+  },
+  "Parsing: <non-special:\\\\opaque> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <non-special:\\\\opaque/path> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <non-special:\\\\opaque\\path> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <non-special:\\/opaque> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <non-special:/\\path> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <non-special://host\\a> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <non-special://host/a\\b> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <\\a> against <foo://foo/a>": {
+    "status": "FAIL"
+  },
+  "Parsing: <\\/a> against <foo://foo/a>": {
+    "status": "FAIL"
+  },
+  "Parsing: <\\\\a> against <foo://foo/a>": {
+    "status": "FAIL"
+  },
+  "Parsing: <data:text/plain,test#<foo> <bar>> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <about:blank#<foo> <bar>> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <data:text/plain,test#\u0000\u0001\t\n\r\u001f !\"#$%&'()*+,-./09:;<=>?@AZ[\\]^_`az{|}~Éé> without base": {
+    "status": "PASS"
+  },
+  "Parsing: <about:blank#\u0000\u0001\t\n\r\u001f !\"#$%&'()*+,-./09:;<=>?@AZ[\\]^_`az{|}~Éé> without base": {
     "status": "PASS"
   },
   "Parsing: <http://example.com/U+d800𐟾U+dfff﷐﷏﷯ﷰ￾￿?U+d800𐟾U+dfff﷐﷏﷯ﷰ￾￿> without base": {

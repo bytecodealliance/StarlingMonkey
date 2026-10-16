@@ -256,5 +256,20 @@
   },
   "ReadableStream (two chunks enqueued, then closed) reader: reader's closed property always returns the same promise": {
     "status": "PASS"
+  },
+  "Running templatedRSThrowAfterCloseOrError with ReadableStream": {
+    "status": "PASS"
+  },
+  "ReadableStream: enqueue() throws after close()": {
+    "status": "PASS"
+  },
+  "ReadableStream: enqueue() throws after enqueue() and close()": {
+    "status": "PASS"
+  },
+  "ReadableStream: enqueue() throws after error()": {
+    "status": "PASS"
+  },
+  "ReadableStream: close() throws after error()": {
+    "status": "PASS"
   }
 }

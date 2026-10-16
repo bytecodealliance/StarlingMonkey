@@ -100,5 +100,17 @@
   },
   "iso-2022-jp decoder: character, Multibyte ESC #2": {
     "status": "PASS"
+  },
+  "iso-2022-jp decoder: reset after a final chunk, fatal=false": {
+    "status": "PASS"
+  },
+  "iso-2022-jp decoder: reset after an empty flush, fatal=false": {
+    "status": "PASS"
+  },
+  "iso-2022-jp decoder: reset after a final chunk, fatal=true": {
+    "status": "PASS"
+  },
+  "iso-2022-jp decoder: reset after an empty flush, fatal=true": {
+    "status": "PASS"
   }
 }

@@ -1,0 +1,14 @@
+{
+  "decompressing deflate input should work": {
+    "status": "PASS"
+  },
+  "decompressing gzip input should work": {
+    "status": "PASS"
+  },
+  "decompressing deflate-raw input should work": {
+    "status": "PASS"
+  },
+  "decompressing brotli input should work": {
+    "status": "FAIL"
+  }
+}

@@ -8,6 +8,9 @@
   "URL.canParse(undefined, aaa:b)": {
     "status": "FAIL"
   },
+  "URL.canParse(undefined, https://test:test/)": {
+    "status": "FAIL"
+  },
   "URL.canParse(aaa:/b, undefined)": {
     "status": "FAIL"
   },

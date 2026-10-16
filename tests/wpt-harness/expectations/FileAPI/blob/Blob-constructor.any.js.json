@@ -32,6 +32,36 @@
   "A Uint8Array object should be treated as a sequence for the blobParts argument.": {
     "status": "PASS"
   },
+  "blobParts not an object: boolean": {
+    "status": "PASS"
+  },
+  "blobParts not an object: boolean with Boolean.prototype[Symbol.iterator]": {
+    "status": "PASS"
+  },
+  "blobParts not an object: string": {
+    "status": "PASS"
+  },
+  "blobParts not an object: string with String.prototype[Symbol.iterator]": {
+    "status": "PASS"
+  },
+  "blobParts not an object: number": {
+    "status": "PASS"
+  },
+  "blobParts not an object: number with Number.prototype[Symbol.iterator]": {
+    "status": "PASS"
+  },
+  "blobParts not an object: BigInt": {
+    "status": "PASS"
+  },
+  "blobParts not an object: BigInt with BigInt.prototype[Symbol.iterator]": {
+    "status": "PASS"
+  },
+  "blobParts not an object: Symbol": {
+    "status": "PASS"
+  },
+  "blobParts not an object: Symbol with Symbol.prototype[Symbol.iterator]": {
+    "status": "PASS"
+  },
   "The length getter should be invoked and any exceptions should be propagated.": {
     "status": "PASS"
   },

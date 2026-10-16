@@ -125,6 +125,12 @@
   "Empty Usages: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-256}, false, [])": {
     "status": "FAIL"
   },
+  "PKCS8 private-only: P-256 bits (pkcs8, buffer(67), {name: ECDSA, namedCurve: P-256}, true, [sign])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-256 bits (pkcs8, buffer(67), {name: ECDSA, namedCurve: P-256}, true, [sign, sign])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-384 bits (spki, buffer(120), {name: ECDSA, namedCurve: P-384}, true, [verify])": {
     "status": "FAIL"
   },
@@ -249,6 +255,12 @@
     "status": "PASS"
   },
   "Empty Usages: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-384}, false, [])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-384 bits (pkcs8, buffer(80), {name: ECDSA, namedCurve: P-384}, true, [sign])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-384 bits (pkcs8, buffer(80), {name: ECDSA, namedCurve: P-384}, true, [sign, sign])": {
     "status": "FAIL"
   },
   "Good parameters: P-521 bits (spki, buffer(158), {name: ECDSA, namedCurve: P-521}, true, [verify])": {
@@ -377,6 +389,12 @@
   "Empty Usages: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDSA, namedCurve: P-521}, false, [])": {
     "status": "FAIL"
   },
+  "PKCS8 private-only: P-521 bits (pkcs8, buffer(98), {name: ECDSA, namedCurve: P-521}, true, [sign])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-521 bits (pkcs8, buffer(98), {name: ECDSA, namedCurve: P-521}, true, [sign, sign])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-256 bits (spki, buffer(91), {name: ECDH, namedCurve: P-256}, true, [])": {
     "status": "FAIL"
   },
@@ -495,6 +513,18 @@
     "status": "FAIL"
   },
   "Empty Usages: P-256 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-256}, false, [])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-256 bits (pkcs8, buffer(67), {name: ECDH, namedCurve: P-256}, true, [deriveKey])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-256 bits (pkcs8, buffer(67), {name: ECDH, namedCurve: P-256}, true, [deriveBits, deriveKey])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-256 bits (pkcs8, buffer(67), {name: ECDH, namedCurve: P-256}, true, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-256 bits (pkcs8, buffer(67), {name: ECDH, namedCurve: P-256}, true, [deriveKey, deriveBits, deriveKey, deriveBits])": {
     "status": "FAIL"
   },
   "Good parameters: P-384 bits (spki, buffer(120), {name: ECDH, namedCurve: P-384}, true, [])": {
@@ -617,6 +647,18 @@
   "Empty Usages: P-384 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-384}, false, [])": {
     "status": "FAIL"
   },
+  "PKCS8 private-only: P-384 bits (pkcs8, buffer(80), {name: ECDH, namedCurve: P-384}, true, [deriveKey])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-384 bits (pkcs8, buffer(80), {name: ECDH, namedCurve: P-384}, true, [deriveBits, deriveKey])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-384 bits (pkcs8, buffer(80), {name: ECDH, namedCurve: P-384}, true, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-384 bits (pkcs8, buffer(80), {name: ECDH, namedCurve: P-384}, true, [deriveKey, deriveBits, deriveKey, deriveBits])": {
+    "status": "FAIL"
+  },
   "Good parameters: P-521 bits (spki, buffer(158), {name: ECDH, namedCurve: P-521}, true, [])": {
     "status": "FAIL"
   },
@@ -735,6 +777,18 @@
     "status": "FAIL"
   },
   "Empty Usages: P-521 bits (jwk, object(kty, crv, x, y, d), {name: ECDH, namedCurve: P-521}, false, [])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-521 bits (pkcs8, buffer(98), {name: ECDH, namedCurve: P-521}, true, [deriveKey])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-521 bits (pkcs8, buffer(98), {name: ECDH, namedCurve: P-521}, true, [deriveBits, deriveKey])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-521 bits (pkcs8, buffer(98), {name: ECDH, namedCurve: P-521}, true, [deriveBits])": {
+    "status": "FAIL"
+  },
+  "PKCS8 private-only: P-521 bits (pkcs8, buffer(98), {name: ECDH, namedCurve: P-521}, true, [deriveKey, deriveBits, deriveKey, deriveBits])": {
     "status": "FAIL"
   }
 }

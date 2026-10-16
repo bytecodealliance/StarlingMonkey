@@ -182,7 +182,16 @@
   "the abort signal is not signalled on close failure": {
     "status": "FAIL"
   },
-  "recursive abort() call": {
+  "recursive abort() call from abort() aborting signal (not started)": {
+    "status": "FAIL"
+  },
+  "recursive abort() call from abort() aborting signal": {
+    "status": "FAIL"
+  },
+  "recursive close() call from abort() aborting signal (not started)": {
+    "status": "FAIL"
+  },
+  "recursive close() call from abort() aborting signal": {
     "status": "FAIL"
   }
 }

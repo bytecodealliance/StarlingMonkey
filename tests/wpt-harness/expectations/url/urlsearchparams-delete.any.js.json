@@ -11,11 +11,11 @@
   "Removing non-existent param removes ? from URL": {
     "status": "PASS"
   },
-  "Changing the query of a URL with an opaque path can impact the path": {
-    "status": "PASS"
+  "Changing the query of a URL with an opaque path with trailing spaces": {
+    "status": "FAIL"
   },
-  "Changing the query of a URL with an opaque path can impact the path if the URL has no fragment": {
-    "status": "PASS"
+  "Changing the query of a URL with an opaque path with trailing spaces and a fragment": {
+    "status": "FAIL"
   },
   "Two-argument delete()": {
     "status": "PASS"

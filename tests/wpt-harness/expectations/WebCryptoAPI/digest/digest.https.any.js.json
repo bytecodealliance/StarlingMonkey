@@ -8,9 +8,6 @@
   "Sha-1 with empty source data": {
     "status": "PASS"
   },
-  "SHA-1 with empty source data and altered buffer after call": {
-    "status": "PASS"
-  },
   "SHA-256 with empty source data": {
     "status": "PASS"
   },
@@ -18,9 +15,6 @@
     "status": "PASS"
   },
   "Sha-256 with empty source data": {
-    "status": "PASS"
-  },
-  "SHA-256 with empty source data and altered buffer after call": {
     "status": "PASS"
   },
   "SHA-384 with empty source data": {
@@ -32,9 +26,6 @@
   "Sha-384 with empty source data": {
     "status": "PASS"
   },
-  "SHA-384 with empty source data and altered buffer after call": {
-    "status": "PASS"
-  },
   "SHA-512 with empty source data": {
     "status": "PASS"
   },
@@ -44,10 +35,19 @@
   "Sha-512 with empty source data": {
     "status": "PASS"
   },
-  "SHA-512 with empty source data and altered buffer after call": {
+  "SHA-1 with short source data": {
     "status": "PASS"
   },
-  "SHA-1 with short source data": {
+  "SHA-1 with short source data and altered buffer during call": {
+    "status": "PASS"
+  },
+  "SHA-1 with short source data and altered buffer after call": {
+    "status": "PASS"
+  },
+  "SHA-1 with short source data and transferred buffer during call": {
+    "status": "FAIL"
+  },
+  "SHA-1 with short source data and transferred buffer after call": {
     "status": "PASS"
   },
   "sha-1 with short source data": {
@@ -56,10 +56,19 @@
   "Sha-1 with short source data": {
     "status": "PASS"
   },
-  "SHA-1 with short source data and altered buffer after call": {
+  "SHA-256 with short source data": {
     "status": "PASS"
   },
-  "SHA-256 with short source data": {
+  "SHA-256 with short source data and altered buffer during call": {
+    "status": "PASS"
+  },
+  "SHA-256 with short source data and altered buffer after call": {
+    "status": "PASS"
+  },
+  "SHA-256 with short source data and transferred buffer during call": {
+    "status": "FAIL"
+  },
+  "SHA-256 with short source data and transferred buffer after call": {
     "status": "PASS"
   },
   "sha-256 with short source data": {
@@ -68,10 +77,19 @@
   "Sha-256 with short source data": {
     "status": "PASS"
   },
-  "SHA-256 with short source data and altered buffer after call": {
+  "SHA-384 with short source data": {
     "status": "PASS"
   },
-  "SHA-384 with short source data": {
+  "SHA-384 with short source data and altered buffer during call": {
+    "status": "PASS"
+  },
+  "SHA-384 with short source data and altered buffer after call": {
+    "status": "PASS"
+  },
+  "SHA-384 with short source data and transferred buffer during call": {
+    "status": "FAIL"
+  },
+  "SHA-384 with short source data and transferred buffer after call": {
     "status": "PASS"
   },
   "sha-384 with short source data": {
@@ -80,10 +98,19 @@
   "Sha-384 with short source data": {
     "status": "PASS"
   },
-  "SHA-384 with short source data and altered buffer after call": {
+  "SHA-512 with short source data": {
     "status": "PASS"
   },
-  "SHA-512 with short source data": {
+  "SHA-512 with short source data and altered buffer during call": {
+    "status": "PASS"
+  },
+  "SHA-512 with short source data and altered buffer after call": {
+    "status": "PASS"
+  },
+  "SHA-512 with short source data and transferred buffer during call": {
+    "status": "FAIL"
+  },
+  "SHA-512 with short source data and transferred buffer after call": {
     "status": "PASS"
   },
   "sha-512 with short source data": {
@@ -92,10 +119,19 @@
   "Sha-512 with short source data": {
     "status": "PASS"
   },
-  "SHA-512 with short source data and altered buffer after call": {
+  "SHA-1 with medium source data": {
     "status": "PASS"
   },
-  "SHA-1 with medium source data": {
+  "SHA-1 with medium source data and altered buffer during call": {
+    "status": "PASS"
+  },
+  "SHA-1 with medium source data and altered buffer after call": {
+    "status": "PASS"
+  },
+  "SHA-1 with medium source data and transferred buffer during call": {
+    "status": "FAIL"
+  },
+  "SHA-1 with medium source data and transferred buffer after call": {
     "status": "PASS"
   },
   "sha-1 with medium source data": {
@@ -104,10 +140,19 @@
   "Sha-1 with medium source data": {
     "status": "PASS"
   },
-  "SHA-1 with medium source data and altered buffer after call": {
+  "SHA-256 with medium source data": {
     "status": "PASS"
   },
-  "SHA-256 with medium source data": {
+  "SHA-256 with medium source data and altered buffer during call": {
+    "status": "PASS"
+  },
+  "SHA-256 with medium source data and altered buffer after call": {
+    "status": "PASS"
+  },
+  "SHA-256 with medium source data and transferred buffer during call": {
+    "status": "FAIL"
+  },
+  "SHA-256 with medium source data and transferred buffer after call": {
     "status": "PASS"
   },
   "sha-256 with medium source data": {
@@ -116,10 +161,19 @@
   "Sha-256 with medium source data": {
     "status": "PASS"
   },
-  "SHA-256 with medium source data and altered buffer after call": {
+  "SHA-384 with medium source data": {
     "status": "PASS"
   },
-  "SHA-384 with medium source data": {
+  "SHA-384 with medium source data and altered buffer during call": {
+    "status": "PASS"
+  },
+  "SHA-384 with medium source data and altered buffer after call": {
+    "status": "PASS"
+  },
+  "SHA-384 with medium source data and transferred buffer during call": {
+    "status": "FAIL"
+  },
+  "SHA-384 with medium source data and transferred buffer after call": {
     "status": "PASS"
   },
   "sha-384 with medium source data": {
@@ -128,10 +182,19 @@
   "Sha-384 with medium source data": {
     "status": "PASS"
   },
-  "SHA-384 with medium source data and altered buffer after call": {
+  "SHA-512 with medium source data": {
     "status": "PASS"
   },
-  "SHA-512 with medium source data": {
+  "SHA-512 with medium source data and altered buffer during call": {
+    "status": "PASS"
+  },
+  "SHA-512 with medium source data and altered buffer after call": {
+    "status": "PASS"
+  },
+  "SHA-512 with medium source data and transferred buffer during call": {
+    "status": "FAIL"
+  },
+  "SHA-512 with medium source data and transferred buffer after call": {
     "status": "PASS"
   },
   "sha-512 with medium source data": {
@@ -140,10 +203,19 @@
   "Sha-512 with medium source data": {
     "status": "PASS"
   },
-  "SHA-512 with medium source data and altered buffer after call": {
+  "SHA-1 with long source data": {
     "status": "PASS"
   },
-  "SHA-1 with long source data": {
+  "SHA-1 with long source data and altered buffer during call": {
+    "status": "PASS"
+  },
+  "SHA-1 with long source data and altered buffer after call": {
+    "status": "PASS"
+  },
+  "SHA-1 with long source data and transferred buffer during call": {
+    "status": "FAIL"
+  },
+  "SHA-1 with long source data and transferred buffer after call": {
     "status": "PASS"
   },
   "sha-1 with long source data": {
@@ -152,10 +224,19 @@
   "Sha-1 with long source data": {
     "status": "PASS"
   },
-  "SHA-1 with long source data and altered buffer after call": {
+  "SHA-256 with long source data": {
     "status": "PASS"
   },
-  "SHA-256 with long source data": {
+  "SHA-256 with long source data and altered buffer during call": {
+    "status": "PASS"
+  },
+  "SHA-256 with long source data and altered buffer after call": {
+    "status": "PASS"
+  },
+  "SHA-256 with long source data and transferred buffer during call": {
+    "status": "FAIL"
+  },
+  "SHA-256 with long source data and transferred buffer after call": {
     "status": "PASS"
   },
   "sha-256 with long source data": {
@@ -164,10 +245,19 @@
   "Sha-256 with long source data": {
     "status": "PASS"
   },
-  "SHA-256 with long source data and altered buffer after call": {
+  "SHA-384 with long source data": {
     "status": "PASS"
   },
-  "SHA-384 with long source data": {
+  "SHA-384 with long source data and altered buffer during call": {
+    "status": "PASS"
+  },
+  "SHA-384 with long source data and altered buffer after call": {
+    "status": "PASS"
+  },
+  "SHA-384 with long source data and transferred buffer during call": {
+    "status": "FAIL"
+  },
+  "SHA-384 with long source data and transferred buffer after call": {
     "status": "PASS"
   },
   "sha-384 with long source data": {
@@ -176,19 +266,25 @@
   "Sha-384 with long source data": {
     "status": "PASS"
   },
-  "SHA-384 with long source data and altered buffer after call": {
+  "SHA-512 with long source data": {
     "status": "PASS"
   },
-  "SHA-512 with long source data": {
+  "SHA-512 with long source data and altered buffer during call": {
+    "status": "PASS"
+  },
+  "SHA-512 with long source data and altered buffer after call": {
+    "status": "PASS"
+  },
+  "SHA-512 with long source data and transferred buffer during call": {
+    "status": "FAIL"
+  },
+  "SHA-512 with long source data and transferred buffer after call": {
     "status": "PASS"
   },
   "sha-512 with long source data": {
     "status": "PASS"
   },
   "Sha-512 with long source data": {
-    "status": "PASS"
-  },
-  "SHA-512 with long source data and altered buffer after call": {
     "status": "PASS"
   },
   "AES-GCM with empty": {
@@ -238,5 +334,17 @@
   },
   "AES-KW with long": {
     "status": "PASS"
+  },
+  "empty algorithm object with empty": {
+    "status": "FAIL"
+  },
+  "empty algorithm object with short": {
+    "status": "FAIL"
+  },
+  "empty algorithm object with medium": {
+    "status": "FAIL"
+  },
+  "empty algorithm object with long": {
+    "status": "FAIL"
   }
 }
