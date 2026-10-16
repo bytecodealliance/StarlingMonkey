@@ -36,6 +36,8 @@ ExternalProject_Add(
         -DNO_SYSLOG
         -DNO_CHMOD
         -DOPENSSL_NO_SECURE_MEMORY
+        # Setting CFLAGS above replaces OpenSSL's default optimization flags, so restore them here.
+        -O3
         --with-rand-seed=getrandom
         --prefix=${OPENSSL_INSTALL_DIR}
         --cross-compile-prefix=${WASI_SDK_PREFIX}/bin/
