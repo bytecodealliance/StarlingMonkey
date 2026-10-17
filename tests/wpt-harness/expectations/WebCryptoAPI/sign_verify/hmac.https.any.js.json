@@ -38,6 +38,18 @@
   "HMAC with SHA-512 verification": {
     "status": "PASS"
   },
+  "HMAC with SHA-1 verification with altered signature during call": {
+    "status": "PASS"
+  },
+  "HMAC with SHA-256 verification with altered signature during call": {
+    "status": "PASS"
+  },
+  "HMAC with SHA-384 verification with altered signature during call": {
+    "status": "PASS"
+  },
+  "HMAC with SHA-512 verification with altered signature during call": {
+    "status": "PASS"
+  },
   "HMAC with SHA-1 verification with altered signature after call": {
     "status": "PASS"
   },
@@ -50,6 +62,42 @@
   "HMAC with SHA-512 verification with altered signature after call": {
     "status": "PASS"
   },
+  "HMAC with SHA-1 verification with transferred signature during call": {
+    "status": "FAIL"
+  },
+  "HMAC with SHA-256 verification with transferred signature during call": {
+    "status": "FAIL"
+  },
+  "HMAC with SHA-384 verification with transferred signature during call": {
+    "status": "FAIL"
+  },
+  "HMAC with SHA-512 verification with transferred signature during call": {
+    "status": "FAIL"
+  },
+  "HMAC with SHA-1 verification with transferred signature after call": {
+    "status": "PASS"
+  },
+  "HMAC with SHA-256 verification with transferred signature after call": {
+    "status": "PASS"
+  },
+  "HMAC with SHA-384 verification with transferred signature after call": {
+    "status": "PASS"
+  },
+  "HMAC with SHA-512 verification with transferred signature after call": {
+    "status": "PASS"
+  },
+  "HMAC with SHA-1 with altered plaintext during call": {
+    "status": "PASS"
+  },
+  "HMAC with SHA-256 with altered plaintext during call": {
+    "status": "PASS"
+  },
+  "HMAC with SHA-384 with altered plaintext during call": {
+    "status": "PASS"
+  },
+  "HMAC with SHA-512 with altered plaintext during call": {
+    "status": "PASS"
+  },
   "HMAC with SHA-1 with altered plaintext after call": {
     "status": "PASS"
   },
@@ -60,6 +108,30 @@
     "status": "PASS"
   },
   "HMAC with SHA-512 with altered plaintext after call": {
+    "status": "PASS"
+  },
+  "HMAC with SHA-1 with transferred plaintext during call": {
+    "status": "FAIL"
+  },
+  "HMAC with SHA-256 with transferred plaintext during call": {
+    "status": "FAIL"
+  },
+  "HMAC with SHA-384 with transferred plaintext during call": {
+    "status": "FAIL"
+  },
+  "HMAC with SHA-512 with transferred plaintext during call": {
+    "status": "FAIL"
+  },
+  "HMAC with SHA-1 with transferred plaintext after call": {
+    "status": "PASS"
+  },
+  "HMAC with SHA-256 with transferred plaintext after call": {
+    "status": "PASS"
+  },
+  "HMAC with SHA-384 with transferred plaintext after call": {
+    "status": "PASS"
+  },
+  "HMAC with SHA-512 with transferred plaintext after call": {
     "status": "PASS"
   },
   "HMAC with SHA-1 no verify usage": {

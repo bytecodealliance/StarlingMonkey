@@ -5,6 +5,9 @@
   "Aborting rejects with abort reason": {
     "status": "PASS"
   },
+  "Aborting rejects with abort reason when aborted after fetch() called": {
+    "status": "PASS"
+  },
   "Aborting rejects with AbortError - no-cors": {
     "status": "PASS"
   },
@@ -89,19 +92,37 @@
   "response.arrayBuffer() rejects if already aborted": {
     "status": "PASS"
   },
+  "response.arrayBuffer() rejects with abort reason if already aborted": {
+    "status": "PASS"
+  },
   "response.blob() rejects if already aborted": {
+    "status": "PASS"
+  },
+  "response.blob() rejects with abort reason if already aborted": {
     "status": "PASS"
   },
   "response.bytes() rejects if already aborted": {
     "status": "FAIL"
   },
+  "response.bytes() rejects with abort reason if already aborted": {
+    "status": "FAIL"
+  },
   "response.formData() rejects if already aborted": {
+    "status": "PASS"
+  },
+  "response.formData() rejects with abort reason if already aborted": {
     "status": "PASS"
   },
   "response.json() rejects if already aborted": {
     "status": "PASS"
   },
+  "response.json() rejects with abort reason if already aborted": {
+    "status": "PASS"
+  },
   "response.text() rejects if already aborted": {
+    "status": "PASS"
+  },
+  "response.text() rejects with abort reason if already aborted": {
     "status": "PASS"
   },
   "Call text() twice on aborted response": {
@@ -141,6 +162,9 @@
     "status": "FAIL"
   },
   "Stream errors once aborted. Underlying connection closed.": {
+    "status": "FAIL"
+  },
+  "Stream errors once aborted with abort reason. Underlying connection closed.": {
     "status": "FAIL"
   },
   "Stream errors once aborted, after reading. Underlying connection closed.": {

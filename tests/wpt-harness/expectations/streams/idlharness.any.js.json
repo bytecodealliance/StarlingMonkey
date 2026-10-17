@@ -29,7 +29,7 @@
   "ReadableStream interface: existence and properties of interface prototype object's @@unscopables property": {
     "status": "PASS"
   },
-  "ReadableStream interface: operation from(any)": {
+  "ReadableStream interface: operation from(async_sequence<any>)": {
     "status": "FAIL"
   },
   "ReadableStream interface: attribute locked": {
@@ -50,19 +50,16 @@
   "ReadableStream interface: operation tee()": {
     "status": "PASS"
   },
-  "ReadableStream interface: async iterable<any>": {
-    "status": "FAIL"
-  },
   "ReadableStream must be primary interface of new ReadableStream()": {
     "status": "PASS"
   },
   "Stringification of new ReadableStream()": {
     "status": "PASS"
   },
-  "ReadableStream interface: new ReadableStream() must inherit property \"from(any)\" with the proper type": {
+  "ReadableStream interface: new ReadableStream() must inherit property \"from(async_sequence<any>)\" with the proper type": {
     "status": "PASS"
   },
-  "ReadableStream interface: calling from(any) on new ReadableStream() with too few arguments must throw TypeError": {
+  "ReadableStream interface: calling from(async_sequence<any>) on new ReadableStream() with too few arguments must throw TypeError": {
     "status": "FAIL"
   },
   "ReadableStream interface: new ReadableStream() must inherit property \"locked\" with the proper type": {

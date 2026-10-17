@@ -10,5 +10,8 @@
   },
   "Garbage-collecting a ReadableStreamDefaultReader should not unlock its stream": {
     "status": "PASS"
+  },
+  "A ReadableStream and its reader should not be garbage collected while there is a read promise pending": {
+    "status": "PASS"
   }
 }
