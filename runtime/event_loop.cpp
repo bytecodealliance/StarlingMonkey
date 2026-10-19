@@ -33,7 +33,9 @@ static PersistentRooted<CleanupFunctions> finalization_registry_cleanups;
 // Called during a collection, so it must not collect: it only appends to the queue. If the
 // append fails, that registry's records stay queued in SpiderMonkey and are offered again after
 // a later collection.
-static void queue_finalization_registry_cleanup(JSFunction *do_cleanup, JSObject *, void *) {
+static void queue_finalization_registry_cleanup(JSFunction *do_cleanup,
+                                                JSObject * /*incumbent_global*/,
+                                                void * /*data*/) {
   (void)finalization_registry_cleanups.get().append(do_cleanup);
 }
 
