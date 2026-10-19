@@ -13,5 +13,8 @@
   },
   "file with lastModified and custom name": {
     "status": "PASS"
+  },
+  "append() should create a single File for each Blob": {
+    "status": "PASS"
   }
 }

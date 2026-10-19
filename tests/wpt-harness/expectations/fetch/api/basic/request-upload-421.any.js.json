@@ -1,0 +1,5 @@
+{
+  "Fetch with POST with text body on 421 response should be retried once on new connection.": {
+    "status": "FAIL"
+  }
+}

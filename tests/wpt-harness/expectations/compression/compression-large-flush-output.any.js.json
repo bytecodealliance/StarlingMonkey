@@ -2,10 +2,13 @@
   "deflate compression with large flush output": {
     "status": "PASS"
   },
+  "deflate-raw compression with large flush output": {
+    "status": "PASS"
+  },
   "gzip compression with large flush output": {
     "status": "PASS"
   },
-  "deflate-raw compression with large flush output": {
-    "status": "PASS"
+  "brotli compression with large flush output": {
+    "status": "FAIL"
   }
 }

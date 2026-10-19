@@ -103,5 +103,8 @@
   },
   "Errors must be propagated backward: erroring via the controller errors once pending write completes": {
     "status": "PASS"
+  },
+  "Errors must be propagated backward: erroring writable stream before chunk enqueued does not write chunk": {
+    "status": "PASS"
   }
 }

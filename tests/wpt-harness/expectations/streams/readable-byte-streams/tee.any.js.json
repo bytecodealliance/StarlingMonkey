@@ -50,6 +50,9 @@
   "ReadableStream teeing with byte source: canceling branch1 should finish when branch2 reads until end of stream": {
     "status": "FAIL"
   },
+  "ReadableStream teeing with byte source: canceling branch1 should finish when branch2 reads with a BYOB reader until end of stream": {
+    "status": "FAIL"
+  },
   "ReadableStream teeing with byte source: canceling branch1 should finish when original stream errors": {
     "status": "FAIL"
   },

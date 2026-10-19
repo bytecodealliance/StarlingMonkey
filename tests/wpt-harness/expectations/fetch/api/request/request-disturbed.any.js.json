@@ -17,8 +17,8 @@
   "Input request used for creating new request became disturbed": {
     "status": "PASS"
   },
-  "Input request used for creating new request became disturbed even if body is not used": {
-    "status": "FAIL"
+  "Input request used for creating new request with a new body is not disturbed": {
+    "status": "PASS"
   },
   "Check consuming a disturbed request": {
     "status": "PASS"

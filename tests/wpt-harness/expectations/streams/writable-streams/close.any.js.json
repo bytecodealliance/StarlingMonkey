@@ -73,5 +73,8 @@
   },
   "close() on a stream with a pending close should reject": {
     "status": "PASS"
+  },
+  "write() on a closed stream should reject": {
+    "status": "PASS"
   }
 }

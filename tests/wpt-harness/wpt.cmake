@@ -1,4 +1,4 @@
-set(WPT_TAG "epochs/daily/2024-10-02_01H")
+set(WPT_TAG "epochs/daily/2026-10-16_04H")
 
 enable_testing()
 
