@@ -1,0 +1,11 @@
+{
+  "AbortSignal.timeout() returns a non-aborted signal": {
+    "status": "PASS"
+  },
+  "Signal returned by AbortSignal.timeout() times out": {
+    "status": "PASS"
+  },
+  "AbortSignal timeouts fire in order": {
+    "status": "PASS"
+  }
+}
