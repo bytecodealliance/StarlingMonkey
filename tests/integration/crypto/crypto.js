@@ -351,7 +351,7 @@ export const handler = serveTest(async (t) => {
                 publicRsaJsonWebKeyData.ext,
                 publicRsaJsonWebKeyData.key_ops,
               );
-            }, TypeError);
+            }, DOMException, null, "DataError");
           },
         );
         await t.test(
@@ -734,7 +734,7 @@ export const handler = serveTest(async (t) => {
                 publicEcdsaJsonWebKeyData.ext,
                 publicEcdsaJsonWebKeyData.key_ops,
               );
-            }, TypeError);
+            }, DOMException, null, "DataError");
           },
         );
         await t.test(
