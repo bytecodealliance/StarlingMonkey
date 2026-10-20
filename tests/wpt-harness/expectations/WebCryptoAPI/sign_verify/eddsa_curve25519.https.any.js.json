@@ -2,10 +2,28 @@
   "EdDSA Ed25519 verification": {
     "status": "PASS"
   },
+  "EdDSA Ed25519 verification with altered signature during call": {
+    "status": "PASS"
+  },
   "EdDSA Ed25519 verification with altered signature after call": {
     "status": "PASS"
   },
+  "EdDSA Ed25519 verification with transferred signature during call": {
+    "status": "FAIL"
+  },
+  "EdDSA Ed25519 verification with transferred signature after call": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 with altered data during call": {
+    "status": "PASS"
+  },
   "EdDSA Ed25519 with altered data after call": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 with transferred data during call": {
+    "status": "FAIL"
+  },
+  "EdDSA Ed25519 with transferred data after call": {
     "status": "PASS"
   },
   "EdDSA Ed25519 using privateKey to verify": {
