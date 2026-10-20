@@ -1249,6 +1249,19 @@ export const handler = serveTest(async (t) => {
           deepStrictEqual(key.usages, ["sign", "verify"], `key.usages`);
         }
       });
+      await t.test("subtle.importKey.HMAC-non-sign-or-verify-usage", async () => {
+        for (const usages of [[], ["encrypt"], ["sign", "encrypt"], ["verify", "deriveBits"]]) {
+          await rejects(async () => {
+            await crypto.subtle.importKey(
+              "raw",
+              new Uint8Array([1, 0, 1]),
+              { name: "HMAC", hash: "SHA-256" },
+              false,
+              usages,
+            );
+          }, DOMException, undefined, "SyntaxError");
+        }
+      });
       await t.test("subtle.importKey.JWK-HS256-Public", async () => {
         const key = await crypto.subtle.importKey(
           "jwk",
