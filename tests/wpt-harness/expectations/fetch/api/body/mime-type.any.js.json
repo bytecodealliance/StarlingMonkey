@@ -45,7 +45,7 @@
     "status": "PASS"
   },
   "Response: Extract a MIME type with clone": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Request: Content-Type in headers wins Blob\"s type": {
     "status": "PASS"

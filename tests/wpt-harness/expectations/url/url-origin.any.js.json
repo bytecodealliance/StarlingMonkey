@@ -119,6 +119,12 @@
   "Origin parsing: <http://a:b@c:29/d> against <http://example.org/foo/bar>": {
     "status": "PASS"
   },
+  "Origin parsing: <http://é@é> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <http://é@example.com> without base": {
+    "status": "PASS"
+  },
   "Origin parsing: <http::@c:29> against <http://example.org/foo/bar>": {
     "status": "PASS"
   },
@@ -195,6 +201,9 @@
     "status": "PASS"
   },
   "Origin parsing: <http:/example.com/> against <http://example.org/foo/bar>": {
+    "status": "PASS"
+  },
+  "Origin parsing: <http:/> against <http://example.com/>": {
     "status": "PASS"
   },
   "Origin parsing: <ftp:/example.com/> against <http://example.org/foo/bar>": {
@@ -536,6 +545,9 @@
   "Origin parsing: <mailto:example.com/> without base": {
     "status": "PASS"
   },
+  "Origin parsing: <https://example.com/aaa/bbb/%2e%2e?query> without base": {
+    "status": "PASS"
+  },
   "Origin parsing: <http:@www.example.com> without base": {
     "status": "PASS"
   },
@@ -626,11 +638,53 @@
   "Origin parsing: <\u0000\u001b\u0004\u0012 http://example.com/\u001f \r > without base": {
     "status": "PASS"
   },
+  "Origin parsing: <non-special:opaque  > without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <non-special:opaque  ?hi> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <non-special:opaque  #hi> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <non-special:opaque  x?hi> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <non-special:opaque  x#hi> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <non-special:opaque \t\t  \t#hi> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <non-special:opaque \t\t  #hi> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <non-special:opaque\t\t  \r #hi> without base": {
+    "status": "PASS"
+  },
   "Origin parsing: <http://www.foo。bar.com> against <http://other.com/>": {
     "status": "PASS"
   },
   "Origin parsing: <https://x/�?�#�> without base": {
     "status": "PASS"
+  },
+  "Origin parsing: <http://a.b.c.xn--pokxncvks> without base": {
+    "status": "FAIL"
+  },
+  "Origin parsing: <http://10.0.0.xn--pokxncvks> without base": {
+    "status": "FAIL"
+  },
+  "Origin parsing: <http://a.b.c.XN--pokxncvks> without base": {
+    "status": "FAIL"
+  },
+  "Origin parsing: <http://a.b.c.Xn--pokxncvks> without base": {
+    "status": "FAIL"
+  },
+  "Origin parsing: <http://10.0.0.XN--pokxncvks> without base": {
+    "status": "FAIL"
+  },
+  "Origin parsing: <http://10.0.0.xN--pokxncvks> without base": {
+    "status": "FAIL"
   },
   "Origin parsing: <http://Ｇｏ.com> against <http://other.com/>": {
     "status": "PASS"
@@ -663,6 +717,21 @@
     "status": "PASS"
   },
   "Origin parsing: <http://foo:💩@example.com/bar> against <http://other.com/>": {
+    "status": "PASS"
+  },
+  "Origin parsing: <http://😀x@host/> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <http://a:😀x@host/> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <http://😀@host/> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <https://localhost?q=🔥> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <https://localhost#🔥> without base": {
     "status": "PASS"
   },
   "Origin parsing: <#> against <test:test>": {
@@ -884,6 +953,15 @@
   "Origin parsing: <https://0x.0x.0> without base": {
     "status": "PASS"
   },
+  "Origin parsing: <https://0x.0x.0x.0x> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <https://00.00.00.00> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <https://0000000000000000000000000000000000000000177.0.0.1> without base": {
+    "status": "PASS"
+  },
   "Origin parsing: <asdf://%43%7C/> without base": {
     "status": "PASS"
   },
@@ -977,6 +1055,9 @@
   "Origin parsing: <non-special:cannot-be-a-base-url-\u0000\u0001\u001f\u001e~> without base": {
     "status": "PASS"
   },
+  "Origin parsing: <non-special:cannot-be-a-base-url-!\"$%&'()*+,-.;<=>@[\\]^_`{|}~@/> without base": {
+    "status": "PASS"
+  },
   "Origin parsing: <https://www.example.com/path{path.html?query'=query#fragment<fragment> without base": {
     "status": "PASS"
   },
@@ -1023,6 +1104,18 @@
     "status": "PASS"
   },
   "Origin parsing: <https://a%C2%ADb/> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <https://xn--/> without base": {
+    "status": "FAIL"
+  },
+  "Origin parsing: <constructor:example> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <constructor:/example> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <constructor://HOST:80> without base": {
     "status": "PASS"
   },
   "Origin parsing: <data://example.com:8080/pathname?search#hash> without base": {
@@ -1131,6 +1224,24 @@
     "status": "PASS"
   },
   "Origin parsing: <isolated-app://x:0> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <non-special:\\\\opaque> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <non-special:\\\\opaque/path> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <non-special:\\\\opaque\\path> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <non-special:\\/opaque> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <non-special:/\\path> without base": {
+    "status": "PASS"
+  },
+  "Origin parsing: <non-special://host/a\\b> without base": {
     "status": "PASS"
   },
   "Origin parsing: <http://example.com/U+d800𐟾U+dfff﷐﷏﷯ﷰ￾￿?U+d800𐟾U+dfff﷐﷏﷯ﷰ￾￿> without base": {

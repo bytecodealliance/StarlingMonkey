@@ -44,7 +44,7 @@
   "chunk of type Uint8Array should work for gzip": {
     "status": "PASS"
   },
-  "chunk of type Uint8ClambedArray should work for gzip": {
+  "chunk of type Uint8ClampedArray should work for gzip": {
     "status": "PASS"
   },
   "chunk of type Int16Array should work for gzip": {
@@ -106,5 +106,41 @@
   },
   "chunk of type DataView should work for deflate-raw": {
     "status": "PASS"
+  },
+  "chunk of type ArrayBuffer should work for brotli": {
+    "status": "FAIL"
+  },
+  "chunk of type Int8Array should work for brotli": {
+    "status": "FAIL"
+  },
+  "chunk of type Uint8Array should work for brotli": {
+    "status": "FAIL"
+  },
+  "chunk of type Uint8ClampedArray should work for brotli": {
+    "status": "FAIL"
+  },
+  "chunk of type Int16Array should work for brotli": {
+    "status": "FAIL"
+  },
+  "chunk of type Uint16Array should work for brotli": {
+    "status": "FAIL"
+  },
+  "chunk of type Int32Array should work for brotli": {
+    "status": "FAIL"
+  },
+  "chunk of type Uint32Array should work for brotli": {
+    "status": "FAIL"
+  },
+  "chunk of type Float16Array should work for brotli": {
+    "status": "FAIL"
+  },
+  "chunk of type Float32Array should work for brotli": {
+    "status": "FAIL"
+  },
+  "chunk of type Float64Array should work for brotli": {
+    "status": "FAIL"
+  },
+  "chunk of type DataView should work for brotli": {
+    "status": "FAIL"
   }
 }

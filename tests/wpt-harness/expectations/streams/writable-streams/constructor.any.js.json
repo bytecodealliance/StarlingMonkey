@@ -17,6 +17,9 @@
   "WritableStream should be constructible with no arguments": {
     "status": "PASS"
   },
+  "WritableStream can't be constructed with a defined type": {
+    "status": "PASS"
+  },
   "underlyingSink argument should be converted after queuingStrategy argument": {
     "status": "PASS"
   },

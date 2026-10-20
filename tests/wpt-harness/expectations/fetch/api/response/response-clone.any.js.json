@@ -5,7 +5,7 @@
   "Check Response's clone has the expected attribute values": {
     "status": "PASS"
   },
-  "Check orginal response's body after cloning": {
+  "Check original response's body after cloning": {
     "status": "PASS"
   },
   "Check cloned response's body": {

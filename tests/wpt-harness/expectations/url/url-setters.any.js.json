@@ -360,6 +360,27 @@
     "status": "PASS"
   },
   "URL: Setting <https://example.com/>.host = 'xn--'": {
+    "status": "FAIL"
+  },
+  "URL: Setting <https://test.invalid/>.host = '*'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://test.invalid/>.host = 'x@x'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://test.invalid/>.host = 'foo\t\r\nbar'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://test.invalid/>.host = '><'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://test.invalid/>.host = 'test/@aaa'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://test.invalid/>.host = 'test/:aaa'": {
+    "status": "PASS"
+  },
+  "URL: Setting <foo://path/to>.host = ':80'": {
     "status": "PASS"
   },
   "URL: Setting <sc://x/>.hostname = '\u0000' Non-special scheme": {
@@ -486,6 +507,24 @@
     "status": "PASS"
   },
   "URL: Setting <https://example.com/>.hostname = 'xn--'": {
+    "status": "FAIL"
+  },
+  "URL: Setting <https://test.invalid/>.hostname = '*'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://test.invalid/>.hostname = 'x@x'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://test.invalid/>.hostname = 'foo\t\r\nbar'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://test.invalid/>.hostname = '><'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://test.invalid/>.hostname = 'test/@aaa'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://test.invalid/>.hostname = 'test/:aaa'": {
     "status": "PASS"
   },
   "URL: Setting <http://example.net>.port = '8080'": {
@@ -563,6 +602,12 @@
   "URL: Setting <https://www.google.com:4343>.port = '4wpt' Should use all ascii prefixed characters as port": {
     "status": "PASS"
   },
+  "URL: Setting <https://domain.com:3000>.port = '\n\t80\n\t80\n\t'": {
+    "status": "PASS"
+  },
+  "URL: Setting <https://domain.com:3000>.port = '\n\n\t\t'": {
+    "status": "FAIL"
+  },
   "URL: Setting <mailto:me@example.net>.pathname = '/foo' Opaque paths cannot be set": {
     "status": "PASS"
   },
@@ -603,7 +648,7 @@
     "status": "PASS"
   },
   "URL: Setting <a:/>.pathname = '\u0000\u0001\t\n\r\u001f !\"#$%&'()*+,-./09:;<=>?@AZ[\\]^_`az{|}~Éé' UTF-8 percent encoding with the default encode set. Tabs and newlines are removed.": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "URL: Setting <http://example.net>.pathname = '%2e%2E%c3%89té' Bytes already percent-encoded are left as-is, including %2E outside dotted segments.": {
     "status": "PASS"
@@ -659,6 +704,9 @@
   "URL: Setting <http://example.net>.pathname = '\u0000' Trailing C0 control should be encoded": {
     "status": "PASS"
   },
+  "URL: Setting <foo://path/to>.pathname = '/..'": {
+    "status": "PASS"
+  },
   "URL: Setting <https://example.net#nav>.search = 'lang=fr'": {
     "status": "PASS"
   },
@@ -689,17 +737,17 @@
   "URL: Setting <http://example.net>.search = '%c3%89té' Bytes already percent-encoded are left as-is": {
     "status": "PASS"
   },
-  "URL: Setting <data:space ?query>.search = '' Drop trailing spaces from trailing opaque paths": {
-    "status": "PASS"
+  "URL: Setting <data:space ?query>.search = '' Trailing spaces and opaque paths": {
+    "status": "FAIL"
   },
   "URL: Setting <sc:space ?query>.search = ''": {
-    "status": "PASS"
+    "status": "FAIL"
   },
-  "URL: Setting <data:space  ?query#fragment>.search = '' Do not drop trailing spaces from non-trailing opaque paths": {
-    "status": "PASS"
+  "URL: Setting <data:space  ?query#fragment>.search = '' Trailing spaces and opaque paths": {
+    "status": "FAIL"
   },
   "URL: Setting <sc:space  ?query#fragment>.search = ''": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "URL: Setting <http://example.net>.search = ' ' Trailing space should be encoded": {
     "status": "PASS"
@@ -755,22 +803,34 @@
   "URL: Setting <javascript:alert(1)>.hash = 'castle'": {
     "status": "PASS"
   },
-  "URL: Setting <data:space                                                                                                                                  #fragment>.hash = '' Drop trailing spaces from trailing opaque paths": {
-    "status": "PASS"
+  "URL: Setting <data:space                                                                                                                                  #fragment>.hash = '' Trailing spaces and opaque paths": {
+    "status": "FAIL"
   },
   "URL: Setting <sc:space    #fragment>.hash = ''": {
-    "status": "PASS"
+    "status": "FAIL"
   },
-  "URL: Setting <data:space  ?query#fragment>.hash = '' Do not drop trailing spaces from non-trailing opaque paths": {
-    "status": "PASS"
+  "URL: Setting <data:space  ?query#fragment>.hash = '' Trailing spaces and opaque paths": {
+    "status": "FAIL"
   },
   "URL: Setting <sc:space  ?query#fragment>.hash = ''": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "URL: Setting <http://example.net>.hash = ' ' Trailing space should be encoded": {
     "status": "PASS"
   },
   "URL: Setting <http://example.net>.hash = '\u0000' Trailing C0 control should be encoded": {
+    "status": "PASS"
+  },
+  "URL: Setting <data:text/plain,test>.hash = '#<foo> <bar>' Fragment with <> on data: URI": {
+    "status": "PASS"
+  },
+  "URL: Setting <about:blank>.hash = '#<foo> <bar>' Fragment with <> on about:blank": {
+    "status": "PASS"
+  },
+  "URL: Setting <data:text/plain,test>.hash = '#\u0000\u0001\t\n\r\u001f !\"#$%&'()*+,-./09:;<=>?@AZ[\\]^_`az{|}~Éé' Fragment percent-encode set on data: URI; tabs and newlines are removed": {
+    "status": "PASS"
+  },
+  "URL: Setting <about:blank>.hash = '#\u0000\u0001\t\n\r\u001f !\"#$%&'()*+,-./09:;<=>?@AZ[\\]^_`az{|}~Éé' Fragment percent-encode set on about:blank; tabs and newlines are removed": {
     "status": "PASS"
   },
   "URL: Setting <file:///var/log/system.log>.href = 'http://0300.168.0xF0'": {
