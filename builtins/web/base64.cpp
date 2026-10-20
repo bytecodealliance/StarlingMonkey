@@ -218,7 +218,7 @@ JS::Result<std::string> forgivingBase64Decode(std::string_view data,
   auto hasWhitespace = std::find_if(data.begin(), data.end(), &isAsciiWhitespace);
   std::string dataWithoutAsciiWhitespace;
 
-  if (*hasWhitespace != 0) {
+  if (hasWhitespace != data.end()) {
     dataWithoutAsciiWhitespace = data;
     dataWithoutAsciiWhitespace.erase(std::remove_if(dataWithoutAsciiWhitespace.begin() +
                                                         std::distance(data.begin(), hasWhitespace),

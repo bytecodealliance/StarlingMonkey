@@ -7,5 +7,8 @@
   },
   "TextDecoder decode() with undefined and options": {
     "status": "PASS"
+  },
+  "TextDecoder decode() with array buffer detached during arg conversion": {
+    "status": "FAIL"
   }
 }

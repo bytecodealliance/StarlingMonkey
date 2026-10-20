@@ -74,6 +74,15 @@
   "format 'gzip' field ISIZE should be error for 1": {
     "status": "FAIL"
   },
+  "the unchanged input for 'brotli' should decompress successfully": {
+    "status": "FAIL"
+  },
+  "truncating the input for 'brotli' should give an error": {
+    "status": "FAIL"
+  },
+  "trailing junk for 'brotli' should give an error": {
+    "status": "FAIL"
+  },
   "the deflate input compressed with dictionary should give an error": {
     "status": "PASS"
   }

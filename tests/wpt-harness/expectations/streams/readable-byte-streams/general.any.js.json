@@ -44,6 +44,9 @@
   "ReadableStream with byte source: Test that erroring a stream does not release a BYOB reader automatically": {
     "status": "PASS"
   },
+  "ReadableStream with byte source: cannot use an already-released BYOB reader to unlock a stream again": {
+    "status": "PASS"
+  },
   "ReadableStream with byte source: releaseLock() on ReadableStreamDefaultReader must reject pending read()": {
     "status": "PASS"
   },
@@ -105,6 +108,9 @@
     "status": "PASS"
   },
   "ReadableStream with byte source: respond(3) to read(view) with 2 element Uint16Array enqueues the 1 byte remainder": {
+    "status": "PASS"
+  },
+  "ReadableStream with byte source: respond(3) to read(view) with 2 element Uint16Array fulfills second read(view) with the 1 byte remainder": {
     "status": "PASS"
   },
   "ReadableStream with byte source: enqueue(), getReader(), then read(view)": {

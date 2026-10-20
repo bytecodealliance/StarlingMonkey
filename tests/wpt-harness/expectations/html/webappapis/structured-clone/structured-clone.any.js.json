@@ -374,6 +374,12 @@
   "MessagePort": {
     "status": "FAIL"
   },
+  "ImageBitmap": {
+    "status": "FAIL"
+  },
+  "OffscreenCanvas": {
+    "status": "FAIL"
+  },
   "A detached ArrayBuffer cannot be transferred": {
     "status": "FAIL"
   },

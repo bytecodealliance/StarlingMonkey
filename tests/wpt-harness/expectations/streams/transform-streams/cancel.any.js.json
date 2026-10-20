@@ -19,5 +19,17 @@
   },
   "writable.abort() and readable.cancel() should reject if a transformer.cancel() calls controller.error()": {
     "status": "FAIL"
+  },
+  "readable.cancel() should not call cancel() when flush() is already called from writable.close()": {
+    "status": "PASS"
+  },
+  "readable.cancel() should not call cancel() again when already called from writable.abort()": {
+    "status": "FAIL"
+  },
+  "writable.close() should not call flush() when cancel() is already called from readable.cancel()": {
+    "status": "FAIL"
+  },
+  "writable.abort() should not call cancel() again when already called from readable.cancel()": {
+    "status": "FAIL"
   }
 }

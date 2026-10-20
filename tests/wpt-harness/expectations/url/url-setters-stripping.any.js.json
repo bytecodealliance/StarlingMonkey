@@ -77,6 +77,24 @@
   "Setting hash with trailing U+0000 (https:)": {
     "status": "PASS"
   },
+  "Setting search with leading U+0000 updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+0000 updates previously obtained searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+0000 updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+0000 updates previously obtained searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+0000 updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+0000 updates previously obtained searchParams (https:)": {
+    "status": "PASS"
+  },
   "Setting protocol with leading U+0009 (https:)": {
     "status": "PASS"
   },
@@ -153,6 +171,24 @@
     "status": "PASS"
   },
   "Setting hash with trailing U+0009 (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+0009 updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+0009 updates previously obtained searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+0009 updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+0009 updates previously obtained searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+0009 updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+0009 updates previously obtained searchParams (https:)": {
     "status": "PASS"
   },
   "Setting protocol with leading U+000A (https:)": {
@@ -233,6 +269,24 @@
   "Setting hash with trailing U+000A (https:)": {
     "status": "PASS"
   },
+  "Setting search with leading U+000A updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+000A updates previously obtained searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+000A updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+000A updates previously obtained searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+000A updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+000A updates previously obtained searchParams (https:)": {
+    "status": "PASS"
+  },
   "Setting protocol with leading U+000D (https:)": {
     "status": "PASS"
   },
@@ -309,6 +363,24 @@
     "status": "PASS"
   },
   "Setting hash with trailing U+000D (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+000D updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+000D updates previously obtained searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+000D updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+000D updates previously obtained searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+000D updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+000D updates previously obtained searchParams (https:)": {
     "status": "PASS"
   },
   "Setting protocol with leading U+001F (https:)": {
@@ -389,6 +461,24 @@
   "Setting hash with trailing U+001F (https:)": {
     "status": "PASS"
   },
+  "Setting search with leading U+001F updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+001F updates previously obtained searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+001F updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+001F updates previously obtained searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+001F updates searchParams (https:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+001F updates previously obtained searchParams (https:)": {
+    "status": "PASS"
+  },
   "Setting protocol with leading U+0000 (wpt++:)": {
     "status": "PASS"
   },
@@ -465,6 +555,24 @@
     "status": "PASS"
   },
   "Setting hash with trailing U+0000 (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+0000 updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+0000 updates previously obtained searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+0000 updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+0000 updates previously obtained searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+0000 updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+0000 updates previously obtained searchParams (wpt++:)": {
     "status": "PASS"
   },
   "Setting protocol with leading U+0009 (wpt++:)": {
@@ -545,6 +653,24 @@
   "Setting hash with trailing U+0009 (wpt++:)": {
     "status": "PASS"
   },
+  "Setting search with leading U+0009 updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+0009 updates previously obtained searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+0009 updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+0009 updates previously obtained searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+0009 updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+0009 updates previously obtained searchParams (wpt++:)": {
+    "status": "PASS"
+  },
   "Setting protocol with leading U+000A (wpt++:)": {
     "status": "PASS"
   },
@@ -621,6 +747,24 @@
     "status": "PASS"
   },
   "Setting hash with trailing U+000A (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+000A updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+000A updates previously obtained searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+000A updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+000A updates previously obtained searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+000A updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+000A updates previously obtained searchParams (wpt++:)": {
     "status": "PASS"
   },
   "Setting protocol with leading U+000D (wpt++:)": {
@@ -701,6 +845,24 @@
   "Setting hash with trailing U+000D (wpt++:)": {
     "status": "PASS"
   },
+  "Setting search with leading U+000D updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+000D updates previously obtained searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+000D updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+000D updates previously obtained searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+000D updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+000D updates previously obtained searchParams (wpt++:)": {
+    "status": "PASS"
+  },
   "Setting protocol with leading U+001F (wpt++:)": {
     "status": "PASS"
   },
@@ -777,6 +939,24 @@
     "status": "PASS"
   },
   "Setting hash with trailing U+001F (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+001F updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with leading U+001F updates previously obtained searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+001F updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with middle U+001F updates previously obtained searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+001F updates searchParams (wpt++:)": {
+    "status": "PASS"
+  },
+  "Setting search with trailing U+001F updates previously obtained searchParams (wpt++:)": {
     "status": "PASS"
   }
 }

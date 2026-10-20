@@ -11,6 +11,15 @@
   "blob2.": {
     "status": "PASS"
   },
+  "undefined start/end Blob slice": {
+    "status": "PASS"
+  },
+  "undefined start Blob slice": {
+    "status": "PASS"
+  },
+  "undefined end Blob slice": {
+    "status": "PASS"
+  },
   "null type Blob slice": {
     "status": "PASS"
   },
@@ -84,7 +93,7 @@
     "status": "PASS"
   },
   "Slicing test: slice (1,1).": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "Slicing test (1,2).": {
     "status": "PASS"
@@ -96,7 +105,7 @@
     "status": "PASS"
   },
   "Slicing test: slice (1,3).": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "Slicing test (1,4).": {
     "status": "PASS"
@@ -108,7 +117,7 @@
     "status": "PASS"
   },
   "Slicing test: slice (1,5).": {
-    "status": "PASS"
+    "status": "FAIL"
   },
   "Slicing test (1,6).": {
     "status": "PASS"
@@ -120,7 +129,19 @@
     "status": "PASS"
   },
   "Slicing test: slice (1,7).": {
+    "status": "FAIL"
+  },
+  "Slicing test (1,8).": {
     "status": "PASS"
+  },
+  "Slicing test: slice (1,8).": {
+    "status": "FAIL"
+  },
+  "Slicing test (1,9).": {
+    "status": "PASS"
+  },
+  "Slicing test: slice (1,9).": {
+    "status": "FAIL"
   },
   "Slicing test (2,0).": {
     "status": "PASS"
@@ -146,6 +167,30 @@
   "Slicing test: slice (2,3).": {
     "status": "PASS"
   },
+  "Slicing test (2,4).": {
+    "status": "PASS"
+  },
+  "Slicing test: slice (2,4).": {
+    "status": "PASS"
+  },
+  "Slicing test (2,5).": {
+    "status": "PASS"
+  },
+  "Slicing test: slice (2,5).": {
+    "status": "PASS"
+  },
+  "Slicing test (2,6).": {
+    "status": "PASS"
+  },
+  "Slicing test: slice (2,6).": {
+    "status": "PASS"
+  },
+  "Slicing test (2,7).": {
+    "status": "PASS"
+  },
+  "Slicing test: slice (2,7).": {
+    "status": "PASS"
+  },
   "Slicing test (3,0).": {
     "status": "PASS"
   },
@@ -168,18 +213,6 @@
     "status": "PASS"
   },
   "Slicing test: slice (3,3).": {
-    "status": "PASS"
-  },
-  "Slicing test (3,4).": {
-    "status": "PASS"
-  },
-  "Slicing test: slice (3,4).": {
-    "status": "PASS"
-  },
-  "Slicing test (3,5).": {
-    "status": "PASS"
-  },
-  "Slicing test: slice (3,5).": {
     "status": "PASS"
   },
   "Slicing test (4,0).": {
@@ -212,6 +245,12 @@
   "Slicing test: slice (4,4).": {
     "status": "PASS"
   },
+  "Slicing test (4,5).": {
+    "status": "PASS"
+  },
+  "Slicing test: slice (4,5).": {
+    "status": "PASS"
+  },
   "Slicing test (5,0).": {
     "status": "PASS"
   },
@@ -236,6 +275,12 @@
   "Slicing test: slice (5,3).": {
     "status": "PASS"
   },
+  "Slicing test (5,4).": {
+    "status": "PASS"
+  },
+  "Slicing test: slice (5,4).": {
+    "status": "PASS"
+  },
   "Slicing test (6,0).": {
     "status": "PASS"
   },
@@ -254,6 +299,12 @@
   "Slicing test: slice (6,2).": {
     "status": "PASS"
   },
+  "Slicing test (6,3).": {
+    "status": "PASS"
+  },
+  "Slicing test: slice (6,3).": {
+    "status": "PASS"
+  },
   "Slicing test (7,0).": {
     "status": "PASS"
   },
@@ -270,12 +321,6 @@
     "status": "PASS"
   },
   "Slicing test: slice (7,2).": {
-    "status": "PASS"
-  },
-  "Slicing test (7,3).": {
-    "status": "PASS"
-  },
-  "Slicing test: slice (7,3).": {
     "status": "PASS"
   },
   "Slicing test (8,0).": {
@@ -300,6 +345,30 @@
     "status": "PASS"
   },
   "Slicing test: slice (8,3).": {
+    "status": "PASS"
+  },
+  "Slicing test (9,0).": {
+    "status": "PASS"
+  },
+  "Slicing test: slice (9,0).": {
+    "status": "PASS"
+  },
+  "Slicing test (9,1).": {
+    "status": "PASS"
+  },
+  "Slicing test: slice (9,1).": {
+    "status": "PASS"
+  },
+  "Slicing test (9,2).": {
+    "status": "PASS"
+  },
+  "Slicing test: slice (9,2).": {
+    "status": "PASS"
+  },
+  "Slicing test (9,3).": {
+    "status": "PASS"
+  },
+  "Slicing test: slice (9,3).": {
     "status": "PASS"
   },
   "Invalid contentType (\"ÿ\")": {
