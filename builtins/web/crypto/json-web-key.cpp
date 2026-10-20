@@ -19,16 +19,14 @@ namespace builtins::web::crypto {
 namespace {
 JS::Result<std::optional<std::string>>
 extractStringPropertyFromObject(JSContext *cx, JS::HandleObject object, const char* property) {
-  bool has_property = false;
-  if (!JS_HasProperty(cx, object, property, &has_property)) {
-    return JS::Result<std::optional<std::string>>(JS::Error());
-  }
-  if (!has_property) {
-    return std::optional<std::string>(std::nullopt);
-  }
   JS::RootedValue value(cx);
   if (!JS_GetProperty(cx, object, property, &value)) {
     return JS::Result<std::optional<std::string>>(JS::Error());
+  }
+  // A dictionary member whose value is undefined is treated as not present:
+  // https://webidl.spec.whatwg.org/#js-dictionary
+  if (value.isUndefined()) {
+    return std::optional<std::string>(std::nullopt);
   }
   // Convert into a String following https://tc39.es/ecma262/#sec-tostring
   auto chars = core::encode(cx, value);
@@ -168,30 +166,22 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
   //   boolean ext;
   std::optional<bool> ext = std::nullopt;
   {
-    bool has_ext = false;
-    if (!JS_HasProperty(cx, object, "ext", &has_ext)) {
+    JS::RootedValue ext_val(cx);
+    if (!JS_GetProperty(cx, object, "ext", &ext_val)) {
       return nullptr;
     }
-    if (has_ext) {
-      JS::RootedValue ext_val(cx);
-      if (!JS_GetProperty(cx, object, "ext", &ext_val)) {
-        return nullptr;
-      }
+    if (!ext_val.isUndefined()) {
       ext = JS::ToBoolean(ext_val);
     }
   }
   //   sequence<DOMString> key_ops;
   std::vector<std::string> key_ops;
   {
-    bool has_key_ops = false;
-    if (!JS_HasProperty(cx, object, "key_ops", &has_key_ops)) {
+    JS::RootedValue key_ops_val(cx);
+    if (!JS_GetProperty(cx, object, "key_ops", &key_ops_val)) {
       return nullptr;
     }
-    if (has_key_ops) {
-      JS::RootedValue key_ops_val(cx);
-      if (!JS_GetProperty(cx, object, "key_ops", &key_ops_val)) {
-        return nullptr;
-      }
+    if (!key_ops_val.isUndefined()) {
       bool key_ops_is_array = false;
       if (!JS::IsArrayObject(cx, key_ops_val, &key_ops_is_array)) {
         return nullptr;
@@ -260,15 +250,11 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
 
   std::vector<RsaOtherPrimesInfo> oth;
   {
-    bool has_oth = false;
-    if (!JS_HasProperty(cx, object, "oth", &has_oth)) {
+    JS::RootedValue oth_val(cx);
+    if (!JS_GetProperty(cx, object, "oth", &oth_val)) {
       return nullptr;
     }
-    if (has_oth) {
-      JS::RootedValue oth_val(cx);
-      if (!JS_GetProperty(cx, object, "oth", &oth_val)) {
-        return nullptr;
-      }
+    if (!oth_val.isUndefined()) {
       bool oth_is_array = false;
       if (!JS::IsArrayObject(cx, oth_val, &oth_is_array)) {
         return nullptr;
