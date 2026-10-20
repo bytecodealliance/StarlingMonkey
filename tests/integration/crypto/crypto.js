@@ -1091,6 +1091,31 @@ export const handler = serveTest(async (t) => {
           );
         }, TypeError);
       });
+      // https://wicg.github.io/webcrypto-modern-algos/ adds these values to the KeyUsage enum, so
+      // they must reach the algorithm's usage check (SyntaxError) instead of failing enum
+      // conversion (TypeError).
+      const modernKeyUsages = ["encapsulateKey", "encapsulateBits", "decapsulateKey", "decapsulateBits"];
+      await t.test("subtle.importKey.fifth-parameter-modern-algorithms-usages", async () => {
+        for (const usage of modernKeyUsages) {
+          const publicEcdsaJsonWebKeyData = createPublicEcdsaJsonWebKeyData();
+          await rejects(async () => {
+            await crypto.subtle.importKey(
+              "jwk",
+              publicEcdsaJsonWebKeyData,
+              ecdsaJsonWebKeyAlgorithm,
+              publicEcdsaJsonWebKeyData.ext,
+              ["verify", usage],
+            );
+          }, DOMException, undefined, "SyntaxError");
+        }
+      });
+      await t.test("subtle.importKey.jwk-key_ops-modern-algorithms-usages", async () => {
+        for (const usage of modernKeyUsages) {
+          const jwk = { ...createPublicEcdsaJsonWebKeyData(), key_ops: ["verify", usage] };
+          const key = await crypto.subtle.importKey("jwk", jwk, ecdsaJsonWebKeyAlgorithm, true, ["verify"]);
+          deepStrictEqual(key.usages, ["verify"], `key.usages with key_ops ["verify", "${usage}"]`);
+        }
+      });
       await t.test(
         "subtle.importKey.fifth-parameter-duplicate-operations",
         async () => {

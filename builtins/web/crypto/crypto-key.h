@@ -20,26 +20,30 @@ enum class CryptoKeyFormat : uint8_t { Raw, Spki, Pkcs8, Jwk };
 
 class CryptoKeyUsages {
 private:
-  uint8_t mask = 0;
+  uint16_t mask = 0;
 
 public:
-  static constexpr const uint8_t encrypt_flag = 1 << 0;
-  static constexpr const uint8_t decrypt_flag = 1 << 1;
-  static constexpr const uint8_t sign_flag = 1 << 2;
-  static constexpr const uint8_t verify_flag = 1 << 3;
-  static constexpr const uint8_t derive_key_flag = 1 << 4;
-  static constexpr const uint8_t derive_bits_flag = 1 << 5;
-  static constexpr const uint8_t wrap_key_flag = 1 << 6;
-  static constexpr const uint8_t unwrap_key_flag = 1 << 7;
+  static constexpr const uint16_t encrypt_flag = 1 << 0;
+  static constexpr const uint16_t decrypt_flag = 1 << 1;
+  static constexpr const uint16_t sign_flag = 1 << 2;
+  static constexpr const uint16_t verify_flag = 1 << 3;
+  static constexpr const uint16_t derive_key_flag = 1 << 4;
+  static constexpr const uint16_t derive_bits_flag = 1 << 5;
+  static constexpr const uint16_t wrap_key_flag = 1 << 6;
+  static constexpr const uint16_t unwrap_key_flag = 1 << 7;
+  static constexpr const uint16_t encapsulate_key_flag = 1 << 8;
+  static constexpr const uint16_t encapsulate_bits_flag = 1 << 9;
+  static constexpr const uint16_t decapsulate_key_flag = 1 << 10;
+  static constexpr const uint16_t decapsulate_bits_flag = 1 << 11;
 
   CryptoKeyUsages() = default;
-  CryptoKeyUsages(uint8_t mask);
+  CryptoKeyUsages(uint16_t mask);
   CryptoKeyUsages(bool encrypt, bool decrypt, bool sign, bool verify, bool derive_key,
                   bool derive_bits, bool wrap_key, bool unwrap_key);
   static CryptoKeyUsages from(const std::vector<std::string>& key_usages);
   static JS::Result<CryptoKeyUsages> from(JSContext *cx, JS::HandleValue key_usages);
 
-  [[nodiscard]] uint8_t toInt() const { return this->mask; };
+  [[nodiscard]] uint16_t toInt() const { return this->mask; };
 
   [[nodiscard]] bool isEmpty() const { return this->mask == 0; };
   bool isSuperSetOf(CryptoKeyUsages &other) const { return (this->mask & other.mask) != 0; };
@@ -52,6 +56,10 @@ public:
   [[nodiscard]] bool canDeriveBits() const { return (this->mask & derive_bits_flag) != 0; };
   [[nodiscard]] bool canWrapKey() const { return (this->mask & wrap_key_flag) != 0; };
   [[nodiscard]] bool canUnwrapKey() const { return (this->mask & unwrap_key_flag) != 0; };
+  [[nodiscard]] bool canEncapsulateKey() const { return (this->mask & encapsulate_key_flag) != 0; };
+  [[nodiscard]] bool canEncapsulateBits() const { return (this->mask & encapsulate_bits_flag) != 0; };
+  [[nodiscard]] bool canDecapsulateKey() const { return (this->mask & decapsulate_key_flag) != 0; };
+  [[nodiscard]] bool canDecapsulateBits() const { return (this->mask & decapsulate_bits_flag) != 0; };
 
   [[nodiscard]] bool canOnlyEncrypt() const { return this->mask == encrypt_flag; };
   [[nodiscard]] bool canOnlyDecrypt() const { return this->mask == decrypt_flag; };
