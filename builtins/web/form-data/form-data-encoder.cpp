@@ -669,13 +669,21 @@ JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
   //
   // bcharsnospace := DIGIT / ALPHA / "'" / "(" / ")" / "+" / "_" / "," / "-" / "." / "/" / ":" / "=" / "?"
   //
+  // We also ensure that the boundary is safe for use in an unquoted Content-Type header by
+  // disallowing "+" and "/" from our Base64. We follow WebKit's implementation and replace them
+  // with "A" and "B" respectively.
+  // 
   // e.g.:
   // This implementation: --BoundaryjXo5N4HEAXWcKrw7
   // WebKit: ----WebKitFormBoundaryhpShnP1JqrBTVTnC
   // Gecko:  ----geckoformboundary8c79e61efa53dc5d441481912ad86113
   auto bytes = std::move(res.unwrap());
   auto bytes_str = std::string_view((char *)(bytes.ptr.get()), bytes.size());
-  auto base64_str = base64::forgivingBase64Encode(bytes_str, base64::base64EncodeTable);
+
+  const char base64EncodeTableContentTypeSafe[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                      "abcdefghijklmnopqrstuvwxyz"
+                      "0123456789AB";
+  auto base64_str = base64::forgivingBase64Encode(bytes_str, base64EncodeTableContentTypeSafe);
 
   auto boundary = fmt::format("--StarlingMonkeyFormBoundary{}", base64_str);
   auto impl = js::MakeUnique<MultipartFormDataImpl>(boundary);
