@@ -1,0 +1,2312 @@
+{
+  "Bad usages: importKey(spki, Ed25519, true, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, true, [verify, verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, Ed25519, false, [verify, verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, true, [sign, sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, Ed25519, false, [sign, sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, true, [verify, verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, Ed25519, false, [verify, verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, true, [sign, sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), Ed25519, false, [sign, sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, true, [verify, verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , Ed25519, false, [verify, verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, true, [verify, verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(spki, {name: Ed25519}, false, [verify, verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, true, [sign, sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(pkcs8, {name: Ed25519}, false, [sign, sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, true, [verify, verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(raw, {name: Ed25519}, false, [verify, verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, sign, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, sign, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, sign, verify])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, sign, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, sign, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, sign, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, sign, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, sign, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, sign, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, sign, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, true, [sign, sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk(private), {name: Ed25519}, false, [sign, sign, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, verify, encrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, verify, decrypt])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, verify, sign])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, verify, wrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, verify, unwrapKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, verify, deriveKey])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, verify, deriveBits])": {
+    "status": "PASS"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, verify, encapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, verify, encapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, verify, decapsulateKey])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, true, [verify, verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Bad usages: importKey(jwk (public) , {name: Ed25519}, false, [verify, verify, decapsulateBits])": {
+    "status": "FAIL"
+  },
+  "Empty usages: importKey(pkcs8, Ed25519, true, [])": {
+    "status": "PASS"
+  },
+  "Empty usages: importKey(pkcs8, Ed25519, false, [])": {
+    "status": "PASS"
+  },
+  "Empty usages: importKey(jwk(private), Ed25519, true, [])": {
+    "status": "PASS"
+  },
+  "Empty usages: importKey(jwk(private), Ed25519, false, [])": {
+    "status": "PASS"
+  },
+  "Empty usages: importKey(pkcs8, {name: Ed25519}, true, [])": {
+    "status": "PASS"
+  },
+  "Empty usages: importKey(pkcs8, {name: Ed25519}, false, [])": {
+    "status": "PASS"
+  },
+  "Empty usages: importKey(jwk(private), {name: Ed25519}, true, [])": {
+    "status": "PASS"
+  },
+  "Empty usages: importKey(jwk(private), {name: Ed25519}, false, [])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(spki, Ed25519, true, [verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(spki, Ed25519, false, [verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(spki, Ed25519, true, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(spki, Ed25519, false, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(pkcs8, Ed25519, true, [sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(pkcs8, Ed25519, false, [sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(pkcs8, Ed25519, true, [sign, sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(pkcs8, Ed25519, false, [sign, sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(raw, Ed25519, true, [verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(raw, Ed25519, false, [verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(raw, Ed25519, true, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(raw, Ed25519, false, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk(private), Ed25519, true, [sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk(private), Ed25519, false, [sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk(private), Ed25519, true, [sign, sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk(private), Ed25519, false, [sign, sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk (public) , Ed25519, true, [verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk (public) , Ed25519, false, [verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk (public) , Ed25519, true, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk (public) , Ed25519, false, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(spki, {name: Ed25519}, true, [verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(spki, {name: Ed25519}, false, [verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(spki, {name: Ed25519}, true, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(spki, {name: Ed25519}, false, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(pkcs8, {name: Ed25519}, true, [sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(pkcs8, {name: Ed25519}, false, [sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(pkcs8, {name: Ed25519}, true, [sign, sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(pkcs8, {name: Ed25519}, false, [sign, sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(raw, {name: Ed25519}, true, [verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(raw, {name: Ed25519}, false, [verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(raw, {name: Ed25519}, true, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(raw, {name: Ed25519}, false, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk(private), {name: Ed25519}, true, [sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk(private), {name: Ed25519}, false, [sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk(private), {name: Ed25519}, true, [sign, sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk(private), {name: Ed25519}, false, [sign, sign])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk (public) , {name: Ed25519}, true, [verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk (public) , {name: Ed25519}, false, [verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk (public) , {name: Ed25519}, true, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Bad key length: importKey(jwk (public) , {name: Ed25519}, false, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'x' parameter: importKey(jwk(private), Ed25519, true, [sign])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'x' parameter: importKey(jwk(private), Ed25519, false, [sign])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'x' parameter: importKey(jwk(private), Ed25519, true, [sign, sign])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'x' parameter: importKey(jwk(private), Ed25519, false, [sign, sign])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'kty' parameter: importKey(jwk(private), Ed25519, true, [sign])": {
+    "status": "FAIL"
+  },
+  "Missing JWK 'kty' parameter: importKey(jwk(private), Ed25519, false, [sign])": {
+    "status": "FAIL"
+  },
+  "Missing JWK 'kty' parameter: importKey(jwk(private), Ed25519, true, [sign, sign])": {
+    "status": "FAIL"
+  },
+  "Missing JWK 'kty' parameter: importKey(jwk(private), Ed25519, false, [sign, sign])": {
+    "status": "FAIL"
+  },
+  "Missing JWK 'crv' parameter: importKey(jwk (public) , Ed25519, true, [verify])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'crv' parameter: importKey(jwk (public) , Ed25519, false, [verify])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'crv' parameter: importKey(jwk (public) , Ed25519, true, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'crv' parameter: importKey(jwk (public) , Ed25519, false, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'x' parameter: importKey(jwk(private), {name: Ed25519}, true, [sign])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'x' parameter: importKey(jwk(private), {name: Ed25519}, false, [sign])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'x' parameter: importKey(jwk(private), {name: Ed25519}, true, [sign, sign])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'x' parameter: importKey(jwk(private), {name: Ed25519}, false, [sign, sign])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'kty' parameter: importKey(jwk(private), {name: Ed25519}, true, [sign])": {
+    "status": "FAIL"
+  },
+  "Missing JWK 'kty' parameter: importKey(jwk(private), {name: Ed25519}, false, [sign])": {
+    "status": "FAIL"
+  },
+  "Missing JWK 'kty' parameter: importKey(jwk(private), {name: Ed25519}, true, [sign, sign])": {
+    "status": "FAIL"
+  },
+  "Missing JWK 'kty' parameter: importKey(jwk(private), {name: Ed25519}, false, [sign, sign])": {
+    "status": "FAIL"
+  },
+  "Missing JWK 'crv' parameter: importKey(jwk (public) , {name: Ed25519}, true, [verify])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'crv' parameter: importKey(jwk (public) , {name: Ed25519}, false, [verify])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'crv' parameter: importKey(jwk (public) , {name: Ed25519}, true, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Missing JWK 'crv' parameter: importKey(jwk (public) , {name: Ed25519}, false, [verify, verify])": {
+    "status": "PASS"
+  },
+  "Invalid key pair: importKey(jwk(private), Ed25519, true, [sign])": {
+    "status": "PASS"
+  },
+  "Invalid key pair: importKey(jwk(private), Ed25519, true, [sign, sign])": {
+    "status": "PASS"
+  },
+  "Invalid key pair: importKey(jwk(private), {name: Ed25519}, true, [sign])": {
+    "status": "PASS"
+  },
+  "Invalid key pair: importKey(jwk(private), {name: Ed25519}, true, [sign, sign])": {
+    "status": "PASS"
+  },
+  "Missing algorithm name: importKey(spki, {}, true, verify)": {
+    "status": "PASS"
+  },
+  "Missing algorithm name: importKey(spki, {}, false, verify)": {
+    "status": "PASS"
+  },
+  "Missing algorithm name: importKey(pkcs8, {}, true, sign)": {
+    "status": "PASS"
+  },
+  "Missing algorithm name: importKey(pkcs8, {}, false, sign)": {
+    "status": "PASS"
+  },
+  "Missing algorithm name: importKey(raw, {}, true, verify)": {
+    "status": "PASS"
+  },
+  "Missing algorithm name: importKey(raw, {}, false, verify)": {
+    "status": "PASS"
+  },
+  "Missing algorithm name: importKey(jwk(private), {}, true, sign)": {
+    "status": "PASS"
+  },
+  "Missing algorithm name: importKey(jwk(private), {}, false, sign)": {
+    "status": "PASS"
+  },
+  "Missing algorithm name: importKey(jwk (public) , {}, true, verify)": {
+    "status": "PASS"
+  },
+  "Missing algorithm name: importKey(jwk (public) , {}, false, verify)": {
+    "status": "PASS"
+  },
+  "Invalid 'kty' field: importKey(jwk(private), Ed25519, true, [sign])": {
+    "status": "PASS"
+  },
+  "Invalid 'kty' field: importKey(jwk (public) , Ed25519, true, [verify])": {
+    "status": "PASS"
+  },
+  "Invalid 'kty' field: importKey(jwk(private), {name: Ed25519}, true, [sign])": {
+    "status": "PASS"
+  },
+  "Invalid 'kty' field: importKey(jwk (public) , {name: Ed25519}, true, [verify])": {
+    "status": "PASS"
+  },
+  "Import from a non-extractable: importKey(jwk(private), Ed25519, true, [sign])": {
+    "status": "PASS"
+  },
+  "Import from a non-extractable: importKey(jwk (public) , Ed25519, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Import from a non-extractable: importKey(jwk(private), {name: Ed25519}, true, [sign])": {
+    "status": "PASS"
+  },
+  "Import from a non-extractable: importKey(jwk (public) , {name: Ed25519}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Invalid 'use' field: importKey(jwk(private), Ed25519, true, [sign])": {
+    "status": "PASS"
+  },
+  "Invalid 'use' field: importKey(jwk (public) , Ed25519, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Invalid 'use' field: importKey(jwk(private), {name: Ed25519}, true, [sign])": {
+    "status": "PASS"
+  },
+  "Invalid 'use' field: importKey(jwk (public) , {name: Ed25519}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Invalid 'crv' field: importKey(jwk(private), Ed25519, true, [sign])": {
+    "status": "PASS"
+  },
+  "Invalid 'crv' field: importKey(jwk (public) , Ed25519, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Invalid 'crv' field: importKey(jwk(private), {name: Ed25519}, true, [sign])": {
+    "status": "PASS"
+  },
+  "Invalid 'crv' field: importKey(jwk (public) , {name: Ed25519}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Invalid 'alg' field 'ed25519': importKey(jwk(private), Ed25519, true, [sign])": {
+    "status": "PASS"
+  },
+  "Invalid 'alg' field 'ED25519': importKey(jwk(private), Ed25519, true, [sign])": {
+    "status": "PASS"
+  },
+  "Invalid 'alg' field 'ed25519': importKey(jwk (public) , Ed25519, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Invalid 'alg' field 'ED25519': importKey(jwk (public) , Ed25519, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Invalid 'alg' field 'ed25519': importKey(jwk(private), {name: Ed25519}, true, [sign])": {
+    "status": "PASS"
+  },
+  "Invalid 'alg' field 'ED25519': importKey(jwk(private), {name: Ed25519}, true, [sign])": {
+    "status": "PASS"
+  },
+  "Invalid 'alg' field 'ed25519': importKey(jwk (public) , {name: Ed25519}, true, [verify])": {
+    "status": "FAIL"
+  },
+  "Invalid 'alg' field 'ED25519': importKey(jwk (public) , {name: Ed25519}, true, [verify])": {
+    "status": "FAIL"
+  }
+}
