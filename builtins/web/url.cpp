@@ -806,8 +806,12 @@ JSObject *URL::create(JSContext *cx, JS::HandleObject self, JS::HandleValue url_
 }
 
 void URL::finalize(JS::GCContext *gcx, JSObject *self) {
-  auto *url =
-      static_cast<jsurl::JSUrl *>(JS::GetReservedSlot(self, std::to_underlying(Slots::Url)).toPrivate());
+  auto url_val = JS::GetReservedSlot(self, std::to_underlying(Slots::Url));
+  if (url_val.isUndefined()) {
+    return;
+  }
+
+  auto *url = static_cast<jsurl::JSUrl *>(url_val.toPrivate());
   jsurl::free_jsurl(url);
 }
 
