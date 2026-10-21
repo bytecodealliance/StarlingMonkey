@@ -670,7 +670,7 @@ JSObject *MultipartFormData::create(JSContext *cx, HandleObject form_data) {
   // bcharsnospace := DIGIT / ALPHA / "'" / "(" / ")" / "+" / "_" / "," / "-" / "." / "/" / ":" / "=" / "?"
   //
   // We also ensure that the boundary is safe for use in an unquoted Content-Type header by
-  // disallowing "-" and "=" from our Base64. We follow WebKit's implementation and replace them
+  // disallowing "+" and "/" from our Base64. We follow WebKit's implementation and replace them
   // with "A" and "B" respectively.
   // 
   // e.g.:
