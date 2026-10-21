@@ -44,7 +44,6 @@ public:
 
   /**
    * Reset the event loop state, cancelling all pending tasks and clearing interest count.
-   * Used between requests in reusable sandboxes.
    */
   static void reset(api::Engine *engine);
 };
