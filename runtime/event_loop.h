@@ -41,6 +41,12 @@ public:
    * Remove a queued async task.
    */
   static bool cancel_async_task(api::Engine *engine, const RefPtr<api::AsyncTask>& task);
+
+  /**
+   * Reset the event loop state, cancelling all pending tasks and clearing interest count.
+   * Used between requests in reusable sandboxes.
+   */
+  static void reset(api::Engine *engine);
 };
 
 } // namespace core

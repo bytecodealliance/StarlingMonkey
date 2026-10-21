@@ -99,4 +99,13 @@ bool EventLoop::run_event_loop(api::Engine *engine, double total_compute) {
 
 void EventLoop::init(JSContext *cx) { queue.init(cx); }
 
+void EventLoop::reset(api::Engine *engine) {
+  auto &q = queue.get();
+  for (auto task : q.tasks) {
+    task->cancel(engine);
+  }
+  q.tasks.clear();
+  q.interest_cnt = 0;
+}
+
 } // namespace core
