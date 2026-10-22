@@ -2136,16 +2136,16 @@
     "status": "PASS"
   },
   "Missing JWK 'kty' parameter: importKey(jwk(private), Ed25519, true, [sign])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Missing JWK 'kty' parameter: importKey(jwk(private), Ed25519, false, [sign])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Missing JWK 'kty' parameter: importKey(jwk(private), Ed25519, true, [sign, sign])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Missing JWK 'kty' parameter: importKey(jwk(private), Ed25519, false, [sign, sign])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Missing JWK 'crv' parameter: importKey(jwk (public) , Ed25519, true, [verify])": {
     "status": "PASS"
@@ -2172,16 +2172,16 @@
     "status": "PASS"
   },
   "Missing JWK 'kty' parameter: importKey(jwk(private), {name: Ed25519}, true, [sign])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Missing JWK 'kty' parameter: importKey(jwk(private), {name: Ed25519}, false, [sign])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Missing JWK 'kty' parameter: importKey(jwk(private), {name: Ed25519}, true, [sign, sign])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Missing JWK 'kty' parameter: importKey(jwk(private), {name: Ed25519}, false, [sign, sign])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Missing JWK 'crv' parameter: importKey(jwk (public) , {name: Ed25519}, true, [verify])": {
     "status": "PASS"
