@@ -1358,14 +1358,16 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
     return nullptr;
   }
 
-  std::unique_ptr<std::span<uint8_t>> data;
+  std::unique_ptr<std::vector<uint8_t>> data;
   // 3. Let hash be a new KeyAlgorithm.
   // 4.
   switch (format) {
   // 5. If format is "raw":
   case CryptoKeyFormat::Raw: {
     // 5.1 Let data be the octet string contained in keyData.
-    data = std::make_unique<std::span<uint8_t>>(std::get<std::span<uint8_t>>(key_data));
+    // keyData is a view of the caller's buffer, which can change after import, so copy it.
+    auto key_bytes = std::get<std::span<uint8_t>>(key_data);
+    data = std::make_unique<std::vector<uint8_t>>(key_bytes.begin(), key_bytes.end());
     if (!data) {
       DOMException::raise(cx, "Supplied keyData must be either an ArrayBuffer, TypedArray, or DataView.", "DataError");
       return nullptr;
@@ -1400,10 +1402,7 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
       return nullptr;
     }
     auto data_string = dataResult.unwrap();
-    auto ddd = std::vector<uint8_t>(data_string.begin(), data_string.end());
-    data = std::make_unique<std::span<uint8_t>>(
-      ddd
-    );
+    data = std::make_unique<std::vector<uint8_t>>(data_string.begin(), data_string.end());
     // 6.7 Set the hash to equal the hash member of normalizedAlgorithm.
     CryptoAlgorithmIdentifier hash = this->hashIdentifier;
     switch(hash) {
