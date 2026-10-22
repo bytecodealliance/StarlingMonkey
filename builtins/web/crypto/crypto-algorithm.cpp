@@ -548,6 +548,9 @@ JS::Result<CryptoAlgorithmIdentifier> normalizeIdentifier(JSContext *cx, JS::Han
   if (algorithm == "PBKDF2") {
     return CryptoAlgorithmIdentifier::PBKDF2;
   }
+  if (algorithm == "ED25519") {
+    return CryptoAlgorithmIdentifier::Ed25519;
+  }
 
   // Otherwise: Return a new NotSupportedError and terminate this algorithm.
   DOMException::raise(cx, "Algorithm: Unrecognized name", "NotSupportedError");
@@ -625,6 +628,9 @@ const char *algorithmName(CryptoAlgorithmIdentifier algorithm) {
   case CryptoAlgorithmIdentifier::PBKDF2: {
     return "PBKDF2";
   }
+  case CryptoAlgorithmIdentifier::Ed25519: {
+    return "Ed25519";
+  }
   default: {
     MOZ_ASSERT_UNREACHABLE("Unknown `CryptoAlgorithmIdentifier` value");
   }
@@ -650,6 +656,7 @@ const char *algorithmName(CryptoAlgorithmIdentifier algorithm) {
 // |	SHA-512						|					|					|				|					|		✔			|							|						|							|						|						|					|						|
 // |	HKDF							|					|					|				|					|					|							|			✔			|			✔				|			✔			|						|					|						|
 // |	PBKDF2						|					|					|				|					|					|							|			✔			|			✔				|			✔			|						|					|						|
+// |	Ed25519						|					|					|		✔		|		✔			|					|			✔				|						|							|			✔			|			✔			|					|						|
 //clang-format on
 
 std::unique_ptr<CryptoAlgorithmDigest> CryptoAlgorithmDigest::normalize(JSContext *cx,
@@ -716,7 +723,7 @@ CryptoAlgorithmSignVerify::normalize(JSContext *cx, JS::HandleValue value) {
   }
 
   // The table listed at https://w3c.github.io/webcrypto/#h-note-15 is what defines which algorithms support which operations
-  // RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA, HMAC, are the algorithms
+  // RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA, HMAC, Ed25519 are the algorithms
   // which support the sign operation
   switch (identifier) {
   case CryptoAlgorithmIdentifier::RSASSA_PKCS1_v1_5: {
@@ -727,6 +734,9 @@ CryptoAlgorithmSignVerify::normalize(JSContext *cx, JS::HandleValue value) {
   }
   case CryptoAlgorithmIdentifier::ECDSA: {
     return CryptoAlgorithmECDSA_Sign_Verify::fromParameters(cx, params);
+  }
+  case CryptoAlgorithmIdentifier::Ed25519: {
+    return std::make_unique<CryptoAlgorithmEd25519_Sign_Verify>();
   }
   case CryptoAlgorithmIdentifier::RSA_PSS: {
     MOZ_ASSERT(false);
@@ -1036,6 +1046,90 @@ JSObject *CryptoAlgorithmECDSA_Sign_Verify::toObject(JSContext *cx) {
   return nullptr;
 };
 
+// https://w3c.github.io/webcrypto/#ed25519-operations
+JSObject *CryptoAlgorithmEd25519_Sign_Verify::sign(JSContext *cx, JS::HandleObject key, std::span<uint8_t> data) {
+  MOZ_ASSERT(CryptoKey::is_instance(key));
+
+  // 1. If the [[type]] internal slot of key is not "private", then throw an InvalidAccessError.
+  if (CryptoKey::type(key) != CryptoKeyType::Private) {
+    DOMException::raise(cx, "InvalidAccessError", "InvalidAccessError");
+    return nullptr;
+  }
+
+  // 2. Let result be the result of performing the Ed25519 signing process, as specified in [RFC8032],
+  //    Section 5.1.6, with message as M, using the Ed25519 private key associated with key.
+  // Ed25519 hashes the message as part of the signing process, so no digest algorithm is given.
+  EvpMdCtxPtr ctx(EVP_MD_CTX_new());
+  if (!ctx || EVP_DigestSignInit(ctx.get(), nullptr, nullptr, nullptr, CryptoKey::key(key)) != 1) {
+    DOMException::raise(cx, "SubtleCrypto.sign: failed to sign", "OperationError");
+    return nullptr;
+  }
+
+  size_t signatureLength = 0;
+  if (EVP_DigestSign(ctx.get(), nullptr, &signatureLength, data.data(), data.size()) != 1) {
+    DOMException::raise(cx, "SubtleCrypto.sign: failed to sign", "OperationError");
+    return nullptr;
+  }
+  mozilla::UniquePtr<uint8_t[], JS::FreePolicy> signature{
+    static_cast<uint8_t *>(JS_malloc(cx, signatureLength))};
+  if (!signature) {
+    JS_ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  if (EVP_DigestSign(ctx.get(), signature.get(), &signatureLength, data.data(), data.size()) != 1) {
+    DOMException::raise(cx, "SubtleCrypto.sign: failed to sign", "OperationError");
+    return nullptr;
+  }
+
+  // 3. Return result.
+  JS::RootedObject buffer(cx, JS::NewArrayBufferWithContents(cx, signatureLength, signature.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
+  if (!buffer) {
+    // We can be here if the array buffer was too large -- if that was the case then a
+    // JSMSG_BAD_ARRAY_LENGTH will have been created. Otherwise we're probably out of memory.
+    if (!JS_IsExceptionPending(cx)) {
+      js::ReportOutOfMemory(cx);
+    }
+    return nullptr;
+  }
+
+  // `signature` is now owned by `buffer`
+  static_cast<void>(signature.release());
+  return buffer;
+}
+
+JS::Result<bool> CryptoAlgorithmEd25519_Sign_Verify::verify(JSContext *cx, JS::HandleObject key, std::span<uint8_t> signature, std::span<uint8_t> data) {
+  MOZ_ASSERT(CryptoKey::is_instance(key));
+
+  // 1. If the [[type]] internal slot of key is not "public", then throw an InvalidAccessError.
+  if (CryptoKey::type(key) != CryptoKeyType::Public) {
+    DOMException::raise(cx, "InvalidAccessError", "InvalidAccessError");
+    return JS::Result<bool>(JS::Error());
+  }
+
+  // 2. If the key data of key represents an invalid point or a small-order element on the Elliptic
+  //    Curve of Ed25519, return false.
+  // 3. If the point R, encoded in the first half of signature, represents an invalid point or a
+  //    small-order element on the Elliptic Curve of Ed25519, return false.
+  // NOTE: The spec notes that not all implementations perform these checks. We rely on OpenSSL,
+  // which rejects invalid points but does not reject small-order elements.
+  // 4. Perform the Ed25519 verification steps, as specified in [RFC8032], Section 5.1.7, using the
+  //    cofactorless (unbatched) equation, [S]B = R + [k]A', on the signature, with message as M,
+  //    using the Ed25519 public key associated with key.
+  EvpMdCtxPtr ctx(EVP_MD_CTX_new());
+  if (!ctx || EVP_DigestVerifyInit(ctx.get(), nullptr, nullptr, nullptr, CryptoKey::key(key)) != 1) {
+    DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
+    return JS::Result<bool>(JS::Error());
+  }
+
+  // 5. Let result be a boolean with the value true if the signature is valid and the value false
+  //    otherwise.
+  int ret = EVP_DigestVerify(ctx.get(), signature.data(), signature.size(), data.data(), data.size());
+
+  // 6. Return result.
+  return ret == 1;
+}
+
 JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify::sign(JSContext *cx, JS::HandleObject key,
                                                  std::span<uint8_t> data) {
 
@@ -1188,8 +1282,8 @@ CryptoAlgorithmImportKey::normalize(JSContext *cx, JS::HandleValue value) {
   }
 
   // The table listed at https://w3c.github.io/webcrypto/#h-note-15 is what defines which algorithms support which operations
-  // RSASSA-PKCS1-v1_5, RSA-PSS, RSA-OAEP, ECDSA, ECDH, AES-CTR, AES-CBC, AES-GCM, AES-KW, HMAC, HKDF, PBKDF2 are the algorithms
-  // which support the importKey operation
+  // RSASSA-PKCS1-v1_5, RSA-PSS, RSA-OAEP, ECDSA, ECDH, AES-CTR, AES-CBC, AES-GCM, AES-KW, HMAC, HKDF, PBKDF2, Ed25519 are the
+  // algorithms which support the importKey operation
   switch (identifier) {
   case CryptoAlgorithmIdentifier::RSASSA_PKCS1_v1_5: {
     return CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::fromParameters(cx, params);
@@ -1199,6 +1293,9 @@ CryptoAlgorithmImportKey::normalize(JSContext *cx, JS::HandleValue value) {
   }
   case CryptoAlgorithmIdentifier::ECDSA: {
     return CryptoAlgorithmECDSA_Import::fromParameters(cx, params);
+  }
+  case CryptoAlgorithmIdentifier::Ed25519: {
+    return std::make_unique<CryptoAlgorithmEd25519_Import>();
   }
   case CryptoAlgorithmIdentifier::RSA_PSS:
   case CryptoAlgorithmIdentifier::RSA_OAEP:
@@ -1928,6 +2025,340 @@ std::unique_ptr<CryptoAlgorithmECDSA_Import> CryptoAlgorithmECDSA_Import::fromPa
     return nullptr;
   }
   return std::make_unique<CryptoAlgorithmECDSA_Import>(namedCurve.unwrap());
+}
+
+namespace {
+// https://www.rfc-editor.org/rfc/rfc8037#section-2
+// Decodes the base64url encoded "x" or "d" member of an Ed25519 JWK. OpenSSL checks the length.
+std::optional<std::string> decodeEd25519JwkMember(JSContext *cx, const std::optional<std::string> &member,
+                                                  std::string_view memberName) {
+  if (!member.has_value()) {
+    auto message = fmt::format("The required JWK member '{}' was missing", memberName);
+    DOMException::raise(cx, message, "DataError");
+    return std::nullopt;
+  }
+  auto result = base64::forgivingBase64Decode(member.value(), base64::base64URLDecodeTable);
+  if (result.isErr()) {
+    auto message = fmt::format("The JWK member '{}' could not be base64url decoded or contained padding", memberName);
+    DOMException::raise(cx, message, "DataError");
+    return std::nullopt;
+  }
+  return result.unwrap();
+}
+
+EvpPkeyPtr createEd25519PublicKeyFromJWK(JSContext *cx, JsonWebKey *jwk) {
+  auto x = decodeEd25519JwkMember(cx, jwk->x, "x");
+  if (!x.has_value()) {
+    return nullptr;
+  }
+  EvpPkeyPtr pkey(EVP_PKEY_new_raw_public_key(EVP_PKEY_ED25519, nullptr,
+                                              reinterpret_cast<const uint8_t *>(x->data()), x->size()));
+  if (!pkey) {
+    DOMException::raise(cx, "Invalid Ed25519 public key", "DataError");
+    return nullptr;
+  }
+  return pkey;
+}
+
+EvpPkeyPtr createEd25519PrivateKeyFromJWK(JSContext *cx, JsonWebKey *jwk) {
+  EvpPkeyPtr publicKey = createEd25519PublicKeyFromJWK(cx, jwk);
+  if (!publicKey) {
+    return nullptr;
+  }
+  auto d = decodeEd25519JwkMember(cx, jwk->d, "d");
+  if (!d.has_value()) {
+    return nullptr;
+  }
+  EvpPkeyPtr pkey(EVP_PKEY_new_raw_private_key(EVP_PKEY_ED25519, nullptr,
+                                               reinterpret_cast<const uint8_t *>(d->data()), d->size()));
+  if (!pkey) {
+    DOMException::raise(cx, "Invalid Ed25519 private key", "DataError");
+    return nullptr;
+  }
+
+  // The "x" member must be the public key which corresponds to the private key in the "d" member.
+  if (EVP_PKEY_eq(publicKey.get(), pkey.get()) != 1) {
+    DOMException::raise(cx, R"(The JWK's "x" member does not match the public key of the "d" member)", "DataError");
+    return nullptr;
+  }
+  return pkey;
+}
+} // namespace
+
+// https://w3c.github.io/webcrypto/#ed25519-operations
+JSObject *CryptoAlgorithmEd25519_Import::importKey(JSContext *cx, CryptoKeyFormat format,
+                                                   KeyData key_data, bool extractable,
+                                                   CryptoKeyUsages usages) {
+  // 1. Let keyData be the key data to be imported.
+  MOZ_ASSERT(cx);
+
+  switch (format) {
+    // 2. If format is "spki":
+    case CryptoKeyFormat::Spki: {
+      // 2.1. If usages contains an entry which is not "verify" then throw a SyntaxError.
+      if (!usages.isEmpty() && !usages.canOnlyVerify()) {
+        DOMException::raise(cx, "SPKI public keys only support 'verify' operations", "SyntaxError");
+        return nullptr;
+      }
+
+      // 2.2. Let spki be the result of running the parse a subjectPublicKeyInfo algorithm over keyData.
+      // 2.3. If an error occurred while parsing, then throw a DataError.
+      auto keyBytes = std::get<std::span<uint8_t>>(key_data);
+      const uint8_t *data = keyBytes.data();
+      EvpPkeyPtr pkey(d2i_PUBKEY(nullptr, &data, keyBytes.size()));
+      if (!pkey || data != keyBytes.data() + keyBytes.size()) {
+        DOMException::raise(cx, "Invalid SPKI key data", "DataError");
+        return nullptr;
+      }
+
+      // 2.4. If the algorithm object identifier field of the algorithm AlgorithmIdentifier field of spki
+      //      is not equal to the id-Ed25519 object identifier defined in [RFC8410], then throw a DataError.
+      // 2.5. If the parameters field of the algorithm AlgorithmIdentifier field of spki is present, then
+      //      throw a DataError.
+      // NOTE: OpenSSL already fails to parse Ed25519 keys which have the parameters field present.
+      if (EVP_PKEY_id(pkey.get()) != EVP_PKEY_ED25519) {
+        DOMException::raise(cx, "SPKI key is not an Ed25519 key", "DataError");
+        return nullptr;
+      }
+
+      // 2.6. Let publicKey be the Ed25519 public key identified by the subjectPublicKey field of spki.
+      // 2.7. Let key be a new CryptoKey that represents publicKey.
+      // 2.8. Set the [[type]] internal slot of key to "public"
+      // 2.9. Let algorithm be a new KeyAlgorithm.
+      // 2.10. Set the name attribute of algorithm to "Ed25519".
+      // 2.11. Set the [[algorithm]] internal slot of key to algorithm.
+      return CryptoKey::createEd25519(cx, this, std::move(pkey), CryptoKeyType::Public, extractable, usages);
+    }
+    // 2. If format is "pkcs8":
+    case CryptoKeyFormat::Pkcs8: {
+      // 2.1. If usages contains an entry which is not "sign" then throw a SyntaxError.
+      if (!usages.isEmpty() && !usages.canOnlySign()) {
+        DOMException::raise(cx, "PKCS#8 private keys only support 'sign' operations", "SyntaxError");
+        return nullptr;
+      }
+
+      // 2.2. Let privateKeyInfo be the result of running the parse a privateKeyInfo algorithm over keyData.
+      // 2.3. If an error occurs while parsing, then throw a DataError.
+      auto keyBytes = std::get<std::span<uint8_t>>(key_data);
+      const uint8_t *data = keyBytes.data();
+      EvpPkeyPtr pkey(d2i_PrivateKey(EVP_PKEY_NONE, nullptr, &data, keyBytes.size()));
+      if (!pkey || data != keyBytes.data() + keyBytes.size()) {
+        DOMException::raise(cx, "Invalid PKCS#8 key data", "DataError");
+        return nullptr;
+      }
+
+      // 2.4. If the algorithm object identifier field of the privateKeyAlgorithm PrivateKeyAlgorithm
+      //      field of privateKeyInfo is not equal to the id-Ed25519 object identifier defined in
+      //      [RFC8410], then throw a DataError.
+      // 2.5. If the parameters field of the privateKeyAlgorithm PrivateKeyAlgorithmIdentifier field of
+      //      privateKeyInfo is present, then throw a DataError.
+      // 2.6. Let curvePrivateKey be the result of performing the parse an ASN.1 structure algorithm,
+      //      with data as the privateKey field of privateKeyInfo, structure as the ASN.1
+      //      CurvePrivateKey structure specified in Section 7 of [RFC8410], and exactData set to true.
+      // 2.7. If an error occurred while parsing, then throw a DataError.
+      // NOTE: OpenSSL already fails to parse Ed25519 keys which have the parameters field present, or
+      // which do not contain a valid CurvePrivateKey.
+      if (EVP_PKEY_id(pkey.get()) != EVP_PKEY_ED25519) {
+        DOMException::raise(cx, "PKCS#8 key is not an Ed25519 key", "DataError");
+        return nullptr;
+      }
+
+      // https://w3c.github.io/webcrypto/#SubtleCrypto-method-importKey
+      // If the [[type]] internal slot of result is "secret" or "private" and usages is empty, then
+      // throw a SyntaxError.
+      if (usages.isEmpty()) {
+        DOMException::raise(cx, "Usages cannot be empty when importing a private key", "SyntaxError");
+        return nullptr;
+      }
+
+      // 2.8. Let key be a new CryptoKey that represents the Ed25519 private key identified by
+      //      curvePrivateKey.
+      // 2.9. Set the [[type]] internal slot of key to "private"
+      // 2.10. Let algorithm be a new KeyAlgorithm.
+      // 2.11. Set the name attribute of algorithm to "Ed25519".
+      // 2.12. Set the [[algorithm]] internal slot of key to algorithm.
+      return CryptoKey::createEd25519(cx, this, std::move(pkey), CryptoKeyType::Private, extractable, usages);
+    }
+    // 2. If format is "jwk":
+    case CryptoKeyFormat::Jwk: {
+      // 2.1. If keyData is a JsonWebKey dictionary:
+        // Let jwk equal keyData.
+      // Otherwise:
+        // Throw a DataError.
+      auto *jwk = std::get<JsonWebKey *>(key_data);
+      if (!jwk) {
+        DOMException::raise(cx, "Supplied keyData is not a JSONWebKey", "DataError");
+        return nullptr;
+      }
+
+      // 2.2. If the d field is present and usages contains a value which is not "sign", or, if the d
+      //      field is not present and usages contains a value which is not "verify" then throw a
+      //      SyntaxError.
+      const bool isPrivate = jwk->d.has_value();
+      if ((isPrivate && !usages.isEmpty() && !usages.canOnlySign()) ||
+          (!isPrivate && !usages.isEmpty() && !usages.canOnlyVerify())) {
+        DOMException::raise(cx, "Ed25519 keys only support 'sign' and 'verify' operations", "SyntaxError");
+        return nullptr;
+      }
+
+      // 2.3. If the kty field of jwk is not "OKP", then throw a DataError.
+      // NOTE: This has already been done in the parent function.
+
+      // 2.4. If the crv field of jwk is not "Ed25519", then throw a DataError.
+      if (jwk->crv.value_or("") != "Ed25519") {
+        DOMException::raise(cx, R"(The JWK's "crv" member must be "Ed25519")", "DataError");
+        return nullptr;
+      }
+
+      // 2.5. If the alg field of jwk is present and is not "Ed25519" or "EdDSA", then throw a DataError.
+      if (jwk->alg.has_value() && jwk->alg.value() != "Ed25519" && jwk->alg.value() != "EdDSA") {
+        DOMException::raise(cx, R"(The JWK's "alg" member must be "Ed25519" or "EdDSA")", "DataError");
+        return nullptr;
+      }
+
+      // 2.6. If usages is non-empty and the use field of jwk is present and is not "sig", then throw a
+      //      DataError.
+      if (!usages.isEmpty() && jwk->use.has_value() && jwk->use.value() != "sig") {
+        DOMException::raise(cx, "Operation not permitted", "DataError");
+        return nullptr;
+      }
+
+      // 2.7. If the key_ops field of jwk is present, and is invalid according to the requirements of
+      //      JSON Web Key [JWK], or it does not contain all of the specified usages values, then throw
+      //      a DataError.
+      if (!jwk->key_ops.empty()) {
+        auto ops = CryptoKeyUsages::from(jwk->key_ops);
+        if ((ops.toInt() & usages.toInt()) != usages.toInt()) {
+          DOMException::raise(cx,
+                              "The JWK 'key_ops' member was inconsistent with that specified by the "
+                              "Web Crypto call. The JWK usage must be a superset of those requested", "DataError");
+          return nullptr;
+        }
+      }
+
+      // 2.8. If the ext field of jwk is present and has the value false and extractable is true, then
+      //      throw a DataError.
+      if (jwk->ext && !jwk->ext.value() && extractable) {
+        DOMException::raise(cx, "Data provided to an operation does not meet requirements", "DataError");
+        return nullptr;
+      }
+
+      // 2.9. If the d field is present:
+      if (isPrivate) {
+        // 2.9.1. If jwk does not meet the requirements of the JWK private key format described in
+        //        Section 2 of [RFC8037], then throw a DataError.
+        // 2.9.2. Let key be a new CryptoKey object that represents the Ed25519 private key identified
+        //        by interpreting jwk according to Section 2 of [RFC8037].
+        auto pkey = createEd25519PrivateKeyFromJWK(cx, jwk);
+        if (!pkey) {
+          return nullptr;
+        }
+
+        // https://w3c.github.io/webcrypto/#SubtleCrypto-method-importKey
+        // If the [[type]] internal slot of result is "secret" or "private" and usages is empty, then
+        // throw a SyntaxError.
+        if (usages.isEmpty()) {
+          DOMException::raise(cx, "Usages cannot be empty when importing a private key", "SyntaxError");
+          return nullptr;
+        }
+
+        // 2.9.3. Set the [[type]] internal slot of Key to "private".
+        // 2.10. Let algorithm be a new instance of a KeyAlgorithm object.
+        // 2.11. Set the name attribute of algorithm to "Ed25519".
+        // 2.12. Set the [[algorithm]] internal slot of key to algorithm.
+        return CryptoKey::createEd25519(cx, this, std::move(pkey), CryptoKeyType::Private, extractable, usages);
+      }
+      // Otherwise:
+      // 2.9.1. If jwk does not meet the requirements of the JWK public key format described in
+      //        Section 2 of [RFC8037], then throw a DataError.
+      // 2.9.2. Let key be a new CryptoKey object that represents the Ed25519 public key identified by
+      //        interpreting jwk according to Section 2 of [RFC8037].
+      auto pkey = createEd25519PublicKeyFromJWK(cx, jwk);
+      if (!pkey) {
+        return nullptr;
+      }
+      // 2.9.3. Set the [[type]] internal slot of Key to "public".
+      // 2.10. Let algorithm be a new instance of a KeyAlgorithm object.
+      // 2.11. Set the name attribute of algorithm to "Ed25519".
+      // 2.12. Set the [[algorithm]] internal slot of key to algorithm.
+      return CryptoKey::createEd25519(cx, this, std::move(pkey), CryptoKeyType::Public, extractable, usages);
+    }
+    // 2. If format is "raw":
+    case CryptoKeyFormat::Raw: {
+      // 2.1. If usages contains an entry which is not "verify" then throw a SyntaxError.
+      if (!usages.isEmpty() && !usages.canOnlyVerify()) {
+        DOMException::raise(cx, "Raw public keys only support 'verify' operations", "SyntaxError");
+        return nullptr;
+      }
+
+      // 2.2. If the length in bits of keyData is not 256 then throw a DataError.
+      // EVP_PKEY_new_raw_public_key below rejects any other length.
+      auto keyBytes = std::get<std::span<uint8_t>>(key_data);
+
+      // 2.3. Let algorithm be a new KeyAlgorithm object.
+      // 2.4. Set the name attribute of algorithm to "Ed25519".
+      // 2.5. Let key be a new CryptoKey representing the key data provided in keyData.
+      // 2.6. Set the [[type]] internal slot of key to "public"
+      // 2.7. Set the [[algorithm]] internal slot of key to algorithm.
+      EvpPkeyPtr pkey(EVP_PKEY_new_raw_public_key(EVP_PKEY_ED25519, nullptr, keyBytes.data(), keyBytes.size()));
+      if (!pkey) {
+        DOMException::raise(cx, "Invalid Ed25519 public key", "DataError");
+        return nullptr;
+      }
+      return CryptoKey::createEd25519(cx, this, std::move(pkey), CryptoKeyType::Public, extractable, usages);
+    }
+  }
+  return nullptr;
+}
+
+JSObject *CryptoAlgorithmEd25519_Import::importKey(JSContext *cx, CryptoKeyFormat format, JS::HandleValue key_data, bool extractable,
+                      CryptoKeyUsages usages) {
+  MOZ_ASSERT(cx);
+
+  std::unique_ptr<JsonWebKey> jwk;
+  KeyData data;
+  switch (format) {
+    case CryptoKeyFormat::Jwk: {
+      // This handles step 2.3: If the kty field of jwk is not "OKP", then throw a DataError.
+      jwk = JsonWebKey::parse(cx, key_data, "OKP");
+      if (!jwk) {
+        return nullptr;
+      }
+      data = jwk.get();
+      break;
+    }
+    case CryptoKeyFormat::Pkcs8:
+    case CryptoKeyFormat::Spki:
+    case CryptoKeyFormat::Raw: {
+      std::optional<std::span<uint8_t>> buffer = value_to_buffer(cx, key_data, "");
+      if (!buffer.has_value()) {
+        return nullptr;
+      }
+      data = buffer.value();
+      break;
+    }
+  }
+
+  return this->importKey(cx, format, data, extractable, usages);
+}
+
+JSObject *CryptoAlgorithmEd25519_Import::toObject(JSContext *cx) const {
+  // Let algorithm be a new KeyAlgorithm dictionary.
+  JS::RootedObject algorithm(cx, JS_NewPlainObject(cx));
+  if (!algorithm) {
+    return nullptr;
+  }
+
+  // Set the name attribute of algorithm to "Ed25519".
+  auto *alg_name = JS_NewStringCopyZ(cx, this->name());
+  if (!alg_name) {
+    return nullptr;
+  }
+  JS::RootedValue name_val(cx, JS::StringValue(alg_name));
+  if (!JS_SetProperty(cx, algorithm, "name", name_val)) {
+    return nullptr;
+  }
+  return algorithm;
 }
 
 std::unique_ptr<CryptoAlgorithmRSASSA_PKCS1_v1_5_Import> CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::fromParameters(JSContext *cx, JS::HandleObject parameters) {

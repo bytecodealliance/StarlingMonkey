@@ -1,0 +1,59 @@
+{
+  "EdDSA Ed25519 verification": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 verification with altered signature during call": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 verification with altered signature after call": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 verification with transferred signature during call": {
+    "status": "FAIL"
+  },
+  "EdDSA Ed25519 verification with transferred signature after call": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 with altered data during call": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 with altered data after call": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 with transferred data during call": {
+    "status": "FAIL"
+  },
+  "EdDSA Ed25519 with transferred data after call": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 using privateKey to verify": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 using publicKey to sign": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 no verify usage": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 round trip": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 signing with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "EdDSA Ed25519 verifying with wrong algorithm name": {
+    "status": "FAIL"
+  },
+  "EdDSA Ed25519 verification failure due to altered signature": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 verification failure due to shortened signature": {
+    "status": "PASS"
+  },
+  "EdDSA Ed25519 verification failure due to altered data": {
+    "status": "PASS"
+  },
+  "Sign and verify using generated Ed25519 keys.": {
+    "status": "FAIL"
+  }
+}
