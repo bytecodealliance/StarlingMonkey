@@ -219,11 +219,14 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
           std::string op(op_chars.begin(), op_chars.len);
 
           if (op != "encrypt" && op != "decrypt" && op != "sign" && op != "verify" &&
-          op != "deriveKey" && op != "deriveBits" && op != "wrapKey" && op != "unwrapKey") {
+          op != "deriveKey" && op != "deriveBits" && op != "wrapKey" && op != "unwrapKey" &&
+          op != "encapsulateKey" && op != "encapsulateBits" && op != "decapsulateKey" &&
+          op != "decapsulateBits") {
             dom_exception::DOMException::raise(cx,
               "crypto.subtle.importKey parameter 'keyData': "
                 "each value in the 'key_ops' list must be one of 'encrypt', 'decrypt', "
-                "'sign', 'verify', 'deriveKey', 'deriveBits', 'wrapKey', or 'unwrapKey'",
+                "'sign', 'verify', 'deriveKey', 'deriveBits', 'wrapKey', 'unwrapKey', "
+                "'encapsulateKey', 'encapsulateBits', 'decapsulateKey', or 'decapsulateBits'",
               "DataError");
             return nullptr;
           }

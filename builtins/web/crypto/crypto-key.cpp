@@ -14,7 +14,7 @@
 
 namespace builtins::web::crypto {
 
-CryptoKeyUsages::CryptoKeyUsages(uint8_t mask) : mask(mask) { };
+CryptoKeyUsages::CryptoKeyUsages(uint16_t mask) : mask(mask) { };
 CryptoKeyUsages::CryptoKeyUsages(bool encrypt, bool decrypt, bool sign, bool verify,
                                  bool derive_key, bool derive_bits, bool wrap_key,
                                  bool unwrap_key) {
@@ -46,7 +46,7 @@ CryptoKeyUsages::CryptoKeyUsages(bool encrypt, bool decrypt, bool sign, bool ver
 };
 
 CryptoKeyUsages CryptoKeyUsages::from(const std::vector<std::string>& key_usages) {
-  uint8_t mask = 0;
+  uint16_t mask = 0;
   for (const auto &usage : key_usages) {
     if (usage == "encrypt") {
       mask |= encrypt_flag;
@@ -64,6 +64,14 @@ CryptoKeyUsages CryptoKeyUsages::from(const std::vector<std::string>& key_usages
       mask |= wrap_key_flag;
     } else if (usage == "unwrapKey") {
       mask |= unwrap_key_flag;
+    } else if (usage == "encapsulateKey") {
+      mask |= encapsulate_key_flag;
+    } else if (usage == "encapsulateBits") {
+      mask |= encapsulate_bits_flag;
+    } else if (usage == "decapsulateKey") {
+      mask |= decapsulate_key_flag;
+    } else if (usage == "decapsulateBits") {
+      mask |= decapsulate_bits_flag;
     }
   }
   return {mask};
@@ -88,7 +96,7 @@ JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue
   if (!JS::GetArrayLength(cx, array, &key_usages_length)) {
     return JS::Result<CryptoKeyUsages>(JS::Error());
   }
-  uint8_t mask = 0;
+  uint16_t mask = 0;
   for (uint32_t index = 0; index < key_usages_length; index++) {
     JS::RootedValue val(cx);
     if (!JS_GetElement(cx, array, index, &val)) {
@@ -118,12 +126,21 @@ JS::Result<CryptoKeyUsages> CryptoKeyUsages::from(JSContext *cx, JS::HandleValue
       mask |= wrap_key_flag;
     } else if (usage == "unwrapKey") {
       mask |= unwrap_key_flag;
+    } else if (usage == "encapsulateKey") {
+      mask |= encapsulate_key_flag;
+    } else if (usage == "encapsulateBits") {
+      mask |= encapsulate_bits_flag;
+    } else if (usage == "decapsulateKey") {
+      mask |= decapsulate_key_flag;
+    } else if (usage == "decapsulateBits") {
+      mask |= decapsulate_bits_flag;
     } else {
       api::throw_error(
           cx, api::Errors::TypeError, "crypto.subtle.importKey",
           "each value in the 'keyUsages' list",
           "be one of 'encrypt', 'decrypt', 'sign', 'verify', 'deriveKey', 'deriveBits', "
-          "'wrapKey', or 'unwrapKey'");
+          "'wrapKey', 'unwrapKey', 'encapsulateKey', 'encapsulateBits', 'decapsulateKey', or "
+          "'decapsulateBits'");
       return JS::Result<CryptoKeyUsages>(JS::Error());
     }
   }
@@ -223,8 +240,8 @@ bool CryptoKey::usages_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   // Else, grab the CryptoKeyUsages value from Slots::Usages and convert
   // it into a JS Array and store the result in Slots::UsagesArray.
   auto usages = JS::GetReservedSlot(self, std::to_underlying(Slots::Usages)).toInt32();
-  MOZ_ASSERT(std::in_range<std::uint8_t>(usages));
-  auto usage = CryptoKeyUsages(static_cast<uint8_t>(usages));
+  MOZ_ASSERT(std::in_range<std::uint16_t>(usages));
+  auto usage = CryptoKeyUsages(static_cast<uint16_t>(usages));
   // The result is ordered alphabetically.
   JS::RootedValueVector result(cx);
   JS::RootedString str(cx);
@@ -239,6 +256,16 @@ bool CryptoKey::usages_get(JSContext *cx, unsigned argc, JS::Value *vp) {
     return true;
   };
 
+  if (usage.canDecapsulateBits()) {
+    if (!append("decapsulateBits")) {
+      return false;
+    }
+  }
+  if (usage.canDecapsulateKey()) {
+    if (!append("decapsulateKey")) {
+      return false;
+    }
+  }
   if (usage.canDecrypt()) {
     if (!append("decrypt")) {
       return false;
@@ -251,6 +278,16 @@ bool CryptoKey::usages_get(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
   if (usage.canDeriveKey()) {
     if (!append("deriveKey")) {
+      return false;
+    }
+  }
+  if (usage.canEncapsulateBits()) {
+    if (!append("encapsulateBits")) {
+      return false;
+    }
+  }
+  if (usage.canEncapsulateKey()) {
+    if (!append("encapsulateKey")) {
       return false;
     }
   }
@@ -882,16 +919,16 @@ JS::Result<bool> CryptoKey::is_algorithm(JSContext *cx, JS::HandleObject self,
 bool CryptoKey::canSign(JS::HandleObject self) {
   MOZ_ASSERT(is_instance(self));
   auto usages = JS::GetReservedSlot(self, std::to_underlying(Slots::Usages)).toInt32();
-  MOZ_ASSERT(std::in_range<std::uint8_t>(usages));
-  auto usage = CryptoKeyUsages(static_cast<uint8_t>(usages));
+  MOZ_ASSERT(std::in_range<std::uint16_t>(usages));
+  auto usage = CryptoKeyUsages(static_cast<uint16_t>(usages));
   return usage.canSign();
 }
 
 bool CryptoKey::canVerify(JS::HandleObject self) {
   MOZ_ASSERT(is_instance(self));
   auto usages = JS::GetReservedSlot(self, std::to_underlying(Slots::Usages)).toInt32();
-  MOZ_ASSERT(std::in_range<std::uint8_t>(usages));
-  auto usage = CryptoKeyUsages(static_cast<uint8_t>(usages));
+  MOZ_ASSERT(std::in_range<std::uint16_t>(usages));
+  auto usage = CryptoKeyUsages(static_cast<uint16_t>(usages));
   return usage.canVerify();
 }
 
