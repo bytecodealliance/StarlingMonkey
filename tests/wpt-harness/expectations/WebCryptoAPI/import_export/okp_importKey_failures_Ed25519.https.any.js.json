@@ -2253,37 +2253,37 @@
     "status": "PASS"
   },
   "Import from a non-extractable: importKey(jwk (public) , Ed25519, true, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Import from a non-extractable: importKey(jwk(private), {name: Ed25519}, true, [sign])": {
     "status": "PASS"
   },
   "Import from a non-extractable: importKey(jwk (public) , {name: Ed25519}, true, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Invalid 'use' field: importKey(jwk(private), Ed25519, true, [sign])": {
     "status": "PASS"
   },
   "Invalid 'use' field: importKey(jwk (public) , Ed25519, true, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Invalid 'use' field: importKey(jwk(private), {name: Ed25519}, true, [sign])": {
     "status": "PASS"
   },
   "Invalid 'use' field: importKey(jwk (public) , {name: Ed25519}, true, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Invalid 'crv' field: importKey(jwk(private), Ed25519, true, [sign])": {
     "status": "PASS"
   },
   "Invalid 'crv' field: importKey(jwk (public) , Ed25519, true, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Invalid 'crv' field: importKey(jwk(private), {name: Ed25519}, true, [sign])": {
     "status": "PASS"
   },
   "Invalid 'crv' field: importKey(jwk (public) , {name: Ed25519}, true, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Invalid 'alg' field 'ed25519': importKey(jwk(private), Ed25519, true, [sign])": {
     "status": "PASS"
@@ -2292,10 +2292,10 @@
     "status": "PASS"
   },
   "Invalid 'alg' field 'ed25519': importKey(jwk (public) , Ed25519, true, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Invalid 'alg' field 'ED25519': importKey(jwk (public) , Ed25519, true, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Invalid 'alg' field 'ed25519': importKey(jwk(private), {name: Ed25519}, true, [sign])": {
     "status": "PASS"
@@ -2304,9 +2304,9 @@
     "status": "PASS"
   },
   "Invalid 'alg' field 'ed25519': importKey(jwk (public) , {name: Ed25519}, true, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Invalid 'alg' field 'ED25519': importKey(jwk (public) , {name: Ed25519}, true, [verify])": {
-    "status": "FAIL"
+    "status": "PASS"
   }
 }
