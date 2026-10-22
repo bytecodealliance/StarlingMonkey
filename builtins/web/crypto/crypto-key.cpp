@@ -678,6 +678,34 @@ JSObject *CryptoKey::createECDSA(JSContext *cx, CryptoAlgorithmECDSA_Import *alg
   return instance;
 }
 
+JSObject *CryptoKey::createEd25519(JSContext *cx, CryptoAlgorithmEd25519_Import *algorithm,
+                                   EvpPkeyPtr pkey, CryptoKeyType keyType, bool extractable,
+                                   CryptoKeyUsages usages) {
+  MOZ_ASSERT(cx);
+  MOZ_ASSERT(algorithm);
+  MOZ_ASSERT(pkey);
+  MOZ_ASSERT(EVP_PKEY_id(pkey.get()) == EVP_PKEY_ED25519);
+  MOZ_ASSERT(keyType == CryptoKeyType::Public || keyType == CryptoKeyType::Private);
+
+  JS::RootedObject instance(
+      cx, JS_NewObjectWithGivenProto(cx, &CryptoKey::class_, CryptoKey::proto_obj));
+  if (!instance) {
+    return nullptr;
+  }
+
+  JS::RootedObject alg(cx, algorithm->toObject(cx));
+  if (!alg) {
+    return nullptr;
+  }
+
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Algorithm), JS::ObjectValue(*alg));
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Type), JS::Int32Value(static_cast<uint8_t>(keyType)));
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Extractable), JS::BooleanValue(extractable));
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Usages), JS::Int32Value(usages.toInt()));
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Key), JS::PrivateValue(pkey.release()));
+  return instance;
+}
+
 JSObject *CryptoKey::createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_Import *algorithm,
                                std::unique_ptr<CryptoKeyRSAComponents> keyData, bool extractable,
                                CryptoKeyUsages usages) {
