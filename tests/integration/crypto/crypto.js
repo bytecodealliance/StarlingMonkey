@@ -138,6 +138,54 @@ const rsaPkcs1Sha512Algorithm = {
   hash: { name: "SHA-512" },
 };
 
+// From https://www.rfc-editor.org/rfc/rfc8032#section-7.1 TEST 1
+const ed25519Test1PublicJsonWebKeyData = () => ({
+  kty: "OKP",
+  crv: "Ed25519",
+  x: "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo",
+  ext: true,
+  key_ops: ["verify"],
+});
+const ed25519Test1PrivateJsonWebKeyData = () => ({
+  kty: "OKP",
+  crv: "Ed25519",
+  x: "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo",
+  d: "nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A",
+  ext: true,
+  key_ops: ["sign"],
+});
+const ed25519Test1Raw = new Uint8Array([
+  215, 90, 152, 1, 130, 177, 10, 183, 213, 75, 254, 211, 201, 100, 7, 58,
+  14, 225, 114, 243, 218, 166, 35, 37, 175, 2, 26, 104, 247, 7, 81, 26,
+]);
+// The message for TEST 1 is empty.
+const ed25519Test1Signature = new Uint8Array([
+  229, 86, 67, 0, 195, 96, 172, 114, 144, 134, 226, 204, 128, 110, 130, 138,
+  132, 135, 127, 30, 184, 229, 217, 116, 216, 115, 224, 101, 34, 73, 1, 85,
+  95, 184, 130, 21, 144, 163, 59, 172, 198, 30, 57, 112, 28, 249, 180, 107,
+  210, 91, 245, 240, 89, 91, 190, 36, 101, 81, 65, 67, 142, 122, 16, 11,
+]);
+
+// From https://www.rfc-editor.org/rfc/rfc8032#section-7.1 TEST 2
+const ed25519Test2Spki = new Uint8Array([
+  48, 42, 48, 5, 6, 3, 43, 101, 112, 3, 33, 0, 61, 64, 23, 195,
+  232, 67, 137, 90, 146, 183, 10, 167, 77, 27, 126, 188, 156, 152, 44, 207,
+  46, 196, 150, 140, 192, 205, 85, 241, 42, 244, 102, 12,
+]);
+const ed25519Test2Pkcs8 = new Uint8Array([
+  48, 46, 2, 1, 0, 48, 5, 6, 3, 43, 101, 112, 4, 34, 4, 32,
+  76, 205, 8, 155, 40, 255, 150, 218, 157, 182, 195, 70, 236, 17, 78, 15,
+  91, 138, 49, 159, 53, 171, 166, 36, 218, 140, 246, 237, 79, 184, 166, 251,
+]);
+const ed25519Test2Message = new Uint8Array([0x72]);
+const ed25519Test2Signature = new Uint8Array([
+  146, 160, 9, 169, 240, 212, 202, 184, 114, 14, 130, 11, 95, 100, 37, 64,
+  162, 178, 123, 84, 22, 80, 63, 143, 179, 118, 34, 35, 235, 219, 105, 218,
+  8, 90, 193, 228, 62, 21, 153, 110, 69, 143, 54, 19, 208, 241, 29, 140,
+  56, 123, 46, 174, 180, 48, 42, 238, 176, 13, 41, 22, 18, 187, 12, 0,
+]);
+
+
 export const handler = serveTest(async (t) => {
   t.test("crypto", () => {
     strictEqual(typeof crypto, "object", `typeof crypto`);
@@ -351,7 +399,7 @@ export const handler = serveTest(async (t) => {
                 publicRsaJsonWebKeyData.ext,
                 publicRsaJsonWebKeyData.key_ops,
               );
-            }, TypeError);
+            }, DOMException, null, "DataError");
           },
         );
         await t.test(
@@ -734,7 +782,7 @@ export const handler = serveTest(async (t) => {
                 publicEcdsaJsonWebKeyData.ext,
                 publicEcdsaJsonWebKeyData.key_ops,
               );
-            }, TypeError);
+            }, DOMException, null, "DataError");
           },
         );
         await t.test(
@@ -2558,5 +2606,215 @@ export const handler = serveTest(async (t) => {
         }
       });
     }
+  }
+
+  // Ed25519
+  {
+    const ed25519Algorithm = { name: "Ed25519" };
+    const assertEd25519Key = (key, type, extractable, usages) => {
+      strictEqual(key instanceof CryptoKey, true, "key instanceof CryptoKey");
+      deepStrictEqual(key.algorithm, { name: "Ed25519" }, "key.algorithm");
+      strictEqual(key.extractable, extractable, "key.extractable");
+      strictEqual(key.type, type, "key.type");
+      deepStrictEqual(key.usages, usages, "key.usages");
+    };
+
+    // importKey happy paths
+    await t.test("ed25519-import-raw", async () => {
+      const key = await crypto.subtle.importKey("raw", ed25519Test1Raw, ed25519Algorithm, true, ["verify"]);
+      assertEd25519Key(key, "public", true, ["verify"]);
+    });
+    await t.test("ed25519-import-raw-empty-usages", async () => {
+      const key = await crypto.subtle.importKey("raw", ed25519Test1Raw, ed25519Algorithm, false, []);
+      assertEd25519Key(key, "public", false, []);
+    });
+    await t.test("ed25519-import-spki", async () => {
+      const key = await crypto.subtle.importKey("spki", ed25519Test2Spki, ed25519Algorithm, true, ["verify"]);
+      assertEd25519Key(key, "public", true, ["verify"]);
+    });
+    await t.test("ed25519-import-pkcs8", async () => {
+      const key = await crypto.subtle.importKey("pkcs8", ed25519Test2Pkcs8, ed25519Algorithm, false, ["sign"]);
+      assertEd25519Key(key, "private", false, ["sign"]);
+    });
+    await t.test("ed25519-import-jwk-public", async () => {
+      const jwk = ed25519Test1PublicJsonWebKeyData();
+      const key = await crypto.subtle.importKey("jwk", jwk, ed25519Algorithm, jwk.ext, jwk.key_ops);
+      assertEd25519Key(key, "public", true, ["verify"]);
+    });
+    await t.test("ed25519-import-jwk-private", async () => {
+      const jwk = ed25519Test1PrivateJsonWebKeyData();
+      const key = await crypto.subtle.importKey("jwk", jwk, ed25519Algorithm, jwk.ext, jwk.key_ops);
+      assertEd25519Key(key, "private", true, ["sign"]);
+    });
+    await t.test("ed25519-import-jwk-alg", async () => {
+      for (const alg of ["Ed25519", "EdDSA"]) {
+        const jwk = { ...ed25519Test1PublicJsonWebKeyData(), alg };
+        const key = await crypto.subtle.importKey("jwk", jwk, ed25519Algorithm, true, ["verify"]);
+        assertEd25519Key(key, "public", true, ["verify"]);
+      }
+    });
+    await t.test("ed25519-import-algorithm-name-is-case-insensitive", async () => {
+      const key = await crypto.subtle.importKey("raw", ed25519Test1Raw, "ed25519", true, ["verify"]);
+      assertEd25519Key(key, "public", true, ["verify"]);
+    });
+
+    // importKey failures
+    await t.test("ed25519-import-raw-sign-usage", async () => {
+      await rejects(async () => {
+        await crypto.subtle.importKey("raw", ed25519Test1Raw, ed25519Algorithm, true, ["sign"]);
+      }, DOMException, undefined, "SyntaxError");
+    });
+    await t.test("ed25519-import-raw-wrong-length", async () => {
+      await rejects(async () => {
+        await crypto.subtle.importKey("raw", ed25519Test1Raw.slice(1), ed25519Algorithm, true, ["verify"]);
+      }, DOMException, undefined, "DataError");
+    });
+    await t.test("ed25519-import-spki-sign-usage", async () => {
+      await rejects(async () => {
+        await crypto.subtle.importKey("spki", ed25519Test2Spki, ed25519Algorithm, true, ["sign"]);
+      }, DOMException, undefined, "SyntaxError");
+    });
+    await t.test("ed25519-import-spki-trailing-data", async () => {
+      const spki = new Uint8Array([...ed25519Test2Spki, 0]);
+      await rejects(async () => {
+        await crypto.subtle.importKey("spki", spki, ed25519Algorithm, true, ["verify"]);
+      }, DOMException, undefined, "DataError");
+    });
+    await t.test("ed25519-import-spki-ecdsa-key", async () => {
+      await rejects(async () => {
+        await crypto.subtle.importKey("spki", ecdsaP256Spki, ed25519Algorithm, true, ["verify"]);
+      }, DOMException, undefined, "DataError");
+    });
+    await t.test("ed25519-import-pkcs8-verify-usage", async () => {
+      await rejects(async () => {
+        await crypto.subtle.importKey("pkcs8", ed25519Test2Pkcs8, ed25519Algorithm, true, ["verify"]);
+      }, DOMException, undefined, "SyntaxError");
+    });
+    await t.test("ed25519-import-pkcs8-empty-usages", async () => {
+      await rejects(async () => {
+        await crypto.subtle.importKey("pkcs8", ed25519Test2Pkcs8, ed25519Algorithm, true, []);
+      }, DOMException, undefined, "SyntaxError");
+    });
+    await t.test("ed25519-import-pkcs8-ecdsa-key", async () => {
+      await rejects(async () => {
+        await crypto.subtle.importKey("pkcs8", ecdsaP256Pkcs8, ed25519Algorithm, true, ["sign"]);
+      }, DOMException, undefined, "DataError");
+    });
+    await t.test("ed25519-import-jwk-private-empty-usages", async () => {
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk", ed25519Test1PrivateJsonWebKeyData(), ed25519Algorithm, true, []);
+      }, DOMException, undefined, "SyntaxError");
+    });
+    await t.test("ed25519-import-jwk-wrong-kty", async () => {
+      const jwk = { ...ed25519Test1PublicJsonWebKeyData(), kty: "EC" };
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk", jwk, ed25519Algorithm, true, ["verify"]);
+      }, DOMException, undefined, "DataError");
+    });
+    await t.test("ed25519-import-jwk-wrong-crv", async () => {
+      const jwk = { ...ed25519Test1PublicJsonWebKeyData(), crv: "X25519" };
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk", jwk, ed25519Algorithm, true, ["verify"]);
+      }, DOMException, undefined, "DataError");
+    });
+    await t.test("ed25519-import-jwk-wrong-alg", async () => {
+      const jwk = { ...ed25519Test1PublicJsonWebKeyData(), alg: "ES256" };
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk", jwk, ed25519Algorithm, true, ["verify"]);
+      }, DOMException, undefined, "DataError");
+    });
+    await t.test("ed25519-import-jwk-missing-x", async () => {
+      const { x, ...jwk } = ed25519Test1PrivateJsonWebKeyData();
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk", jwk, ed25519Algorithm, true, ["sign"]);
+      }, DOMException, undefined, "DataError");
+    });
+    await t.test("ed25519-import-jwk-mismatched-x-and-d", async () => {
+      const jwk = { ...ed25519Test1PrivateJsonWebKeyData(), x: "PUAXw-hDiVqStwqnTRt-vJyYLM8uxJaMwM1V8Sr0Zgw" };
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk", jwk, ed25519Algorithm, true, ["sign"]);
+      }, DOMException, undefined, "DataError");
+    });
+    await t.test("ed25519-import-jwk-key-ops-not-superset", async () => {
+      const jwk = { ...ed25519Test1PublicJsonWebKeyData(), key_ops: ["sign"] };
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk", jwk, ed25519Algorithm, true, ["verify"]);
+      }, DOMException, undefined, "DataError");
+    });
+
+    // sign
+    await t.test("ed25519-sign-pkcs8", async () => {
+      const key = await crypto.subtle.importKey("pkcs8", ed25519Test2Pkcs8, ed25519Algorithm, false, ["sign"]);
+      const signature = new Uint8Array(await crypto.subtle.sign(ed25519Algorithm, key, ed25519Test2Message));
+      deepStrictEqual(signature, ed25519Test2Signature, "signature deep equals expected");
+    });
+    await t.test("ed25519-sign-jwk-empty-message", async () => {
+      const jwk = ed25519Test1PrivateJsonWebKeyData();
+      const key = await crypto.subtle.importKey("jwk", jwk, ed25519Algorithm, false, ["sign"]);
+      const signature = new Uint8Array(await crypto.subtle.sign("Ed25519", key, new Uint8Array()));
+      deepStrictEqual(signature, ed25519Test1Signature, "signature deep equals expected");
+    });
+    await t.test("ed25519-sign-with-public-key", async () => {
+      const key = await crypto.subtle.importKey("raw", ed25519Test1Raw, ed25519Algorithm, false, ["verify"]);
+      await rejects(async () => {
+        await crypto.subtle.sign(ed25519Algorithm, key, new Uint8Array());
+      }, DOMException, undefined, "InvalidAccessError");
+    });
+    await t.test("ed25519-sign-with-ecdsa-algorithm", async () => {
+      const key = await crypto.subtle.importKey("pkcs8", ed25519Test2Pkcs8, ed25519Algorithm, false, ["sign"]);
+      await rejects(async () => {
+        await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, ed25519Test2Message);
+      }, DOMException, undefined, "InvalidAccessError");
+    });
+
+    // verify
+    await t.test("ed25519-verify-spki", async () => {
+      const key = await crypto.subtle.importKey("spki", ed25519Test2Spki, ed25519Algorithm, false, ["verify"]);
+      const result = await crypto.subtle.verify(ed25519Algorithm, key, ed25519Test2Signature, ed25519Test2Message);
+      strictEqual(result, true, "result");
+    });
+    await t.test("ed25519-verify-raw-empty-message", async () => {
+      const key = await crypto.subtle.importKey("raw", ed25519Test1Raw, ed25519Algorithm, false, ["verify"]);
+      const result = await crypto.subtle.verify(ed25519Algorithm, key, ed25519Test1Signature, new Uint8Array());
+      strictEqual(result, true, "result");
+    });
+    await t.test("ed25519-verify-jwk", async () => {
+      const jwk = ed25519Test1PublicJsonWebKeyData();
+      const key = await crypto.subtle.importKey("jwk", jwk, ed25519Algorithm, false, ["verify"]);
+      const result = await crypto.subtle.verify(ed25519Algorithm, key, ed25519Test1Signature, new Uint8Array());
+      strictEqual(result, true, "result");
+    });
+    await t.test("ed25519-verify-sign-round-trip", async () => {
+      const privateKey = await crypto.subtle.importKey("pkcs8", ed25519Test2Pkcs8, ed25519Algorithm, false, ["sign"]);
+      const publicKey = await crypto.subtle.importKey("spki", ed25519Test2Spki, ed25519Algorithm, false, ["verify"]);
+      const message = new TextEncoder().encode("StarlingMonkey");
+      const signature = await crypto.subtle.sign(ed25519Algorithm, privateKey, message);
+      strictEqual(await crypto.subtle.verify(ed25519Algorithm, publicKey, signature, message), true, "result");
+    });
+    await t.test("ed25519-verify-altered-signature", async () => {
+      const key = await crypto.subtle.importKey("spki", ed25519Test2Spki, ed25519Algorithm, false, ["verify"]);
+      const signature = ed25519Test2Signature.slice();
+      signature[0] ^= 1;
+      const result = await crypto.subtle.verify(ed25519Algorithm, key, signature, ed25519Test2Message);
+      strictEqual(result, false, "result");
+    });
+    await t.test("ed25519-verify-altered-message", async () => {
+      const key = await crypto.subtle.importKey("spki", ed25519Test2Spki, ed25519Algorithm, false, ["verify"]);
+      const result = await crypto.subtle.verify(ed25519Algorithm, key, ed25519Test2Signature, new Uint8Array([0x73]));
+      strictEqual(result, false, "result");
+    });
+    await t.test("ed25519-verify-wrong-signature-length", async () => {
+      const key = await crypto.subtle.importKey("spki", ed25519Test2Spki, ed25519Algorithm, false, ["verify"]);
+      for (const signature of [ed25519Test2Signature.slice(1), new Uint8Array([...ed25519Test2Signature, 0])]) {
+        const result = await crypto.subtle.verify(ed25519Algorithm, key, signature, ed25519Test2Message);
+        strictEqual(result, false, "result");
+      }
+    });
+    await t.test("ed25519-verify-with-private-key", async () => {
+      const key = await crypto.subtle.importKey("pkcs8", ed25519Test2Pkcs8, ed25519Algorithm, false, ["sign"]);
+      await rejects(async () => {
+        await crypto.subtle.verify(ed25519Algorithm, key, ed25519Test2Signature, ed25519Test2Message);
+      }, DOMException, undefined, "InvalidAccessError");
+    });
   }
 });

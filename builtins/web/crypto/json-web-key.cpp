@@ -54,18 +54,13 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
     return nullptr;
   }
   auto kty_option = kty_result.unwrap();
-  if (!kty_option.has_value()) {
-    api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.importKey",
-      "keyData", "be a JSONWebKey");
-    return nullptr;
-  }
-  auto kty = kty_option.value();
-  if (kty != required_kty_value) {
+  if (kty_option != required_kty_value) {
     auto message = fmt::format("crypto.subtle.importkey: The JWK member 'kty' was not '{}'",
       required_kty_value);
     dom_exception::DOMException::raise(cx, message, "DataError");
     return nullptr;
   }
+  auto kty = kty_option.value();
 
   //   DOMString use;
   auto use_result = extractStringPropertyFromObject(cx, object, "use");
