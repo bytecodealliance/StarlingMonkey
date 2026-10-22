@@ -59,7 +59,10 @@ public:
   [[nodiscard]] bool canOnlyDecrypt() const { return this->mask == decrypt_flag; };
   [[nodiscard]] bool canOnlySign() const { return this->mask == sign_flag; };
   [[nodiscard]] bool canOnlyVerify() const { return this->mask == verify_flag; };
-  [[nodiscard]] bool canOnlySignOrVerify() const { return (this->mask & (sign_flag | verify_flag)) != 0; };
+  [[nodiscard]] bool canOnlySignOrVerify() const {
+    return this->mask == sign_flag || this->mask == verify_flag ||
+           this->mask == (sign_flag | verify_flag);
+  };
   [[nodiscard]] bool canOnlyDeriveKey() const { return this->mask == derive_key_flag; };
   [[nodiscard]] bool canOnlyDeriveBits() const { return this->mask == derive_bits_flag; };
   [[nodiscard]] bool canOnlyWrapKey() const { return this->mask == wrap_key_flag; };
