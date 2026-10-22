@@ -631,7 +631,7 @@ EvpPkeyPtr create_rsa_key_from_parts(
 } // namespace
 
 JSObject *CryptoKey::createHMAC(JSContext *cx, CryptoAlgorithmHMAC_Import *algorithm,
-                                std::unique_ptr<std::span<uint8_t>> data, unsigned long length,
+                                std::unique_ptr<std::vector<uint8_t>> data, unsigned long length,
                                 bool extractable, CryptoKeyUsages usages) {
   MOZ_ASSERT(cx);
   MOZ_ASSERT(algorithm);

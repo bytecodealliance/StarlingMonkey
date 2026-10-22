@@ -134,7 +134,7 @@ public:
   static bool init_class(JSContext *cx, JS::HandleObject global);
 
   static JSObject *createHMAC(JSContext *cx, CryptoAlgorithmHMAC_Import *algorithm,
-                              std::unique_ptr<std::span<uint8_t>> data, unsigned long length,
+                              std::unique_ptr<std::vector<uint8_t>> data, unsigned long length,
                               bool extractable, CryptoKeyUsages usages);
   static JSObject *createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_Import *algorithm,
                              std::unique_ptr<CryptoKeyRSAComponents> keyData, bool extractable,
