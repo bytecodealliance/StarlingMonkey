@@ -15,6 +15,9 @@ test_serve_body_expectation="$test_dir/expect_serve_body.txt"
 test_serve_headers_expectation="$test_dir/expect_serve_headers.txt"
 test_serve_stdout_expectation="$test_dir/expect_serve_stdout.txt"
 test_serve_stderr_expectation="$test_dir/expect_serve_stderr.txt"
+if [[ "$componentize_flags" == *--enable-nightmonkey* ]] && [ -f "$test_dir/expect_serve_stderr_nightmonkey.txt" ]; then
+   test_serve_stderr_expectation="$test_dir/expect_serve_stderr_nightmonkey.txt"
+fi
 test_serve_status_expectation=$(cat "$test_dir/expect_serve_status.txt" 2> /dev/null || echo "200")
 
 body_log="$test_dir/body.log"
