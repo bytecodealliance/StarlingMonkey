@@ -172,6 +172,7 @@ public:
   void report_unhandled_promise_rejections();
   static void clear_unhandled_promise_rejections();
 
+  void reset();
   void abort(const char *reason);
 
   static bool debug_logging_enabled();

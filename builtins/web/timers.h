@@ -14,6 +14,7 @@ bool set_interval(JSContext *cx, HandleObject handler, JS::HandleValueVector arg
 void clear_timeout_or_interval(int32_t timer_id);
 
 bool install(api::Engine *engine);
+void reset();
 
 } // namespace builtins::web::timers
 

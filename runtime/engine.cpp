@@ -3,6 +3,7 @@
 #include "debugger.h"
 #include "encode.h"
 #include "event_loop.h"
+#include "../builtins/web/timers.h"
 #include "script_loader.h"
 
 #include "js/CompilationAndEvaluation.h"
@@ -707,4 +708,12 @@ void Engine::report_unhandled_promise_rejections() {
 }
 void Engine::clear_unhandled_promise_rejections() {
   JS::SetClear(CONTEXT, unhandledRejectedPromises);
+}
+void Engine::reset() {
+  clear_unhandled_promise_rejections();
+  core::EventLoop::reset(this);
+  builtins::web::timers::reset();
+  core::EventLoop::reset(this);
+  JS::PrepareForFullGC(cx());
+  JS::NonIncrementalGC(cx(), JS::GCOptions::Normal, JS::GCReason::API);
 }
