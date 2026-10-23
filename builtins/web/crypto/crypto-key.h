@@ -84,7 +84,7 @@ public:
   };
 };
 
-class CryptoKey : public BuiltinNoConstructor<CryptoKey> {
+class CryptoKey : public BuiltinNoConstructor<CryptoKey, FinalizableClassPolicy> {
 public:
   static const int ctor_length = 0;
   static constexpr const char *class_name = "CryptoKey";
@@ -125,10 +125,10 @@ public:
     // Returns the cached ECMAScript object associated with the [[usages]] internal slot,
     // which indicates which cryptographic operations are permissible to be used with this key.
     UsagesArray,
-    // We store a JS::PrivateValue in this slot, it will contain either the raw key data.
-    // It will either be an `EVP_PKEY *` or an `uint8_t *`.
-    // `uint8_t *` is used only for HMAC keys, `EVP_PKEY *` is used for all the other key types.
+    // We store a JS::PrivateValue in this slot containing an `EVP_PKEY *` for asymmetric keys.
     Key,
+    // We store a JS::PrivateValue containing a `std::vector<uint8_t> *` holding the raw key
+    // bytes for symmetric keys.
     KeyData,
     KeyDataLength,
     Count
@@ -139,6 +139,8 @@ public:
   static const JSPropertySpec properties[];
 
   static bool init_class(JSContext *cx, JS::HandleObject global);
+
+  static void finalize(JS::GCContext *gcx, JSObject *self);
 
   static JSObject *createHMAC(JSContext *cx, CryptoAlgorithmHMAC_Import *algorithm,
                               std::unique_ptr<std::vector<uint8_t>> data, unsigned long length,
