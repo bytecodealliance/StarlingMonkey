@@ -3079,11 +3079,13 @@ JSObject *CryptoAlgorithmPBKDF2_DeriveBits::deriveBits(JSContext *cx, JS::Handle
   auto password = CryptoKey::keyData(baseKey);
   size_t derived_length = length.value() / 8;
 
-  // PKCS5_PBKDF2_HMAC takes the iteration count as an int, so larger counts cannot be requested
-  // from OpenSSL. Treat them as a failed key derivation operation (step 6) rather than letting the
-  // static_cast below produce an implementation-defined value.
-  if (this->iterations > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
-    DOMException::raise(cx, "SubtleCrypto.deriveBits: iterations is too large", "OperationError");
+  // PKCS5_PBKDF2_HMAC takes int for its iteration count and buffer sizes; values that do not
+  // fit an int cannot be passed to it and thus cannot be processed. Treat them as a failed key
+  // derivation operation (step 6) rather than letting the static_casts below produce
+  // implementation-defined values.
+  if (password.size() > INT32_MAX || this->salt.size() > INT32_MAX ||
+      this->iterations > INT32_MAX || derived_length > INT32_MAX) {
+    DOMException::raise(cx, "SubtleCrypto.deriveBits: input is too large", "OperationError");
     return nullptr;
   }
 
@@ -3380,6 +3382,13 @@ JSObject *aesCbcCrypt(JSContext *cx, JS::HandleObject key, std::vector<uint8_t> 
     DOMException::raise(cx, "AES-CBC key must be 16, 24 or 32 bytes long", "OperationError");
     return nullptr;
   }
+  }
+
+  // EVP_Cipher takes int for its data sizes; inputs that do not fit an int cannot be passed
+  // to it and thus cannot be processed.
+  if (data.size() > INT32_MAX) {
+    DOMException::raise(cx, "AES-CBC input is too large", "OperationError");
+    return nullptr;
   }
 
   EvpCipherCtxPtr ctx(EVP_CIPHER_CTX_new());
