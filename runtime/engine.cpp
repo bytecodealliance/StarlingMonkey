@@ -638,6 +638,12 @@ bool Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, std::strin
   if (state() == EngineState::ScriptPreInitializing) {
     JS::PrepareForFullGC(cx());
     JS::NonIncrementalGC(cx(), JS::GCOptions::Normal, JS::GCReason::API);
+
+    // The collection may have queued FinalizationRegistry cleanups. Run them now, so they are
+    // not baked into the snapshot and run on its first resumption.
+    if (!core::EventLoop::drain_finalization_registry_cleanups(this)) {
+      return false;
+    }
   }
 
   // Ignore the first GC, but then print all others, because ideally GCs
