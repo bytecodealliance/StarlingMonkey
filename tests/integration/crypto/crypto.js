@@ -3080,5 +3080,237 @@ export const handler = serveTest(async (t) => {
         "120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b"),
         "derived bits use the pre-detach salt");
     });
+
+
+    // AES-CBC
+    // Expected outputs generated with Node.js crypto.subtle (OpenSSL), cross-checked against the
+    // NIST SP 800-38A F.2 known-answer vectors.
+    const aesCbcIv = hexToBytes("000102030405060708090a0b0c0d0e0f");
+    const aesCbcPlaintext = hexToBytes(
+      "6bc1bee22e409f96e93d7e117393172a" +
+      "ae2d8a571e03ac9c9eb76fac45af8e51" +
+      "30c81c46a35ce411e5fbc1191a0a52ef" +
+      "f69f2445df4f9b17ad2b417be66c3710");
+    const aesCbcParams = () => ({ name: "AES-CBC", iv: aesCbcIv });
+    const aesCbcKeys = [
+      // NIST SP 800-38A F.2.1 (AES-128), F.2.3 (AES-192), F.2.5 (AES-256). PKCS#7 padding adds a
+      // final block past the raw NIST ciphertext since the plaintext is block-aligned.
+      { bits: 128,
+        key: "2b7e151628aed2a6abf7158809cf4f3c",
+        ciphertext: "7649abac8119b246cee98e9b12e9197d5086cb9b507219ee95db113a917678b273bed6b8e3c1743b7116e69e222295163ff1caa1681fac09120eca307586e1a78cb82807230e1321d3fae00d18cc2012" },
+      { bits: 192,
+        key: "8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b",
+        ciphertext: "4f021db243bc633d7178183a9fa071e8b4d9ada9ad7dedf4e5e738763f69145a571b242012fb7ae07fa9baac3df102e008b0e27988598881d920a9e64f5615cd612ccd79224b350935d45dd6a98f8176" },
+      { bits: 256,
+        key: "603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4",
+        ciphertext: "f58c4c04d6e5f1ba779eabfb5f7bfbd69cfc4e967edb808d679f777bc6702c7d39f23369a9d9bacfa530e26304231461b2eb05e2c39be9fcda6c19078c6a9d1b3f461796d6b0d6b2e0c2a72b4d80e644" },
+    ];
+
+    // importKey
+    for (const { bits, key: keyHex } of aesCbcKeys) {
+      await t.test(`aes-cbc-importKey-raw-${bits}`, async () => {
+        const key = await crypto.subtle.importKey("raw", hexToBytes(keyHex), "AES-CBC", false, ["encrypt", "decrypt"]);
+        strictEqual(key.type, "secret", "type");
+        deepStrictEqual(key.algorithm, { name: "AES-CBC", length: bits }, "algorithm");
+        deepStrictEqual(key.usages, ["decrypt", "encrypt"], "usages");
+        strictEqual(key.extractable, false, "extractable");
+      });
+    }
+    await t.test("aes-cbc-importKey-jwk", async () => {
+      const jwk = { kty: "oct", k: "YD3rEBXKcb4rc67whX13gR81LAc7YQjXLZgQowkU3_Q", alg: "A256CBC", ext: true };
+      const key = await crypto.subtle.importKey("jwk", jwk, "AES-CBC", true, ["encrypt", "decrypt"]);
+      strictEqual(key.type, "secret", "type");
+      deepStrictEqual(key.algorithm, { name: "AES-CBC", length: 256 }, "algorithm");
+      strictEqual(key.extractable, true, "extractable");
+      const rt = new Uint8Array(await crypto.subtle.decrypt(aesCbcParams(), key,
+        hexToBytes(aesCbcKeys[2].ciphertext)));
+      deepStrictEqual(rt, aesCbcPlaintext, "jwk key decrypts");
+    });
+    await t.test("aes-cbc-importKey-jwk-wrong-alg", async () => {
+      for (const alg of ["A128CBC", "A192CBC", "A256GCM"]) {
+        await rejects(async () => {
+          await crypto.subtle.importKey("jwk",
+            { kty: "oct", k: "YD3rEBXKcb4rc67whX13gR81LAc7YQjXLZgQowkU3_Q", alg },
+            "AES-CBC", false, ["encrypt"]);
+        }, DOMException, undefined, "DataError");
+      }
+    });
+    await t.test("aes-cbc-importKey-jwk-wrong-use", async () => {
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk",
+          { kty: "oct", k: "YD3rEBXKcb4rc67whX13gR81LAc7YQjXLZgQowkU3_Q", use: "sig" },
+          "AES-CBC", false, ["encrypt"]);
+      }, DOMException, undefined, "DataError");
+    });
+    await t.test("aes-cbc-importKey-jwk-wrong-key-ops", async () => {
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk",
+          { kty: "oct", k: "YD3rEBXKcb4rc67whX13gR81LAc7YQjXLZgQowkU3_Q", key_ops: ["encrypt"] },
+          "AES-CBC", false, ["encrypt", "decrypt"]);
+      }, DOMException, undefined, "DataError");
+    });
+    await t.test("aes-cbc-importKey-jwk-ext-false-extractable", async () => {
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk",
+          { kty: "oct", k: "YD3rEBXKcb4rc67whX13gR81LAc7YQjXLZgQowkU3_Q", ext: false },
+          "AES-CBC", true, ["encrypt"]);
+      }, DOMException, undefined, "DataError");
+    });
+    await t.test("aes-cbc-importKey-wrong-length", async () => {
+      for (const len of [0, 8, 15, 17, 31, 33, 64]) {
+        await rejects(async () => {
+          await crypto.subtle.importKey("raw", new Uint8Array(len), "AES-CBC", false, ["encrypt"]);
+        }, DOMException, undefined, "DataError");
+      }
+    });
+    await t.test("aes-cbc-importKey-wrong-usages", async () => {
+      for (const usages of [["sign"], ["verify"], ["deriveBits"], ["encrypt", "sign"]]) {
+        await rejects(async () => {
+          await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, usages);
+        }, DOMException, undefined, "SyntaxError");
+      }
+    });
+    await t.test("aes-cbc-importKey-unsupported-format", async () => {
+      for (const format of ["spki", "pkcs8"]) {
+        await rejects(async () => {
+          await crypto.subtle.importKey(format, hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["encrypt"]);
+        }, DOMException, undefined, "NotSupportedError");
+      }
+    });
+    await t.test("aes-cbc-importKey-wrapKey-unwrapKey-usages", async () => {
+      const key = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[0].key), "AES-CBC", false, ["wrapKey", "unwrapKey"]);
+      deepStrictEqual(key.usages, ["unwrapKey", "wrapKey"], "usages");
+    });
+
+    // encrypt/decrypt — NIST SP 800-38A F.2 known-answer vectors
+    for (const { bits, key: keyHex, ciphertext: ctHex } of aesCbcKeys) {
+      await t.test(`aes-cbc-encrypt-nist-${bits}`, async () => {
+        const key = await crypto.subtle.importKey("raw", hexToBytes(keyHex), "AES-CBC", false, ["encrypt"]);
+        const ct = new Uint8Array(await crypto.subtle.encrypt(aesCbcParams(), key, aesCbcPlaintext));
+        deepStrictEqual(ct, hexToBytes(ctHex), "ciphertext deep equal expected");
+      });
+      await t.test(`aes-cbc-decrypt-nist-${bits}`, async () => {
+        const key = await crypto.subtle.importKey("raw", hexToBytes(keyHex), "AES-CBC", false, ["decrypt"]);
+        const pt = new Uint8Array(await crypto.subtle.decrypt(aesCbcParams(), key, hexToBytes(ctHex)));
+        deepStrictEqual(pt, aesCbcPlaintext, "plaintext deep equal expected");
+      });
+    }
+    await t.test("aes-cbc-round-trip-non-aligned", async () => {
+      const key = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["encrypt", "decrypt"]);
+      const message = new TextEncoder().encode("hello aes-cbc world!"); // 20 bytes, not block-aligned
+      const ct = new Uint8Array(await crypto.subtle.encrypt(aesCbcParams(), key, message));
+      deepStrictEqual(ct, hexToBytes("caad553e140c86f8d58208f338831f2c7084361d559bd3b7439d920b8de23e16"), "ciphertext");
+      const pt = new Uint8Array(await crypto.subtle.decrypt(aesCbcParams(), key, ct));
+      deepStrictEqual(pt, message, "round-trip");
+    });
+    await t.test("aes-cbc-encrypt-iv-wrong-length", async () => {
+      const key = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["encrypt", "decrypt"]);
+      for (const iv of [new Uint8Array(0), new Uint8Array(15), new Uint8Array(17), new Uint8Array(32)]) {
+        await rejects(async () => {
+          await crypto.subtle.encrypt({ name: "AES-CBC", iv }, key, aesCbcPlaintext);
+        }, DOMException, undefined, "OperationError");
+        await rejects(async () => {
+          await crypto.subtle.decrypt({ name: "AES-CBC", iv }, key, hexToBytes(aesCbcKeys[2].ciphertext));
+        }, DOMException, undefined, "OperationError");
+      }
+    });
+    await t.test("aes-cbc-decrypt-non-block-multiple", async () => {
+      const key = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["decrypt"]);
+      for (const len of [1, 15, 17, 31, 48 + 7]) {
+        await rejects(async () => {
+          await crypto.subtle.decrypt(aesCbcParams(), key, new Uint8Array(len));
+        }, DOMException, undefined, "OperationError");
+      }
+    });
+    await t.test("aes-cbc-decrypt-bad-padding", async () => {
+      const key = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["decrypt"]);
+      // Corrupt the last block so PKCS#7 unpadding fails
+      const corrupted = hexToBytes(aesCbcKeys[2].ciphertext);
+      corrupted[corrupted.length - 1] ^= 0xff;
+      await rejects(async () => {
+        await crypto.subtle.decrypt(aesCbcParams(), key, corrupted);
+      }, DOMException, undefined, "OperationError");
+      // A random block-aligned buffer is overwhelmingly likely to fail unpadding as well
+      await rejects(async () => {
+        await crypto.subtle.decrypt(aesCbcParams(), key, crypto.getRandomValues(new Uint8Array(64)));
+      }, DOMException, undefined, "OperationError");
+    });
+    await t.test("aes-cbc-usage-checks", async () => {
+      const encOnly = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["encrypt"]);
+      const decOnly = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["decrypt"]);
+      await rejects(async () => {
+        await crypto.subtle.decrypt(aesCbcParams(), encOnly, hexToBytes(aesCbcKeys[2].ciphertext));
+      }, DOMException, undefined, "InvalidAccessError");
+      await rejects(async () => {
+        await crypto.subtle.encrypt(aesCbcParams(), decOnly, aesCbcPlaintext);
+      }, DOMException, undefined, "InvalidAccessError");
+      // wrapKey-only key can't encrypt or decrypt
+      const wrapKey = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["wrapKey"]);
+      await rejects(async () => {
+        await crypto.subtle.encrypt(aesCbcParams(), wrapKey, aesCbcPlaintext);
+      }, DOMException, undefined, "InvalidAccessError");
+    });
+    await t.test("aes-cbc-wrong-key-algorithm", async () => {
+      const aesKey = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["encrypt"]);
+      const hmacKey = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+      await rejects(async () => {
+        await crypto.subtle.encrypt(aesCbcParams(), hmacKey, aesCbcPlaintext);
+      }, DOMException, undefined, "InvalidAccessError");
+      await rejects(async () => {
+        await crypto.subtle.sign("HMAC", aesKey, new Uint8Array(1));
+      }, DOMException, undefined, "InvalidAccessError");
+    });
+    await t.test("aes-cbc-encrypt-non-cryptokey", async () => {
+      await rejects(async () => {
+        await crypto.subtle.encrypt(aesCbcParams(), {}, aesCbcPlaintext);
+      }, TypeError);
+    });
+    await t.test("aes-cbc-encrypt-unsupported-algorithms", async () => {
+      const key = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["encrypt"]);
+      // Algorithms which are recognized but don't support the encrypt operation
+      for (const name of ["HMAC", "SHA-256", "PBKDF2", "Ed25519"]) {
+        await rejects(async () => {
+          await crypto.subtle.encrypt({ name, iv: aesCbcIv }, key, aesCbcPlaintext);
+        }, DOMException, undefined, "NotSupportedError");
+      }
+      // Cipher algorithms which are not implemented yet
+      for (const name of ["AES-CTR", "AES-GCM", "AES-KW", "RSA-OAEP"]) {
+        await rejects(async () => {
+          await crypto.subtle.encrypt({ name, iv: aesCbcIv }, key, aesCbcPlaintext);
+        }, DOMException, undefined, "NotSupportedError");
+      }
+      await rejects(async () => {
+        await crypto.subtle.encrypt({ name: "NOPE", iv: aesCbcIv }, key, aesCbcPlaintext);
+      }, DOMException, undefined, "NotSupportedError");
+    });
+    await t.test("aes-cbc-encrypt-missing-iv", async () => {
+      const key = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["encrypt"]);
+      await rejects(async () => {
+        await crypto.subtle.encrypt({ name: "AES-CBC" }, key, aesCbcPlaintext);
+      }, TypeError);
+      await rejects(async () => {
+        await crypto.subtle.encrypt("AES-CBC", key, aesCbcPlaintext);
+      }, TypeError);
+    });
+
+    // The _px3 end-to-end shape: PBKDF2-HMAC-SHA256 (1000 iters) derives 384 bits, split into a
+    // 32-byte AES-256 key and 16-byte IV, then AES-256-CBC decrypt a canned blob.
+    await t.test("px3-shape-derive-and-decrypt", async () => {
+      const password = new TextEncoder().encode("px3-password");
+      const salt = new TextEncoder().encode("px3-salt");
+      const baseKey = await crypto.subtle.importKey("raw", password, "PBKDF2", false, ["deriveBits"]);
+      const bits = new Uint8Array(await crypto.subtle.deriveBits(
+        { name: "PBKDF2", salt, iterations: 1000, hash: "SHA-256" }, baseKey, 384));
+      deepStrictEqual(bits, hexToBytes(
+        "15a7cea7209c02746580b374df7a64139cc6a6e59916d8e3719763ff3dad2a7769d7c04f476d9042487ef55f08ea8dfe"),
+        "derived key+iv material");
+
+      const aesKey = await crypto.subtle.importKey("raw", bits.slice(0, 32), "AES-CBC", false, ["decrypt"]);
+      const iv = bits.slice(32, 48);
+      const ciphertext = hexToBytes(
+        "539c4eb3750f03b151d7d89d27cf2e48eaf44550d6a3736924cab89682d546778dc61eff6517ea0096365e31788919f0");
+      const plaintext = new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-CBC", iv }, aesKey, ciphertext));
+      strictEqual(plaintext, '{"token":"px3-cookie-payload","score":99}', "decrypted px3 payload");
+    });
   }
 });

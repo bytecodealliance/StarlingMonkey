@@ -47,6 +47,12 @@ namespace detail {
     }
   };
 
+  struct EvpCipherCtxDeleter {
+    void operator()(EVP_CIPHER_CTX *ctx) const {
+      if (ctx) { EVP_CIPHER_CTX_free(ctx); }
+    }
+  };
+
   struct EcdsaSigDeleter {
     void operator()(ECDSA_SIG *sig) const {
       if (sig) { ECDSA_SIG_free(sig); }
@@ -72,6 +78,7 @@ using EvpPkeyCtxPtr = std::unique_ptr<EVP_PKEY_CTX, detail::EvpPkeyCtxDeleter>;
 using ParamBldPtr = std::unique_ptr<OSSL_PARAM_BLD, detail::ParamBldDeleter>;
 using ParamPtr = std::unique_ptr<OSSL_PARAM, detail::ParamDeleter>;
 using EvpMdCtxPtr = std::unique_ptr<EVP_MD_CTX, detail::EvpMdCtxDeleter>;
+using EvpCipherCtxPtr = std::unique_ptr<EVP_CIPHER_CTX, detail::EvpCipherCtxDeleter>;
 using EcdsaSigPtr = std::unique_ptr<ECDSA_SIG, detail::EcdsaSigDeleter>;
 using EcGroupPtr = std::unique_ptr<EC_GROUP, detail::EcGroupDeleter>;
 using EcPointPtr = std::unique_ptr<EC_POINT, detail::EcPointDeleter>;

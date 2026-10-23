@@ -444,6 +444,125 @@ bool SubtleCrypto::deriveBits(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+namespace {
+// Shared implementation of the encrypt() and decrypt() methods
+// (https://w3c.github.io/webcrypto/#SubtleCrypto-method-encrypt and
+// https://w3c.github.io/webcrypto/#SubtleCrypto-method-decrypt), which differ only in the
+// [[usages]] entry the key must carry and the operation invoked. `enc` selects encrypt.
+bool encryptOrDecrypt(JSContext *cx, JS::CallArgs &args, bool enc) {
+  const char *method_name = enc ? "crypto.subtle.encrypt" : "crypto.subtle.decrypt";
+
+  // 1. Let algorithm, key and data be the algorithm, key and data parameters passed to the
+  // encrypt()/decrypt() method, respectively.
+  auto algorithm = args.get(0);
+  auto key_arg = args.get(1);
+  if (!CryptoKey::is_instance(key_arg)) {
+    api::throw_error(cx, api::Errors::TypeError, method_name, "key", "be a CryptoKey object");
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+  JS::RootedObject key(cx, &key_arg.toObject());
+
+  // 2. Let ciphertext/plaintext be the result of getting a copy of the bytes held by the data
+  // parameter passed to the encrypt()/decrypt() method.
+  std::optional<std::span<uint8_t>> dataOptional = value_to_buffer(cx, args.get(2), method_name);
+  if (!dataOptional.has_value()) {
+    // value_to_buffer would have already created a JS exception so we don't need to create one
+    // ourselves.
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+  std::span<uint8_t> data = dataOptional.value();
+
+  // 3. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set to
+  // algorithm and op set to "encrypt"/"decrypt".
+  auto normalizedAlgorithm = CryptoAlgorithmEncryptDecrypt::normalize(cx, algorithm);
+  // 4. If an error occurred, return a Promise rejected with normalizedAlgorithm.
+  if (!normalizedAlgorithm) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  // 5. Let promise be a new Promise.
+  JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
+  if (!promise) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+  // 6. Return promise and perform the remaining steps in parallel.
+  args.rval().setObject(*promise);
+
+  // 7. If the following steps or referenced procedures say to throw an error, reject promise with
+  // the returned error and then terminate the algorithm.
+
+  // 8. If the name member of normalizedAlgorithm is not equal to the name attribute of the
+  // [[algorithm]] internal slot of key then throw an InvalidAccessError.
+  auto identifier = normalizedAlgorithm->identifier();
+  auto match_result = CryptoKey::is_algorithm(cx, key, identifier);
+  if (match_result.isErr() || match_result.unwrap() == false) {
+    DOMException::raise(cx, "CryptoKey doesn't match AlgorithmIdentifier", "InvalidAccessError");
+    return RejectPromiseWithPendingError(cx, promise);
+  }
+
+  // 9. If the [[usages]] internal slot of key does not contain an entry that is
+  // "encrypt"/"decrypt", then throw an InvalidAccessError.
+  bool has_usage = enc ? CryptoKey::canEncrypt(key) : CryptoKey::canDecrypt(key);
+  if (!has_usage) {
+    DOMException::raise(
+        cx, enc ? "CryptoKey doesn't support encryption" : "CryptoKey doesn't support decryption",
+        "InvalidAccessError");
+    return RejectPromiseWithPendingError(cx, promise);
+  }
+
+  // 10. Let result be the result of performing the encryption/decryption operation specified by
+  // normalizedAlgorithm using key and algorithm and with data as ciphertext/plaintext.
+  JSObject *operation_result = enc ? normalizedAlgorithm->encrypt(cx, key, data)
+                                   : normalizedAlgorithm->decrypt(cx, key, data);
+  if (!operation_result) {
+    return RejectPromiseWithPendingError(cx, promise);
+  }
+
+  // 11. Resolve promise with result.
+  JS::RootedValue result(cx, JS::ObjectValue(*operation_result));
+  JS::ResolvePromise(cx, promise, result);
+  return true;
+}
+} // namespace
+
+// Promise<ArrayBuffer> encrypt(AlgorithmIdentifier algorithm,
+//                              CryptoKey key,
+//                              BufferSource data);
+// https://w3c.github.io/webcrypto/#SubtleCrypto-method-encrypt
+bool SubtleCrypto::encrypt(JSContext *cx, unsigned argc, JS::Value *vp) {
+  MOZ_ASSERT(cx);
+  MOZ_ASSERT(vp);
+  JS::CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (!args.requireAtLeast(cx, "SubtleCrypto.encrypt", 3)) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+  if (!check_receiver(cx, args.thisv(), "SubtleCrypto.encrypt")) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  return encryptOrDecrypt(cx, args, true);
+}
+
+// Promise<ArrayBuffer> decrypt(AlgorithmIdentifier algorithm,
+//                              CryptoKey key,
+//                              BufferSource data);
+// https://w3c.github.io/webcrypto/#SubtleCrypto-method-decrypt
+bool SubtleCrypto::decrypt(JSContext *cx, unsigned argc, JS::Value *vp) {
+  MOZ_ASSERT(cx);
+  MOZ_ASSERT(vp);
+  JS::CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (!args.requireAtLeast(cx, "SubtleCrypto.decrypt", 3)) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+  if (!check_receiver(cx, args.thisv(), "SubtleCrypto.decrypt")) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  return encryptOrDecrypt(cx, args, false);
+}
+
 const JSFunctionSpec SubtleCrypto::static_methods[] = {
     JS_FS_END,
 };
@@ -454,9 +573,13 @@ const JSPropertySpec SubtleCrypto::static_properties[] = {
 
 const JSFunctionSpec SubtleCrypto::methods[] = {
     JS_FN("deriveBits", deriveBits, 2, JSPROP_ENUMERATE),
+    JS_FN("decrypt", decrypt, 3, JSPROP_ENUMERATE),
     JS_FN("digest", digest, 2, JSPROP_ENUMERATE),
-    JS_FN("importKey", importKey, 5, JSPROP_ENUMERATE), JS_FN("sign", sign, 3, JSPROP_ENUMERATE),
-    JS_FN("verify", verify, 4, JSPROP_ENUMERATE), JS_FS_END};
+    JS_FN("encrypt", encrypt, 3, JSPROP_ENUMERATE),
+    JS_FN("importKey", importKey, 5, JSPROP_ENUMERATE),
+    JS_FN("sign", sign, 3, JSPROP_ENUMERATE),
+    JS_FN("verify", verify, 4, JSPROP_ENUMERATE),
+    JS_FS_END};
 
 const JSPropertySpec SubtleCrypto::properties[] = {
     JS_STRING_SYM_PS(toStringTag, "SubtleCrypto", JSPROP_READONLY), JS_PS_END};
