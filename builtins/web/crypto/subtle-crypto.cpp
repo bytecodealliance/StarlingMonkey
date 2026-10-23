@@ -462,31 +462,33 @@ bool encryptOrDecrypt(JSContext *cx, JS::CallArgs &args, bool enc) {
   }
   JS::RootedObject key(cx, &key_arg.toObject());
 
-  // 2. Let ciphertext/plaintext be the result of getting a copy of the bytes held by the data
-  // parameter passed to the encrypt()/decrypt() method.
-  std::optional<std::span<uint8_t>> dataOptional = value_to_buffer(cx, args.get(2), method_name);
-  if (!dataOptional.has_value()) {
-    // value_to_buffer would have already created a JS exception so we don't need to create one
-    // ourselves.
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
-  std::span<uint8_t> data = dataOptional.value();
-
-  // 3. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set to
+  // 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set to
   // algorithm and op set to "encrypt"/"decrypt".
   auto normalizedAlgorithm = CryptoAlgorithmEncryptDecrypt::normalize(cx, algorithm);
-  // 4. If an error occurred, return a Promise rejected with normalizedAlgorithm.
+  // 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
   if (!normalizedAlgorithm) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
-  // 5. Let promise be a new Promise.
+  // 4. Let promise be a new Promise.
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
   if (!promise) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
-  // 6. Return promise and perform the remaining steps in parallel.
+  // 5. Return promise and perform the remaining steps in parallel.
   args.rval().setObject(*promise);
+
+  // 6. Let ciphertext/plaintext be the result of getting a copy of the bytes held by the data
+  // parameter passed to the encrypt()/decrypt() method. Note: the copy is taken after
+  // normalization per the spec — the algorithm parameter's getters may detach or mutate
+  // the data buffer during normalization.
+  std::optional<std::span<uint8_t>> dataOptional = value_to_buffer(cx, args.get(2), method_name);
+  if (!dataOptional.has_value()) {
+    // value_to_buffer would have already created a JS exception so we don't need to create one
+    // ourselves.
+    return RejectPromiseWithPendingError(cx, promise);
+  }
+  std::span<uint8_t> data = dataOptional.value();
 
   // 7. If the following steps or referenced procedures say to throw an error, reject promise with
   // the returned error and then terminate the algorithm.

@@ -3293,6 +3293,37 @@ export const handler = serveTest(async (t) => {
       }, TypeError);
     });
 
+    await t.test("aes-cbc-detach-during-normalize", async () => {
+      const key = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["encrypt", "decrypt"]);
+      // The spec copies the data bytes AFTER normalizing the algorithm — a name getter that
+      // detaches the data buffer mid-call makes the op see an empty input (not the
+      // original, and not stale linear memory).
+      const encryptInput = aesCbcPlaintext.slice();
+      const encParams = {
+        iv: aesCbcIv,
+        get name() {
+          structuredClone(encryptInput, { transfer: [encryptInput.buffer] });
+          return "AES-CBC";
+        },
+      };
+      const ct = new Uint8Array(await crypto.subtle.encrypt(encParams, key, encryptInput));
+      strictEqual(ct.length, 16, "detached input encrypts as empty (one padding block)");
+      const emptyPt = new Uint8Array(await crypto.subtle.decrypt(aesCbcParams(), key, ct));
+      strictEqual(emptyPt.length, 0, "round-trips to empty plaintext");
+
+      const decryptInput = hexToBytes(aesCbcKeys[2].ciphertext);
+      const decParams = {
+        iv: aesCbcIv,
+        get name() {
+          structuredClone(decryptInput, { transfer: [decryptInput.buffer] });
+          return "AES-CBC";
+        },
+      };
+      await rejects(async () => {
+        await crypto.subtle.decrypt(decParams, key, decryptInput);
+      }, DOMException, undefined, "OperationError");
+    });
+
     // The _px3 end-to-end shape: PBKDF2-HMAC-SHA256 (1000 iters) derives 384 bits, split into a
     // 32-byte AES-256 key and 16-byte IV, then AES-256-CBC decrypt a canned blob.
     await t.test("px3-shape-derive-and-decrypt", async () => {

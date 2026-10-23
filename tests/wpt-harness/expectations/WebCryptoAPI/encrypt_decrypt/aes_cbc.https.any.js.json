@@ -30,13 +30,13 @@
     "status": "PASS"
   },
   "AES-CBC 128-bit key with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "AES-CBC 192-bit key with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "AES-CBC 256-bit key with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "AES-CBC 128-bit key with transferred plaintext after call": {
     "status": "PASS"
@@ -75,13 +75,13 @@
     "status": "PASS"
   },
   "AES-CBC 128-bit key decryption with transferred ciphertext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "AES-CBC 192-bit key decryption with transferred ciphertext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "AES-CBC 256-bit key decryption with transferred ciphertext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "AES-CBC 128-bit key decryption with transferred ciphertext after call": {
     "status": "PASS"
