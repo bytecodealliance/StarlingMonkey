@@ -283,6 +283,7 @@
   "url/urlsearchparams-size.any.js",
   "url/urlsearchparams-sort.any.js",
   "url/urlsearchparams-stringifier.any.js",
+  "WebCryptoAPI/derive_bits_keys/pbkdf2.https.any.js",
   "WebCryptoAPI/digest/digest.https.any.js",
   "WebCryptoAPI/getRandomValues.any.js",
   "WebCryptoAPI/idlharness.https.any.js",

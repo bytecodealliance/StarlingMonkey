@@ -635,18 +635,27 @@ JSObject *CryptoKey::createHMAC(JSContext *cx, CryptoAlgorithmHMAC_Import *algor
                                 bool extractable, CryptoKeyUsages usages) {
   MOZ_ASSERT(cx);
   MOZ_ASSERT(algorithm);
-  JS::RootedObject instance(
-      cx, JS_NewObjectWithGivenProto(cx, &CryptoKey::class_, CryptoKey::proto_obj));
-  if (!instance) {
-    return nullptr;
-  }
 
   JS::RootedObject alg(cx, algorithm->toObject(cx));
   if (!alg) {
     return nullptr;
   }
 
-  JS::SetReservedSlot(instance, std::to_underlying(Slots::Algorithm), JS::ObjectValue(*alg));
+  return createSymmetric(cx, alg, std::move(data), extractable, usages);
+}
+
+JSObject *CryptoKey::createSymmetric(JSContext *cx, JS::HandleObject algorithm_object,
+                                     std::unique_ptr<std::vector<uint8_t>> data, bool extractable,
+                                     CryptoKeyUsages usages) {
+  MOZ_ASSERT(cx);
+  MOZ_ASSERT(algorithm_object);
+  JS::RootedObject instance(
+      cx, JS_NewObjectWithGivenProto(cx, &CryptoKey::class_, CryptoKey::proto_obj));
+  if (!instance) {
+    return nullptr;
+  }
+
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Algorithm), JS::ObjectValue(*algorithm_object));
   JS::SetReservedSlot(instance, std::to_underlying(Slots::Type), JS::Int32Value(static_cast<uint8_t>(CryptoKeyType::Secret)));
   JS::SetReservedSlot(instance, std::to_underlying(Slots::Extractable), JS::BooleanValue(extractable));
   JS::SetReservedSlot(instance, std::to_underlying(Slots::Usages), JS::Int32Value(usages.toInt()));
@@ -884,7 +893,7 @@ EVP_PKEY *CryptoKey::key(JSObject *self) {
   return static_cast<EVP_PKEY *>(JS::GetReservedSlot(self, std::to_underlying(Slots::Key)).toPrivate());
 }
 
-std::span<uint8_t> CryptoKey::hmacKeyData(JSObject *self) {
+std::span<uint8_t> CryptoKey::keyData(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
   return {
       static_cast<uint8_t *>(JS::GetReservedSlot(self, std::to_underlying(Slots::KeyData)).toPrivate()),
@@ -916,6 +925,22 @@ JS::Result<bool> CryptoKey::is_algorithm(JSContext *cx, JS::HandleObject self,
   return match;
 }
 
+bool CryptoKey::canEncrypt(JS::HandleObject self) {
+  MOZ_ASSERT(is_instance(self));
+  auto usages = JS::GetReservedSlot(self, std::to_underlying(Slots::Usages)).toInt32();
+  MOZ_ASSERT(std::in_range<std::uint16_t>(usages));
+  auto usage = CryptoKeyUsages(static_cast<uint16_t>(usages));
+  return usage.canEncrypt();
+}
+
+bool CryptoKey::canDecrypt(JS::HandleObject self) {
+  MOZ_ASSERT(is_instance(self));
+  auto usages = JS::GetReservedSlot(self, std::to_underlying(Slots::Usages)).toInt32();
+  MOZ_ASSERT(std::in_range<std::uint16_t>(usages));
+  auto usage = CryptoKeyUsages(static_cast<uint16_t>(usages));
+  return usage.canDecrypt();
+}
+
 bool CryptoKey::canSign(JS::HandleObject self) {
   MOZ_ASSERT(is_instance(self));
   auto usages = JS::GetReservedSlot(self, std::to_underlying(Slots::Usages)).toInt32();
@@ -930,6 +955,14 @@ bool CryptoKey::canVerify(JS::HandleObject self) {
   MOZ_ASSERT(std::in_range<std::uint16_t>(usages));
   auto usage = CryptoKeyUsages(static_cast<uint16_t>(usages));
   return usage.canVerify();
+}
+
+bool CryptoKey::canDeriveBits(JS::HandleObject self) {
+  MOZ_ASSERT(is_instance(self));
+  auto usages = JS::GetReservedSlot(self, std::to_underlying(Slots::Usages)).toInt32();
+  MOZ_ASSERT(std::in_range<std::uint16_t>(usages));
+  auto usage = CryptoKeyUsages(static_cast<uint16_t>(usages));
+  return usage.canDeriveBits();
 }
 
 } // namespace builtins::web::crypto

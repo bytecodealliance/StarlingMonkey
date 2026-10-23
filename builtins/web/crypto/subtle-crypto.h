@@ -33,6 +33,7 @@ public:
   static const JSPropertySpec static_properties[];
   static const JSFunctionSpec methods[];
   static const JSPropertySpec properties[];
+  static bool deriveBits(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool digest(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool importKey(JSContext *cx, unsigned argc, JS::Value *vp);
   static bool sign(JSContext *cx, unsigned argc, JS::Value *vp);
