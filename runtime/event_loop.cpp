@@ -4,6 +4,7 @@
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "js/GCVector.h"
+#include "js/Utility.h"
 
 #include <iostream>
 #include <print>
@@ -30,13 +31,15 @@ static PersistentRooted<TaskQueue> queue;
 using CleanupFunctions = JS::GCVector<JSFunction *, 0, js::SystemAllocPolicy>;
 static PersistentRooted<CleanupFunctions> finalization_registry_cleanups;
 
-// Called during a collection, so it must not collect: it only appends to the queue. If the
-// append fails, that registry's records stay queued in SpiderMonkey and are offered again after
-// a later collection.
+// Called during GC, so this must not trigger another collection: it only appends to the queue.
+// An append can only fail on allocation failure, which is fatal, as in SpiderMonkey's shell.
 static void queue_finalization_registry_cleanup(JSFunction *do_cleanup,
                                                 JSObject * /*incumbent_global*/,
                                                 void * /*data*/) {
-  (void)finalization_registry_cleanups.get().append(do_cleanup);
+  js::AutoEnterOOMUnsafeRegion oom_unsafe;
+  if (!finalization_registry_cleanups.get().append(do_cleanup)) {
+    oom_unsafe.crash("queue_finalization_registry_cleanup");
+  }
 }
 
 // Calls every queued cleanup function and returns whether any ran. An exception thrown by a
