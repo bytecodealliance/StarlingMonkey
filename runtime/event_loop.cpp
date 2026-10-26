@@ -101,7 +101,7 @@ void EventLoop::init(JSContext *cx) { queue.init(cx); }
 
 void EventLoop::reset(api::Engine *engine) {
   auto &q = queue.get();
-  for (auto task : q.tasks) {
+  for (const auto& task : q.tasks) {
     task->cancel(engine);
   }
   q.tasks.clear();
