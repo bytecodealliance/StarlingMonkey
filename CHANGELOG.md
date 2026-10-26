@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.4.0](https://github.com/bytecodealliance/StarlingMonkey/compare/starlingmonkey-v0.3.0...starlingmonkey-v0.4.0) (2026-10-26)
+
+
+### Features
+
+* Allow resetting of engine at runtime ([#337](https://github.com/bytecodealliance/StarlingMonkey/issues/337)) ([e0d58d0](https://github.com/bytecodealliance/StarlingMonkey/commit/e0d58d0c82f49d22fbe82e35fb6222d24d552d8a))
+* **crypto:** Add support for Ed25519 ([#330](https://github.com/bytecodealliance/StarlingMonkey/issues/330)) ([0539a47](https://github.com/bytecodealliance/StarlingMonkey/commit/0539a47c961eebd4d623a17250d40b2546f47e3e))
+* implement Response.clone() ([#312](https://github.com/bytecodealliance/StarlingMonkey/issues/312)) ([5c671dd](https://github.com/bytecodealliance/StarlingMonkey/commit/5c671dd86db596ac2ea88a60bebf8d4505b4b8fa))
+
+
+### Bug Fixes
+
+* **console:** console.assert() logs on failure, not on success ([#318](https://github.com/bytecodealliance/StarlingMonkey/issues/318)) ([f5a7adc](https://github.com/bytecodealliance/StarlingMonkey/commit/f5a7adcae0f2864e53b1642d23eff8c401160922))
+* Correct URL finalizer for when the URL is undefined ([#336](https://github.com/bytecodealliance/StarlingMonkey/issues/336)) ([fe2c92e](https://github.com/bytecodealliance/StarlingMonkey/commit/fe2c92e4a14e7a4ad64bd0d58df8ce1dffb8827f))
+* **crypto:** Copy HMAC bytes into a new std::vector, to avoid a use-after-free ([#342](https://github.com/bytecodealliance/StarlingMonkey/issues/342)) ([d3d8125](https://github.com/bytecodealliance/StarlingMonkey/commit/d3d8125b3eed1651c1f20a51bc901577bd145f90))
+* **crypto:** Fix bug in canOnlySignOrVerify logic. Current version checks for sign|verify, but not exclusively those flags ([#332](https://github.com/bytecodealliance/StarlingMonkey/issues/332)) ([d7ba2ea](https://github.com/bytecodealliance/StarlingMonkey/commit/d7ba2ea306a0df1baf875f5e1000e85153adbf00))
+* **crypto:** throw DataError, not TypeError, for JWK missing kty ([f7d56e1](https://github.com/bytecodealliance/StarlingMonkey/commit/f7d56e146e577039e9788f5da30d2c2d54e5a837))
+* **crypto:** Throw DataError, not TypeError, for JWK missing kty ([#328](https://github.com/bytecodealliance/StarlingMonkey/issues/328)) ([f7d56e1](https://github.com/bytecodealliance/StarlingMonkey/commit/f7d56e146e577039e9788f5da30d2c2d54e5a837))
+* **crypto:** Treat undefined JWK members as absent, not "undefined" ([#333](https://github.com/bytecodealliance/StarlingMonkey/issues/333)) ([7dc6aa9](https://github.com/bytecodealliance/StarlingMonkey/commit/7dc6aa9016bf3e3e6747038c32dcf86f821e3f3a))
+* **fetch:** body.blob() sets Blob.type from Content-Type header ([#313](https://github.com/bytecodealliance/StarlingMonkey/issues/313)) ([04721e3](https://github.com/bytecodealliance/StarlingMonkey/commit/04721e3ab946bd77e9ad9de055efa1ef809b545d))
+* Fix CryptoKeyUsages::isSuperSetOf ([#347](https://github.com/bytecodealliance/StarlingMonkey/issues/347)) ([ab43f2c](https://github.com/bytecodealliance/StarlingMonkey/commit/ab43f2c4f274f9b43acf41de19a38c52746c29dc))
+* **form-data:** preserve leading BOM in multipart text parts ([#317](https://github.com/bytecodealliance/StarlingMonkey/issues/317)) ([17c0e12](https://github.com/bytecodealliance/StarlingMonkey/commit/17c0e12bcdb324b1b55445f10900c8326eee1aa8))
+* handle any sequence in AbortSignal ([#310](https://github.com/bytecodealliance/StarlingMonkey/issues/310)) ([f74fb25](https://github.com/bytecodealliance/StarlingMonkey/commit/f74fb2547e3bc6a275366ecbb4dc80e2f4121b4f))
+* Make boundary parameter of multi-part form data requests safe for use in Content-Type headers ([#335](https://github.com/bytecodealliance/StarlingMonkey/issues/335)) ([a46051a](https://github.com/bytecodealliance/StarlingMonkey/commit/a46051ab379559cb2fa85760a387eaf3f75c4681))
+* **url:** validate name in URLSearchParams.append() ([#320](https://github.com/bytecodealliance/StarlingMonkey/issues/320)) ([fb47e0e](https://github.com/bytecodealliance/StarlingMonkey/commit/fb47e0e771fb8538b8cf2a41c24e534cca518e44))
+
 ## [0.3.0](https://github.com/bytecodealliance/StarlingMonkey/compare/starlingmonkey-v0.2.1...starlingmonkey-v0.3.0) (2026-03-05)
 
 
