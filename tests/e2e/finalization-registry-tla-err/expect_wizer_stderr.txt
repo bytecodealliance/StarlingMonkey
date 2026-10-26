@@ -1,0 +1,2 @@
+Exception while evaluating top-level script
+e2e/finalization-registry-tla-err/finalization-registry-tla-err.js:6:10 Error: rejected by a FinalizationRegistry cleanup
