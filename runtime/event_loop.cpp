@@ -168,4 +168,13 @@ void EventLoop::init(JSContext *cx) {
   JS::SetHostCleanupFinalizationRegistryCallback(cx, queue_finalization_registry_cleanup, nullptr);
 }
 
+void EventLoop::reset(api::Engine *engine) {
+  auto &q = queue.get();
+  for (const auto& task : q.tasks) {
+    task->cancel(engine);
+  }
+  q.tasks.clear();
+  q.interest_cnt = 0;
+}
+
 } // namespace core

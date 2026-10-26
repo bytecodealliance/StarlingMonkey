@@ -229,4 +229,12 @@ bool install(api::Engine *engine) {
   return JS_DefineFunctions(engine->cx(), engine->global(), methods);
 }
 
+void reset() {
+  for (auto &[id, timer] : TIMERS_MAP->timers_) {
+    timer->cancel(ENGINE);
+  }
+  TIMERS_MAP->timers_.clear();
+  TIMERS_MAP->next_timer_id = 1;
+}
+
 } // namespace builtins::web::timers
