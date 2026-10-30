@@ -48,7 +48,7 @@ public:
   [[nodiscard]] uint16_t toInt() const { return this->mask; };
 
   [[nodiscard]] bool isEmpty() const { return this->mask == 0; };
-  bool isSuperSetOf(CryptoKeyUsages &other) const { return (this->mask & other.mask) != 0; };
+  bool isSuperSetOf(CryptoKeyUsages &other) const { return (this->mask & other.mask) == other.mask; };
 
   [[nodiscard]] bool canEncrypt() const { return (this->mask & encrypt_flag) != 0; };
   [[nodiscard]] bool canDecrypt() const { return (this->mask & decrypt_flag) != 0; };

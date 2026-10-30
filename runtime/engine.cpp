@@ -3,6 +3,7 @@
 #include "debugger.h"
 #include "encode.h"
 #include "event_loop.h"
+#include "../builtins/web/timers.h"
 #include "script_loader.h"
 
 #include "js/CompilationAndEvaluation.h"
@@ -601,14 +602,21 @@ bool Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, std::strin
   // TLA rejections during pre-initialization are treated as top-level exceptions.
   // TLA may remain unresolved, in which case it will continue tasks at runtime.
   // Rejections after pre-intialization remain unhandled rejections for now.
-  if (tla_promise.isObject()) {
-    RootedObject promise_obj(cx(), &tla_promise.toObject());
-    JS::PromiseState state = JS::GetPromiseState(promise_obj);
-    if (state == JS::PromiseState::Rejected) {
-      RootedValue err(cx(), JS::GetPromiseResult(promise_obj));
-      JS_SetPendingException(cx(), err);
+  auto tla_rejected = [&]() {
+    if (!tla_promise.isObject()) {
       return false;
     }
+    RootedObject promise_obj(cx(), &tla_promise.toObject());
+    if (JS::GetPromiseState(promise_obj) != JS::PromiseState::Rejected) {
+      return false;
+    }
+    RootedValue err(cx(), JS::GetPromiseResult(promise_obj));
+    JS_SetPendingException(cx(), err);
+    return true;
+  };
+
+  if (tla_rejected()) {
+    return false;
   }
 
   // Report any promise rejections that weren't handled before snapshotting.
@@ -638,6 +646,18 @@ bool Engine::eval_toplevel(JS::SourceText<mozilla::Utf8Unit> &source, std::strin
   if (state() == EngineState::ScriptPreInitializing) {
     JS::PrepareForFullGC(cx());
     JS::NonIncrementalGC(cx(), JS::GCOptions::Normal, JS::GCReason::API);
+
+    // The collection may have queued FinalizationRegistry cleanups. Run them now, so they are
+    // not baked into the snapshot and run on its first resumption.
+    if (!core::EventLoop::drain_finalization_registry_cleanups(this)) {
+      return false;
+    }
+
+    // A cleanup, or a microtask it queued, may have rejected the TLA promise. Check again, so
+    // that a failing module is not snapshotted.
+    if (tla_rejected()) {
+      return false;
+    }
   }
 
   // Ignore the first GC, but then print all others, because ideally GCs
@@ -707,4 +727,12 @@ void Engine::report_unhandled_promise_rejections() {
 }
 void Engine::clear_unhandled_promise_rejections() {
   JS::SetClear(CONTEXT, unhandledRejectedPromises);
+}
+void Engine::reset() {
+  clear_unhandled_promise_rejections();
+  core::EventLoop::reset(this);
+  builtins::web::timers::reset();
+  core::EventLoop::reset(this);
+  JS::PrepareForFullGC(cx());
+  JS::NonIncrementalGC(cx(), JS::GCOptions::Normal, JS::GCReason::API);
 }

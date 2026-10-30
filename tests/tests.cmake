@@ -61,6 +61,9 @@ test_e2e(teed-stream-as-outgoing-body)
 test_e2e(init-script)
 test_e2e(no-init-location)
 test_e2e(init-location)
+test_e2e(finalization-registry)
+test_e2e(finalization-registry-snapshot)
+test_e2e(finalization-registry-tla-err)
 
 integration_tests(
     blob

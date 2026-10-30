@@ -24,6 +24,17 @@ public:
    */
   static bool run_event_loop(api::Engine *engine, double total_compute);
 
+  /**
+   * Run the FinalizationRegistry cleanups that collections have queued, and the microtasks they
+   * queue, until none are left. Used before a Wizer snapshot is taken, so that the snapshot holds
+   * an empty queue. A cleanup that triggers a collection that queues more is run in a further
+   * round, up to MAX_CLEANUP_DRAIN_ROUNDS; anything still queued then stays queued, and runs in
+   * the first event loop after the snapshot is resumed. Returns false if an exception is pending.
+   */
+  static bool drain_finalization_registry_cleanups(api::Engine *engine);
+
+  static constexpr unsigned MAX_CLEANUP_DRAIN_ROUNDS = 16;
+
   static void incr_event_loop_interest();
   static void decr_event_loop_interest();
 
@@ -41,6 +52,11 @@ public:
    * Remove a queued async task.
    */
   static bool cancel_async_task(api::Engine *engine, const RefPtr<api::AsyncTask>& task);
+
+  /**
+   * Reset the event loop state, cancelling all pending tasks and clearing interest count.
+   */
+  static void reset(api::Engine *engine);
 };
 
 } // namespace core
