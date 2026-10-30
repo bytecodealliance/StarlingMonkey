@@ -80,6 +80,16 @@ public:
   static std::unique_ptr<CryptoAlgorithmSignVerify> normalize(JSContext *cx, JS::HandleValue value);
 };
 
+class CryptoAlgorithmDeriveBits : public CryptoAlgorithm {
+public:
+  // `length` is the length, in bits, of the keying material to derive. It is `std::nullopt`
+  // when the caller omitted the optional `length` argument of `SubtleCrypto.deriveBits`,
+  // which algorithm operations treat as a `null` length per the WebCrypto specification.
+  virtual JSObject *deriveBits(JSContext *cx, JS::HandleObject baseKey,
+                               std::optional<uint64_t> length) = 0;
+  static std::unique_ptr<CryptoAlgorithmDeriveBits> normalize(JSContext *cx, JS::HandleValue value);
+};
+
 class CryptoAlgorithmHMAC_Sign_Verify final : public CryptoAlgorithmSignVerify {
 public:
   [[nodiscard]] const char *name() const noexcept override { return "HMAC"; };
@@ -271,6 +281,44 @@ public:
   [[nodiscard]] const char *name() const noexcept override { return "SHA-512"; };
   CryptoAlgorithmIdentifier identifier() override { return CryptoAlgorithmIdentifier::SHA_512; };
   JSObject *digest(JSContext *cx, std::span<uint8_t> data) override;
+};
+
+class CryptoAlgorithmPBKDF2_Import final : public CryptoAlgorithmImportKey {
+public:
+  [[nodiscard]] const char *name() const noexcept override { return "PBKDF2"; };
+  CryptoAlgorithmPBKDF2_Import() = default;
+
+  CryptoAlgorithmIdentifier identifier() final { return CryptoAlgorithmIdentifier::PBKDF2; };
+
+  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, JS::HandleValue key_data,
+                      bool extractable, CryptoKeyUsages usages) override;
+  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, KeyData key_data, bool extractable,
+                      CryptoKeyUsages usages) override;
+  JSObject *toObject(JSContext *cx) const;
+};
+
+class CryptoAlgorithmPBKDF2_DeriveBits final : public CryptoAlgorithmDeriveBits {
+public:
+  // The salt member of a Pbkdf2Params dictionary.
+  std::vector<uint8_t> salt;
+  // The iterations member of a Pbkdf2Params dictionary.
+  uint32_t iterations;
+  // The hash member of a Pbkdf2Params dictionary.
+  CryptoAlgorithmIdentifier hashIdentifier;
+
+  [[nodiscard]] const char *name() const noexcept override { return "PBKDF2"; };
+  CryptoAlgorithmPBKDF2_DeriveBits(std::vector<uint8_t> salt, uint32_t iterations,
+                                   CryptoAlgorithmIdentifier hashIdentifier)
+      : salt{std::move(salt)}, iterations{iterations}, hashIdentifier{hashIdentifier} {};
+
+  // https://w3c.github.io/webcrypto/#dfn-Pbkdf2Params
+  static std::unique_ptr<CryptoAlgorithmPBKDF2_DeriveBits>
+  fromParameters(JSContext *cx, JS::HandleObject parameters);
+
+  CryptoAlgorithmIdentifier identifier() final { return CryptoAlgorithmIdentifier::PBKDF2; };
+
+  JSObject *deriveBits(JSContext *cx, JS::HandleObject baseKey,
+                       std::optional<uint64_t> length) override;
 };
 
 } // namespace builtins::web::crypto

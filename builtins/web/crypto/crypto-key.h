@@ -73,6 +73,10 @@ public:
   };
   [[nodiscard]] bool canOnlyDeriveKey() const { return this->mask == derive_key_flag; };
   [[nodiscard]] bool canOnlyDeriveBits() const { return this->mask == derive_bits_flag; };
+  [[nodiscard]] bool canOnlyDeriveBitsOrKey() const {
+    return this->mask == derive_bits_flag || this->mask == derive_key_flag ||
+           this->mask == (derive_bits_flag | derive_key_flag);
+  };
   [[nodiscard]] bool canOnlyWrapKey() const { return this->mask == wrap_key_flag; };
   [[nodiscard]] bool canOnlyUnwrapKey() const { return this->mask == unwrap_key_flag; };
 };
@@ -136,6 +140,12 @@ public:
   static JSObject *createHMAC(JSContext *cx, CryptoAlgorithmHMAC_Import *algorithm,
                               std::unique_ptr<std::vector<uint8_t>> data, unsigned long length,
                               bool extractable, CryptoKeyUsages usages);
+  // Shared constructor for `secret`-type CryptoKey objects whose key material is a raw
+  // byte string (e.g. HMAC and PBKDF2 keys). `algorithm_object` is the already-materialized
+  // KeyAlgorithm object to store in the [[algorithm]] internal slot.
+  static JSObject *createSymmetric(JSContext *cx, JS::HandleObject algorithm_object,
+                                   std::unique_ptr<std::vector<uint8_t>> data, bool extractable,
+                                   CryptoKeyUsages usages);
   static JSObject *createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_Import *algorithm,
                              std::unique_ptr<CryptoKeyRSAComponents> keyData, bool extractable,
                              CryptoKeyUsages usages);
@@ -148,9 +158,12 @@ public:
   static CryptoKeyType type(JSObject *self);
   static JSObject *get_algorithm(JS::HandleObject self);
   static EVP_PKEY *key(JSObject *self);
-  static std::span<uint8_t> hmacKeyData(JSObject *self);
+  static std::span<uint8_t> keyData(JSObject *self);
+  static bool canEncrypt(JS::HandleObject self);
+  static bool canDecrypt(JS::HandleObject self);
   static bool canSign(JS::HandleObject self);
   static bool canVerify(JS::HandleObject self);
+  static bool canDeriveBits(JS::HandleObject self);
   static JS::Result<bool> is_algorithm(JSContext *cx, JS::HandleObject self,
                                        CryptoAlgorithmIdentifier algorithm);
 };
