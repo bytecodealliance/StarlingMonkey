@@ -15,6 +15,7 @@
 #include "extension-api.h"
 #include "fetch_event.h"
 #include "host_api.h"
+#include "rust-encoding.h"
 #include "js/String.h"
 #include "js/TypeDecls.h"
 
@@ -594,6 +595,49 @@ JSObject *RequestOrResponse::headers(JSContext *cx, JS::HandleObject obj) {
   return headers;
 }
 
+namespace {
+
+// https://encoding.spec.whatwg.org/#utf-8-decode
+JSString *utf8_decode(JSContext *cx, const char *buf, size_t len) {
+  constexpr std::string_view UTF8_BOM = "\xEF\xBB\xBF";
+  std::string_view bytes(buf, len);
+  if (bytes.starts_with(UTF8_BOM)) {
+    bytes.remove_prefix(UTF8_BOM.size());
+  }
+  if (bytes.empty()) {
+    return JS_GetEmptyString(cx);
+  }
+
+  const auto *src = reinterpret_cast<const uint8_t *>(bytes.data());
+  if (jsencoding::encoding_utf8_valid_up_to(src, bytes.size()) == bytes.size()) {
+    return JS_NewStringCopyUTF8N(cx, JS::UTF8Chars(bytes.data(), bytes.size()));
+  }
+
+  constexpr std::string_view UTF8_LABEL = "UTF-8";
+  static const auto *utf8 = jsencoding::encoding_for_label(
+      reinterpret_cast<const uint8_t *>(UTF8_LABEL.data()), UTF8_LABEL.size());
+  std::unique_ptr<jsencoding::Decoder, decltype(&jsencoding::decoder_free)> decoder(
+      jsencoding::encoding_new_decoder_without_bom_handling(utf8), jsencoding::decoder_free);
+
+  size_t src_len = bytes.size();
+  size_t dst_len = jsencoding::decoder_max_utf16_buffer_length(decoder.get(), src_len);
+  std::unique_ptr<char16_t[]> dst(new (std::nothrow) char16_t[dst_len]);
+  if (!dst) {
+    JS_ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  bool had_replacements = false;
+  mozilla::DebugOnly<uint32_t> result = jsencoding::decoder_decode_to_utf16(
+      decoder.get(), src, &src_len, reinterpret_cast<uint16_t *>(dst.get()), &dst_len, true,
+      &had_replacements);
+  MOZ_ASSERT(result == 0);
+
+  return JS_NewUCStringCopyN(cx, dst.get(), dst_len);
+}
+
+} // namespace
+
 // https://fetch.spec.whatwg.org/#body-mixin
 template <RequestOrResponse::BodyReadResult result_type>
 bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::UniqueChars buf,
@@ -681,7 +725,7 @@ bool RequestOrResponse::parse_body(JSContext *cx, JS::HandleObject self, JS::Uni
 
     result.setObject(*form_data);
   } else {
-    JS::RootedString text(cx, JS_NewStringCopyUTF8N(cx, JS::UTF8Chars(buf.get(), len)));
+    JS::RootedString text(cx, utf8_decode(cx, buf.get(), len));
     if (!text) {
       return RejectPromiseWithPendingError(cx, result_promise);
     }
