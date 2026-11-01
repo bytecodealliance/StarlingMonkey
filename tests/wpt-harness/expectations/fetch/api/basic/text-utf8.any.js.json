@@ -1,15 +1,15 @@
 {
   "UTF-8 with BOM with Request.text()": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-8 with BOM with Response.text()": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-8 with BOM with fetched data (UTF-8 charset)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-8 with BOM with fetched data (UTF-16 charset)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-8 with BOM (Response object)": {
     "status": "PASS"
@@ -36,16 +36,16 @@
     "status": "PASS"
   },
   "UTF-16BE with BOM decoded as UTF-8 with Request.text()": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-16BE with BOM decoded as UTF-8 with Response.text()": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-16BE with BOM decoded as UTF-8 with fetched data (UTF-8 charset)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-16BE with BOM decoded as UTF-8 with fetched data (UTF-16 charset)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-16BE with BOM decoded as UTF-8 (Response object)": {
     "status": "PASS"
@@ -54,16 +54,16 @@
     "status": "PASS"
   },
   "UTF-16LE with BOM decoded as UTF-8 with Request.text()": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-16LE with BOM decoded as UTF-8 with Response.text()": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-16LE with BOM decoded as UTF-8 with fetched data (UTF-8 charset)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-16LE with BOM decoded as UTF-8 with fetched data (UTF-16 charset)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-16LE with BOM decoded as UTF-8 (Response object)": {
     "status": "PASS"
@@ -72,16 +72,16 @@
     "status": "PASS"
   },
   "UTF-16 without BOM decoded as UTF-8 with Request.text()": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-16 without BOM decoded as UTF-8 with Response.text()": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-16 without BOM decoded as UTF-8 with fetched data (UTF-8 charset)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-16 without BOM decoded as UTF-8 with fetched data (UTF-16 charset)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "UTF-16 without BOM decoded as UTF-8 (Response object)": {
     "status": "PASS"
