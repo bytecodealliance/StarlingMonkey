@@ -12,6 +12,22 @@ export const handler = serveTest(async (t) => {
     strictEqual(decoded, "é");
   });
 
+  await t.test('body-text-replaces-invalid-utf8', async () => {
+    const bytes = new Uint8Array([0x61, 0xff, 0x62, 0xe3, 0x81, 0x63, 0xf0, 0x9f, 0x98]);
+    strictEqual(await new Response(bytes).text(), 'a�b�c�');
+    strictEqual(await new Request('https://example.com', { method: 'POST', body: bytes }).text(),
+                'a�b�c�');
+  });
+
+  await t.test('body-text-strips-bom', async () => {
+    const bom = [0xef, 0xbb, 0xbf];
+    strictEqual(await new Response(new Uint8Array([...bom, 0x68, 0x69])).text(), 'hi');
+    strictEqual(await new Response(new Uint8Array([...bom, ...bom])).text(), '﻿');
+    strictEqual(await new Response(new Uint8Array(bom)).text(), '');
+    deepStrictEqual(await new Response(new Uint8Array([...bom, 0x5b, 0x31, 0x5d])).json(), [1]);
+  });
+
+
   t.test('request-clone-bad-calls', () => {
     throws(() => new Request.prototype.clone(), TypeError);
     throws(() => new Request.prototype.clone.call(undefined), TypeError);
