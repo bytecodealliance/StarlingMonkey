@@ -3170,6 +3170,42 @@ export const handler = serveTest(async (t) => {
         }, DOMException, undefined, "SyntaxError");
       }
     });
+    await t.test("aes-cbc-importKey-jwk-missing-k", async () => {
+      // JWA section 6.4 requires "k" for "oct" keys (import key operation step 2.3)
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk", { kty: "oct", alg: "A256CBC" }, "AES-CBC", false, ["encrypt"]);
+      }, DOMException, undefined, "DataError");
+    });
+    await t.test("aes-cbc-importKey-step-order", async () => {
+      const keyBytes = hexToBytes(aesCbcKeys[2].key);
+      // importKey() step 4 rejects a keyData of the wrong kind with a TypeError before the
+      // import key operation runs...
+      await rejects(async () => {
+        await crypto.subtle.importKey("raw", "not-a-buffer", "AES-CBC", false, ["sign"]);
+      }, TypeError);
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk", "not-an-object", "AES-CBC", false, ["sign"]);
+      }, TypeError);
+      // ...whose step 1 (SyntaxError for unsupported usages) precedes the format
+      // NotSupportedError and the JWK kty DataError...
+      await rejects(async () => {
+        await crypto.subtle.importKey("spki", keyBytes, "AES-CBC", false, ["sign"]);
+      }, DOMException, undefined, "SyntaxError");
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk", { kty: "RSA" }, "AES-CBC", false, ["sign"]);
+      }, DOMException, undefined, "SyntaxError");
+      // ...and whose raw key length DataError (step 2.2) precedes the empty-usages SyntaxError
+      // of importKey() step 10.
+      await rejects(async () => {
+        await crypto.subtle.importKey("raw", new Uint8Array(7), "AES-CBC", false, []);
+      }, DOMException, undefined, "DataError");
+      await rejects(async () => {
+        await crypto.subtle.importKey("raw", keyBytes, "AES-CBC", false, []);
+      }, DOMException, undefined, "SyntaxError");
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk", { kty: "oct", k: "YD3rEBXKcb4rc67whX13gR81LAc7YQjXLZgQowkU3_Q" }, "AES-CBC", false, []);
+      }, DOMException, undefined, "SyntaxError");
+    });
     await t.test("aes-cbc-importKey-unsupported-format", async () => {
       for (const format of ["spki", "pkcs8"]) {
         await rejects(async () => {
@@ -3214,9 +3250,27 @@ export const handler = serveTest(async (t) => {
         }, DOMException, undefined, "OperationError");
       }
     });
+    await t.test("aes-cbc-encrypt-step-order", async () => {
+      const key = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["encrypt", "decrypt"]);
+      const decOnly = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["decrypt"]);
+      const shortIv = { name: "AES-CBC", iv: new Uint8Array(15) };
+      // The iv length is checked by the AES-CBC encrypt operation (its step 1), after the
+      // encrypt() method's key usage check (step 10)...
+      await rejects(async () => {
+        await crypto.subtle.encrypt(shortIv, decOnly, aesCbcPlaintext);
+      }, DOMException, undefined, "InvalidAccessError");
+      // ...and after WebIDL has rejected a data argument that is not a BufferSource.
+      await rejects(async () => {
+        await crypto.subtle.encrypt(shortIv, key, "not-a-buffer");
+      }, TypeError);
+      await rejects(async () => {
+        await crypto.subtle.encrypt({ name: "NOPE", iv: aesCbcIv }, key, "not-a-buffer");
+      }, TypeError);
+    });
     await t.test("aes-cbc-decrypt-non-block-multiple", async () => {
       const key = await crypto.subtle.importKey("raw", hexToBytes(aesCbcKeys[2].key), "AES-CBC", false, ["decrypt"]);
-      for (const len of [1, 15, 17, 31, 48 + 7]) {
+      // decrypt operation step 2: an empty ciphertext is an OperationError as well
+      for (const len of [0, 1, 15, 17, 31, 48 + 7]) {
         await rejects(async () => {
           await crypto.subtle.decrypt(aesCbcParams(), key, new Uint8Array(len));
         }, DOMException, undefined, "OperationError");

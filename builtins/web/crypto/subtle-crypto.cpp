@@ -452,8 +452,9 @@ namespace {
 bool encryptOrDecrypt(JSContext *cx, JS::CallArgs &args, bool enc) {
   const char *method_name = enc ? "crypto.subtle.encrypt" : "crypto.subtle.decrypt";
 
-  // 1. Let algorithm, key and data be the algorithm, key and data parameters passed to the
-  // encrypt()/decrypt() method, respectively.
+  // WebIDL converts the arguments before the method steps run: key must be a CryptoKey and data
+  // a BufferSource, otherwise a TypeError rejects the promise. The bytes of data are only copied
+  // in step 4, after the algorithm has been normalized.
   auto algorithm = args.get(0);
   auto key_arg = args.get(1);
   if (!CryptoKey::is_instance(key_arg)) {
@@ -461,39 +462,48 @@ bool encryptOrDecrypt(JSContext *cx, JS::CallArgs &args, bool enc) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
   JS::RootedObject key(cx, &key_arg.toObject());
+  auto data_arg = args.get(2);
+  if (!value_to_buffer(cx, data_arg, method_name).has_value()) {
+    // value_to_buffer would have already created a JS exception so we don't need to create one
+    // ourselves.
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
 
+  // 1. Let algorithm and key be the algorithm and key parameters passed to the encrypt() /
+  // decrypt() method, respectively.
   // 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set to
-  // algorithm and op set to "encrypt"/"decrypt".
+  // algorithm and op set to "encrypt" / "decrypt".
   auto normalizedAlgorithm = CryptoAlgorithmEncryptDecrypt::normalize(cx, algorithm);
   // 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
   if (!normalizedAlgorithm) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
-  // 4. Let promise be a new Promise.
+  // 4. Let data be the result of getting a copy of the bytes held by the data parameter passed to
+  // the encrypt() / decrypt() method.
+  // Normalization can run user JS (getters on algorithm) that detaches or mutates the buffer, so
+  // the bytes are read only now, and copied at once so nothing below can observe later changes.
+  std::optional<std::span<uint8_t>> data_view = value_to_buffer(cx, data_arg, method_name);
+  if (!data_view.has_value()) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+  std::vector<uint8_t> data(data_view->begin(), data_view->end());
+
+  // 5. Let realm be the relevant realm of this.
+  // (Implicit: there is a single realm.)
+  // 6. Let promise be a new Promise.
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
   if (!promise) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
-  // 5. Return promise and perform the remaining steps in parallel.
+  // 7. Return promise and perform the remaining steps in parallel.
   args.rval().setObject(*promise);
 
-  // 6. Let ciphertext/plaintext be the result of getting a copy of the bytes held by the data
-  // parameter passed to the encrypt()/decrypt() method. Note: the copy is taken after
-  // normalization per the spec — the algorithm parameter's getters may detach or mutate
-  // the data buffer during normalization.
-  std::optional<std::span<uint8_t>> dataOptional = value_to_buffer(cx, args.get(2), method_name);
-  if (!dataOptional.has_value()) {
-    // value_to_buffer would have already created a JS exception so we don't need to create one
-    // ourselves.
-    return RejectPromiseWithPendingError(cx, promise);
-  }
-  std::span<uint8_t> data = dataOptional.value();
+  // 8. If the following steps or referenced procedures say to throw an error, queue a global task
+  // on the crypto task source, given realm's global object, to reject promise with the returned
+  // error; and then terminate the algorithm.
 
-  // 7. If the following steps or referenced procedures say to throw an error, reject promise with
-  // the returned error and then terminate the algorithm.
-
-  // 8. If the name member of normalizedAlgorithm is not equal to the name attribute of the
+  // 9. If the name member of normalizedAlgorithm is not equal to the name attribute of the
   // [[algorithm]] internal slot of key then throw an InvalidAccessError.
   auto identifier = normalizedAlgorithm->identifier();
   auto match_result = CryptoKey::is_algorithm(cx, key, identifier);
@@ -502,8 +512,8 @@ bool encryptOrDecrypt(JSContext *cx, JS::CallArgs &args, bool enc) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
-  // 9. If the [[usages]] internal slot of key does not contain an entry that is
-  // "encrypt"/"decrypt", then throw an InvalidAccessError.
+  // 10. If the [[usages]] internal slot of key does not contain an entry that is "encrypt" /
+  // "decrypt", then throw an InvalidAccessError.
   bool has_usage = enc ? CryptoKey::canEncrypt(key) : CryptoKey::canDecrypt(key);
   if (!has_usage) {
     DOMException::raise(
@@ -512,15 +522,21 @@ bool encryptOrDecrypt(JSContext *cx, JS::CallArgs &args, bool enc) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
-  // 10. Let result be the result of performing the encryption/decryption operation specified by
-  // normalizedAlgorithm using key and algorithm and with data as ciphertext/plaintext.
+  // 11. Let ciphertext be the result of performing the encrypt operation specified by
+  // normalizedAlgorithm using algorithm and key and with data as plaintext. /
+  // Let plaintext be the result of performing the decrypt operation specified by
+  // normalizedAlgorithm using key and algorithm and with data as ciphertext.
   JSObject *operation_result = enc ? normalizedAlgorithm->encrypt(cx, key, data)
                                    : normalizedAlgorithm->decrypt(cx, key, data);
   if (!operation_result) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
-  // 11. Resolve promise with result.
+  // 12. Queue a global task on the crypto task source, given realm's global object, to perform the
+  // remaining steps.
+  // 13. Let result be the result of creating an ArrayBuffer in realm, containing ciphertext /
+  // plaintext.
+  // 14. Resolve promise with result.
   JS::RootedValue result(cx, JS::ObjectValue(*operation_result));
   JS::ResolvePromise(cx, promise, result);
   return true;
