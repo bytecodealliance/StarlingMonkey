@@ -366,6 +366,7 @@ bool SubtleCrypto::deriveBits(JSContext *cx, unsigned argc, JS::Value *vp) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
+  // Argument validation and WebIDL-level processing happens before the spec steps.
   // 1. Let algorithm, baseKey and length be the algorithm, baseKey and length parameters passed to
   // the deriveBits() method, respectively.
   auto algorithm = args.get(0);
@@ -431,14 +432,16 @@ bool SubtleCrypto::deriveBits(JSContext *cx, unsigned argc, JS::Value *vp) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
-  // 9. Let result be the result of performing the key derivation operation specified by
+  // 9. Let bits be the result of performing the derive bits operation specified by
   // normalizedAlgorithm using baseKey, algorithm and length.
   auto *bits = normalizedAlgorithm->deriveBits(cx, key, length);
   if (!bits) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
-  // 10. Resolve promise with result.
+  // 10. Queue a global task on the crypto task source to perform the remaining steps.
+  // 11. Let result be the result of creating an ArrayBuffer in realm, containing bits.
+  // 12. Resolve promise with result.
   JS::RootedValue result(cx, JS::ObjectValue(*bits));
   JS::ResolvePromise(cx, promise, result);
   return true;

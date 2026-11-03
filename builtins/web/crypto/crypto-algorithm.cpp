@@ -2964,7 +2964,7 @@ CryptoAlgorithmPBKDF2_DeriveBits::fromParameters(JSContext *cx, JS::HandleObject
                                                           hashIdentifier.unwrap());
 }
 
-// https://w3c.github.io/webcrypto/#pbkdf2-operations
+// https://w3c.github.io/webcrypto/#pbkdf2-operations-derive-bits
 JSObject *CryptoAlgorithmPBKDF2_DeriveBits::deriveBits(JSContext *cx, JS::HandleObject baseKey,
                                                      std::optional<uint64_t> length) {
   // 1. If length is null or is not a multiple of 8, then throw an OperationError.
@@ -2974,29 +2974,32 @@ JSObject *CryptoAlgorithmPBKDF2_DeriveBits::deriveBits(JSContext *cx, JS::Handle
     return nullptr;
   }
 
-  // 2. If the iterations field of this algorithm is zero, then throw an OperationError.
+  // 2. If the iterations member of normalizedAlgorithm is zero, then throw an OperationError.
   if (this->iterations == 0) {
     DOMException::raise(cx, "iterations must be greater than 0", "OperationError");
     return nullptr;
   }
 
-  // 3. Let prf be the MAC Generation operation described in Section 4 of [FIPS-198-1] using the
-  //    hash function described in the hash member of this algorithm.
+  // 3. If length is zero, return an empty byte sequence.
+  if (length.value() == 0) {
+    return JS::NewArrayBuffer(cx, 0);
+  }
+
+  // 4. Let prf be the HMAC function described in Section 2 of [NIST-SP800-224] using the hash
+  //    function described by the hash member of normalizedAlgorithm.
   const EVP_MD *prf = createDigestAlgorithm(cx, this->hashIdentifier);
   if (!prf) {
     return nullptr;
   }
 
-  // 4. Let result be the octet string of length length bits produced by prf where the password is
-  //    the [[handle]] internal slot of baseKey and the salt is the salt field of this algorithm
-  //    and the iteration count is the iterations field of this algorithm.
+  // 5. Let result be the result of performing the PBKDF2 operation defined in Section 5.2 of
+  //    [RFC8018] using prf as the pseudo-random function, PRF, the password represented by the
+  //    [[handle]] internal slot of key as the password, P, the salt attribute of
+  //    normalizedAlgorithm as the salt, S, the value of the iterations attribute of
+  //    normalizedAlgorithm as the iteration count, c, and length divided by 8 as the intended
+  //    key length, dkLen.
   auto password = CryptoKey::keyData(baseKey);
   size_t derived_length = length.value() / 8;
-
-  // A length of zero derives an empty ArrayBuffer.
-  if (derived_length == 0) {
-    return JS::NewArrayBuffer(cx, 0);
-  }
 
   mozilla::UniquePtr<uint8_t[], JS::FreePolicy> result{
       static_cast<uint8_t *>(JS_malloc(cx, derived_length))};
@@ -3008,12 +3011,12 @@ JSObject *CryptoAlgorithmPBKDF2_DeriveBits::deriveBits(JSContext *cx, JS::Handle
                       static_cast<int>(password.size()), this->salt.data(),
                       static_cast<int>(this->salt.size()), static_cast<int>(this->iterations), prf,
                       static_cast<int>(derived_length), result.get()) != 1) {
-    // 5. If performing the operation results in an error, then throw an OperationError.
+    // 6. If the key derivation operation fails, then throw an OperationError.
     DOMException::raise(cx, "SubtleCrypto.deriveBits: failed to derive bits", "OperationError");
     return nullptr;
   }
 
-  // 6. Otherwise return a new ArrayBuffer containing result.
+  // 7. Return result as an ArrayBuffer.
   JS::RootedObject array_buffer(cx);
   array_buffer.set(JS::NewArrayBufferWithContents(
       cx, derived_length, result.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
