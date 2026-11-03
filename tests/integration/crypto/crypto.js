@@ -2944,17 +2944,32 @@ export const handler = serveTest(async (t) => {
     });
     await t.test("pbkdf2-deriveBits-length-out-of-range", async () => {
       const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
-      // [EnforceRange] unsigned long: non-integral or out-of-range lengths are TypeErrors
-      for (const length of [NaN, Infinity, -8, 1.5, 2 ** 32 + 8]) {
+      // [EnforceRange] unsigned long: NaN, infinite and out-of-range lengths are TypeErrors
+      for (const length of [NaN, Infinity, -Infinity, -8, 2 ** 32, 2 ** 32 + 8]) {
         await rejects(async () => {
           await crypto.subtle.deriveBits(pbkdf2Params("SHA-256"), key, length);
         }, TypeError);
       }
     });
+    await t.test("pbkdf2-deriveBits-fractional-length-and-iterations", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      // [EnforceRange] truncates fractional values rather than rejecting them: 1.5 iterations
+      // and a length of 256.5 bits behave as 1 iteration and 256 bits.
+      const bits = new Uint8Array(await crypto.subtle.deriveBits(pbkdf2Params("SHA-256", 1.5), key, 256.5));
+      deepStrictEqual(bits, hexToBytes("120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b"),
+        "derived bits with truncated iterations and length");
+      // 1.5 truncates to a length of 1, which is not a multiple of 8.
+      await rejects(async () => {
+        await crypto.subtle.deriveBits(pbkdf2Params("SHA-256"), key, 1.5);
+      }, DOMException, undefined, "OperationError");
+      // -0.5 truncates to -0, which is in range and derives an empty buffer.
+      const empty = await crypto.subtle.deriveBits(pbkdf2Params("SHA-256"), key, -0.5);
+      strictEqual(empty.byteLength, 0, "derived bits length for -0.5");
+    });
     await t.test("pbkdf2-deriveBits-iterations-out-of-range", async () => {
       const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
-      // [EnforceRange] unsigned long: non-integral or out-of-range iterations are TypeErrors
-      for (const iterations of [NaN, Infinity, -1, 1.5, 2 ** 32]) {
+      // [EnforceRange] unsigned long: NaN, infinite and out-of-range iterations are TypeErrors
+      for (const iterations of [NaN, Infinity, -Infinity, -1, 2 ** 32]) {
         await rejects(async () => {
           await crypto.subtle.deriveBits(pbkdf2Params("SHA-256", iterations), key, 256);
         }, TypeError);

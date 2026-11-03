@@ -4,6 +4,7 @@
 #include <openssl/core_names.h>
 #include <openssl/ecdsa.h>
 #include <openssl/err.h>
+#include <cmath>
 #include <optional>
 #include <span>
 #include <vector>
@@ -435,6 +436,34 @@ JS::Result<size_t> curveSize(JSContext *cx, JS::HandleObject key) {
 
   MOZ_ASSERT_UNREACHABLE();
   return 0;
+}
+
+// https://webidl.spec.whatwg.org/#abstract-opdef-converttoint with bitLength 32, "unsigned" and
+// [EnforceRange].
+std::optional<uint32_t> enforce_range_unsigned_long(JSContext *cx, JS::HandleValue value,
+                                                    const char *method, const char *argument) {
+  // 4. Let x be ? ToNumber(V).
+  double number = 0;
+  if (!JS::ToNumber(cx, value, &number)) {
+    return std::nullopt;
+  }
+  // 6. If the conversion is to an IDL type associated with the [EnforceRange] extended attribute:
+  // 6.1 If x is NaN, +∞, or −∞, then throw a TypeError.
+  if (!std::isfinite(number)) {
+    api::throw_error(cx, api::Errors::TypeError, method, argument,
+                     "be an unsigned long integer between 0 and 4294967295");
+    return std::nullopt;
+  }
+  // 6.2 Set x to IntegerPart(x).
+  number = std::trunc(number);
+  // 6.3 If x < lowerBound or x > upperBound, then throw a TypeError.
+  if (number < 0 || number > 4294967295.0) {
+    api::throw_error(cx, api::Errors::TypeError, method, argument,
+                     "be an unsigned long integer between 0 and 4294967295");
+    return std::nullopt;
+  }
+  // 6.4 Return x.
+  return static_cast<uint32_t>(number);
 }
 
 // This implements the first section of
@@ -2926,18 +2955,11 @@ CryptoAlgorithmPBKDF2_DeriveBits::fromParameters(JSContext *cx, JS::HandleObject
   if (!JS_GetProperty(cx, parameters, "iterations", &iterations_val)) {
     return nullptr;
   }
-  double iterations_number = 0;
-  if (!JS::ToNumber(cx, iterations_val, &iterations_number)) {
+  auto iterations = enforce_range_unsigned_long(cx, iterations_val, "crypto.subtle.deriveBits",
+                                                "Pbkdf2Params.iterations");
+  if (!iterations.has_value()) {
     return nullptr;
   }
-  if (!std::isfinite(iterations_number) || std::trunc(iterations_number) != iterations_number ||
-      iterations_number < 0 || iterations_number > 4294967295.0) {
-    api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.deriveBits",
-                     "Pbkdf2Params.iterations",
-                     "be an unsigned long integer between 0 and 4294967295");
-    return nullptr;
-  }
-  auto iterations = static_cast<uint32_t>(iterations_number);
 
   // The hash member of Pbkdf2Params is a required HashAlgorithmIdentifier.
   JS::Rooted<JS::Value> hash_val(cx);
@@ -2954,7 +2976,7 @@ CryptoAlgorithmPBKDF2_DeriveBits::fromParameters(JSContext *cx, JS::HandleObject
     return nullptr;
   }
 
-  return std::make_unique<CryptoAlgorithmPBKDF2_DeriveBits>(std::move(salt), iterations,
+  return std::make_unique<CryptoAlgorithmPBKDF2_DeriveBits>(std::move(salt), iterations.value(),
                                                           hashIdentifier.unwrap());
 }
 

@@ -1,5 +1,6 @@
 #ifndef BUILTINS_WEB_CRYPTO_CRYPTO_ALGORITHM_H
 #define BUILTINS_WEB_CRYPTO_CRYPTO_ALGORITHM_H
+#include <optional>
 #include <span>
 
 #include "builtin.h"
@@ -46,6 +47,14 @@ enum class NamedCurve : uint8_t {
 const char *algorithmName(CryptoAlgorithmIdentifier algorithm);
 
 /// The base class that all algorithm implementations should derive from.
+// Converts `value` to a WebIDL `[EnforceRange] unsigned long`, following
+// https://webidl.spec.whatwg.org/#abstract-opdef-converttoint: NaN, infinities and values outside
+// [0, 2^32 - 1] are a TypeError, fractional values are truncated. Returns `std::nullopt` with a
+// pending exception on failure. `method` and `argument` name the operation and parameter being
+// converted, for the error message.
+std::optional<uint32_t> enforce_range_unsigned_long(JSContext *cx, JS::HandleValue value,
+                                                    const char *method, const char *argument);
+
 class CryptoAlgorithm {
 public:
   CryptoAlgorithm() = default;

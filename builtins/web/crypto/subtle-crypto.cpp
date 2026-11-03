@@ -3,8 +3,6 @@
 #include "builtin.h"
 #include "encode.h"
 
-#include <cmath>
-
 namespace builtins::web::crypto {
 
 using dom_exception::DOMException;
@@ -378,23 +376,18 @@ bool SubtleCrypto::deriveBits(JSContext *cx, unsigned argc, JS::Value *vp) {
   }
   JS::RootedObject key(cx, &key_arg.toObject());
 
-  // The length parameter is optional. When provided it is an [EnforceRange] unsigned long, so
-  // non-integer and out-of-range values are a TypeError. A missing, undefined, or null length is
-  // passed to the key derivation operation as null.
+  // The length parameter is an optional, nullable [EnforceRange] unsigned long: NaN, infinities
+  // and out-of-range values are a TypeError, fractional values are truncated. A missing,
+  // undefined, or null length is passed to the key derivation operation as null.
   std::optional<uint64_t> length;
   auto length_val = args.get(2);
   if (!length_val.isNullOrUndefined()) {
-    double length_number = 0;
-    if (!JS::ToNumber(cx, length_val, &length_number)) {
+    auto length_result =
+        enforce_range_unsigned_long(cx, length_val, "crypto.subtle.deriveBits", "length");
+    if (!length_result.has_value()) {
       return ReturnPromiseRejectedWithPendingError(cx, args);
     }
-    if (!std::isfinite(length_number) || std::trunc(length_number) != length_number ||
-        length_number < 0 || length_number > 4294967295.0) {
-      api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.deriveBits", "length",
-        "be an unsigned long integer between 0 and 4294967295");
-      return ReturnPromiseRejectedWithPendingError(cx, args);
-    }
-    length = static_cast<uint64_t>(length_number);
+    length = length_result.value();
   }
 
   // 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set to
