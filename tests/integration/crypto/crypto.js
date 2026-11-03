@@ -3002,5 +3002,24 @@ export const handler = serveTest(async (t) => {
         await crypto.subtle.deriveBits({ name: "NOPE" }, key, 256);
       }, DOMException, undefined, "NotSupportedError");
     });
+    await t.test("pbkdf2-deriveBits-salt-detach-during-normalize", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      // The salt bytes are copied as soon as Pbkdf2Params.salt is read — an iterations getter
+      // that detaches the salt buffer mid-normalization must not change the derived bits.
+      const salt = new TextEncoder().encode("salt");
+      const params = {
+        name: "PBKDF2",
+        salt,
+        hash: "SHA-256",
+        get iterations() {
+          structuredClone(salt, { transfer: [salt.buffer] });
+          return 1;
+        },
+      };
+      const bits = new Uint8Array(await crypto.subtle.deriveBits(params, key, 256));
+      deepStrictEqual(bits, hexToBytes(
+        "120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b"),
+        "derived bits use the pre-detach salt");
+    });
   }
 });

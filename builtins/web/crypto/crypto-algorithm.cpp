@@ -2930,7 +2930,9 @@ CryptoAlgorithmPBKDF2_DeriveBits::fromParameters(JSContext *cx, JS::HandleObject
     // ourselves.
     return nullptr;
   }
-  auto salt = salt_buffer.value();
+  // Copy the salt now: reading `iterations` and `hash` below can run user JS that detaches or
+  // mutates the buffer this span points into.
+  std::vector<uint8_t> salt(salt_buffer->begin(), salt_buffer->end());
 
   // The iterations member of Pbkdf2Params is a required [EnforceRange] unsigned long.
   JS::Rooted<JS::Value> iterations_val(cx);
@@ -2965,8 +2967,8 @@ CryptoAlgorithmPBKDF2_DeriveBits::fromParameters(JSContext *cx, JS::HandleObject
     return nullptr;
   }
 
-  return std::make_unique<CryptoAlgorithmPBKDF2_DeriveBits>(
-      std::vector<uint8_t>(salt.begin(), salt.end()), iterations, hashIdentifier.unwrap());
+  return std::make_unique<CryptoAlgorithmPBKDF2_DeriveBits>(std::move(salt), iterations,
+                                                          hashIdentifier.unwrap());
 }
 
 // https://w3c.github.io/webcrypto/#pbkdf2-operations
