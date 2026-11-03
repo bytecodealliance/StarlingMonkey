@@ -17265,10 +17265,10 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-384, with 1 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-384, with 1 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-384, with 1 iterations": {
     "status": "FAIL"
@@ -17463,22 +17463,22 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-384, with 1 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-384, with 1 iterations with bad hash name SHA384": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-384, with 1 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-384, with 1 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, short salt, SHA-384, with 1000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-384, with 1000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-384, with 1000 iterations": {
     "status": "FAIL"
@@ -17673,22 +17673,22 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-384, with 1000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-384, with 1000 iterations with bad hash name SHA384": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-384, with 1000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-384, with 1000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, short salt, SHA-384, with 100000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-384, with 100000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-384, with 100000 iterations": {
     "status": "FAIL"
@@ -17883,19 +17883,19 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-384, with 100000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-384, with 100000 iterations with bad hash name SHA384": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-384, with 100000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-384, with 100000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, short salt, SHA-384, with 0 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-384, with 0 iterations": {
     "status": "FAIL"
@@ -17946,10 +17946,10 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-512, with 1 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-512, with 1 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-512, with 1 iterations": {
     "status": "FAIL"
@@ -18144,22 +18144,22 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-512, with 1 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-512, with 1 iterations with bad hash name SHA512": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-512, with 1 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-512, with 1 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, short salt, SHA-512, with 1000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-512, with 1000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-512, with 1000 iterations": {
     "status": "FAIL"
@@ -18354,22 +18354,22 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-512, with 1000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-512, with 1000 iterations with bad hash name SHA512": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-512, with 1000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-512, with 1000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, short salt, SHA-512, with 100000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-512, with 100000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-512, with 100000 iterations": {
     "status": "FAIL"
@@ -18564,19 +18564,19 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-512, with 100000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-512, with 100000 iterations with bad hash name SHA512": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-512, with 100000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-512, with 100000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, short salt, SHA-512, with 0 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-512, with 0 iterations": {
     "status": "FAIL"
@@ -18627,10 +18627,10 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-1, with 1 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-1, with 1 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-1, with 1 iterations": {
     "status": "FAIL"
@@ -18825,22 +18825,22 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-1, with 1 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-1, with 1 iterations with bad hash name SHA1": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-1, with 1 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-1, with 1 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, short salt, SHA-1, with 1000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-1, with 1000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-1, with 1000 iterations": {
     "status": "FAIL"
@@ -19035,22 +19035,22 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-1, with 1000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-1, with 1000 iterations with bad hash name SHA1": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-1, with 1000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-1, with 1000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, short salt, SHA-1, with 100000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-1, with 100000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-1, with 100000 iterations": {
     "status": "FAIL"
@@ -19245,19 +19245,19 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-1, with 100000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-1, with 100000 iterations with bad hash name SHA1": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-1, with 100000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-1, with 100000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, short salt, SHA-1, with 0 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-1, with 0 iterations": {
     "status": "FAIL"
@@ -19308,10 +19308,10 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-256, with 1 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-256, with 1 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-256, with 1 iterations": {
     "status": "FAIL"
@@ -19506,22 +19506,22 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-256, with 1 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-256, with 1 iterations with bad hash name SHA256": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-256, with 1 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-256, with 1 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, short salt, SHA-256, with 1000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-256, with 1000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-256, with 1000 iterations": {
     "status": "FAIL"
@@ -19716,22 +19716,22 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-256, with 1000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-256, with 1000 iterations with bad hash name SHA256": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-256, with 1000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-256, with 1000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, short salt, SHA-256, with 100000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-256, with 100000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-256, with 100000 iterations": {
     "status": "FAIL"
@@ -19926,19 +19926,19 @@
     "status": "FAIL"
   },
   "empty password, short salt, SHA-256, with 100000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-256, with 100000 iterations with bad hash name SHA256": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-256, with 100000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, short salt, SHA-256, with 100000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, short salt, SHA-256, with 0 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, SHA-256, with 0 iterations": {
     "status": "FAIL"
@@ -19989,7 +19989,7 @@
     "status": "FAIL"
   },
   "empty password, short salt, PBKDF2, with 1 iterations with non-digest algorithm PBKDF2": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, PBKDF2, with 1 iterations": {
     "status": "FAIL"
@@ -20040,7 +20040,7 @@
     "status": "FAIL"
   },
   "empty password, short salt, PBKDF2, with 1000 iterations with non-digest algorithm PBKDF2": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, PBKDF2, with 1000 iterations": {
     "status": "FAIL"
@@ -20091,7 +20091,7 @@
     "status": "FAIL"
   },
   "empty password, short salt, PBKDF2, with 100000 iterations with non-digest algorithm PBKDF2": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, short salt, PBKDF2, with 100000 iterations": {
     "status": "FAIL"
@@ -20142,10 +20142,10 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-384, with 1 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-384, with 1 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-384, with 1 iterations": {
     "status": "FAIL"
@@ -20340,22 +20340,22 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-384, with 1 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-384, with 1 iterations with bad hash name SHA384": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-384, with 1 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-384, with 1 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, long salt, SHA-384, with 1000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-384, with 1000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-384, with 1000 iterations": {
     "status": "FAIL"
@@ -20550,22 +20550,22 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-384, with 1000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-384, with 1000 iterations with bad hash name SHA384": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-384, with 1000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-384, with 1000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, long salt, SHA-384, with 100000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-384, with 100000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-384, with 100000 iterations": {
     "status": "FAIL"
@@ -20760,19 +20760,19 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-384, with 100000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-384, with 100000 iterations with bad hash name SHA384": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-384, with 100000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-384, with 100000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, long salt, SHA-384, with 0 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-384, with 0 iterations": {
     "status": "FAIL"
@@ -20823,10 +20823,10 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-512, with 1 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-512, with 1 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-512, with 1 iterations": {
     "status": "FAIL"
@@ -21021,22 +21021,22 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-512, with 1 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-512, with 1 iterations with bad hash name SHA512": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-512, with 1 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-512, with 1 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, long salt, SHA-512, with 1000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-512, with 1000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-512, with 1000 iterations": {
     "status": "FAIL"
@@ -21231,22 +21231,22 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-512, with 1000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-512, with 1000 iterations with bad hash name SHA512": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-512, with 1000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-512, with 1000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, long salt, SHA-512, with 100000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-512, with 100000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-512, with 100000 iterations": {
     "status": "FAIL"
@@ -21441,19 +21441,19 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-512, with 100000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-512, with 100000 iterations with bad hash name SHA512": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-512, with 100000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-512, with 100000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, long salt, SHA-512, with 0 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-512, with 0 iterations": {
     "status": "FAIL"
@@ -21504,10 +21504,10 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-1, with 1 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-1, with 1 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-1, with 1 iterations": {
     "status": "FAIL"
@@ -21702,22 +21702,22 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-1, with 1 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-1, with 1 iterations with bad hash name SHA1": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-1, with 1 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-1, with 1 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, long salt, SHA-1, with 1000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-1, with 1000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-1, with 1000 iterations": {
     "status": "FAIL"
@@ -21912,22 +21912,22 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-1, with 1000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-1, with 1000 iterations with bad hash name SHA1": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-1, with 1000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-1, with 1000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, long salt, SHA-1, with 100000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-1, with 100000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-1, with 100000 iterations": {
     "status": "FAIL"
@@ -22122,19 +22122,19 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-1, with 100000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-1, with 100000 iterations with bad hash name SHA1": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-1, with 100000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-1, with 100000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, long salt, SHA-1, with 0 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-1, with 0 iterations": {
     "status": "FAIL"
@@ -22185,10 +22185,10 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-256, with 1 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-256, with 1 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-256, with 1 iterations": {
     "status": "FAIL"
@@ -22383,22 +22383,22 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-256, with 1 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-256, with 1 iterations with bad hash name SHA256": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-256, with 1 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-256, with 1 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, long salt, SHA-256, with 1000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-256, with 1000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-256, with 1000 iterations": {
     "status": "FAIL"
@@ -22593,22 +22593,22 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-256, with 1000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-256, with 1000 iterations with bad hash name SHA256": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-256, with 1000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-256, with 1000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, long salt, SHA-256, with 100000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-256, with 100000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-256, with 100000 iterations": {
     "status": "FAIL"
@@ -22803,19 +22803,19 @@
     "status": "FAIL"
   },
   "empty password, long salt, SHA-256, with 100000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-256, with 100000 iterations with bad hash name SHA256": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-256, with 100000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, long salt, SHA-256, with 100000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, long salt, SHA-256, with 0 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, SHA-256, with 0 iterations": {
     "status": "FAIL"
@@ -22866,7 +22866,7 @@
     "status": "FAIL"
   },
   "empty password, long salt, PBKDF2, with 1 iterations with non-digest algorithm PBKDF2": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, PBKDF2, with 1 iterations": {
     "status": "FAIL"
@@ -22917,7 +22917,7 @@
     "status": "FAIL"
   },
   "empty password, long salt, PBKDF2, with 1000 iterations with non-digest algorithm PBKDF2": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, PBKDF2, with 1000 iterations": {
     "status": "FAIL"
@@ -22968,7 +22968,7 @@
     "status": "FAIL"
   },
   "empty password, long salt, PBKDF2, with 100000 iterations with non-digest algorithm PBKDF2": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, long salt, PBKDF2, with 100000 iterations": {
     "status": "FAIL"
@@ -23019,10 +23019,10 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-384, with 1 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-384, with 1 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-384, with 1 iterations": {
     "status": "FAIL"
@@ -23217,22 +23217,22 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-384, with 1 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-384, with 1 iterations with bad hash name SHA384": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-384, with 1 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-384, with 1 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-384, with 1000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-384, with 1000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-384, with 1000 iterations": {
     "status": "FAIL"
@@ -23427,22 +23427,22 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-384, with 1000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-384, with 1000 iterations with bad hash name SHA384": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-384, with 1000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-384, with 1000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-384, with 100000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-384, with 100000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-384, with 100000 iterations": {
     "status": "FAIL"
@@ -23637,19 +23637,19 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-384, with 100000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-384, with 100000 iterations with bad hash name SHA384": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-384, with 100000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-384, with 100000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-384, with 0 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-384, with 0 iterations": {
     "status": "FAIL"
@@ -23700,10 +23700,10 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-512, with 1 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-512, with 1 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-512, with 1 iterations": {
     "status": "FAIL"
@@ -23898,22 +23898,22 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-512, with 1 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-512, with 1 iterations with bad hash name SHA512": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-512, with 1 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-512, with 1 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-512, with 1000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-512, with 1000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-512, with 1000 iterations": {
     "status": "FAIL"
@@ -24108,22 +24108,22 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-512, with 1000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-512, with 1000 iterations with bad hash name SHA512": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-512, with 1000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-512, with 1000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-512, with 100000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-512, with 100000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-512, with 100000 iterations": {
     "status": "FAIL"
@@ -24318,19 +24318,19 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-512, with 100000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-512, with 100000 iterations with bad hash name SHA512": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-512, with 100000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-512, with 100000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-512, with 0 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-512, with 0 iterations": {
     "status": "FAIL"
@@ -24381,10 +24381,10 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-1, with 1 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-1, with 1 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-1, with 1 iterations": {
     "status": "FAIL"
@@ -24579,22 +24579,22 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-1, with 1 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-1, with 1 iterations with bad hash name SHA1": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-1, with 1 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-1, with 1 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-1, with 1000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-1, with 1000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-1, with 1000 iterations": {
     "status": "FAIL"
@@ -24789,22 +24789,22 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-1, with 1000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-1, with 1000 iterations with bad hash name SHA1": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-1, with 1000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-1, with 1000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-1, with 100000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-1, with 100000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-1, with 100000 iterations": {
     "status": "FAIL"
@@ -24999,19 +24999,19 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-1, with 100000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-1, with 100000 iterations with bad hash name SHA1": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-1, with 100000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-1, with 100000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-1, with 0 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-1, with 0 iterations": {
     "status": "FAIL"
@@ -25062,10 +25062,10 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-256, with 1 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-256, with 1 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-256, with 1 iterations": {
     "status": "FAIL"
@@ -25260,22 +25260,22 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-256, with 1 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-256, with 1 iterations with bad hash name SHA256": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-256, with 1 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-256, with 1 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-256, with 1000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-256, with 1000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-256, with 1000 iterations": {
     "status": "FAIL"
@@ -25470,22 +25470,22 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-256, with 1000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-256, with 1000 iterations with bad hash name SHA256": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-256, with 1000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-256, with 1000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-256, with 100000 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-256, with 100000 iterations with 0 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-256, with 100000 iterations": {
     "status": "FAIL"
@@ -25680,19 +25680,19 @@
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-256, with 100000 iterations with non-multiple of 8 length": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-256, with 100000 iterations with bad hash name SHA256": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-256, with 100000 iterations with missing deriveBits usage": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "empty password, empty salt, SHA-256, with 100000 iterations with wrong (ECDH) key": {
     "status": "FAIL"
   },
   "empty password, empty salt, SHA-256, with 0 iterations": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, SHA-256, with 0 iterations": {
     "status": "FAIL"
@@ -25743,7 +25743,7 @@
     "status": "FAIL"
   },
   "empty password, empty salt, PBKDF2, with 1 iterations with non-digest algorithm PBKDF2": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, PBKDF2, with 1 iterations": {
     "status": "FAIL"
@@ -25794,7 +25794,7 @@
     "status": "FAIL"
   },
   "empty password, empty salt, PBKDF2, with 1000 iterations with non-digest algorithm PBKDF2": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, PBKDF2, with 1000 iterations": {
     "status": "FAIL"
@@ -25845,7 +25845,7 @@
     "status": "FAIL"
   },
   "empty password, empty salt, PBKDF2, with 100000 iterations with non-digest algorithm PBKDF2": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Derived key of type name: AES-CBC length: 128  using empty password, empty salt, PBKDF2, with 100000 iterations": {
     "status": "FAIL"

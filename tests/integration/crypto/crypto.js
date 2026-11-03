@@ -2868,9 +2868,16 @@ export const handler = serveTest(async (t) => {
       }
     });
     await t.test("pbkdf2-importKey-empty-key-data", async () => {
-      await rejects(async () => {
-        await crypto.subtle.importKey("raw", new Uint8Array(), "PBKDF2", false, ["deriveBits"]);
-      }, DOMException, undefined, "DataError");
+      // RFC 8018 permits an empty password; the WPT pbkdf2 vectors include empty-password
+      // derivations (expected value below is the WPT vector for empty password, salt "NaCl",
+      // SHA-256, 1 iteration).
+      const key = await crypto.subtle.importKey("raw", new Uint8Array(), "PBKDF2", false, ["deriveBits"]);
+      const bits = new Uint8Array(await crypto.subtle.deriveBits(
+        { name: "PBKDF2", salt: new TextEncoder().encode("NaCl"), iterations: 1, hash: "SHA-256" },
+        key, 256));
+      deepStrictEqual(bits, hexToBytes(
+        "2ddb49243eb3b5912cb260cdd87fb04ef0d111bfa44d40a45e02a8a5c3c1518d"),
+        "derived bits for an empty password");
     });
     await t.test("pbkdf2-importKey-case-insensitive-name", async () => {
       const key = await crypto.subtle.importKey("raw", pbkdf2Password, "pbkdf2", false, ["deriveBits"]);

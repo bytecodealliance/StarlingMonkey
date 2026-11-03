@@ -2850,12 +2850,6 @@ JSObject *CryptoAlgorithmPBKDF2_Import::importKey(JSContext *cx, CryptoKeyFormat
   }
   auto data = std::make_unique<std::vector<uint8_t>>(key_bytes->begin(), key_bytes->end());
 
-  // If the length of data is zero, then throw a DataError.
-  if (data->empty()) {
-    DOMException::raise(cx, "Supplied keyData can not have a length of 0.", "DataError");
-    return nullptr;
-  }
-
   // 5. Set the [[type]] internal slot of key to "secret".
   //    (Done in CryptoKey::createSymmetric.)
   // 6. Let algorithm be a new KeyAlgorithm object.
