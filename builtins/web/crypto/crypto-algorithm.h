@@ -92,8 +92,9 @@ public:
 class CryptoAlgorithmDeriveBits : public CryptoAlgorithm {
 public:
   // `length` is the length, in bits, of the keying material to derive. It is `std::nullopt`
-  // when the caller omitted the optional `length` argument of `SubtleCrypto.deriveBits`,
-  // which algorithm operations treat as a `null` length per the WebCrypto specification.
+  // when the `length` argument of `SubtleCrypto.deriveBits` (declared as
+  // `optional [EnforceRange] unsigned long? length = null`) was omitted, `undefined` or `null`,
+  // which the derive bits operations treat as a `null` length per the WebCrypto specification.
   virtual JSObject *deriveBits(JSContext *cx, JS::HandleObject baseKey,
                                std::optional<uint64_t> length) = 0;
   static std::unique_ptr<CryptoAlgorithmDeriveBits> normalize(JSContext *cx, JS::HandleValue value);

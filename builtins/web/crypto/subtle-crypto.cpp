@@ -350,7 +350,7 @@ bool SubtleCrypto::verify(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 // Promise<ArrayBuffer> deriveBits(AlgorithmIdentifier algorithm,
 //                                 CryptoKey baseKey,
-//                                 optional [EnforceRange] unsigned long length);
+//                                 optional [EnforceRange] unsigned long? length = null);
 // https://w3c.github.io/webcrypto/#SubtleCrypto-method-deriveBits
 bool SubtleCrypto::deriveBits(JSContext *cx, unsigned argc, JS::Value *vp) {
   MOZ_ASSERT(cx);
@@ -398,18 +398,21 @@ bool SubtleCrypto::deriveBits(JSContext *cx, unsigned argc, JS::Value *vp) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
-  // 4. Let promise be a new Promise.
+  // 4. Let realm be the relevant realm of this.
+  // (Implicit: there is a single realm.)
+  // 5. Let promise be a new Promise.
   JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
   if (!promise) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
-  // 5. Return promise and perform the remaining steps in parallel.
+  // 6. Return promise and perform the remaining steps in parallel.
   args.rval().setObject(*promise);
 
-  // 6. If the following steps or referenced procedures say to throw an error, reject promise with
-  // the returned error and then terminate the algorithm.
+  // 7. If the following steps or referenced procedures say to throw an error, queue a global task
+  // on the crypto task source, given realm's global object, to reject promise with the returned
+  // error; and then terminate the algorithm.
 
-  // 7. If the name member of normalizedAlgorithm is not equal to the name attribute of the
+  // 8. If the name member of normalizedAlgorithm is not equal to the name attribute of the
   // [[algorithm]] internal slot of baseKey then throw an InvalidAccessError.
   auto identifier = normalizedAlgorithm->identifier();
   auto match_result = CryptoKey::is_algorithm(cx, key, identifier);
@@ -418,23 +421,24 @@ bool SubtleCrypto::deriveBits(JSContext *cx, unsigned argc, JS::Value *vp) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
-  // 8. If the [[usages]] internal slot of baseKey does not contain an entry that is "deriveBits",
+  // 9. If the [[usages]] internal slot of baseKey does not contain an entry that is "deriveBits",
   // then throw an InvalidAccessError.
   if (!CryptoKey::canDeriveBits(key)) {
     DOMException::raise(cx, "CryptoKey doesn't support deriving bits", "InvalidAccessError");
     return RejectPromiseWithPendingError(cx, promise);
   }
 
-  // 9. Let bits be the result of performing the derive bits operation specified by
+  // 10. Let bits be the result of performing the derive bits operation specified by
   // normalizedAlgorithm using baseKey, algorithm and length.
   auto *bits = normalizedAlgorithm->deriveBits(cx, key, length);
   if (!bits) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
-  // 10. Queue a global task on the crypto task source to perform the remaining steps.
-  // 11. Let result be the result of creating an ArrayBuffer in realm, containing bits.
-  // 12. Resolve promise with result.
+  // 11. Queue a global task on the crypto task source, given realm's global object, to perform the
+  // remaining steps.
+  // 12. Let result be the result of creating an ArrayBuffer in realm, containing bits.
+  // 13. Resolve promise with result.
   JS::RootedValue result(cx, JS::ObjectValue(*bits));
   JS::ResolvePromise(cx, promise, result);
   return true;

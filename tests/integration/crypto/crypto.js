@@ -2859,6 +2859,11 @@ export const handler = serveTest(async (t) => {
       await rejects(async () => {
         await crypto.subtle.importKey("jwk", { kty: "oct", k: "cGFzc3dvcmQ" }, "PBKDF2", false, ["deriveBits"]);
       }, DOMException, undefined, "NotSupportedError");
+      // importKey() step 4: a "jwk" keyData that is not a JsonWebKey dictionary is a TypeError,
+      // before the PBKDF2 import key operation gets to reject the format.
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk", "not-an-object", "PBKDF2", false, ["deriveBits"]);
+      }, TypeError);
     });
     await t.test("pbkdf2-importKey-wrong-usages", async () => {
       for (const usages of [["sign"], ["verify"], ["encrypt"], ["deriveBits", "sign"], ["unwrapKey"]]) {
@@ -2916,6 +2921,14 @@ export const handler = serveTest(async (t) => {
       const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
       await rejects(async () => {
         await crypto.subtle.deriveBits(pbkdf2Params("SHA-256", 0), key, 256);
+      }, DOMException, undefined, "OperationError");
+    });
+    await t.test("pbkdf2-deriveBits-iterations-above-int-max", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      // 2 ** 31 is a valid unsigned long, but more iterations than OpenSSL can be asked for, so
+      // the key derivation operation fails.
+      await rejects(async () => {
+        await crypto.subtle.deriveBits(pbkdf2Params("SHA-256", 2 ** 31), key, 256);
       }, DOMException, undefined, "OperationError");
     });
     await t.test("pbkdf2-deriveBits-zero-length", async () => {
@@ -3028,18 +3041,38 @@ export const handler = serveTest(async (t) => {
         await crypto.subtle.deriveBits({ name: "NOPE" }, key, 256);
       }, DOMException, undefined, "NotSupportedError");
     });
+    await t.test("pbkdf2-deriveBits-params-read-order", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      // WebIDL converts dictionary members in lexicographic order, so Pbkdf2Params getters run
+      // as hash, iterations, salt; the hash is normalized (name read) after the conversion.
+      const order = [];
+      const params = {
+        name: "PBKDF2",
+        get salt() { order.push("salt"); return pbkdf2Salt; },
+        get iterations() { order.push("iterations"); return 1; },
+        get hash() { order.push("hash"); return { get name() { order.push("hash.name"); return "SHA-256"; } }; },
+      };
+      const bits = new Uint8Array(await crypto.subtle.deriveBits(params, key, 256));
+      deepStrictEqual(order, ["hash", "iterations", "salt", "hash.name"], "member read order");
+      deepStrictEqual(bits, hexToBytes(
+        "120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b"),
+        "derived bits with getter-backed params");
+    });
     await t.test("pbkdf2-deriveBits-salt-detach-during-normalize", async () => {
       const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
-      // The salt bytes are copied as soon as Pbkdf2Params.salt is read — an iterations getter
-      // that detaches the salt buffer mid-normalization must not change the derived bits.
+      // The salt bytes are copied as soon as Pbkdf2Params.salt is read. The hash is normalized
+      // afterwards, so a hash name getter that detaches the salt buffer must not change the
+      // derived bits.
       const salt = new TextEncoder().encode("salt");
       const params = {
         name: "PBKDF2",
         salt,
-        hash: "SHA-256",
-        get iterations() {
-          structuredClone(salt, { transfer: [salt.buffer] });
-          return 1;
+        iterations: 1,
+        hash: {
+          get name() {
+            structuredClone(salt, { transfer: [salt.buffer] });
+            return "SHA-256";
+          },
         },
       };
       const bits = new Uint8Array(await crypto.subtle.deriveBits(params, key, 256));

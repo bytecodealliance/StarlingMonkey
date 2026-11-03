@@ -159,8 +159,6 @@ public:
   static JSObject *get_algorithm(JS::HandleObject self);
   static EVP_PKEY *key(JSObject *self);
   static std::span<uint8_t> keyData(JSObject *self);
-  static bool canEncrypt(JS::HandleObject self);
-  static bool canDecrypt(JS::HandleObject self);
   static bool canSign(JS::HandleObject self);
   static bool canVerify(JS::HandleObject self);
   static bool canDeriveBits(JS::HandleObject self);

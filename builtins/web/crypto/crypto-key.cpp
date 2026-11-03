@@ -925,22 +925,6 @@ JS::Result<bool> CryptoKey::is_algorithm(JSContext *cx, JS::HandleObject self,
   return match;
 }
 
-bool CryptoKey::canEncrypt(JS::HandleObject self) {
-  MOZ_ASSERT(is_instance(self));
-  auto usages = JS::GetReservedSlot(self, std::to_underlying(Slots::Usages)).toInt32();
-  MOZ_ASSERT(std::in_range<std::uint16_t>(usages));
-  auto usage = CryptoKeyUsages(static_cast<uint16_t>(usages));
-  return usage.canEncrypt();
-}
-
-bool CryptoKey::canDecrypt(JS::HandleObject self) {
-  MOZ_ASSERT(is_instance(self));
-  auto usages = JS::GetReservedSlot(self, std::to_underlying(Slots::Usages)).toInt32();
-  MOZ_ASSERT(std::in_range<std::uint16_t>(usages));
-  auto usage = CryptoKeyUsages(static_cast<uint16_t>(usages));
-  return usage.canDecrypt();
-}
-
 bool CryptoKey::canSign(JS::HandleObject self) {
   MOZ_ASSERT(is_instance(self));
   auto usages = JS::GetReservedSlot(self, std::to_underlying(Slots::Usages)).toInt32();
