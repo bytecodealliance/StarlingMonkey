@@ -167,6 +167,8 @@ public:
   static bool canSign(JS::HandleObject self);
   static bool canVerify(JS::HandleObject self);
   static bool canDeriveBits(JS::HandleObject self);
+  static bool canEncrypt(JS::HandleObject self);
+  static bool canDecrypt(JS::HandleObject self);
   static JS::Result<bool> is_algorithm(JSContext *cx, JS::HandleObject self,
                                        CryptoAlgorithmIdentifier algorithm);
 };

@@ -968,6 +968,22 @@ bool CryptoKey::canDeriveBits(JS::HandleObject self) {
   return usage.canDeriveBits();
 }
 
+bool CryptoKey::canEncrypt(JS::HandleObject self) {
+  MOZ_ASSERT(is_instance(self));
+  auto usages = JS::GetReservedSlot(self, std::to_underlying(Slots::Usages)).toInt32();
+  MOZ_ASSERT(std::in_range<std::uint16_t>(usages));
+  auto usage = CryptoKeyUsages(static_cast<uint16_t>(usages));
+  return usage.canEncrypt();
+}
+
+bool CryptoKey::canDecrypt(JS::HandleObject self) {
+  MOZ_ASSERT(is_instance(self));
+  auto usages = JS::GetReservedSlot(self, std::to_underlying(Slots::Usages)).toInt32();
+  MOZ_ASSERT(std::in_range<std::uint16_t>(usages));
+  auto usage = CryptoKeyUsages(static_cast<uint16_t>(usages));
+  return usage.canDecrypt();
+}
+
 } // namespace builtins::web::crypto
 
 
