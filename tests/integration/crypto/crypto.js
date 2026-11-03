@@ -2847,9 +2847,13 @@ export const handler = serveTest(async (t) => {
       strictEqual(key.extractable, false, "extractable");
     });
     await t.test("pbkdf2-importKey-raw-extractable", async () => {
-      const key = await crypto.subtle.importKey("raw", pbkdf2Password, { name: "PBKDF2" }, true, ["deriveKey"]);
-      strictEqual(key.extractable, true, "extractable");
-      deepStrictEqual(key.usages, ["deriveKey"], "usages");
+      // PBKDF2 keys must be non-extractable.
+      await rejects(async () => {
+        await crypto.subtle.importKey("raw", pbkdf2Password, { name: "PBKDF2" }, true, ["deriveKey"]);
+      }, DOMException, undefined, "SyntaxError");
+      await rejects(async () => {
+        await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", true, ["deriveBits"]);
+      }, DOMException, undefined, "SyntaxError");
     });
     await t.test("pbkdf2-importKey-jwk-not-supported", async () => {
       await rejects(async () => {

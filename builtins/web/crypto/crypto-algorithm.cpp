@@ -2815,13 +2815,19 @@ JSObject *CryptoAlgorithmSHA512::digest(JSContext *cx, std::span<uint8_t> data) 
   return builtins::web::crypto::digest(cx, data, EVP_sha512(), SHA512_DIGEST_LENGTH);
 }
 
-// https://w3c.github.io/webcrypto/#pbkdf2-operations
+// https://w3c.github.io/webcrypto/#pbkdf2-operations-import-key
 JSObject *CryptoAlgorithmPBKDF2_Import::importKey(JSContext *cx, CryptoKeyFormat format,
                                                 KeyData key_data, bool extractable,
                                                 CryptoKeyUsages usages) {
   MOZ_ASSERT(cx);
 
-  // 2. If usages contains an entry which is not "deriveKey" or "deriveBits", then throw a
+  // 1. If format is not "raw", then throw a NotSupportedError.
+  if (format != CryptoKeyFormat::Raw) {
+    DOMException::raise(cx, "Supplied format is not supported", "NotSupportedError");
+    return nullptr;
+  }
+
+  // 2. If usages contains a value that is not "deriveKey" or "deriveBits", then throw a
   //    SyntaxError.
   if (!usages.canOnlyDeriveBitsOrKey()) {
     DOMException::raise(cx, "PBKDF2 keys only support 'deriveKey' and 'deriveBits' operations",
@@ -2829,44 +2835,39 @@ JSObject *CryptoAlgorithmPBKDF2_Import::importKey(JSContext *cx, CryptoKeyFormat
     return nullptr;
   }
 
-  std::unique_ptr<std::vector<uint8_t>> data;
-  switch (format) {
-  // 3. If format is "raw":
-  case CryptoKeyFormat::Raw: {
-    // 3.1 Let data be the octet string contained in keyData.
-    // keyData is a view of the caller's buffer, which can change after import, so copy it.
-    auto key_bytes = std::get<std::span<uint8_t>>(key_data);
-    data = std::make_unique<std::vector<uint8_t>>(key_bytes.begin(), key_bytes.end());
-    if (!data) {
-      DOMException::raise(cx, "Supplied keyData must be either an ArrayBuffer, TypedArray, or DataView.", "DataError");
-      return nullptr;
-    }
-    break;
-  }
-  // 4. Otherwise: throw a NotSupportedError.
-  default: {
-    DOMException::raise(cx, "Supplied format is not supported", "NotSupportedError");
+  // 3. If extractable is not false, then throw a SyntaxError.
+  if (extractable) {
+    DOMException::raise(cx, "PBKDF2 keys must not be extractable", "SyntaxError");
     return nullptr;
   }
-  }
 
-  // 5. If the length of data is zero, then throw a DataError.
+  // 4. Let key be a new CryptoKey representing keyData.
+  // keyData is a view of the caller's buffer, which can change after import, so copy it.
+  auto *key_bytes = std::get_if<std::span<uint8_t>>(&key_data);
+  if (!key_bytes) {
+    DOMException::raise(cx, "Supplied keyData must be either an ArrayBuffer, TypedArray, or DataView.", "DataError");
+    return nullptr;
+  }
+  auto data = std::make_unique<std::vector<uint8_t>>(key_bytes->begin(), key_bytes->end());
+
+  // If the length of data is zero, then throw a DataError.
   if (data->empty()) {
     DOMException::raise(cx, "Supplied keyData can not have a length of 0.", "DataError");
     return nullptr;
   }
 
-  // 6. Let key be a new CryptoKey object representing a PBKDF2 password with the value of data.
-  // 7. Let algorithm be a new KeyAlgorithm.
-  // 8. Set the name attribute of algorithm to "PBKDF2".
-  // Steps 7 and 8 are done in CryptoAlgorithmPBKDF2_Import::toObject
+  // 5. Set the [[type]] internal slot of key to "secret".
+  //    (Done in CryptoKey::createSymmetric.)
+  // 6. Let algorithm be a new KeyAlgorithm object.
+  // 7. Set the name attribute of algorithm to "PBKDF2".
+  //    (Steps 6 and 7 are done in CryptoAlgorithmPBKDF2_Import::toObject.)
   JS::RootedObject algorithm(cx, this->toObject(cx));
   if (!algorithm) {
     return nullptr;
   }
 
-  // 9. Set the [[algorithm]] internal slot of key to algorithm.
-  // 10. Return key.
+  // 8. Set the [[algorithm]] internal slot of key to algorithm.
+  // 9. Return key.
   return CryptoKey::createSymmetric(cx, algorithm, std::move(data), extractable, usages);
 }
 
@@ -2875,16 +2876,8 @@ JSObject *CryptoAlgorithmPBKDF2_Import::importKey(JSContext *cx, CryptoKeyFormat
                                                 CryptoKeyUsages usages) {
   MOZ_ASSERT(cx);
 
-  // 2. If usages contains an entry which is not "deriveKey" or "deriveBits", then throw a
-  //    SyntaxError.
-  if (!usages.canOnlyDeriveBitsOrKey()) {
-    DOMException::raise(cx, "PBKDF2 keys only support 'deriveKey' and 'deriveBits' operations",
-                        "SyntaxError");
-    return nullptr;
-  }
-
-  // 3. If format is not equal to the string "raw", then throw a NotSupportedError.
-  //    The only supported format for PBKDF2 is raw.
+  // The only supported format for PBKDF2 is raw. The format check precedes the usages and
+  // extractable checks, per the spec step order.
   if (format != CryptoKeyFormat::Raw) {
     DOMException::raise(cx, "Supplied format is not supported", "NotSupportedError");
     return nullptr;
