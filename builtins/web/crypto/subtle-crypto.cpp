@@ -534,6 +534,8 @@ bool encryptOrDecrypt(JSContext *cx, JS::CallArgs &args, bool enc) {
 
   // 12. Queue a global task on the crypto task source, given realm's global object, to perform the
   // remaining steps.
+  // Intentional deviation: like every other SubtleCrypto method, the promise is resolved
+  // synchronously in the calling frame instead of via a queued global task.
   // 13. Let result be the result of creating an ArrayBuffer in realm, containing ciphertext /
   // plaintext.
   // 14. Resolve promise with result.
