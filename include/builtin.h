@@ -294,8 +294,7 @@ static bool init_class_impl(JSContext *cx, const HandleObject global,
 template <typename Impl, typename ClassPolicy>
 PersistentRooted<JSObject *> BuiltinImpl<Impl, ClassPolicy>::proto_obj{};
 
-template <typename Impl, typename ClassPolicy = DefaultClassPolicy>
-class BuiltinNoConstructor : public BuiltinImpl<Impl, ClassPolicy> {
+template <typename Impl> class BuiltinNoConstructor : public BuiltinImpl<Impl> {
 public:
   static constexpr int ctor_length = 1;
 
@@ -305,8 +304,8 @@ public:
   }
 
   static bool init_class(JSContext *cx, HandleObject global) {
-    return BuiltinImpl<Impl, ClassPolicy>::init_class_impl(cx, global) &&
-           JS_DeleteProperty(cx, global, BuiltinImpl<Impl, ClassPolicy>::class_.name);
+    return BuiltinImpl<Impl>::init_class_impl(cx, global) &&
+           JS_DeleteProperty(cx, global, BuiltinImpl<Impl>::class_.name);
   }
 };
 

@@ -6,7 +6,6 @@
 #include "../dom-exception.h"
 
 #include <openssl/core_names.h>
-#include <openssl/crypto.h>
 #include <openssl/ec.h>
 #include <openssl/err.h>
 #include <utility>
@@ -348,7 +347,7 @@ const JSPropertySpec CryptoKey::properties[] = {
     JS_PS_END};
 
 bool CryptoKey::init_class(JSContext *cx, JS::HandleObject global) {
-  return BuiltinImpl<CryptoKey, FinalizableClassPolicy>::init_class_impl(cx, global);
+  return BuiltinImpl<CryptoKey>::init_class_impl(cx, global);
 }
 
 namespace {
@@ -661,7 +660,7 @@ JSObject *CryptoKey::createSymmetric(JSContext *cx, JS::HandleObject algorithm_o
   JS::SetReservedSlot(instance, std::to_underlying(Slots::Extractable), JS::BooleanValue(extractable));
   JS::SetReservedSlot(instance, std::to_underlying(Slots::Usages), JS::Int32Value(usages.toInt()));
   JS::SetReservedSlot(instance, std::to_underlying(Slots::KeyDataLength), JS::Int32Value(data->size()));
-  JS::SetReservedSlot(instance, std::to_underlying(Slots::KeyData), JS::PrivateValue(data.release()));
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::KeyData), JS::PrivateValue(data.release()->data()));
   return instance;
 }
 
@@ -896,27 +895,9 @@ EVP_PKEY *CryptoKey::key(JSObject *self) {
 
 std::span<uint8_t> CryptoKey::keyData(JSObject *self) {
   MOZ_ASSERT(is_instance(self));
-  auto *data = static_cast<std::vector<uint8_t> *>(
-      JS::GetReservedSlot(self, std::to_underlying(Slots::KeyData)).toPrivate());
-  return {data->data(), data->size()};
-}
-
-void CryptoKey::finalize(JS::GCContext *gcx, JSObject *self) {
-  // Free asymmetric key material.
-  auto key_val = JS::GetReservedSlot(self, std::to_underlying(Slots::Key));
-  if (key_val.isDouble()) {
-    EVP_PKEY_free(static_cast<EVP_PKEY *>(key_val.toPrivate()));
-  }
-
-  // Scrub and free symmetric key material.
-  auto key_data_val = JS::GetReservedSlot(self, std::to_underlying(Slots::KeyData));
-  if (key_data_val.isDouble()) {
-    auto *data = static_cast<std::vector<uint8_t> *>(key_data_val.toPrivate());
-    if (!data->empty()) {
-      OPENSSL_cleanse(data->data(), data->size());
-    }
-    delete data;
-  }
+  return {
+      static_cast<uint8_t *>(JS::GetReservedSlot(self, std::to_underlying(Slots::KeyData)).toPrivate()),
+      static_cast<size_t>(JS::GetReservedSlot(self, std::to_underlying(Slots::KeyDataLength)).toInt32())};
 }
 
 JS::Result<bool> CryptoKey::is_algorithm(JSContext *cx, JS::HandleObject self,
