@@ -437,6 +437,8 @@ bool SubtleCrypto::deriveBits(JSContext *cx, unsigned argc, JS::Value *vp) {
 
   // 11. Queue a global task on the crypto task source, given realm's global object, to perform the
   // remaining steps.
+  // Intentional deviation: like every other SubtleCrypto method, the promise is resolved
+  // synchronously in the calling frame instead of via a queued global task.
   // 12. Let result be the result of creating an ArrayBuffer in realm, containing bits.
   // 13. Resolve promise with result.
   JS::RootedValue result(cx, JS::ObjectValue(*bits));
