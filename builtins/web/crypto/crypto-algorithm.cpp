@@ -4,6 +4,8 @@
 #include <openssl/core_names.h>
 #include <openssl/ecdsa.h>
 #include <openssl/err.h>
+#include <cmath>
+#include <limits>
 #include <optional>
 #include <span>
 #include <vector>
@@ -437,6 +439,34 @@ JS::Result<size_t> curveSize(JSContext *cx, JS::HandleObject key) {
   return 0;
 }
 
+// https://webidl.spec.whatwg.org/#abstract-opdef-converttoint with bitLength 32, "unsigned" and
+// [EnforceRange].
+std::optional<uint32_t> enforce_range_unsigned_long(JSContext *cx, JS::HandleValue value,
+                                                    const char *method, const char *argument) {
+  // 4. Let x be ? ToNumber(V).
+  double number = 0;
+  if (!JS::ToNumber(cx, value, &number)) {
+    return std::nullopt;
+  }
+  // 6. If the conversion is to an IDL type associated with the [EnforceRange] extended attribute:
+  // 6.1 If x is NaN, +∞, or −∞, then throw a TypeError.
+  if (!std::isfinite(number)) {
+    api::throw_error(cx, api::Errors::TypeError, method, argument,
+                     "be an unsigned long integer between 0 and 4294967295");
+    return std::nullopt;
+  }
+  // 6.2 Set x to IntegerPart(x).
+  number = std::trunc(number);
+  // 6.3 If x < lowerBound or x > upperBound, then throw a TypeError.
+  if (number < 0 || number > 4294967295.0) {
+    api::throw_error(cx, api::Errors::TypeError, method, argument,
+                     "be an unsigned long integer between 0 and 4294967295");
+    return std::nullopt;
+  }
+  // 6.4 Return x.
+  return static_cast<uint32_t>(number);
+}
+
 // This implements the first section of
 // https://w3c.github.io/webcrypto/#algorithm-normalization-normalize-an-algorithm which is shared
 // across all the diffent algorithms, but importantly does not implement the parts to do with the
@@ -749,6 +779,48 @@ CryptoAlgorithmSignVerify::normalize(JSContext *cx, JS::HandleValue value) {
   }
 };
 
+std::unique_ptr<CryptoAlgorithmDeriveBits>
+CryptoAlgorithmDeriveBits::normalize(JSContext *cx, JS::HandleValue value) {
+  // Do steps 1 through 5.1 of https://w3c.github.io/webcrypto/#algorithm-normalization-normalize-an-algorithm
+  auto identifierResult = normalizeIdentifier(cx, value);
+  if (identifierResult.isErr()) {
+    // If we are here, this means either the identifier could not be coerced to a String or was not recognized
+    // In both those scenarios an exception will have already been created, which is why we are not creating one here.
+    return nullptr;
+  }
+  auto identifier = identifierResult.unwrap();
+  JS::Rooted<JSObject *> params(cx);
+
+  // The value can either be a JS String or a JS Object with a 'name' property which is the algorithm identifier.
+  // Other properties within the object will be the parameters for the algorithm to use.
+  if (value.isString()) {
+    auto *obj = JS_NewPlainObject(cx);
+    params.set(obj);
+    if (!JS_SetProperty(cx, params, "name", value)) {
+      return nullptr;
+    }
+  } else if (value.isObject()) {
+    params.set(&value.toObject());
+  }
+
+  // The table listed at https://w3c.github.io/webcrypto/#h-note-15 is what defines which algorithms support which operations
+  // ECDH, HKDF, and PBKDF2 are the algorithms which support the deriveBits operation
+  switch (identifier) {
+  case CryptoAlgorithmIdentifier::PBKDF2: {
+    return CryptoAlgorithmPBKDF2_DeriveBits::fromParameters(cx, params);
+  }
+  case CryptoAlgorithmIdentifier::ECDH:
+  case CryptoAlgorithmIdentifier::HKDF: {
+    DOMException::raise(cx, "Supplied algorithm is not yet supported", "NotSupportedError");
+    return nullptr;
+  }
+  default: {
+    DOMException::raise(cx, "Supplied algorithm does not support the deriveBits operation", "NotSupportedError");
+    return nullptr;
+  }
+  }
+};
+
 
 namespace {
   std::optional<std::pair<mozilla::UniquePtr<uint8_t[], JS::FreePolicy>, size_t>> hmacSignature(JSContext *cx,
@@ -799,7 +871,7 @@ JSObject *CryptoAlgorithmHMAC_Sign_Verify::sign(JSContext *cx, JS::HandleObject 
     return nullptr;
   }
 
-  std::span<uint8_t> keyData = CryptoKey::hmacKeyData(key);
+  std::span<uint8_t> keyData = CryptoKey::keyData(key);
   auto result = hmacSignature(cx, algorithm, keyData, data);
   if (!result.has_value()) {
     DOMException::raise(cx, "SubtleCrypto.sign: failed to sign", "OperationError");
@@ -831,7 +903,7 @@ JS::Result<bool> CryptoAlgorithmHMAC_Sign_Verify::verify(JSContext *cx, JS::Hand
     return JS::Result<bool>(JS::Error());
   }
 
-  std::span<uint8_t> keyData = CryptoKey::hmacKeyData(key);
+  std::span<uint8_t> keyData = CryptoKey::keyData(key);
   auto result = hmacSignature(cx, algorithm, keyData, data);
   if (!result.has_value()) {
     DOMException::raise(cx, "SubtleCrypto.verify: failed to verify", "OperationError");
@@ -1297,6 +1369,9 @@ CryptoAlgorithmImportKey::normalize(JSContext *cx, JS::HandleValue value) {
   case CryptoAlgorithmIdentifier::Ed25519: {
     return std::make_unique<CryptoAlgorithmEd25519_Import>();
   }
+  case CryptoAlgorithmIdentifier::PBKDF2: {
+    return std::make_unique<CryptoAlgorithmPBKDF2_Import>();
+  }
   case CryptoAlgorithmIdentifier::RSA_PSS:
   case CryptoAlgorithmIdentifier::RSA_OAEP:
   case CryptoAlgorithmIdentifier::AES_CTR:
@@ -1304,8 +1379,7 @@ CryptoAlgorithmImportKey::normalize(JSContext *cx, JS::HandleValue value) {
   case CryptoAlgorithmIdentifier::AES_GCM:
   case CryptoAlgorithmIdentifier::AES_KW:
   case CryptoAlgorithmIdentifier::ECDH:
-  case CryptoAlgorithmIdentifier::HKDF:
-  case CryptoAlgorithmIdentifier::PBKDF2: {
+  case CryptoAlgorithmIdentifier::HKDF: {
     DOMException::raise(cx, "Supplied algorithm is not yet supported", "NotSupportedError");
     return nullptr;
   }
@@ -2769,6 +2843,232 @@ JSObject *CryptoAlgorithmSHA384::digest(JSContext *cx, std::span<uint8_t> data) 
 }
 JSObject *CryptoAlgorithmSHA512::digest(JSContext *cx, std::span<uint8_t> data) {
   return builtins::web::crypto::digest(cx, data, EVP_sha512(), SHA512_DIGEST_LENGTH);
+}
+
+// https://w3c.github.io/webcrypto/#pbkdf2-operations-import-key
+JSObject *CryptoAlgorithmPBKDF2_Import::importKey(JSContext *cx, CryptoKeyFormat format,
+                                                KeyData key_data, bool extractable,
+                                                CryptoKeyUsages usages) {
+  MOZ_ASSERT(cx);
+
+  // 1. If format is not "raw", then throw a NotSupportedError.
+  if (format != CryptoKeyFormat::Raw) {
+    DOMException::raise(cx, "Supplied format is not supported", "NotSupportedError");
+    return nullptr;
+  }
+
+  // 2. If usages contains a value that is not "deriveKey" or "deriveBits", then throw a
+  //    SyntaxError.
+  if (!usages.canOnlyDeriveBitsOrKey()) {
+    DOMException::raise(cx, "PBKDF2 keys only support 'deriveKey' and 'deriveBits' operations",
+                        "SyntaxError");
+    return nullptr;
+  }
+
+  // 3. If extractable is not false, then throw a SyntaxError.
+  if (extractable) {
+    DOMException::raise(cx, "PBKDF2 keys must not be extractable", "SyntaxError");
+    return nullptr;
+  }
+
+  // 4. Let key be a new CryptoKey representing keyData.
+  // The importKey() method has already turned keyData into a byte sequence for every format
+  // other than "jwk", which step 1 rules out, so keyData is always the byte-span alternative.
+  MOZ_ASSERT(std::holds_alternative<std::span<uint8_t>>(key_data));
+  auto key_bytes = std::get<std::span<uint8_t>>(key_data);
+  // keyData is a view of the caller's buffer, which can change after import, so copy it.
+  auto data = std::make_unique<std::vector<uint8_t>>(key_bytes.begin(), key_bytes.end());
+
+  // 5. Set the [[type]] internal slot of key to "secret".
+  //    (Done in CryptoKey::createSymmetric.)
+  // 6. Let algorithm be a new KeyAlgorithm object.
+  // 7. Set the name attribute of algorithm to "PBKDF2".
+  //    (Steps 6 and 7 are done in CryptoAlgorithmPBKDF2_Import::toObject.)
+  JS::RootedObject algorithm(cx, this->toObject(cx));
+  if (!algorithm) {
+    return nullptr;
+  }
+
+  // 8. Set the [[algorithm]] internal slot of key to algorithm.
+  // 9. Return key.
+  return CryptoKey::createSymmetric(cx, algorithm, std::move(data), extractable, usages);
+}
+
+JSObject *CryptoAlgorithmPBKDF2_Import::importKey(JSContext *cx, CryptoKeyFormat format,
+                                                JS::HandleValue key_data, bool extractable,
+                                                CryptoKeyUsages usages) {
+  MOZ_ASSERT(cx);
+
+  // Step 4 of https://w3c.github.io/webcrypto/#SubtleCrypto-method-importKey: for "jwk", keyData
+  // must be a JsonWebKey dictionary (which WebIDL only converts from an object, undefined or
+  // null), otherwise a TypeError is thrown before the import key operation runs. For every other
+  // format, a keyData that is not a BufferSource is likewise a TypeError (value_to_buffer).
+  if (format == CryptoKeyFormat::Jwk) {
+    if (!key_data.isObject() && !key_data.isNullOrUndefined()) {
+      api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.importKey", "keyData",
+                       "be a JsonWebKey dictionary");
+      return nullptr;
+    }
+    // Step 1 of the PBKDF2 import key operation: the only supported format is "raw".
+    DOMException::raise(cx, "Supplied format is not supported", "NotSupportedError");
+    return nullptr;
+  }
+
+  std::optional<std::span<uint8_t>> buffer = value_to_buffer(cx, key_data, "");
+  if (!buffer.has_value()) {
+    // value_to_buffer would have already created a JS exception so we don't need to create one
+    // ourselves.
+    return nullptr;
+  }
+  return this->importKey(cx, format, buffer.value(), extractable, usages);
+}
+
+JSObject *CryptoAlgorithmPBKDF2_Import::toObject(JSContext *cx) const {
+  // Let algorithm be a new KeyAlgorithm dictionary.
+  JS::RootedObject algorithm(cx, JS_NewPlainObject(cx));
+
+  // Set the name attribute of algorithm to "PBKDF2"
+  auto *alg_name = JS_NewStringCopyZ(cx, this->name());
+  if (!alg_name) {
+    return nullptr;
+  }
+  JS::RootedValue name_val(cx, JS::StringValue(alg_name));
+  if (!JS_SetProperty(cx, algorithm, "name", name_val)) {
+    return nullptr;
+  }
+  return algorithm;
+}
+
+// https://w3c.github.io/webcrypto/#dfn-Pbkdf2Params
+std::unique_ptr<CryptoAlgorithmPBKDF2_DeriveBits>
+CryptoAlgorithmPBKDF2_DeriveBits::fromParameters(JSContext *cx, JS::HandleObject parameters) {
+  // WebIDL converts dictionary members in lexicographic order (hash, iterations, salt), and
+  // https://w3c.github.io/webcrypto/#algorithm-normalization-normalize-an-algorithm only copies
+  // BufferSource members and normalizes HashAlgorithmIdentifier members once the whole dictionary
+  // has been converted. The reads below follow that order so user-observable getters run in the
+  // same order as in other engines.
+
+  // The hash member of Pbkdf2Params is a required HashAlgorithmIdentifier. Only read it here; it
+  // is normalized (with op set to "digest") after the other members have been converted.
+  JS::Rooted<JS::Value> hash_val(cx);
+  if (!JS_GetProperty(cx, parameters, "hash", &hash_val)) {
+    return nullptr;
+  }
+  if (hash_val.isUndefined()) {
+    api::throw_error(cx, api::Errors::TypeError, "Pbkdf2Params", "hash",
+                     "be a HashAlgorithmIdentifier");
+    return nullptr;
+  }
+
+  // The iterations member of Pbkdf2Params is a required [EnforceRange] unsigned long.
+  JS::Rooted<JS::Value> iterations_val(cx);
+  if (!JS_GetProperty(cx, parameters, "iterations", &iterations_val)) {
+    return nullptr;
+  }
+  auto iterations = enforce_range_unsigned_long(cx, iterations_val, "Pbkdf2Params", "iterations");
+  if (!iterations.has_value()) {
+    return nullptr;
+  }
+
+  // The salt member of Pbkdf2Params is a required BufferSource.
+  JS::Rooted<JS::Value> salt_val(cx);
+  if (!JS_GetProperty(cx, parameters, "salt", &salt_val)) {
+    return nullptr;
+  }
+  std::optional<std::span<uint8_t>> salt_buffer =
+      value_to_buffer(cx, salt_val, "Pbkdf2Params.salt");
+  if (!salt_buffer.has_value()) {
+    // value_to_buffer would have already created a JS exception so we don't need to create one
+    // ourselves.
+    return nullptr;
+  }
+  // Copy the salt now, before anything else can run user JS: normalizing `hash` below reads
+  // `hash.name` when it is an object, which could detach or mutate the buffer this span points
+  // into.
+  std::vector<uint8_t> salt(salt_buffer->begin(), salt_buffer->end());
+
+  auto hashIdentifier = toHashIdentifier(cx, hash_val);
+  if (hashIdentifier.isErr()) {
+    return nullptr;
+  }
+
+  return std::make_unique<CryptoAlgorithmPBKDF2_DeriveBits>(std::move(salt), iterations.value(),
+                                                          hashIdentifier.unwrap());
+}
+
+// https://w3c.github.io/webcrypto/#pbkdf2-operations-derive-bits
+JSObject *CryptoAlgorithmPBKDF2_DeriveBits::deriveBits(JSContext *cx, JS::HandleObject baseKey,
+                                                     std::optional<uint64_t> length) {
+  // 1. If length is null or is not a multiple of 8, then throw an OperationError.
+  if (!length.has_value() || length.value() % 8 != 0) {
+    DOMException::raise(cx, "deriveBits requires a length that is a multiple of 8",
+                        "OperationError");
+    return nullptr;
+  }
+
+  // 2. If the iterations member of normalizedAlgorithm is zero, then throw an OperationError.
+  if (this->iterations == 0) {
+    DOMException::raise(cx, "iterations must be greater than 0", "OperationError");
+    return nullptr;
+  }
+
+  // 3. If length is zero, return an empty byte sequence.
+  if (length.value() == 0) {
+    return JS::NewArrayBuffer(cx, 0);
+  }
+
+  // 4. Let prf be the HMAC function described in Section 2 of [NIST-SP800-224] using the hash
+  //    function described by the hash member of normalizedAlgorithm.
+  const EVP_MD *prf = createDigestAlgorithm(cx, this->hashIdentifier);
+  if (!prf) {
+    return nullptr;
+  }
+
+  // 5. Let result be the result of performing the PBKDF2 operation defined in Section 5.2 of
+  //    [RFC8018] using prf as the pseudo-random function, PRF, the password represented by the
+  //    [[handle]] internal slot of key as the password, P, the salt attribute of
+  //    normalizedAlgorithm as the salt, S, the value of the iterations attribute of
+  //    normalizedAlgorithm as the iteration count, c, and length divided by 8 as the intended
+  //    key length, dkLen.
+  auto password = CryptoKey::keyData(baseKey);
+  size_t derived_length = length.value() / 8;
+
+  // PKCS5_PBKDF2_HMAC takes the iteration count as an int, so larger counts cannot be requested
+  // from OpenSSL. Treat them as a failed key derivation operation (step 6) rather than letting the
+  // static_cast below produce an implementation-defined value.
+  if (this->iterations > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
+    DOMException::raise(cx, "SubtleCrypto.deriveBits: iterations is too large", "OperationError");
+    return nullptr;
+  }
+
+  mozilla::UniquePtr<uint8_t[], JS::FreePolicy> result{
+      static_cast<uint8_t *>(JS_malloc(cx, derived_length))};
+  if (!result) {
+    JS_ReportOutOfMemory(cx);
+    return nullptr;
+  }
+  if (PKCS5_PBKDF2_HMAC(reinterpret_cast<const char *>(password.data()),
+                      static_cast<int>(password.size()), this->salt.data(),
+                      static_cast<int>(this->salt.size()), static_cast<int>(this->iterations), prf,
+                      static_cast<int>(derived_length), result.get()) != 1) {
+    // 6. If the key derivation operation fails, then throw an OperationError.
+    DOMException::raise(cx, "SubtleCrypto.deriveBits: failed to derive bits", "OperationError");
+    return nullptr;
+  }
+
+  // 7. Return result as an ArrayBuffer.
+  JS::RootedObject array_buffer(cx);
+  array_buffer.set(JS::NewArrayBufferWithContents(
+      cx, derived_length, result.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
+  if (!array_buffer) {
+    JS_ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  // `array_buffer` now owns `result`
+  static_cast<void>(result.release());
+
+  return array_buffer;
 }
 
 } // namespace builtins::web::crypto

@@ -1,5 +1,6 @@
 #ifndef BUILTINS_WEB_CRYPTO_CRYPTO_ALGORITHM_H
 #define BUILTINS_WEB_CRYPTO_CRYPTO_ALGORITHM_H
+#include <optional>
 #include <span>
 
 #include "builtin.h"
@@ -46,6 +47,14 @@ enum class NamedCurve : uint8_t {
 const char *algorithmName(CryptoAlgorithmIdentifier algorithm);
 
 /// The base class that all algorithm implementations should derive from.
+// Converts `value` to a WebIDL `[EnforceRange] unsigned long`, following
+// https://webidl.spec.whatwg.org/#abstract-opdef-converttoint: NaN, infinities and values outside
+// [0, 2^32 - 1] are a TypeError, fractional values are truncated. Returns `std::nullopt` with a
+// pending exception on failure. `method` and `argument` name the operation and parameter being
+// converted, for the error message.
+std::optional<uint32_t> enforce_range_unsigned_long(JSContext *cx, JS::HandleValue value,
+                                                    const char *method, const char *argument);
+
 class CryptoAlgorithm {
 public:
   CryptoAlgorithm() = default;
@@ -78,6 +87,17 @@ public:
   virtual JS::Result<bool> verify(JSContext *cx, JS::HandleObject key, std::span<uint8_t> signature,
                                   std::span<uint8_t> data) = 0;
   static std::unique_ptr<CryptoAlgorithmSignVerify> normalize(JSContext *cx, JS::HandleValue value);
+};
+
+class CryptoAlgorithmDeriveBits : public CryptoAlgorithm {
+public:
+  // `length` is the length, in bits, of the keying material to derive. It is `std::nullopt`
+  // when the `length` argument of `SubtleCrypto.deriveBits` (declared as
+  // `optional [EnforceRange] unsigned long? length = null`) was omitted, `undefined` or `null`,
+  // which the derive bits operations treat as a `null` length per the WebCrypto specification.
+  virtual JSObject *deriveBits(JSContext *cx, JS::HandleObject baseKey,
+                               std::optional<uint64_t> length) = 0;
+  static std::unique_ptr<CryptoAlgorithmDeriveBits> normalize(JSContext *cx, JS::HandleValue value);
 };
 
 class CryptoAlgorithmHMAC_Sign_Verify final : public CryptoAlgorithmSignVerify {
@@ -271,6 +291,44 @@ public:
   [[nodiscard]] const char *name() const noexcept override { return "SHA-512"; };
   CryptoAlgorithmIdentifier identifier() override { return CryptoAlgorithmIdentifier::SHA_512; };
   JSObject *digest(JSContext *cx, std::span<uint8_t> data) override;
+};
+
+class CryptoAlgorithmPBKDF2_Import final : public CryptoAlgorithmImportKey {
+public:
+  [[nodiscard]] const char *name() const noexcept override { return "PBKDF2"; };
+  CryptoAlgorithmPBKDF2_Import() = default;
+
+  CryptoAlgorithmIdentifier identifier() final { return CryptoAlgorithmIdentifier::PBKDF2; };
+
+  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, JS::HandleValue key_data,
+                      bool extractable, CryptoKeyUsages usages) override;
+  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, KeyData key_data, bool extractable,
+                      CryptoKeyUsages usages) override;
+  JSObject *toObject(JSContext *cx) const;
+};
+
+class CryptoAlgorithmPBKDF2_DeriveBits final : public CryptoAlgorithmDeriveBits {
+public:
+  // The salt member of a Pbkdf2Params dictionary.
+  std::vector<uint8_t> salt;
+  // The iterations member of a Pbkdf2Params dictionary.
+  uint32_t iterations;
+  // The hash member of a Pbkdf2Params dictionary.
+  CryptoAlgorithmIdentifier hashIdentifier;
+
+  [[nodiscard]] const char *name() const noexcept override { return "PBKDF2"; };
+  CryptoAlgorithmPBKDF2_DeriveBits(std::vector<uint8_t> salt, uint32_t iterations,
+                                   CryptoAlgorithmIdentifier hashIdentifier)
+      : salt{std::move(salt)}, iterations{iterations}, hashIdentifier{hashIdentifier} {};
+
+  // https://w3c.github.io/webcrypto/#dfn-Pbkdf2Params
+  static std::unique_ptr<CryptoAlgorithmPBKDF2_DeriveBits>
+  fromParameters(JSContext *cx, JS::HandleObject parameters);
+
+  CryptoAlgorithmIdentifier identifier() final { return CryptoAlgorithmIdentifier::PBKDF2; };
+
+  JSObject *deriveBits(JSContext *cx, JS::HandleObject baseKey,
+                       std::optional<uint64_t> length) override;
 };
 
 } // namespace builtins::web::crypto

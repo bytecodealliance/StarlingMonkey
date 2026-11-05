@@ -2829,5 +2829,256 @@ export const handler = serveTest(async (t) => {
         await crypto.subtle.verify(ed25519Algorithm, key, ed25519Test2Signature, ed25519Test2Message);
       }, DOMException, undefined, "InvalidAccessError");
     });
+
+    // PBKDF2
+    // Expected outputs generated with Node.js crypto.subtle (OpenSSL), cross-checked against the
+    // RFC 6070 / RFC 7914 PBKDF2 test vectors.
+    const hexToBytes = (hex) => new Uint8Array(hex.match(/../g).map((b) => parseInt(b, 16)));
+    const pbkdf2Password = new TextEncoder().encode("password");
+    const pbkdf2Salt = new TextEncoder().encode("salt");
+    const pbkdf2Params = (hash, iterations = 1) => ({ name: "PBKDF2", salt: pbkdf2Salt, iterations, hash });
+
+    // importKey
+    await t.test("pbkdf2-importKey-raw", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      strictEqual(key.type, "secret", "type");
+      deepStrictEqual(key.algorithm, { name: "PBKDF2" }, "algorithm");
+      deepStrictEqual(key.usages, ["deriveBits"], "usages");
+      strictEqual(key.extractable, false, "extractable");
+    });
+    await t.test("pbkdf2-importKey-raw-extractable", async () => {
+      // PBKDF2 keys must be non-extractable.
+      await rejects(async () => {
+        await crypto.subtle.importKey("raw", pbkdf2Password, { name: "PBKDF2" }, true, ["deriveKey"]);
+      }, DOMException, undefined, "SyntaxError");
+      await rejects(async () => {
+        await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", true, ["deriveBits"]);
+      }, DOMException, undefined, "SyntaxError");
+    });
+    await t.test("pbkdf2-importKey-jwk-not-supported", async () => {
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk", { kty: "oct", k: "cGFzc3dvcmQ" }, "PBKDF2", false, ["deriveBits"]);
+      }, DOMException, undefined, "NotSupportedError");
+      // importKey() step 4: a "jwk" keyData that is not a JsonWebKey dictionary is a TypeError,
+      // before the PBKDF2 import key operation gets to reject the format.
+      await rejects(async () => {
+        await crypto.subtle.importKey("jwk", "not-an-object", "PBKDF2", false, ["deriveBits"]);
+      }, TypeError);
+    });
+    await t.test("pbkdf2-importKey-wrong-usages", async () => {
+      for (const usages of [["sign"], ["verify"], ["encrypt"], ["deriveBits", "sign"], ["unwrapKey"]]) {
+        await rejects(async () => {
+          await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, usages);
+        }, DOMException, undefined, "SyntaxError");
+      }
+    });
+    await t.test("pbkdf2-importKey-empty-key-data", async () => {
+      // RFC 8018 permits an empty password; the WPT pbkdf2 vectors include empty-password
+      // derivations (expected value below is the WPT vector for empty password, salt "NaCl",
+      // SHA-256, 1 iteration).
+      const key = await crypto.subtle.importKey("raw", new Uint8Array(), "PBKDF2", false, ["deriveBits"]);
+      const bits = new Uint8Array(await crypto.subtle.deriveBits(
+        { name: "PBKDF2", salt: new TextEncoder().encode("NaCl"), iterations: 1, hash: "SHA-256" },
+        key, 256));
+      deepStrictEqual(bits, hexToBytes(
+        "2ddb49243eb3b5912cb260cdd87fb04ef0d111bfa44d40a45e02a8a5c3c1518d"),
+        "derived bits for an empty password");
+    });
+    await t.test("pbkdf2-importKey-case-insensitive-name", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "pbkdf2", false, ["deriveBits"]);
+      strictEqual(key.algorithm.name, "PBKDF2", "algorithm name");
+    });
+
+    // deriveBits
+    const pbkdf2Vectors = [
+      // password "password", salt "salt"
+      { hash: "SHA-1", iterations: 1, length: 160, expected: "0c60c80f961f0e71f3a9b524af6012062fe037a6" },
+      { hash: "SHA-1", iterations: 2, length: 160, expected: "ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957" },
+      { hash: "SHA-256", iterations: 1, length: 256, expected: "120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b" },
+      { hash: "SHA-256", iterations: 2, length: 256, expected: "ae4d0c95af6b46d32d0adff928f06dd02a303f8ef3c251dfd6e2d85a95474c43" },
+      { hash: "SHA-384", iterations: 1, length: 384, expected: "c0e14f06e49e32d73f9f52ddf1d0c5c7191609233631dadd76a567db42b78676b38fc800cc53ddb642f5c74442e62be4" },
+      { hash: "SHA-512", iterations: 1, length: 512, expected: "867f70cf1ade02cff3752599a3a53dc4af34c7a669815ae5d513554e1c8cf252c02d470a285a0501bad999bfe943c08f050235d7d68b1da55e63f73b60a57fce" },
+      { hash: "SHA-256", iterations: 1, length: 384, expected: "120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b4dbf3a2f3dad3377264bb7b8e8330d4e" },
+      { hash: "SHA-256", iterations: 1, length: 8, expected: "12" },
+    ];
+    for (const { hash, iterations, length, expected } of pbkdf2Vectors) {
+      await t.test(`pbkdf2-deriveBits-${hash}-${iterations}-${length}`, async () => {
+        const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+        const bits = new Uint8Array(await crypto.subtle.deriveBits(pbkdf2Params(hash, iterations), key, length));
+        deepStrictEqual(bits, hexToBytes(expected), "derived bits deep equal expected");
+      });
+    }
+    await t.test("pbkdf2-deriveBits-rfc7914", async () => {
+      // RFC 7914 vectors: P = "passwordPASSWORDpassword", S = "saltSALTsaltSALTsaltSALTsaltSALTsalt", c = 4096
+      const key = await crypto.subtle.importKey("raw", new TextEncoder().encode("passwordPASSWORDpassword"), "PBKDF2", false, ["deriveBits"]);
+      const salt = new TextEncoder().encode("saltSALTsaltSALTsaltSALTsaltSALTsalt");
+      const bits256 = new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 4096, hash: "SHA-256" }, key, 256));
+      deepStrictEqual(bits256, hexToBytes("348c89dbcbd32b2f32d814b8116e84cf2b17347ebc1800181c4e2a1fb8dd53e1"), "SHA-256 derived bits");
+      const bits512 = new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 4096, hash: "SHA-512" }, key, 512));
+      deepStrictEqual(bits512, hexToBytes("8c0511f4c6e597c6ac6315d8f0362e225f3c501495ba23b868c005174dc4ee71115b59f9e60cd9532fa33e0f75aefe30225c583a186cd82bd4daea9724a3d3b8"), "SHA-512 derived bits");
+    });
+    await t.test("pbkdf2-deriveBits-zero-iterations", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      await rejects(async () => {
+        await crypto.subtle.deriveBits(pbkdf2Params("SHA-256", 0), key, 256);
+      }, DOMException, undefined, "OperationError");
+    });
+    await t.test("pbkdf2-deriveBits-iterations-above-int-max", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      // 2 ** 31 is a valid unsigned long, but more iterations than OpenSSL can be asked for, so
+      // the key derivation operation fails.
+      await rejects(async () => {
+        await crypto.subtle.deriveBits(pbkdf2Params("SHA-256", 2 ** 31), key, 256);
+      }, DOMException, undefined, "OperationError");
+    });
+    await t.test("pbkdf2-deriveBits-zero-length", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      const bits = await crypto.subtle.deriveBits(pbkdf2Params("SHA-256"), key, 0);
+      strictEqual(bits.byteLength, 0, "derived bits length");
+    });
+    await t.test("pbkdf2-deriveBits-length-not-multiple-of-8", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      for (const length of [1, 7, 9, 230, 255]) {
+        await rejects(async () => {
+          await crypto.subtle.deriveBits(pbkdf2Params("SHA-256"), key, length);
+        }, DOMException, undefined, "OperationError");
+      }
+    });
+    await t.test("pbkdf2-deriveBits-length-null-or-missing", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      for (const length of [null, undefined]) {
+        await rejects(async () => {
+          await crypto.subtle.deriveBits(pbkdf2Params("SHA-256"), key, length);
+        }, DOMException, undefined, "OperationError");
+      }
+      await rejects(async () => {
+        await crypto.subtle.deriveBits(pbkdf2Params("SHA-256"), key);
+      }, DOMException, undefined, "OperationError");
+    });
+    await t.test("pbkdf2-deriveBits-length-out-of-range", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      // [EnforceRange] unsigned long: NaN, infinite and out-of-range lengths are TypeErrors
+      for (const length of [NaN, Infinity, -Infinity, -8, 2 ** 32, 2 ** 32 + 8]) {
+        await rejects(async () => {
+          await crypto.subtle.deriveBits(pbkdf2Params("SHA-256"), key, length);
+        }, TypeError);
+      }
+    });
+    await t.test("pbkdf2-deriveBits-fractional-length-and-iterations", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      // [EnforceRange] truncates fractional values rather than rejecting them: 1.5 iterations
+      // and a length of 256.5 bits behave as 1 iteration and 256 bits.
+      const bits = new Uint8Array(await crypto.subtle.deriveBits(pbkdf2Params("SHA-256", 1.5), key, 256.5));
+      deepStrictEqual(bits, hexToBytes("120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b"),
+        "derived bits with truncated iterations and length");
+      // 1.5 truncates to a length of 1, which is not a multiple of 8.
+      await rejects(async () => {
+        await crypto.subtle.deriveBits(pbkdf2Params("SHA-256"), key, 1.5);
+      }, DOMException, undefined, "OperationError");
+      // -0.5 truncates to -0, which is in range and derives an empty buffer.
+      const empty = await crypto.subtle.deriveBits(pbkdf2Params("SHA-256"), key, -0.5);
+      strictEqual(empty.byteLength, 0, "derived bits length for -0.5");
+    });
+    await t.test("pbkdf2-deriveBits-iterations-out-of-range", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      // [EnforceRange] unsigned long: NaN, infinite and out-of-range iterations are TypeErrors
+      for (const iterations of [NaN, Infinity, -Infinity, -1, 2 ** 32]) {
+        await rejects(async () => {
+          await crypto.subtle.deriveBits(pbkdf2Params("SHA-256", iterations), key, 256);
+        }, TypeError);
+      }
+    });
+    await t.test("pbkdf2-deriveBits-missing-params", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      // salt, iterations and hash are all required members of Pbkdf2Params
+      for (const algorithm of [
+        { name: "PBKDF2", iterations: 1, hash: "SHA-256" },
+        { name: "PBKDF2", salt: pbkdf2Salt, hash: "SHA-256" },
+        { name: "PBKDF2", salt: pbkdf2Salt, iterations: 1 },
+        "PBKDF2",
+      ]) {
+        await rejects(async () => {
+          await crypto.subtle.deriveBits(algorithm, key, 256);
+        }, TypeError);
+      }
+    });
+    await t.test("pbkdf2-deriveBits-wrong-key-algorithm", async () => {
+      const pbkdf2Key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      const hmacKey = await crypto.subtle.importKey("raw", pbkdf2Password, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+      await rejects(async () => {
+        await crypto.subtle.deriveBits(pbkdf2Params("SHA-256"), hmacKey, 256);
+      }, DOMException, undefined, "InvalidAccessError");
+      await rejects(async () => {
+        await crypto.subtle.sign("HMAC", pbkdf2Key, new Uint8Array(1));
+      }, DOMException, undefined, "InvalidAccessError");
+    });
+    await t.test("pbkdf2-deriveBits-key-without-usage", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveKey"]);
+      await rejects(async () => {
+        await crypto.subtle.deriveBits(pbkdf2Params("SHA-256"), key, 256);
+      }, DOMException, undefined, "InvalidAccessError");
+    });
+    await t.test("pbkdf2-deriveBits-non-cryptokey", async () => {
+      await rejects(async () => {
+        await crypto.subtle.deriveBits(pbkdf2Params("SHA-256"), {}, 256);
+      }, TypeError);
+    });
+    await t.test("pbkdf2-deriveBits-unsupported-algorithms", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      // Algorithms which are recognized but don't support the deriveBits operation
+      for (const name of ["AES-CBC", "HMAC", "SHA-256", "Ed25519"]) {
+        await rejects(async () => {
+          await crypto.subtle.deriveBits({ name }, key, 256);
+        }, DOMException, undefined, "NotSupportedError");
+      }
+      // Key derivation algorithms which are not implemented yet
+      for (const name of ["HKDF", "ECDH"]) {
+        await rejects(async () => {
+          await crypto.subtle.deriveBits({ name }, key, 256);
+        }, DOMException, undefined, "NotSupportedError");
+      }
+      await rejects(async () => {
+        await crypto.subtle.deriveBits({ name: "NOPE" }, key, 256);
+      }, DOMException, undefined, "NotSupportedError");
+    });
+    await t.test("pbkdf2-deriveBits-params-read-order", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      // WebIDL converts dictionary members in lexicographic order, so Pbkdf2Params getters run
+      // as hash, iterations, salt; the hash is normalized (name read) after the conversion.
+      const order = [];
+      const params = {
+        name: "PBKDF2",
+        get salt() { order.push("salt"); return pbkdf2Salt; },
+        get iterations() { order.push("iterations"); return 1; },
+        get hash() { order.push("hash"); return { get name() { order.push("hash.name"); return "SHA-256"; } }; },
+      };
+      const bits = new Uint8Array(await crypto.subtle.deriveBits(params, key, 256));
+      deepStrictEqual(order, ["hash", "iterations", "salt", "hash.name"], "member read order");
+      deepStrictEqual(bits, hexToBytes(
+        "120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b"),
+        "derived bits with getter-backed params");
+    });
+    await t.test("pbkdf2-deriveBits-salt-detach-during-normalize", async () => {
+      const key = await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, ["deriveBits"]);
+      // The salt bytes are copied as soon as Pbkdf2Params.salt is read. The hash is normalized
+      // afterwards, so a hash name getter that detaches the salt buffer must not change the
+      // derived bits.
+      const salt = new TextEncoder().encode("salt");
+      const params = {
+        name: "PBKDF2",
+        salt,
+        iterations: 1,
+        hash: {
+          get name() {
+            structuredClone(salt, { transfer: [salt.buffer] });
+            return "SHA-256";
+          },
+        },
+      };
+      const bits = new Uint8Array(await crypto.subtle.deriveBits(params, key, 256));
+      deepStrictEqual(bits, hexToBytes(
+        "120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b"),
+        "derived bits use the pre-detach salt");
+    });
   }
 });
