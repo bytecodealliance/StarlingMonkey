@@ -3176,6 +3176,15 @@ export const handler = serveTest(async (t) => {
         await crypto.subtle.importKey("jwk", { kty: "oct", alg: "A256CBC" }, "AES-CBC", false, ["encrypt"]);
       }, DOMException, undefined, "DataError");
     });
+    await t.test("aes-cbc-importKey-jwk-undefined", async () => {
+      // WebIDL converts undefined/null to an empty JsonWebKey dictionary, so the import key
+      // operation reaches the kty check with no kty present rather than a TypeError.
+      for (const keyData of [undefined, null]) {
+        await rejects(async () => {
+          await crypto.subtle.importKey("jwk", keyData, "AES-CBC", false, ["encrypt"]);
+        }, DOMException, undefined, "DataError");
+      }
+    });
     await t.test("aes-cbc-importKey-step-order", async () => {
       const keyBytes = hexToBytes(aesCbcKeys[2].key);
       // importKey() step 4 rejects a keyData of the wrong kind with a TypeError before the

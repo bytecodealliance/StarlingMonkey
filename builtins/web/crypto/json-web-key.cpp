@@ -39,12 +39,21 @@ extractStringPropertyFromObject(JSContext *cx, JS::HandleObject object, const ch
 
 std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue value,
                                               std::string_view required_kty_value) {
-  if (!value.isObject()) {
+  JS::RootedObject object(cx);
+  if (value.isObject()) {
+    object = &value.toObject();
+  } else if (value.isNullOrUndefined()) {
+    // WebIDL dictionary conversion treats undefined and null as an empty dictionary,
+    // so parsing continues and fails at the 'kty' check with a DataError below.
+    object = JS_NewPlainObject(cx);
+    if (!object) {
+      return nullptr;
+    }
+  } else {
     api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.importKey",
       "keyData", "be a JSONWebKey");
     return nullptr;
   }
-  JS::RootedObject object(cx, &value.toObject());
 
   //   DOMString kty;
   auto kty_result = extractStringPropertyFromObject(cx, object, "kty");
