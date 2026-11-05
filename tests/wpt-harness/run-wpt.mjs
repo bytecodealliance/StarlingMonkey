@@ -278,12 +278,34 @@ async function startWptServer(root, logLevel) {
       shutdown(new Error('WPT Server Error: ' + chunk));
     }
     if (/wss on port \d+\] INFO - Listen on/.test(chunk)) {
-      if (logLevel > LogLevel.Quiet) {
-        console.info(`Started internal WPT server`);
-      }
-      return { process: server, ...config };
+      break;
     }
   }
+
+  // The marker above can precede some of the server's listeners actually being bound, so
+  // actively probe the endpoint the tests fetch from until it responds.
+  await waitForWptServer("http://web-platform.test:8000/", 30000);
+  if (logLevel > LogLevel.Quiet) {
+    console.info(`Started internal WPT server`);
+  }
+  return { process: server, ...config };
+}
+
+async function waitForWptServer(url, timeoutMillis) {
+  const deadline = Date.now() + timeoutMillis;
+  let lastError;
+  while (Date.now() < deadline) {
+    try {
+      // Any HTTP response - even an error status - means the host name resolves, the
+      // port is bound, and the server is handling requests.
+      await fetch(url, { signal: AbortSignal.timeout(1000) });
+      return;
+    } catch (e) {
+      lastError = e;
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+  }
+  throw new Error(`WPT server did not start serving ${url} within ${timeoutMillis}ms: ${lastError}`);
 }
 
 async function ensureWasmtime(config, logLevel) {
