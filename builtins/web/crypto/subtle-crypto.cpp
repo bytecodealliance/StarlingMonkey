@@ -499,6 +499,9 @@ bool encryptOrDecrypt(JSContext *cx, JS::CallArgs &args, bool enc) {
     return ReturnPromiseRejectedWithPendingError(cx, args);
   }
   // 7. Return promise and perform the remaining steps in parallel.
+  // Intentional deviation: the remaining steps are not run in parallel. Like every other
+  // SubtleCrypto method, they run synchronously in the calling frame, and the promise is
+  // rejected (step 8) or resolved (steps 12-14) there instead of via a queued global task.
   args.rval().setObject(*promise);
 
   // 8. If the following steps or referenced procedures say to throw an error, queue a global task
@@ -536,8 +539,7 @@ bool encryptOrDecrypt(JSContext *cx, JS::CallArgs &args, bool enc) {
 
   // 12. Queue a global task on the crypto task source, given realm's global object, to perform the
   // remaining steps.
-  // Intentional deviation: like every other SubtleCrypto method, the promise is resolved
-  // synchronously in the calling frame instead of via a queued global task.
+  // (Intentional deviation: resolved synchronously, see step 7.)
   // 13. Let result be the result of creating an ArrayBuffer in realm, containing ciphertext /
   // plaintext.
   // 14. Resolve promise with result.

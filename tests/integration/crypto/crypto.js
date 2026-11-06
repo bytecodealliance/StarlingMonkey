@@ -2872,6 +2872,12 @@ export const handler = serveTest(async (t) => {
         }, DOMException, undefined, "SyntaxError");
       }
     });
+    await t.test("pbkdf2-importKey-empty-usages", async () => {
+      // Step 10 of importKey(): the key is "secret", so an empty usages list is a SyntaxError.
+      await rejects(async () => {
+        await crypto.subtle.importKey("raw", pbkdf2Password, "PBKDF2", false, []);
+      }, DOMException, undefined, "SyntaxError");
+    });
     await t.test("pbkdf2-importKey-empty-key-data", async () => {
       // RFC 8018 permits an empty password; the WPT pbkdf2 vectors include empty-password
       // derivations (expected value below is the WPT vector for empty password, salt "NaCl",

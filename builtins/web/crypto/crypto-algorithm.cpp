@@ -668,7 +668,7 @@ const char *algorithmName(CryptoAlgorithmIdentifier algorithm) {
 }
 
 // clang-format off
-/// This table is from https://w3c.github.io/webcrypto/#h-note-15
+/// This table is from https://w3c.github.io/webcrypto/#algorithm-overview
 // | Algorithm					|	encrypt	|	decrypt	|	sign	|	verify	|	digest	|	generateKey	|	deriveKey	|	deriveBits	|	importKey	|	exportKey	|	wrapKey	|	unwrapKey	|
 // |	RSASSA-PKCS1-v1_5	|					|					|		✔		|		✔			|					|			✔				| 					|							|			✔			|			✔			|					|						|
 // |	RSA-PSS         	|					|					|		✔		|		✔			|					|			✔				|						|							|			✔			|			✔			|					|						|
@@ -700,7 +700,7 @@ std::unique_ptr<CryptoAlgorithmDigest> CryptoAlgorithmDigest::normalize(JSContex
   }
   auto identifier = identifierResult.unwrap();
 
-  // The table listed at https://w3c.github.io/webcrypto/#h-note-15 is what defines which algorithms support which operations
+  // The table listed at https://w3c.github.io/webcrypto/#algorithm-overview is what defines which algorithms support which operations
   // SHA-1, SHA-256, SHA-384, and SHA-512 are the only algorithms which support the digest operation
   // We also support MD5 as an extra implementor defined algorithm
 
@@ -752,7 +752,7 @@ CryptoAlgorithmSignVerify::normalize(JSContext *cx, JS::HandleValue value) {
     params.set(&value.toObject());
   }
 
-  // The table listed at https://w3c.github.io/webcrypto/#h-note-15 is what defines which algorithms support which operations
+  // The table listed at https://w3c.github.io/webcrypto/#algorithm-overview is what defines which algorithms support which operations
   // RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA, HMAC, Ed25519 are the algorithms
   // which support the sign operation
   switch (identifier) {
@@ -803,7 +803,7 @@ CryptoAlgorithmDeriveBits::normalize(JSContext *cx, JS::HandleValue value) {
     params.set(&value.toObject());
   }
 
-  // The table listed at https://w3c.github.io/webcrypto/#h-note-15 is what defines which algorithms support which operations
+  // The table listed at https://w3c.github.io/webcrypto/#algorithm-overview is what defines which algorithms support which operations
   // ECDH, HKDF, and PBKDF2 are the algorithms which support the deriveBits operation
   switch (identifier) {
   case CryptoAlgorithmIdentifier::PBKDF2: {
@@ -845,7 +845,7 @@ CryptoAlgorithmEncryptDecrypt::normalize(JSContext *cx, JS::HandleValue value) {
     params.set(&value.toObject());
   }
 
-  // The table listed at https://w3c.github.io/webcrypto/#h-note-15 is what defines which algorithms support which operations
+  // The table listed at https://w3c.github.io/webcrypto/#algorithm-overview is what defines which algorithms support which operations
   // RSA-OAEP, AES-CTR, AES-CBC, and AES-GCM are the algorithms which support the encrypt and decrypt operations
   switch (identifier) {
   case CryptoAlgorithmIdentifier::AES_CBC: {
@@ -1397,7 +1397,7 @@ CryptoAlgorithmImportKey::normalize(JSContext *cx, JS::HandleValue value) {
     params.set(&value.toObject());
   }
 
-  // The table listed at https://w3c.github.io/webcrypto/#h-note-15 is what defines which algorithms support which operations
+  // The table listed at https://w3c.github.io/webcrypto/#algorithm-overview is what defines which algorithms support which operations
   // RSASSA-PKCS1-v1_5, RSA-PSS, RSA-OAEP, ECDSA, ECDH, AES-CTR, AES-CBC, AES-GCM, AES-KW, HMAC, HKDF, PBKDF2, Ed25519 are the
   // algorithms which support the importKey operation
   switch (identifier) {
@@ -2905,9 +2905,7 @@ JSObject *CryptoAlgorithmPBKDF2_Import::importKey(JSContext *cx, CryptoKeyFormat
 
   // 2. If usages contains a value that is not "deriveKey" or "deriveBits", then throw a
   //    SyntaxError.
-  //    An empty usages list is also a SyntaxError, per step 10 of
-  //    https://w3c.github.io/webcrypto/#SubtleCrypto-method-importKey (the key is "secret").
-  if (usages.isEmpty() || !usages.canOnlyDeriveBitsOrKey()) {
+  if (!usages.isEmpty() && !usages.canOnlyDeriveBitsOrKey()) {
     DOMException::raise(cx, "PBKDF2 keys only support 'deriveKey' and 'deriveBits' operations",
                         "SyntaxError");
     return nullptr;
@@ -2916,6 +2914,14 @@ JSObject *CryptoAlgorithmPBKDF2_Import::importKey(JSContext *cx, CryptoKeyFormat
   // 3. If extractable is not false, then throw a SyntaxError.
   if (extractable) {
     DOMException::raise(cx, "PBKDF2 keys must not be extractable", "SyntaxError");
+    return nullptr;
+  }
+
+  // Step 10 of https://w3c.github.io/webcrypto/#SubtleCrypto-method-importKey: If the [[type]]
+  // internal slot of result is "secret" or "private" and usages is empty, then throw a
+  // SyntaxError. The key is always "secret"; the method delegates the check to this operation.
+  if (usages.isEmpty()) {
+    DOMException::raise(cx, "PBKDF2 keys must have at least one usage", "SyntaxError");
     return nullptr;
   }
 
@@ -3189,7 +3195,7 @@ JSObject *CryptoAlgorithmAES_CBC_Import::importKey(JSContext *cx, CryptoKeyForma
     //       If the alg field of jwk is present, and is not "A256CBC", then throw a DataError.
     //     Otherwise:
     //       throw a DataError.
-    const char *expected_alg = nullptr;
+    std::string_view expected_alg;
     switch (data->size()) {
     case 16: {
       expected_alg = "A128CBC";
@@ -3215,7 +3221,7 @@ JSObject *CryptoAlgorithmAES_CBC_Import::importKey(JSContext *cx, CryptoKeyForma
 
     // 2.6 If usages is non-empty and the use field of jwk is present and is not "enc", then
     //     throw a DataError.
-    if (!usages.isEmpty() && jwk->use.has_value() && jwk->use != "enc") {
+    if (!usages.isEmpty() && jwk->use.has_value() && jwk->use.value() != "enc") {
       DOMException::raise(cx, "The JWK member 'use' must be 'enc'", "DataError");
       return nullptr;
     }
@@ -3489,7 +3495,7 @@ JSObject *CryptoAlgorithmAES_CBC_Encrypt_Decrypt::decrypt(JSContext *cx, JS::Han
 
   // 2. If the length of ciphertext is zero or is not a multiple of 16 bytes, then throw an
   //    OperationError.
-  if (data.empty() || data.size() % 16 != 0) {
+  if (data.empty() || (data.size() % 16) != 0) {
     DOMException::raise(cx, "AES-CBC ciphertext must be a non-empty multiple of 16 bytes",
                         "OperationError");
     return nullptr;
