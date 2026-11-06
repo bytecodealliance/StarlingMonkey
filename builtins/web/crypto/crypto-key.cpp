@@ -671,7 +671,7 @@ JSObject *CryptoKey::createSymmetric(JSContext *cx, JS::HandleObject algorithm_o
   JS::SetReservedSlot(instance, std::to_underlying(Slots::Type), JS::Int32Value(static_cast<uint8_t>(CryptoKeyType::Secret)));
   JS::SetReservedSlot(instance, std::to_underlying(Slots::Extractable), JS::BooleanValue(extractable));
   JS::SetReservedSlot(instance, std::to_underlying(Slots::Usages), JS::Int32Value(usages.toInt()));
-  JS::SetReservedSlot(instance, std::to_underlying(Slots::KeyData), JS::PrivateValue(data.release());
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::KeyData), JS::PrivateValue(data.release()));
   return instance;
 }
 
