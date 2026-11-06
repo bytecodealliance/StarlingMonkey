@@ -79,6 +79,9 @@ public:
   };
   [[nodiscard]] bool canOnlyWrapKey() const { return this->mask == wrap_key_flag; };
   [[nodiscard]] bool canOnlyUnwrapKey() const { return this->mask == unwrap_key_flag; };
+  [[nodiscard]] bool canOnlyEncryptDecryptWrapUnwrap() const {
+    return (this->mask & ~(encrypt_flag | decrypt_flag | wrap_key_flag | unwrap_key_flag)) == 0;
+  };
 };
 
 class CryptoKey : public BuiltinNoConstructor<CryptoKey, FinalizableClassPolicy> {
@@ -161,6 +164,8 @@ public:
   static bool canSign(JS::HandleObject self);
   static bool canVerify(JS::HandleObject self);
   static bool canDeriveBits(JS::HandleObject self);
+  static bool canEncrypt(JS::HandleObject self);
+  static bool canDecrypt(JS::HandleObject self);
   static JS::Result<bool> is_algorithm(JSContext *cx, JS::HandleObject self,
                                        CryptoAlgorithmIdentifier algorithm);
 };

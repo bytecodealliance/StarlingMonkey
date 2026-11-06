@@ -668,7 +668,7 @@ const char *algorithmName(CryptoAlgorithmIdentifier algorithm) {
 }
 
 // clang-format off
-/// This table is from https://w3c.github.io/webcrypto/#h-note-15
+/// This table is from https://w3c.github.io/webcrypto/#algorithm-overview
 // | Algorithm					|	encrypt	|	decrypt	|	sign	|	verify	|	digest	|	generateKey	|	deriveKey	|	deriveBits	|	importKey	|	exportKey	|	wrapKey	|	unwrapKey	|
 // |	RSASSA-PKCS1-v1_5	|					|					|		✔		|		✔			|					|			✔				| 					|							|			✔			|			✔			|					|						|
 // |	RSA-PSS         	|					|					|		✔		|		✔			|					|			✔				|						|							|			✔			|			✔			|					|						|
@@ -700,7 +700,7 @@ std::unique_ptr<CryptoAlgorithmDigest> CryptoAlgorithmDigest::normalize(JSContex
   }
   auto identifier = identifierResult.unwrap();
 
-  // The table listed at https://w3c.github.io/webcrypto/#h-note-15 is what defines which algorithms support which operations
+  // The table listed at https://w3c.github.io/webcrypto/#algorithm-overview is what defines which algorithms support which operations
   // SHA-1, SHA-256, SHA-384, and SHA-512 are the only algorithms which support the digest operation
   // We also support MD5 as an extra implementor defined algorithm
 
@@ -752,7 +752,7 @@ CryptoAlgorithmSignVerify::normalize(JSContext *cx, JS::HandleValue value) {
     params.set(&value.toObject());
   }
 
-  // The table listed at https://w3c.github.io/webcrypto/#h-note-15 is what defines which algorithms support which operations
+  // The table listed at https://w3c.github.io/webcrypto/#algorithm-overview is what defines which algorithms support which operations
   // RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA, HMAC, Ed25519 are the algorithms
   // which support the sign operation
   switch (identifier) {
@@ -803,7 +803,7 @@ CryptoAlgorithmDeriveBits::normalize(JSContext *cx, JS::HandleValue value) {
     params.set(&value.toObject());
   }
 
-  // The table listed at https://w3c.github.io/webcrypto/#h-note-15 is what defines which algorithms support which operations
+  // The table listed at https://w3c.github.io/webcrypto/#algorithm-overview is what defines which algorithms support which operations
   // ECDH, HKDF, and PBKDF2 are the algorithms which support the deriveBits operation
   switch (identifier) {
   case CryptoAlgorithmIdentifier::PBKDF2: {
@@ -816,6 +816,50 @@ CryptoAlgorithmDeriveBits::normalize(JSContext *cx, JS::HandleValue value) {
   }
   default: {
     DOMException::raise(cx, "Supplied algorithm does not support the deriveBits operation", "NotSupportedError");
+    return nullptr;
+  }
+  }
+};
+
+std::unique_ptr<CryptoAlgorithmEncryptDecrypt>
+CryptoAlgorithmEncryptDecrypt::normalize(JSContext *cx, JS::HandleValue value) {
+  // Do steps 1 through 5.1 of https://w3c.github.io/webcrypto/#algorithm-normalization-normalize-an-algorithm
+  auto identifierResult = normalizeIdentifier(cx, value);
+  if (identifierResult.isErr()) {
+    // If we are here, this means either the identifier could not be coerced to a String or was not recognized
+    // In both those scenarios an exception will have already been created, which is why we are not creating one here.
+    return nullptr;
+  }
+  auto identifier = identifierResult.unwrap();
+  JS::Rooted<JSObject *> params(cx);
+
+  // The value can either be a JS String or a JS Object with a 'name' property which is the algorithm identifier.
+  // Other properties within the object will be the parameters for the algorithm to use.
+  if (value.isString()) {
+    auto *obj = JS_NewPlainObject(cx);
+    params.set(obj);
+    if (!JS_SetProperty(cx, params, "name", value)) {
+      return nullptr;
+    }
+  } else if (value.isObject()) {
+    params.set(&value.toObject());
+  }
+
+  // The table listed at https://w3c.github.io/webcrypto/#algorithm-overview is what defines which algorithms support which operations
+  // RSA-OAEP, AES-CTR, AES-CBC, and AES-GCM are the algorithms which support the encrypt and decrypt operations
+  switch (identifier) {
+  case CryptoAlgorithmIdentifier::AES_CBC: {
+    return CryptoAlgorithmAES_CBC_Encrypt_Decrypt::fromParameters(cx, params);
+  }
+  case CryptoAlgorithmIdentifier::RSA_OAEP:
+  case CryptoAlgorithmIdentifier::AES_CTR:
+  case CryptoAlgorithmIdentifier::AES_GCM:
+  case CryptoAlgorithmIdentifier::AES_KW: {
+    DOMException::raise(cx, "Supplied algorithm is not yet supported", "NotSupportedError");
+    return nullptr;
+  }
+  default: {
+    DOMException::raise(cx, "Supplied algorithm does not support the encrypt or decrypt operation", "NotSupportedError");
     return nullptr;
   }
   }
@@ -1353,7 +1397,7 @@ CryptoAlgorithmImportKey::normalize(JSContext *cx, JS::HandleValue value) {
     params.set(&value.toObject());
   }
 
-  // The table listed at https://w3c.github.io/webcrypto/#h-note-15 is what defines which algorithms support which operations
+  // The table listed at https://w3c.github.io/webcrypto/#algorithm-overview is what defines which algorithms support which operations
   // RSASSA-PKCS1-v1_5, RSA-PSS, RSA-OAEP, ECDSA, ECDH, AES-CTR, AES-CBC, AES-GCM, AES-KW, HMAC, HKDF, PBKDF2, Ed25519 are the
   // algorithms which support the importKey operation
   switch (identifier) {
@@ -1372,10 +1416,12 @@ CryptoAlgorithmImportKey::normalize(JSContext *cx, JS::HandleValue value) {
   case CryptoAlgorithmIdentifier::PBKDF2: {
     return std::make_unique<CryptoAlgorithmPBKDF2_Import>();
   }
+  case CryptoAlgorithmIdentifier::AES_CBC: {
+    return std::make_unique<CryptoAlgorithmAES_CBC_Import>();
+  }
   case CryptoAlgorithmIdentifier::RSA_PSS:
   case CryptoAlgorithmIdentifier::RSA_OAEP:
   case CryptoAlgorithmIdentifier::AES_CTR:
-  case CryptoAlgorithmIdentifier::AES_CBC:
   case CryptoAlgorithmIdentifier::AES_GCM:
   case CryptoAlgorithmIdentifier::AES_KW:
   case CryptoAlgorithmIdentifier::ECDH:
@@ -2859,7 +2905,7 @@ JSObject *CryptoAlgorithmPBKDF2_Import::importKey(JSContext *cx, CryptoKeyFormat
 
   // 2. If usages contains a value that is not "deriveKey" or "deriveBits", then throw a
   //    SyntaxError.
-  if (!usages.canOnlyDeriveBitsOrKey()) {
+  if (!usages.isEmpty() && !usages.canOnlyDeriveBitsOrKey()) {
     DOMException::raise(cx, "PBKDF2 keys only support 'deriveKey' and 'deriveBits' operations",
                         "SyntaxError");
     return nullptr;
@@ -2868,6 +2914,14 @@ JSObject *CryptoAlgorithmPBKDF2_Import::importKey(JSContext *cx, CryptoKeyFormat
   // 3. If extractable is not false, then throw a SyntaxError.
   if (extractable) {
     DOMException::raise(cx, "PBKDF2 keys must not be extractable", "SyntaxError");
+    return nullptr;
+  }
+
+  // Step 10 of https://w3c.github.io/webcrypto/#SubtleCrypto-method-importKey: If the [[type]]
+  // internal slot of result is "secret" or "private" and usages is empty, then throw a
+  // SyntaxError. The key is always "secret"; the method delegates the check to this operation.
+  if (usages.isEmpty()) {
+    DOMException::raise(cx, "PBKDF2 keys must have at least one usage", "SyntaxError");
     return nullptr;
   }
 
@@ -3033,11 +3087,13 @@ JSObject *CryptoAlgorithmPBKDF2_DeriveBits::deriveBits(JSContext *cx, JS::Handle
   auto password = CryptoKey::keyData(baseKey);
   size_t derived_length = length.value() / 8;
 
-  // PKCS5_PBKDF2_HMAC takes the iteration count as an int, so larger counts cannot be requested
-  // from OpenSSL. Treat them as a failed key derivation operation (step 6) rather than letting the
-  // static_cast below produce an implementation-defined value.
-  if (this->iterations > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
-    DOMException::raise(cx, "SubtleCrypto.deriveBits: iterations is too large", "OperationError");
+  // PKCS5_PBKDF2_HMAC takes int for its iteration count and buffer sizes; values that do not
+  // fit an int cannot be passed to it and thus cannot be processed. Treat them as a failed key
+  // derivation operation (step 6) rather than letting the static_casts below produce
+  // implementation-defined values.
+  if (password.size() > INT32_MAX || this->salt.size() > INT32_MAX ||
+      this->iterations > INT32_MAX || derived_length > INT32_MAX) {
+    DOMException::raise(cx, "SubtleCrypto.deriveBits: input is too large", "OperationError");
     return nullptr;
   }
 
@@ -3069,6 +3125,393 @@ JSObject *CryptoAlgorithmPBKDF2_DeriveBits::deriveBits(JSContext *cx, JS::Handle
   static_cast<void>(result.release());
 
   return array_buffer;
+}
+
+// https://w3c.github.io/webcrypto/#aes-cbc-operations-import-key
+JSObject *CryptoAlgorithmAES_CBC_Import::importKey(JSContext *cx, CryptoKeyFormat format,
+                                                 KeyData key_data, bool extractable,
+                                                 CryptoKeyUsages usages) {
+  MOZ_ASSERT(cx);
+
+  // 1. If usages contains an entry which is not one of "encrypt", "decrypt", "wrapKey" or
+  //    "unwrapKey", then throw a SyntaxError.
+  if (!usages.canOnlyEncryptDecryptWrapUnwrap()) {
+    DOMException::raise(
+        cx, "AES-CBC keys only support 'encrypt', 'decrypt', 'wrapKey' and 'unwrapKey' operations",
+        "SyntaxError");
+    return nullptr;
+  }
+
+  std::unique_ptr<std::vector<uint8_t>> data;
+  switch (format) {
+  // 2. If format is "raw":
+  case CryptoKeyFormat::Raw: {
+    // The importKey() method has already turned keyData into a byte sequence for every format
+    // other than "jwk", so keyData is always the byte-span alternative here.
+    MOZ_ASSERT(std::holds_alternative<std::span<uint8_t>>(key_data));
+    auto key_bytes = std::get<std::span<uint8_t>>(key_data);
+    // 2.1 Let data be keyData.
+    //     keyData is a view of the caller's buffer, which can change after import, so copy it.
+    data = std::make_unique<std::vector<uint8_t>>(key_bytes.begin(), key_bytes.end());
+    // 2.2 If the length in bits of data is not 128, 192 or 256 then throw a DataError.
+    if (data->size() != 16 && data->size() != 24 && data->size() != 32) {
+      DOMException::raise(cx, "AES-CBC key data must be 128, 192 or 256 bits long", "DataError");
+      return nullptr;
+    }
+    break;
+  }
+  // If format is "jwk":
+  case CryptoKeyFormat::Jwk: {
+    // 2.1 If keyData is a JsonWebKey dictionary: Let jwk equal keyData. Otherwise: Throw a
+    //     DataError.
+    //     The importKey() overload below only gets here with a parsed JsonWebKey.
+    MOZ_ASSERT(std::holds_alternative<JsonWebKey *>(key_data));
+    auto *jwk = std::get<JsonWebKey *>(key_data);
+    MOZ_ASSERT(jwk);
+    // 2.2 If the kty field of jwk is not "oct", then throw a DataError.
+    //     (Checked by JsonWebKey::parse in the importKey() overload below.)
+    // 2.3 If jwk does not meet the requirements of Section 6.4 of JSON Web Algorithms [JWA], then
+    //     throw a DataError.
+    //     Section 6.4 of JWA requires the "k" member for "oct" keys.
+    if (!jwk->k.has_value()) {
+      DOMException::raise(cx, "The JWK member 'k' is required for 'oct' keys", "DataError");
+      return nullptr;
+    }
+    // 2.4 Let data be the byte sequence obtained by decoding the k field of jwk.
+    auto dataResult = base64::forgivingBase64Decode(jwk->k.value(), base64::base64URLDecodeTable);
+    if (dataResult.isErr()) {
+      DOMException::raise(cx,
+                         "The JWK member 'k' could not be base64url decoded or contained padding", "DataError");
+      return nullptr;
+    }
+    auto data_string = dataResult.unwrap();
+    data = std::make_unique<std::vector<uint8_t>>(data_string.begin(), data_string.end());
+
+    // 2.5 If the length in bits of data is 128:
+    //       If the alg field of jwk is present, and is not "A128CBC", then throw a DataError.
+    //     If the length in bits of data is 192:
+    //       If the alg field of jwk is present, and is not "A192CBC", then throw a DataError.
+    //     If the length in bits of data is 256:
+    //       If the alg field of jwk is present, and is not "A256CBC", then throw a DataError.
+    //     Otherwise:
+    //       throw a DataError.
+    std::string_view expected_alg;
+    switch (data->size()) {
+    case 16: {
+      expected_alg = "A128CBC";
+      break;
+    }
+    case 24: {
+      expected_alg = "A192CBC";
+      break;
+    }
+    case 32: {
+      expected_alg = "A256CBC";
+      break;
+    }
+    default: {
+      DOMException::raise(cx, "AES-CBC key data must be 128, 192 or 256 bits long", "DataError");
+      return nullptr;
+    }
+    }
+    if (jwk->alg.has_value() && jwk->alg.value() != expected_alg) {
+      DOMException::raise(cx, "The JWK member 'alg' does not match the length of 'k'", "DataError");
+      return nullptr;
+    }
+
+    // 2.6 If usages is non-empty and the use field of jwk is present and is not "enc", then
+    //     throw a DataError.
+    if (!usages.isEmpty() && jwk->use.has_value() && jwk->use.value() != "enc") {
+      DOMException::raise(cx, "The JWK member 'use' must be 'enc'", "DataError");
+      return nullptr;
+    }
+    // 2.7 If the key_ops field of jwk is present, and is invalid according to the requirements
+    //     of JSON Web Key [JWK] or does not contain all of the specified usages values, then
+    //     throw a DataError.
+    //     (JsonWebKey::parse rejects key_ops entries that are not recognized or repeated.)
+    if (!jwk->key_ops.empty()) {
+      auto ops = CryptoKeyUsages::from(jwk->key_ops);
+      if (!ops.isSuperSetOf(usages)) {
+        DOMException::raise(cx,
+                            "The JWK 'key_ops' member was inconsistent with that specified by the "
+                            "Web Crypto call. The JWK usage must be a superset of those requested", "DataError");
+        return nullptr;
+      }
+    }
+    // 2.8 If the ext field of jwk is present and has the value false and extractable is true,
+    //     then throw a DataError.
+    if (jwk->ext.has_value() && !jwk->ext.value() && extractable) {
+      DOMException::raise(cx, "The JWK member 'ext' is false but extractable is true", "DataError");
+      return nullptr;
+    }
+    break;
+  }
+  // Otherwise: throw a NotSupportedError
+  default: {
+    DOMException::raise(cx, "Supplied format is not supported", "NotSupportedError");
+    return nullptr;
+  }
+  }
+
+  // Step 10 of https://w3c.github.io/webcrypto/#SubtleCrypto-method-importKey: If the [[type]]
+  // internal slot of result is "secret" or "private" and usages is empty, then throw a
+  // SyntaxError. The key is always "secret"; the method delegates the check to this operation.
+  if (usages.isEmpty()) {
+    DOMException::raise(cx, "AES-CBC keys must have at least one usage", "SyntaxError");
+    return nullptr;
+  }
+
+  // 3. Let key be a new CryptoKey object representing an AES key with value data.
+  // 4. Set the [[type]] internal slot of key to "secret".
+  //    (Steps 3 and 4 are done in CryptoKey::createSymmetric.)
+  // 5. Let algorithm be a new AesKeyAlgorithm.
+  // 6. Set the name attribute of algorithm to "AES-CBC".
+  // 7. Set the length attribute of algorithm to the length, in bits, of data.
+  //    (Steps 5 through 7 are done in CryptoAlgorithmAES_CBC_Import::toObject.)
+  JS::RootedObject algorithm(cx, this->toObject(cx, data->size() * 8));
+  if (!algorithm) {
+    return nullptr;
+  }
+
+  // 8. Set the [[algorithm]] internal slot of key to algorithm.
+  // 9. Return key.
+  return CryptoKey::createSymmetric(cx, algorithm, std::move(data), extractable, usages);
+}
+
+JSObject *CryptoAlgorithmAES_CBC_Import::importKey(JSContext *cx, CryptoKeyFormat format,
+                                                 JS::HandleValue key_data, bool extractable,
+                                                 CryptoKeyUsages usages) {
+  MOZ_ASSERT(cx);
+
+  // Step 4 of https://w3c.github.io/webcrypto/#SubtleCrypto-method-importKey runs before the
+  // import key operation: for "jwk", keyData must be a JsonWebKey dictionary (which WebIDL only
+  // converts from an object, undefined or null); for every other format it must be a
+  // BufferSource. Anything else is a TypeError.
+  std::span<uint8_t> key_bytes;
+  if (format == CryptoKeyFormat::Jwk) {
+    if (!key_data.isObject() && !key_data.isNullOrUndefined()) {
+      api::throw_error(cx, api::Errors::TypeError, "crypto.subtle.importKey", "keyData",
+                       "be a JsonWebKey dictionary");
+      return nullptr;
+    }
+  } else {
+    std::optional<std::span<uint8_t>> buffer = value_to_buffer(cx, key_data, "");
+    if (!buffer.has_value()) {
+      // value_to_buffer would have already created a JS exception so we don't need to create one
+      // ourselves.
+      return nullptr;
+    }
+    key_bytes = buffer.value();
+  }
+
+  // 1. If usages contains an entry which is not one of "encrypt", "decrypt", "wrapKey" or
+  //    "unwrapKey", then throw a SyntaxError.
+  //    Checked here as well so it precedes the kty DataError raised by JsonWebKey::parse.
+  if (!usages.canOnlyEncryptDecryptWrapUnwrap()) {
+    DOMException::raise(
+        cx, "AES-CBC keys only support 'encrypt', 'decrypt', 'wrapKey' and 'unwrapKey' operations",
+        "SyntaxError");
+    return nullptr;
+  }
+
+  if (format == CryptoKeyFormat::Jwk) {
+    // 2.1 Let jwk equal keyData.
+    // 2.2 If the kty field of jwk is not "oct", then throw a DataError.
+    //     (Both handled by JsonWebKey::parse.)
+    auto jwk = JsonWebKey::parse(cx, key_data, "oct");
+    if (!jwk) {
+      return nullptr;
+    }
+    return this->importKey(cx, format, KeyData{jwk.get()}, extractable, usages);
+  }
+  return this->importKey(cx, format, KeyData{key_bytes}, extractable, usages);
+}
+
+JSObject *CryptoAlgorithmAES_CBC_Import::toObject(JSContext *cx, size_t length) const {
+  // Let algorithm be a new AesKeyAlgorithm dictionary.
+  JS::RootedObject algorithm(cx, JS_NewPlainObject(cx));
+
+  // Set the name attribute of algorithm to "AES-CBC"
+  auto *alg_name = JS_NewStringCopyZ(cx, this->name());
+  if (!alg_name) {
+    return nullptr;
+  }
+  JS::RootedValue name_val(cx, JS::StringValue(alg_name));
+  if (!JS_SetProperty(cx, algorithm, "name", name_val)) {
+    return nullptr;
+  }
+
+  // Set the length attribute of algorithm to the length, in bits, of the imported key data.
+  JS::RootedValue length_val(cx, JS::Int32Value(static_cast<int32_t>(length)));
+  if (!JS_SetProperty(cx, algorithm, "length", length_val)) {
+    return nullptr;
+  }
+  return algorithm;
+}
+
+// https://w3c.github.io/webcrypto/#dfn-AesCbcParams
+std::unique_ptr<CryptoAlgorithmAES_CBC_Encrypt_Decrypt>
+CryptoAlgorithmAES_CBC_Encrypt_Decrypt::fromParameters(JSContext *cx, JS::HandleObject parameters) {
+  // AesCbcParams has a single member of its own, iv, which WebIDL converts after the inherited
+  // Algorithm member name (already read by normalizeIdentifier).
+
+  // The iv member of AesCbcParams is a required BufferSource.
+  JS::Rooted<JS::Value> iv_val(cx);
+  if (!JS_GetProperty(cx, parameters, "iv", &iv_val)) {
+    return nullptr;
+  }
+  std::optional<std::span<uint8_t>> iv_buffer = value_to_buffer(cx, iv_val, "AesCbcParams.iv");
+  if (!iv_buffer.has_value()) {
+    // value_to_buffer would have already created a JS exception so we don't need to create one
+    // ourselves.
+    return nullptr;
+  }
+  // Copy the iv right away: nothing below runs user JS, but the span points into the caller's
+  // buffer and must not be held any longer than necessary. Its length is only validated by the
+  // encrypt and decrypt operations (their step 1), after the method's key checks.
+  return std::make_unique<CryptoAlgorithmAES_CBC_Encrypt_Decrypt>(
+      std::vector<uint8_t>(iv_buffer->begin(), iv_buffer->end()));
+}
+
+namespace {
+// Shared implementation of the AES-CBC encrypt and decrypt operations
+// (https://w3c.github.io/webcrypto/#aes-cbc-operations-encrypt and
+// https://w3c.github.io/webcrypto/#aes-cbc-operations-decrypt): the CBC operation of
+// [NIST-SP800-38A] Section 6.2 with the PKCS#7 padding of [RFC2315] Section 10.3. `enc` selects
+// the direction: true for encrypt, false for decrypt.
+JSObject *aesCbcCrypt(JSContext *cx, JS::HandleObject key, const std::vector<uint8_t> &iv,
+                      std::span<uint8_t> data, bool enc) {
+  MOZ_ASSERT(iv.size() == 16);
+
+  // Select the cipher matching the key length. Import only produces 128, 192 or 256-bit keys.
+  auto keyData = CryptoKey::keyData(key);
+  const EVP_CIPHER *cipher = nullptr;
+  switch (keyData.size()) {
+  case 16: {
+    cipher = EVP_aes_128_cbc();
+    break;
+  }
+  case 24: {
+    cipher = EVP_aes_192_cbc();
+    break;
+  }
+  case 32: {
+    cipher = EVP_aes_256_cbc();
+    break;
+  }
+  default: {
+    MOZ_ASSERT_UNREACHABLE("AES-CBC key length is validated at import");
+    return nullptr;
+  }
+  }
+
+  // EVP_CipherUpdate takes int for its data sizes; inputs that do not fit an int cannot be passed
+  // to it and thus cannot be processed. Treat them as a failed operation.
+  if (data.size() > INT32_MAX) {
+    DOMException::raise(cx, "AES-CBC input is too large", "OperationError");
+    return nullptr;
+  }
+
+  // Every failure inside OpenSSL below (including a bad PKCS#7 padding on decrypt, which is
+  // the OperationError of decrypt step 5) is reported as an OperationError, the only error the
+  // AES-CBC operations define.
+  EvpCipherCtxPtr ctx(EVP_CIPHER_CTX_new());
+  if (!ctx) {
+    JS_ReportOutOfMemory(cx);
+    return nullptr;
+  }
+  if (EVP_CipherInit_ex(ctx.get(), cipher, nullptr, keyData.data(), iv.data(), enc ? 1 : 0) != 1) {
+    DOMException::raise(cx, "AES-CBC operation failed", "OperationError");
+    return nullptr;
+  }
+
+  // PKCS#7 padding can add a full block on encrypt; decrypt output never exceeds the input.
+  size_t out_capacity = data.size() + 16;
+  mozilla::UniquePtr<uint8_t[], JS::FreePolicy> result{
+      static_cast<uint8_t *>(JS_malloc(cx, out_capacity))};
+  if (!result) {
+    JS_ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  int update_length = 0;
+  if (EVP_CipherUpdate(ctx.get(), result.get(), &update_length, data.data(),
+                       static_cast<int>(data.size())) != 1) {
+    DOMException::raise(cx, "AES-CBC operation failed", "OperationError");
+    return nullptr;
+  }
+
+  int final_length = 0;
+  if (EVP_CipherFinal_ex(ctx.get(), result.get() + update_length, &final_length) != 1) {
+    DOMException::raise(cx, "AES-CBC operation failed", "OperationError");
+    return nullptr;
+  }
+  size_t out_length = static_cast<size_t>(update_length) + static_cast<size_t>(final_length);
+
+  JS::RootedObject array_buffer(cx);
+  array_buffer.set(JS::NewArrayBufferWithContents(
+      cx, out_length, result.get(), JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory));
+  if (!array_buffer) {
+    JS_ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  // `array_buffer` now owns `result`
+  static_cast<void>(result.release());
+
+  return array_buffer;
+}
+} // namespace
+
+// https://w3c.github.io/webcrypto/#aes-cbc-operations-encrypt
+JSObject *CryptoAlgorithmAES_CBC_Encrypt_Decrypt::encrypt(JSContext *cx, JS::HandleObject key,
+                                                        std::span<uint8_t> data) {
+  // 1. If the iv member of normalizedAlgorithm does not have a length of 16 bytes, then throw an
+  //    OperationError.
+  if (this->iv.size() != 16) {
+    DOMException::raise(cx, "AES-CBC iv must be 16 bytes long", "OperationError");
+    return nullptr;
+  }
+
+  // 2. Let paddedPlaintext be the result of adding padding octets to plaintext according to the
+  //    procedure defined in Section 10.3 of [RFC2315], step 2, with a value of k of 16.
+  // 3. Let ciphertext be the result of performing the CBC Encryption operation described in
+  //    Section 6.2 of [NIST-SP800-38A] using AES as the block cipher, the iv member of
+  //    normalizedAlgorithm as the IV input parameter and paddedPlaintext as the input plaintext.
+  //    (OpenSSL applies the PKCS#7 padding of step 2 as part of the CBC encryption.)
+  // 4. Return ciphertext.
+  return aesCbcCrypt(cx, key, this->iv, data, true);
+}
+
+// https://w3c.github.io/webcrypto/#aes-cbc-operations-decrypt
+JSObject *CryptoAlgorithmAES_CBC_Encrypt_Decrypt::decrypt(JSContext *cx, JS::HandleObject key,
+                                                        std::span<uint8_t> data) {
+  // 1. If the iv member of normalizedAlgorithm does not have a length of 16 bytes, then throw an
+  //    OperationError.
+  if (this->iv.size() != 16) {
+    DOMException::raise(cx, "AES-CBC iv must be 16 bytes long", "OperationError");
+    return nullptr;
+  }
+
+  // 2. If the length of ciphertext is zero or is not a multiple of 16 bytes, then throw an
+  //    OperationError.
+  if (data.empty() || (data.size() % 16) != 0) {
+    DOMException::raise(cx, "AES-CBC ciphertext must be a non-empty multiple of 16 bytes",
+                        "OperationError");
+    return nullptr;
+  }
+
+  // 3. Let paddedPlaintext be the result of performing the CBC Decryption operation described in
+  //    Section 6.2 of [NIST-SP800-38A] using AES as the block cipher, the iv member of
+  //    normalizedAlgorithm as the IV input parameter and ciphertext as the input ciphertext.
+  // 4. Let p be the value of the last octet of paddedPlaintext.
+  // 5. If p is zero or greater than 16, or if any of the last p octets of paddedPlaintext have a
+  //    value which is not p, then throw an OperationError.
+  // 6. Let plaintext be the result of removing p octets from the end of paddedPlaintext.
+  // 7. Return plaintext.
+  //    (Steps 4 through 6 are the PKCS#7 unpadding OpenSSL performs in EVP_CipherFinal_ex,
+  //    which fails for invalid padding.)
+  return aesCbcCrypt(cx, key, this->iv, data, false);
 }
 
 } // namespace builtins::web::crypto
