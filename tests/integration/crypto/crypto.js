@@ -203,6 +203,35 @@ export const handler = serveTest(async (t) => {
 
   // importKey
   {
+    for (const [name, createJwk, algorithm, usage] of [
+      ["rsa-public", createPublicRsaJsonWebKeyData, createRsaJsonWebKeyAlgorithm(), "verify"],
+      ["ecdsa-public", createPublicEcdsaJsonWebKeyData, ecdsaJsonWebKeyAlgorithm, "verify"],
+      ["ed25519-public", ed25519Test1PublicJsonWebKeyData, "Ed25519", "verify"],
+      ["hmac", () => ({ kty: "oct", k: "AAECAwQFBgcICQoLDA0ODw" }), { name: "HMAC", hash: "SHA-256" }, "sign"],
+      ["aes-cbc", () => ({ kty: "oct", k: "AAECAwQFBgcICQoLDA0ODw" }), "AES-CBC", "encrypt"],
+    ]) {
+      await t.test(`subtle.importKey.jwk-key-ops-presence.${name}`, async () => {
+        const jwk = createJwk();
+        delete jwk.key_ops;
+        const omitted = await crypto.subtle.importKey("jwk", jwk, algorithm, true, [usage]);
+        deepStrictEqual(omitted.usages, [usage]);
+
+        jwk.key_ops = [];
+        await rejects(
+          () => crypto.subtle.importKey("jwk", jwk, algorithm, true, [usage]),
+          DOMException,
+          null,
+          "DataError",
+        );
+
+        if (name === "ed25519-public") {
+          const noUsages = await crypto.subtle.importKey("jwk", jwk, algorithm, true, []);
+          deepStrictEqual(noUsages.usages, []);
+        }
+
+      });
+    }
+
     await t.test("subtle.importKey", async () => {
       strictEqual(
         typeof crypto.subtle.importKey,
@@ -467,12 +496,17 @@ export const handler = serveTest(async (t) => {
             const publicRsaJsonWebKeyData = createPublicRsaJsonWebKeyData();
             const key_ops = Array.from(publicRsaJsonWebKeyData.key_ops);
             publicRsaJsonWebKeyData.key_ops = [];
-            await crypto.subtle.importKey(
-              "jwk",
-              publicRsaJsonWebKeyData,
-              createRsaJsonWebKeyAlgorithm(),
-              publicRsaJsonWebKeyData.ext,
-              key_ops,
+            await rejects(
+              () => crypto.subtle.importKey(
+                "jwk",
+                publicRsaJsonWebKeyData,
+                createRsaJsonWebKeyAlgorithm(),
+                publicRsaJsonWebKeyData.ext,
+                key_ops,
+              ),
+              DOMException,
+              null,
+              "DataError",
             );
           },
         );
@@ -850,12 +884,17 @@ export const handler = serveTest(async (t) => {
             const publicEcdsaJsonWebKeyData = createPublicEcdsaJsonWebKeyData();
             const key_ops = Array.from(publicEcdsaJsonWebKeyData.key_ops);
             publicEcdsaJsonWebKeyData.key_ops = [];
-            await crypto.subtle.importKey(
-              "jwk",
-              publicEcdsaJsonWebKeyData,
-              ecdsaJsonWebKeyAlgorithm,
-              publicEcdsaJsonWebKeyData.ext,
-              key_ops,
+            await rejects(
+              () => crypto.subtle.importKey(
+                "jwk",
+                publicEcdsaJsonWebKeyData,
+                ecdsaJsonWebKeyAlgorithm,
+                publicEcdsaJsonWebKeyData.ext,
+                key_ops,
+              ),
+              DOMException,
+              null,
+              "DataError",
             );
           },
         );
