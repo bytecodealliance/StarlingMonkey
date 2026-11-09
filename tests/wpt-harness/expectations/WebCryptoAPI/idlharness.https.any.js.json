@@ -129,10 +129,10 @@
     "status": "PASS"
   },
   "SubtleCrypto interface: operation encrypt(AlgorithmIdentifier, CryptoKey, BufferSource)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "SubtleCrypto interface: operation decrypt(AlgorithmIdentifier, CryptoKey, BufferSource)": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "SubtleCrypto interface: operation sign(AlgorithmIdentifier, CryptoKey, BufferSource)": {
     "status": "PASS"
@@ -171,16 +171,16 @@
     "status": "PASS"
   },
   "SubtleCrypto interface: crypto.subtle must inherit property \"encrypt(AlgorithmIdentifier, CryptoKey, BufferSource)\" with the proper type": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "SubtleCrypto interface: calling encrypt(AlgorithmIdentifier, CryptoKey, BufferSource) on crypto.subtle with too few arguments must throw TypeError": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "SubtleCrypto interface: crypto.subtle must inherit property \"decrypt(AlgorithmIdentifier, CryptoKey, BufferSource)\" with the proper type": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "SubtleCrypto interface: calling decrypt(AlgorithmIdentifier, CryptoKey, BufferSource) on crypto.subtle with too few arguments must throw TypeError": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "SubtleCrypto interface: crypto.subtle must inherit property \"sign(AlgorithmIdentifier, CryptoKey, BufferSource)\" with the proper type": {
     "status": "PASS"

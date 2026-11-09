@@ -446,6 +446,147 @@ bool SubtleCrypto::deriveBits(JSContext *cx, unsigned argc, JS::Value *vp) {
   return true;
 }
 
+namespace {
+// Shared implementation of the encrypt() and decrypt() methods
+// (https://w3c.github.io/webcrypto/#SubtleCrypto-method-encrypt and
+// https://w3c.github.io/webcrypto/#SubtleCrypto-method-decrypt), which differ only in the
+// [[usages]] entry the key must carry and the operation invoked. `enc` selects encrypt.
+bool encryptOrDecrypt(JSContext *cx, JS::CallArgs &args, bool enc) {
+  const char *method_name = enc ? "crypto.subtle.encrypt" : "crypto.subtle.decrypt";
+
+  // WebIDL converts the arguments before the method steps run: key must be a CryptoKey and data
+  // a BufferSource, otherwise a TypeError rejects the promise. The bytes of data are only copied
+  // in step 4, after the algorithm has been normalized.
+  auto algorithm = args.get(0);
+  auto key_arg = args.get(1);
+  if (!CryptoKey::is_instance(key_arg)) {
+    api::throw_error(cx, api::Errors::TypeError, method_name, "key", "be a CryptoKey object");
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+  JS::RootedObject key(cx, &key_arg.toObject());
+  auto data_arg = args.get(2);
+  if (!value_to_buffer(cx, data_arg, method_name).has_value()) {
+    // value_to_buffer would have already created a JS exception so we don't need to create one
+    // ourselves.
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  // 1. Let algorithm and key be the algorithm and key parameters passed to the encrypt() /
+  // decrypt() method, respectively.
+  // 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set to
+  // algorithm and op set to "encrypt" / "decrypt".
+  auto normalizedAlgorithm = CryptoAlgorithmEncryptDecrypt::normalize(cx, algorithm);
+  // 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
+  if (!normalizedAlgorithm) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  // 4. Let data be the result of getting a copy of the bytes held by the data parameter passed to
+  // the encrypt() / decrypt() method.
+  // Normalization can run user JS (getters on algorithm) that detaches or mutates the buffer, so
+  // the bytes are read only now, and copied at once so nothing below can observe later changes.
+  std::optional<std::span<uint8_t>> data_view = value_to_buffer(cx, data_arg, method_name);
+  if (!data_view.has_value()) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+  std::vector<uint8_t> data(data_view->begin(), data_view->end());
+
+  // 5. Let realm be the relevant realm of this.
+  // (Implicit: there is a single realm.)
+  // 6. Let promise be a new Promise.
+  JS::RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
+  if (!promise) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+  // 7. Return promise and perform the remaining steps in parallel.
+  // Intentional deviation: the remaining steps are not run in parallel. Like every other
+  // SubtleCrypto method, they run synchronously in the calling frame, and the promise is
+  // rejected (step 8) or resolved (steps 12-14) there instead of via a queued global task.
+  args.rval().setObject(*promise);
+
+  // 8. If the following steps or referenced procedures say to throw an error, queue a global task
+  // on the crypto task source, given realm's global object, to reject promise with the returned
+  // error; and then terminate the algorithm.
+
+  // 9. If the name member of normalizedAlgorithm is not equal to the name attribute of the
+  // [[algorithm]] internal slot of key then throw an InvalidAccessError.
+  auto identifier = normalizedAlgorithm->identifier();
+  auto match_result = CryptoKey::is_algorithm(cx, key, identifier);
+  if (match_result.isErr() || match_result.unwrap() == false) {
+    DOMException::raise(cx, "CryptoKey doesn't match AlgorithmIdentifier", "InvalidAccessError");
+    return RejectPromiseWithPendingError(cx, promise);
+  }
+
+  // 10. If the [[usages]] internal slot of key does not contain an entry that is "encrypt" /
+  // "decrypt", then throw an InvalidAccessError.
+  bool has_usage = enc ? CryptoKey::canEncrypt(key) : CryptoKey::canDecrypt(key);
+  if (!has_usage) {
+    DOMException::raise(
+        cx, enc ? "CryptoKey doesn't support encryption" : "CryptoKey doesn't support decryption",
+        "InvalidAccessError");
+    return RejectPromiseWithPendingError(cx, promise);
+  }
+
+  // 11. Let ciphertext be the result of performing the encrypt operation specified by
+  // normalizedAlgorithm using algorithm and key and with data as plaintext. /
+  // Let plaintext be the result of performing the decrypt operation specified by
+  // normalizedAlgorithm using key and algorithm and with data as ciphertext.
+  JSObject *operation_result = enc ? normalizedAlgorithm->encrypt(cx, key, data)
+                                   : normalizedAlgorithm->decrypt(cx, key, data);
+  if (!operation_result) {
+    return RejectPromiseWithPendingError(cx, promise);
+  }
+
+  // 12. Queue a global task on the crypto task source, given realm's global object, to perform the
+  // remaining steps.
+  // (Intentional deviation: resolved synchronously, see step 7.)
+  // 13. Let result be the result of creating an ArrayBuffer in realm, containing ciphertext /
+  // plaintext.
+  // 14. Resolve promise with result.
+  JS::RootedValue result(cx, JS::ObjectValue(*operation_result));
+  JS::ResolvePromise(cx, promise, result);
+  return true;
+}
+} // namespace
+
+// Promise<ArrayBuffer> encrypt(AlgorithmIdentifier algorithm,
+//                              CryptoKey key,
+//                              BufferSource data);
+// https://w3c.github.io/webcrypto/#SubtleCrypto-method-encrypt
+bool SubtleCrypto::encrypt(JSContext *cx, unsigned argc, JS::Value *vp) {
+  MOZ_ASSERT(cx);
+  MOZ_ASSERT(vp);
+  JS::CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (!args.requireAtLeast(cx, "SubtleCrypto.encrypt", 3)) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+  if (!check_receiver(cx, args.thisv(), "SubtleCrypto.encrypt")) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  return encryptOrDecrypt(cx, args, true);
+}
+
+// Promise<ArrayBuffer> decrypt(AlgorithmIdentifier algorithm,
+//                              CryptoKey key,
+//                              BufferSource data);
+// https://w3c.github.io/webcrypto/#SubtleCrypto-method-decrypt
+bool SubtleCrypto::decrypt(JSContext *cx, unsigned argc, JS::Value *vp) {
+  MOZ_ASSERT(cx);
+  MOZ_ASSERT(vp);
+  JS::CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (!args.requireAtLeast(cx, "SubtleCrypto.decrypt", 3)) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+  if (!check_receiver(cx, args.thisv(), "SubtleCrypto.decrypt")) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  return encryptOrDecrypt(cx, args, false);
+}
+
 const JSFunctionSpec SubtleCrypto::static_methods[] = {
     JS_FS_END,
 };
@@ -456,9 +597,13 @@ const JSPropertySpec SubtleCrypto::static_properties[] = {
 
 const JSFunctionSpec SubtleCrypto::methods[] = {
     JS_FN("deriveBits", deriveBits, 2, JSPROP_ENUMERATE),
+    JS_FN("decrypt", decrypt, 3, JSPROP_ENUMERATE),
     JS_FN("digest", digest, 2, JSPROP_ENUMERATE),
-    JS_FN("importKey", importKey, 5, JSPROP_ENUMERATE), JS_FN("sign", sign, 3, JSPROP_ENUMERATE),
-    JS_FN("verify", verify, 4, JSPROP_ENUMERATE), JS_FS_END};
+    JS_FN("encrypt", encrypt, 3, JSPROP_ENUMERATE),
+    JS_FN("importKey", importKey, 5, JSPROP_ENUMERATE),
+    JS_FN("sign", sign, 3, JSPROP_ENUMERATE),
+    JS_FN("verify", verify, 4, JSPROP_ENUMERATE),
+    JS_FS_END};
 
 const JSPropertySpec SubtleCrypto::properties[] = {
     JS_STRING_SYM_PS(toStringTag, "SubtleCrypto", JSPROP_READONLY), JS_PS_END};

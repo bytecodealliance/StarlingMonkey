@@ -100,6 +100,14 @@ public:
   static std::unique_ptr<CryptoAlgorithmDeriveBits> normalize(JSContext *cx, JS::HandleValue value);
 };
 
+class CryptoAlgorithmEncryptDecrypt : public CryptoAlgorithm {
+public:
+  virtual JSObject *encrypt(JSContext *cx, JS::HandleObject key, std::span<uint8_t> data) = 0;
+  virtual JSObject *decrypt(JSContext *cx, JS::HandleObject key, std::span<uint8_t> data) = 0;
+  static std::unique_ptr<CryptoAlgorithmEncryptDecrypt> normalize(JSContext *cx,
+                                                                  JS::HandleValue value);
+};
+
 class CryptoAlgorithmHMAC_Sign_Verify final : public CryptoAlgorithmSignVerify {
 public:
   [[nodiscard]] const char *name() const noexcept override { return "HMAC"; };
@@ -331,7 +339,38 @@ public:
                        std::optional<uint64_t> length) override;
 };
 
-} // namespace builtins::web::crypto
+class CryptoAlgorithmAES_CBC_Import final : public CryptoAlgorithmImportKey {
+public:
+  [[nodiscard]] const char *name() const noexcept override { return "AES-CBC"; };
+  CryptoAlgorithmAES_CBC_Import() = default;
 
+  CryptoAlgorithmIdentifier identifier() final { return CryptoAlgorithmIdentifier::AES_CBC; };
+
+  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, JS::HandleValue key_data,
+                      bool extractable, CryptoKeyUsages usages) override;
+  JSObject *importKey(JSContext *cx, CryptoKeyFormat format, KeyData key_data, bool extractable,
+                      CryptoKeyUsages usages) override;
+  JSObject *toObject(JSContext *cx, size_t length) const;
+};
+
+class CryptoAlgorithmAES_CBC_Encrypt_Decrypt final : public CryptoAlgorithmEncryptDecrypt {
+public:
+  // The iv member of an AesCbcParams dictionary.
+  std::vector<uint8_t> iv;
+
+  [[nodiscard]] const char *name() const noexcept override { return "AES-CBC"; };
+  CryptoAlgorithmAES_CBC_Encrypt_Decrypt(std::vector<uint8_t> iv) : iv{std::move(iv)} {};
+
+  // https://w3c.github.io/webcrypto/#dfn-AesCbcParams
+  static std::unique_ptr<CryptoAlgorithmAES_CBC_Encrypt_Decrypt>
+  fromParameters(JSContext *cx, JS::HandleObject parameters);
+
+  CryptoAlgorithmIdentifier identifier() final { return CryptoAlgorithmIdentifier::AES_CBC; };
+
+  JSObject *encrypt(JSContext *cx, JS::HandleObject key, std::span<uint8_t> data) override;
+  JSObject *decrypt(JSContext *cx, JS::HandleObject key, std::span<uint8_t> data) override;
+};
+
+} // namespace builtins::web::crypto
 
 #endif
