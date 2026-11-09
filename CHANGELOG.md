@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.5.0](https://github.com/bytecodealliance/StarlingMonkey/compare/starlingmonkey-v0.4.0...starlingmonkey-v0.5.0) (2026-11-09)
+
+
+### Features
+
+* **crypto:** Add AES-CBC importKey and SubtleCrypto encrypt/decrypt ([#360](https://github.com/bytecodealliance/StarlingMonkey/issues/360)) ([0ab1f96](https://github.com/bytecodealliance/StarlingMonkey/commit/0ab1f96a61ef527bf9dfd57c617dfe483fb0fb11))
+* **crypto:** Add PBKDF2 importKey and SubtleCrypto.deriveBits ([#346](https://github.com/bytecodealliance/StarlingMonkey/issues/346)) ([167a5b6](https://github.com/bytecodealliance/StarlingMonkey/commit/167a5b699f764ff7576bda18d3e20633d0facc46))
+
+
+### Bug Fixes
+
+* Distinguish between empty and no `key_ops` field ([#363](https://github.com/bytecodealliance/StarlingMonkey/issues/363)) ([d9ea7a3](https://github.com/bytecodealliance/StarlingMonkey/commit/d9ea7a319b0534cc31f8dae6f7f7d3916bc467ff))
+* Distinguish between empty and no key_ops field ([d9ea7a3](https://github.com/bytecodealliance/StarlingMonkey/commit/d9ea7a319b0534cc31f8dae6f7f7d3916bc467ff))
+* make CryptoKey class finalizable ([#362](https://github.com/bytecodealliance/StarlingMonkey/issues/362)) ([989d356](https://github.com/bytecodealliance/StarlingMonkey/commit/989d3563ca020ceda26043d40bfa9322f9e4c35e))
+* Replace malformed UTF-8 and strip BOM in Response and Request `text()` and `json()` ([#348](https://github.com/bytecodealliance/StarlingMonkey/issues/348)) ([54b3329](https://github.com/bytecodealliance/StarlingMonkey/commit/54b3329b3ce818fd1f244e871e9c259b63667cda))
+* **tests:** probe WPT endpoint for readiness before dispatching tests ([#361](https://github.com/bytecodealliance/StarlingMonkey/issues/361)) ([24fabdc](https://github.com/bytecodealliance/StarlingMonkey/commit/24fabdc9a279b002a68b7e07151eafc16826341b))
+* **tests:** probe WPT endpoint for readiness instead of relying on stdout marker ([24fabdc](https://github.com/bytecodealliance/StarlingMonkey/commit/24fabdc9a279b002a68b7e07151eafc16826341b))
+
 ## [0.4.0](https://github.com/bytecodealliance/StarlingMonkey/compare/starlingmonkey-v0.3.0...starlingmonkey-v0.4.0) (2026-10-26)
 
 
