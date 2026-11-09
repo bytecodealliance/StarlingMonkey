@@ -1575,8 +1575,8 @@ JSObject *CryptoAlgorithmHMAC_Import::importKey(JSContext *cx, CryptoKeyFormat f
       return nullptr;
     }
     // 6.15 If the key_ops field of jwk is present, and is invalid according to the requirements of JSON Web Key [JWK] or does not contain all of the specified usages values, then throw a DataError.
-    if (!jwk->key_ops.empty()) {
-      auto ops = CryptoKeyUsages::from(jwk->key_ops);
+    if (jwk->key_ops.has_value()) {
+      auto ops = CryptoKeyUsages::from(*jwk->key_ops);
       if (!ops.isSuperSetOf(usages)) {
         DOMException::raise(cx,
                             "The JWK 'key_ops' member was inconsistent with that specified by the "
@@ -1747,8 +1747,8 @@ JSObject *CryptoAlgorithmECDSA_Import::importKey(JSContext *cx, CryptoKeyFormat 
         return nullptr;
       }
       // 2.5. If the "key_ops" field of jwk is present, and is invalid according to the requirements of JSON Web Key, or it does not contain all of the specified usages values, then throw a DataError.
-      if (!jwk->key_ops.empty()) {
-        auto ops = CryptoKeyUsages::from(jwk->key_ops);
+      if (jwk->key_ops.has_value()) {
+        auto ops = CryptoKeyUsages::from(*jwk->key_ops);
         if (!ops.isSuperSetOf(usages)) {
           DOMException::raise(cx,
                               "The JWK 'key_ops' member was inconsistent with that specified by the "
@@ -2345,8 +2345,8 @@ JSObject *CryptoAlgorithmEd25519_Import::importKey(JSContext *cx, CryptoKeyForma
       // 2.7. If the key_ops field of jwk is present, and is invalid according to the requirements of
       //      JSON Web Key [JWK], or it does not contain all of the specified usages values, then throw
       //      a DataError.
-      if (!jwk->key_ops.empty()) {
-        auto ops = CryptoKeyUsages::from(jwk->key_ops);
+      if (jwk->key_ops.has_value()) {
+        auto ops = CryptoKeyUsages::from(*jwk->key_ops);
         if ((ops.toInt() & usages.toInt()) != usages.toInt()) {
           DOMException::raise(cx,
                               "The JWK 'key_ops' member was inconsistent with that specified by the "
@@ -2545,8 +2545,8 @@ JSObject *CryptoAlgorithmRSASSA_PKCS1_v1_5_Import::importKey(JSContext *cx, Cryp
     // 2.5. If the key_ops field of jwk is present, and is invalid according to
     // the requirements of JSON Web Key [JWK] or does not contain all of the
     // specified usages values, then throw a DataError.
-    if (!jwk->key_ops.empty()) {
-      auto ops = CryptoKeyUsages::from(jwk->key_ops);
+    if (jwk->key_ops.has_value()) {
+      auto ops = CryptoKeyUsages::from(*jwk->key_ops);
       if (!ops.isSuperSetOf(usages)) {
         DOMException::raise(cx,
                             "The JWK 'key_ops' member was inconsistent with that specified by the "
@@ -3229,8 +3229,8 @@ JSObject *CryptoAlgorithmAES_CBC_Import::importKey(JSContext *cx, CryptoKeyForma
     //     of JSON Web Key [JWK] or does not contain all of the specified usages values, then
     //     throw a DataError.
     //     (JsonWebKey::parse rejects key_ops entries that are not recognized or repeated.)
-    if (!jwk->key_ops.empty()) {
-      auto ops = CryptoKeyUsages::from(jwk->key_ops);
+    if (jwk->key_ops.has_value()) {
+      auto ops = CryptoKeyUsages::from(*jwk->key_ops);
       if (!ops.isSuperSetOf(usages)) {
         DOMException::raise(cx,
                             "The JWK 'key_ops' member was inconsistent with that specified by the "

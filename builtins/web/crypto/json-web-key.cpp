@@ -179,7 +179,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
     }
   }
   //   sequence<DOMString> key_ops;
-  std::vector<std::string> key_ops;
+  std::optional<std::vector<std::string>> key_ops;
   {
     JS::RootedValue key_ops_val(cx);
     if (!JS_GetProperty(cx, object, "key_ops", &key_ops_val)) {
@@ -202,10 +202,11 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
       if (!JS::GetArrayLength(cx, key_ops_array, &length)) {
         return nullptr;
       }
+      key_ops.emplace();
       if (length != 0) {
         // Initialize to the provided array's length.
         // TODO: move to mozilla::Vector so we can catch if this reserve exceeds our memory limits
-        key_ops.reserve(length);
+        key_ops->reserve(length);
         JS::RootedValue op_val(cx);
         for (uint32_t i = 0; i < length; ++i) {
           // We should check for and handle interrupts so we can allow GC to happen whilst we are
@@ -241,7 +242,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
           }
 
           // No duplicates allowed
-          if (std::find(key_ops.begin(), key_ops.end(), op) != key_ops.end()) {
+          if (std::find(key_ops->begin(), key_ops->end(), op) != key_ops->end()) {
             dom_exception::DOMException::raise(cx,
               "crypto.subtle.importKey parameter 'keyData': "
                 "'key_ops' list must not contain duplicate entries",
@@ -249,7 +250,7 @@ std::unique_ptr<JsonWebKey> JsonWebKey::parse(JSContext *cx, JS::HandleValue val
             return nullptr;
           }
 
-          key_ops.push_back(std::move(op));
+          key_ops->push_back(std::move(op));
         }
       }
     }
