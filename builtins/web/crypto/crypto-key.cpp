@@ -943,9 +943,10 @@ std::span<uint8_t> CryptoKey::keyData(JSObject *self) {
   return {data->data(), data->size()};
 }
 
-JS::Result<bool> CryptoKey::is_algorithm(JSContext *, JS::HandleObject self,
+JS::Result<bool> CryptoKey::is_algorithm(JSContext *cx, JS::HandleObject self,
                                          CryptoAlgorithmIdentifier algorithm) {
   MOZ_ASSERT(CryptoKey::is_instance(self));
+  static_cast<void>(cx);
   return algorithm_identifier(self) == algorithm;
 }
 
