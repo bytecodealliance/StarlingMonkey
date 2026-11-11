@@ -2062,6 +2062,32 @@ export const handler = serveTest(async (t) => {
   {
     const enc = new TextEncoder();
     const data = enc.encode("hello world");
+    for (const [label, namedCurve, errorClass, errorName] of [
+      ["unknown", "NOT-A-CURVE", DOMException, "OperationError"],
+      ["symbol", Symbol("curve"), TypeError, null],
+    ]) {
+      await t.test(`subtle.sign.ecdsa-${label}-curve`, async () => {
+        const key = await crypto.subtle.importKey(
+          "jwk",
+          createPrivateEcdsaJsonWebKeyData(),
+          ecdsaJsonWebKeyAlgorithm,
+          false,
+          ["sign"],
+        );
+        key.algorithm.namedCurve = namedCurve;
+        await rejects(
+          () => crypto.subtle.sign(
+            { name: "ECDSA", hash: "SHA-256" },
+            key,
+            new Uint8Array([0x61]),
+          ),
+          errorClass,
+          null,
+          errorName,
+        );
+      });
+    }
+
     await t.test("subtle.sign", async () => {
       strictEqual(
         typeof crypto.subtle.sign,

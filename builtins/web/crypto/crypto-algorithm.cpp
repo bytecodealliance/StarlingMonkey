@@ -418,7 +418,9 @@ JS::Result<size_t> curveSize(JSContext *cx, JS::HandleObject key) {
   JS::RootedObject alg(cx, CryptoKey::get_algorithm(key));
   JS::RootedValue namedCurve_val(cx);
 
-  JS_GetProperty(cx, alg, "namedCurve", &namedCurve_val);
+  if (!JS_GetProperty(cx, alg, "namedCurve", &namedCurve_val)) {
+    return JS::Result<size_t>(JS::Error());
+  }
   auto namedCurve_chars = core::encode(cx, namedCurve_val);
   if (!namedCurve_chars) {
     return JS::Result<size_t>(JS::Error());
@@ -435,8 +437,8 @@ JS::Result<size_t> curveSize(JSContext *cx, JS::HandleObject key) {
     return 521;
   }
 
-  MOZ_ASSERT_UNREACHABLE();
-  return 0;
+  DOMException::raise(cx, "Unsupported ECDSA named curve", "OperationError");
+  return JS::Result<size_t>(JS::Error());
 }
 
 // https://webidl.spec.whatwg.org/#abstract-opdef-converttoint with bitLength 32, "unsigned" and
@@ -1037,7 +1039,11 @@ JSObject *CryptoAlgorithmECDSA_Sign_Verify::sign(JSContext *cx, JS::HandleObject
   const BIGNUM *r_raw = nullptr;
   const BIGNUM *s_raw = nullptr;
   ECDSA_SIG_get0(sig.get(), &r_raw, &s_raw);
-  size_t coord_size = num_bits_to_bytes(curveSize(cx, key).unwrap());
+  auto key_size = curveSize(cx, key);
+  if (key_size.isErr()) {
+    return nullptr;
+  }
+  size_t coord_size = num_bits_to_bytes(key_size.unwrap());
 
   auto [r_bytes, r_len] = to_bytes_expand(cx, r_raw, coord_size);
   auto [s_bytes, s_len] = to_bytes_expand(cx, s_raw, coord_size);
