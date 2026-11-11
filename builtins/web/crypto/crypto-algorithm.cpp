@@ -1341,6 +1341,10 @@ JS::Result<bool> CryptoAlgorithmRSASSA_PKCS1_v1_5_Sign_Verify::verify(JSContext 
     return JS::Result<bool>(JS::Error());
   }
   const EVP_MD *algorithm = createDigestAlgorithm(cx, key);
+  if (!algorithm) {
+    DOMException::raise(cx, "OperationError", "OperationError");
+    return JS::Result<bool>(JS::Error());
+  }
 
   auto digestOption = rawDigest(cx, data, algorithm, EVP_MD_size(algorithm));
   if (!digestOption.has_value()) {

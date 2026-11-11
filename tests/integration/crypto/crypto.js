@@ -2498,6 +2498,34 @@ export const handler = serveTest(async (t) => {
     }
     // incorrect-signature
     {
+      for (const hashCase of ["unknown", "missing"]) {
+        await t.test(`subtle.verify.rsa-${hashCase}-hash`, async () => {
+          const key = await crypto.subtle.importKey(
+            "jwk",
+            createPublicRsaJsonWebKeyData(),
+            createRsaJsonWebKeyAlgorithm(),
+            false,
+            ["verify"],
+          );
+          if (hashCase === "unknown") {
+            key.algorithm.hash.name = "NOT-A-HASH";
+          } else {
+            delete key.algorithm.hash;
+          }
+          await rejects(
+            () => crypto.subtle.verify(
+              "RSASSA-PKCS1-v1_5",
+              key,
+              new Uint8Array(256),
+              new Uint8Array([0x61]),
+            ),
+            DOMException,
+            null,
+            "OperationError",
+          );
+        });
+      }
+
       await t.test("subtle.verify.incorrect-signature-jwk", async () => {
         const publicRsaJsonWebKeyData = createPublicRsaJsonWebKeyData();
         const key = await crypto.subtle.importKey(
