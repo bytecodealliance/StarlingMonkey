@@ -69,46 +69,7 @@ const EVP_MD *createDigestAlgorithm(JSContext *cx, CryptoAlgorithmIdentifier has
 }
 
 const EVP_MD *createDigestAlgorithm(JSContext *cx, JS::HandleObject key) {
-
-  JS::RootedObject alg(cx, CryptoKey::get_algorithm(key));
-
-  JS::RootedValue hash_val(cx);
-  JS_GetProperty(cx, alg, "hash", &hash_val);
-  if (!hash_val.isObject()) {
-    DOMException::raise(cx, "NotSupportedError", "NotSupportedError");
-    return nullptr;
-  }
-  JS::RootedObject hash(cx, &hash_val.toObject());
-  JS::RootedValue name_val(cx);
-  JS_GetProperty(cx, hash, "name", &name_val);
-  auto name_chars = core::encode(cx, name_val);
-  if (!name_chars) {
-    DOMException::raise(cx, "NotSupportedError", "NotSupportedError");
-    return nullptr;
-  }
-
-  std::string_view name = name_chars;
-  if (name == "MD5") {
-    return EVP_md5();
-  }
-  if (name == "SHA-1") {
-    return EVP_sha1();
-  }
-  if (name == "SHA-224") {
-    return EVP_sha224();
-  }
-  if (name == "SHA-256") {
-    return EVP_sha256();
-  }
-  if (name == "SHA-384") {
-    return EVP_sha384();
-  }
-  if (name == "SHA-512") {
-    return EVP_sha512();
-  }
-
-  DOMException::raise(cx, "NotSupportedError", "NotSupportedError");
-  return nullptr;
+  return createDigestAlgorithm(cx, CryptoKey::hash_identifier(key));
 }
 // This implements https://w3c.github.io/webcrypto/#sha-operations for all
 // the SHA algorithms that we support.
@@ -414,24 +375,13 @@ JS::Result<NamedCurve> toNamedCurve(JSContext *cx, JS::HandleValue value) {
   return JS::Result<NamedCurve>(JS::Error());
 }
 
-JS::Result<size_t> curveSize(JSContext *cx, JS::HandleObject key) {
-  JS::RootedObject alg(cx, CryptoKey::get_algorithm(key));
-  JS::RootedValue namedCurve_val(cx);
-
-  JS_GetProperty(cx, alg, "namedCurve", &namedCurve_val);
-  auto namedCurve_chars = core::encode(cx, namedCurve_val);
-  if (!namedCurve_chars) {
-    return JS::Result<size_t>(JS::Error());
-  }
-
-  std::string_view namedCurve = namedCurve_chars;
-  if (namedCurve == "P-256") {
+size_t curveSize(JS::HandleObject key) {
+  switch (CryptoKey::named_curve(key)) {
+  case NamedCurve::P256:
     return 256;
-  }
-  if (namedCurve == "P-384") {
+  case NamedCurve::P384:
     return 384;
-  }
-  if (namedCurve == "P-521") {
+  case NamedCurve::P521:
     return 521;
   }
 
@@ -1037,7 +987,7 @@ JSObject *CryptoAlgorithmECDSA_Sign_Verify::sign(JSContext *cx, JS::HandleObject
   const BIGNUM *r_raw = nullptr;
   const BIGNUM *s_raw = nullptr;
   ECDSA_SIG_get0(sig.get(), &r_raw, &s_raw);
-  size_t coord_size = num_bits_to_bytes(curveSize(cx, key).unwrap());
+  size_t coord_size = num_bits_to_bytes(curveSize(key));
 
   auto [r_bytes, r_len] = to_bytes_expand(cx, r_raw, coord_size);
   auto [s_bytes, s_len] = to_bytes_expand(cx, s_raw, coord_size);
@@ -1098,12 +1048,7 @@ JS::Result<bool> CryptoAlgorithmECDSA_Sign_Verify::verify(JSContext *cx, JS::Han
       // Perform the ECDSA verifying process, as specified in RFC6090, Section 5.3, with M as the received message, signature as the received signature and using params as the EC domain parameters, and Q as the public key.
     // Otherwise, the namedCurve attribute of the [[algorithm]] internal slot of key is a value specified in an applicable specification:
       // Perform the ECDSA verification steps specified in that specification passing in M, signature, params and Q and resulting in an indication of whether or not the purported signature is valid.
-  auto keySize = curveSize(cx, key);
-  if (keySize.isErr()) {
-    return JS::Result<bool>(JS::Error());
-  }
-
-  size_t coordSize = num_bits_to_bytes(keySize.unwrap());
+  size_t coordSize = num_bits_to_bytes(curveSize(key));
   if (signature.size() != coordSize * 2) {
     return false;
   }
@@ -2945,7 +2890,8 @@ JSObject *CryptoAlgorithmPBKDF2_Import::importKey(JSContext *cx, CryptoKeyFormat
 
   // 8. Set the [[algorithm]] internal slot of key to algorithm.
   // 9. Return key.
-  return CryptoKey::createSymmetric(cx, algorithm, std::move(data), extractable, usages);
+  return CryptoKey::createSymmetric(cx, algorithm, this->identifier(), std::nullopt,
+                                    std::move(data), extractable, usages);
 }
 
 JSObject *CryptoAlgorithmPBKDF2_Import::importKey(JSContext *cx, CryptoKeyFormat format,
@@ -3275,7 +3221,8 @@ JSObject *CryptoAlgorithmAES_CBC_Import::importKey(JSContext *cx, CryptoKeyForma
 
   // 8. Set the [[algorithm]] internal slot of key to algorithm.
   // 9. Return key.
-  return CryptoKey::createSymmetric(cx, algorithm, std::move(data), extractable, usages);
+  return CryptoKey::createSymmetric(cx, algorithm, this->identifier(), std::nullopt,
+                                    std::move(data), extractable, usages);
 }
 
 JSObject *CryptoAlgorithmAES_CBC_Import::importKey(JSContext *cx, CryptoKeyFormat format,

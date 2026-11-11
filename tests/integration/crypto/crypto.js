@@ -2293,6 +2293,72 @@ export const handler = serveTest(async (t) => {
           );
         }
       });
+      await t.test("subtle.key-algorithm-mutations-do-not-change-key", async () => {
+        const message = new Uint8Array([0x61]);
+
+        const hmacKey = await crypto.subtle.importKey(
+          "raw",
+          new Uint8Array(32).fill(7),
+          { name: "HMAC", hash: "SHA-256" },
+          false,
+          ["sign"],
+        );
+        const hmacBefore = await crypto.subtle.sign("HMAC", hmacKey, message);
+        hmacKey.algorithm.hash.name = "SHA-512";
+        const hmacAfter = await crypto.subtle.sign("HMAC", hmacKey, message);
+        deepStrictEqual(
+          new Uint8Array(hmacAfter),
+          new Uint8Array(hmacBefore),
+          "HMAC keeps its imported hash",
+        );
+
+        const rsaKey = await crypto.subtle.importKey(
+          "pkcs8",
+          rsa2048Pkcs8,
+          rsaPkcs1Sha256Algorithm,
+          false,
+          ["sign"],
+        );
+        const rsaBefore = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", rsaKey, message);
+        rsaKey.algorithm.hash.name = "MD5";
+        const rsaAfter = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", rsaKey, message);
+        deepStrictEqual(
+          new Uint8Array(rsaAfter),
+          new Uint8Array(rsaBefore),
+          "RSA keeps its imported hash",
+        );
+
+        const ecdsaPrivateKey = await crypto.subtle.importKey(
+          "jwk",
+          createPrivateEcdsaJsonWebKeyData(),
+          ecdsaP256Algorithm,
+          false,
+          ["sign"],
+        );
+        ecdsaPrivateKey.algorithm.namedCurve = "P-384";
+        const ecdsaSignature = await crypto.subtle.sign(
+          { name: "ECDSA", hash: "SHA-256" },
+          ecdsaPrivateKey,
+          message,
+        );
+        strictEqual(new Uint8Array(ecdsaSignature).byteLength, 64, "P-256 signature length");
+
+        const ecdsaPublicKey = await crypto.subtle.importKey(
+          "jwk",
+          createPublicEcdsaJsonWebKeyData(),
+          ecdsaP256Algorithm,
+          false,
+          ["verify"],
+        );
+        ecdsaPublicKey.algorithm.name = "HMAC";
+        ecdsaPublicKey.algorithm.hash = { name: "SHA-256" };
+        await rejects(
+          () => crypto.subtle.verify("HMAC", ecdsaPublicKey, new Uint8Array(32), message),
+          DOMException,
+          null,
+          "InvalidAccessError",
+        );
+      });
     }
   }
 
