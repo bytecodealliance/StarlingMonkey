@@ -17,11 +17,7 @@ endif()
 option(ENABLE_INTL "Build with the ECMAScript Internationalization API (Intl, ICU)" OFF)
 
 if (ENABLE_INTL)
-    # TODO: test WEVAL with ENABLE_INTL (build type `release_weval_intl`) and drop this check if
-    # it works; also add a CI job and a prebuilt variant for it.
-    if (WEVAL)
-        message(FATAL_ERROR "ENABLE_INTL is not supported together with WEVAL yet")
-    endif()
+    # With WEVAL this is `release_weval_intl`.
     set(SM_BUILD_TYPE "${SM_BUILD_TYPE}_intl")
     set(SM_INTL_API_OPTION "--with-intl-api")
 else()
