@@ -18,5 +18,6 @@ panic = 'abort'
 lto = true
 panic = 'abort'
 
+@RUST_STATICLIB_PATCH@
 [dependencies]
 # Dependencies appended by the CMake build system below here:

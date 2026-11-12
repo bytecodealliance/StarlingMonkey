@@ -15,6 +15,13 @@ set(RUST_STATICLIB_RS "${CMAKE_CURRENT_BINARY_DIR}/rust-staticlib.rs" CACHE INTE
 set(RUST_STATICLIB_TOML "${CMAKE_CURRENT_BINARY_DIR}/Cargo.toml" CACHE INTERNAL "Path to the Rust staticlibs bundler Cargo.toml file" FORCE)
 set(RUST_STATICLIB_LOCK "${CMAKE_CURRENT_BINARY_DIR}/Cargo.lock" CACHE INTERNAL "Path to the Rust staticlibs bundler Cargo.toml file" FORCE)
 
+if (ENABLE_INTL)
+    # Use Firefox's baked segmenter data, as SpiderMonkey does.
+    set(RUST_STATICLIB_PATCH "[patch.crates-io]\nicu_segmenter_data = { path = \"${ICU4X_CRATES_DIR}/icu_segmenter_data\" }\n")
+else()
+    set(RUST_STATICLIB_PATCH "")
+endif()
+
 configure_file("runtime/crates/staticlib-template/rust-staticlib.rs.in" "${RUST_STATICLIB_RS}" COPYONLY)
 configure_file("runtime/crates/staticlib-template/Cargo.toml.in" "${RUST_STATICLIB_TOML}")
 configure_file("runtime/crates/staticlib-template/Cargo.lock" "${RUST_STATICLIB_LOCK}" COPYONLY)
@@ -47,3 +54,10 @@ target_link_libraries(rust-crates PRIVATE rust_staticlib rust-hooks-wrappers)
 # Add crates as needed here:
 add_rust_lib(rust-url "${CMAKE_CURRENT_SOURCE_DIR}/crates/rust-url")
 add_rust_lib(multipart "${CMAKE_CURRENT_SOURCE_DIR}/crates/rust-multipart" "\"capi\", \"simd\"")
+
+# ICU4X C API for SpiderMonkey's Intl code, with the features Firefox uses in js/src/rust/shared.
+# Added by hand because it needs `default-features = false`.
+if (ENABLE_INTL)
+    file(APPEND $CACHE{RUST_STATICLIB_TOML} "icu_capi = { path = \"${ICU4X_CRATES_DIR}/icu_capi\", default-features = false, features = [\"any_provider\", \"compiled_data\", \"segmenter\", \"calendar\"] }\n")
+    file(APPEND $CACHE{RUST_STATICLIB_RS} "pub use icu_capi;\n")
+endif()
