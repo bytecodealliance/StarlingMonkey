@@ -111,6 +111,10 @@ jobs:
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
+      - name: Publish to Open VSX
+        working-directory: debugger/vscode-dap-extension
+        run: npx ovsx publish *.vsix --pat "${{ secrets.OVSX_PAT }}"
+        
       - name: Upload VSIX to Release
         uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 #2.3.2
         with:
