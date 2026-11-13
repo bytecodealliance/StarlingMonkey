@@ -201,6 +201,103 @@ export const handler = serveTest(async (t) => {
     );
   });
 
+  await t.test("subtle.detached-buffers", async () => {
+    const { subtle } = crypto;
+    const size = 4096;
+    const reused = [];
+    const hex = (buffer) => Array.from(new Uint8Array(buffer), (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
+    const emptyDigest = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+    const importHmacKey = () => subtle.importKey(
+      "raw",
+      new Uint8Array(32).fill(7),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign", "verify"],
+    );
+
+    function detachingAlgorithm(name, view) {
+      return {
+        get name() {
+          if (!view.buffer.detached) view.buffer.transfer();
+          return name;
+        },
+      };
+    }
+
+    function freeAndReuse(view) {
+      if (view.buffer.detached) return;
+      view.buffer.transfer(0);
+      for (let index = 0; index < 64; index++) {
+        reused.push(new Uint8Array(size).fill(0x5a));
+      }
+    }
+
+    async function keyThatFreesOnAlgorithmRead(view) {
+      const key = await importHmacKey();
+      Object.defineProperty(key.algorithm, "name", {
+        get() {
+          freeAndReuse(view);
+          return "HMAC";
+        },
+      });
+      return key;
+    }
+
+    const key = await importHmacKey();
+    const message = new Uint8Array(32).fill(0x42);
+    const mac = new Uint8Array(await subtle.sign("HMAC", key, message));
+    const emptyMac = hex(await subtle.sign("HMAC", key, new Uint8Array(0)));
+
+    {
+      const data = new Uint8Array(32).fill(0x41);
+      const result = await subtle.digest(detachingAlgorithm("SHA-256", data), data);
+      strictEqual(hex(result), emptyDigest, "digest reads data after normalization");
+    }
+    {
+      const data = message.slice();
+      const result = await subtle.sign(detachingAlgorithm("HMAC", data), key, data);
+      strictEqual(hex(result), emptyMac, "sign reads data after normalization");
+    }
+    {
+      const signature = mac.slice();
+      const result = await subtle.verify(
+        detachingAlgorithm("HMAC", signature), key, signature, message,
+      );
+      strictEqual(result, false, "verify reads signature after normalization");
+    }
+    {
+      const data = message.slice();
+      const result = await subtle.verify(detachingAlgorithm("HMAC", data), key, mac, data);
+      strictEqual(result, false, "verify reads data after normalization");
+    }
+    {
+      const data = new Uint8Array(size).fill(0x41);
+      const result = await subtle.digest({
+        get name() {
+          freeAndReuse(data);
+          return "SHA-256";
+        },
+      }, data);
+      strictEqual(hex(result), emptyDigest, "digest does not read freed memory");
+    }
+    {
+      const data = new Uint8Array(size).fill(0x41);
+      const expected = hex(await subtle.sign("HMAC", key, data));
+      const result = await subtle.sign("HMAC", await keyThatFreesOnAlgorithmRead(data), data);
+      strictEqual(hex(result), expected, "sign copies data before reading key.algorithm");
+    }
+    {
+      const data = new Uint8Array(size).fill(0x41);
+      const signature = await subtle.sign("HMAC", key, data);
+      const result = await subtle.verify(
+        "HMAC", await keyThatFreesOnAlgorithmRead(data), signature, data,
+      );
+      strictEqual(result, true, "verify copies data before reading key.algorithm");
+    }
+  });
+
   // importKey
   {
     for (const [name, createJwk, algorithm, usage] of [
