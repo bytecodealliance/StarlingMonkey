@@ -2664,37 +2664,37 @@ export const handler = serveTest(async (t) => {
       for (const hashCase of ["unknown", "missing"]) {
         await t.test(`subtle.verify.rsa-${hashCase}-hash`, async () => {
           const key = await crypto.subtle.importKey(
-            "jwk",
+            'jwk',
             createPublicRsaJsonWebKeyData(),
             createRsaJsonWebKeyAlgorithm(),
             false,
-            ["verify"],
+            ['verify'],
           );
           const signingKey = await crypto.subtle.importKey(
-            "jwk",
+            'jwk',
             createPrivateRsaJsonWebKeyData(),
             createRsaJsonWebKeyAlgorithm(),
             false,
-            ["sign"],
+            ['sign'],
           );
           const message = new Uint8Array([0x61]);
           const signature = await crypto.subtle.sign(
-            "RSASSA-PKCS1-v1_5",
+            'RSASSA-PKCS1-v1_5',
             signingKey,
             message,
           );
-          if (hashCase === "unknown") {
-            key.algorithm.hash.name = "NOT-A-HASH";
+          if (hashCase === 'unknown') {
+            key.algorithm.hash.name = 'NOT-A-HASH';
           } else {
             delete key.algorithm.hash;
           }
           const result = await crypto.subtle.verify(
-            "RSASSA-PKCS1-v1_5",
+            'RSASSA-PKCS1-v1_5',
             key,
             signature,
             message,
           );
-          strictEqual(result, true, "verifies with the imported SHA-256 hash");
+          strictEqual(result, true, 'verifies with the imported SHA-256 hash');
         });
       }
 
