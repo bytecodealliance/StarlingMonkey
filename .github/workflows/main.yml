@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build: [release, debug, weval]
+        build: [release, debug, weval, release_intl, weval_intl]
         os: [ubuntu-latest]
     outputs:
       SM_TAG_EXISTS: ${{ steps.check-sm-release.outputs.SM_TAG_EXISTS }}
@@ -32,6 +32,8 @@ jobs:
       SM_CACHE_KEY_debug: ${{ steps.check-sm-release.outputs.SM_CACHE_KEY_debug }}
       SM_CACHE_KEY_release: ${{ steps.check-sm-release.outputs.SM_CACHE_KEY_release }}
       SM_CACHE_KEY_weval: ${{ steps.check-sm-release.outputs.SM_CACHE_KEY_weval }}
+      SM_CACHE_KEY_release_intl: ${{ steps.check-sm-release.outputs.SM_CACHE_KEY_release_intl }}
+      SM_CACHE_KEY_weval_intl: ${{ steps.check-sm-release.outputs.SM_CACHE_KEY_weval_intl }}
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -46,13 +48,26 @@ jobs:
           echo "SM_TAG_EXISTS=true" >> "$GITHUB_OUTPUT"
         else
           echo "SM_TAG_EXISTS=false" >> "$GITHUB_OUTPUT"
+        fi
+        # A release can lack a variant added after it was published (e.g. release_intl),
+        # so check for this job's tarball itself.
+        case "${{ matrix.build }}" in
+          weval) SM_BUILD_TYPE=release_weval ;;
+          weval_intl) SM_BUILD_TYPE=release_weval_intl ;;
+          *) SM_BUILD_TYPE="${{ matrix.build }}" ;;
+        esac
+        SM_URL="https://github.com/bytecodealliance/starlingmonkey/releases/download/${SM_TAG}/spidermonkey-static-${SM_BUILD_TYPE}.tar.gz"
+        if curl -sfIL -o /dev/null "${SM_URL}"; then
+          echo "SM_ASSET_EXISTS=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "SM_ASSET_EXISTS=false" >> "$GITHUB_OUTPUT"
           echo "SM_CACHE_KEY_${{ matrix.build }}=spidermonkey-cache-${{ matrix.build }}-${{ hashFiles('cmake/spidermonkey.cmake') }}" >> "$GITHUB_OUTPUT"
         fi
       env:
         GH_TOKEN: ${{ github.token }}
 
     - name: Cache SpiderMonkey tarball
-      if: steps.check-sm-release.outputs.SM_TAG_EXISTS == 'false'
+      if: steps.check-sm-release.outputs.SM_ASSET_EXISTS == 'false'
       uses: actions/cache@v4
       id: sm-cache
       with:
@@ -61,7 +76,7 @@ jobs:
         key: spidermonkey-cache-${{ matrix.build }}-${{ hashFiles('cmake/spidermonkey.cmake') }}
 
     - name: Set env var to use cached SpiderMonkey tarball
-      if: steps.check-sm-release.outputs.SM_TAG_EXISTS == 'false' && steps.sm-cache.outputs.cache-hit == 'true'
+      if: steps.check-sm-release.outputs.SM_ASSET_EXISTS == 'false' && steps.sm-cache.outputs.cache-hit == 'true'
       run: |
         tree spidermonkey-dist-${{ matrix.build }}
         echo "SPIDERMONKEY_BINARIES=$(pwd)/spidermonkey-dist-${{ matrix.build }}" >> $GITHUB_ENV
@@ -73,8 +88,9 @@ jobs:
     - name: Configure StarlingMonkey
       run: |
         cmake -S . -B cmake-build-${{ matrix.build }}\
-          -DCMAKE_BUILD_TYPE=${{ (matrix.build == 'release' || matrix.build == 'weval') && 'Release' || 'Debug' }}\
-          ${{matrix.build == 'weval' && '-DUSE_WASM_OPT=OFF -DWEVAL=ON' || ''}}
+          -DCMAKE_BUILD_TYPE=${{ matrix.build == 'debug' && 'Debug' || 'Release' }}\
+          ${{startsWith(matrix.build, 'weval') && '-DUSE_WASM_OPT=OFF -DWEVAL=ON' || ''}}\
+          ${{endsWith(matrix.build, '_intl') && '-DENABLE_INTL=ON' || ''}}
 
     - name: Build StarlingMonkey
       run: |
@@ -97,11 +113,15 @@ jobs:
         CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir cmake-build-${{ matrix.build }} -j$(nproc) --verbose
 
     - name: Set up cacheable SpiderMonkey artifacts
-      if: steps.check-sm-release.outputs.SM_TAG_EXISTS == 'false' && steps.sm-cache.outputs.cache-hit != 'true'
+      if: steps.check-sm-release.outputs.SM_ASSET_EXISTS == 'false' && steps.sm-cache.outputs.cache-hit != 'true'
       run: |
         mkdir -p spidermonkey-dist-${{ matrix.build }}
         cp -a cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/libspidermonkey.a spidermonkey-dist-${{ matrix.build }}/
         cp -aL cmake-build-${{ matrix.build }}/spidermonkey-obj/dist/include spidermonkey-dist-${{ matrix.build }}/
+        if [[ "${{ matrix.build }}" == *_intl ]]; then
+          mkdir -p spidermonkey-dist-${{ matrix.build }}/intl
+          cp -a deps/spidermonkey-source/intl/icu_capi deps/spidermonkey-source/intl/icu_segmenter_data spidermonkey-dist-${{ matrix.build }}/intl/
+        fi
         tree spidermonkey-dist-${{ matrix.build }}
 
       # Upload tarball as an artifact of the github action run, so the output
@@ -109,7 +129,7 @@ jobs:
     - name: Upload SpiderMonkey tarball
       uses: actions/upload-artifact@v4
       if: (github.event_name != 'push' || (github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v')))
-        && steps.check-sm-release.outputs.SM_TAG_EXISTS == 'false' && steps.sm-cache.outputs.cache-hit != 'true'
+        && steps.check-sm-release.outputs.SM_ASSET_EXISTS == 'false' && steps.sm-cache.outputs.cache-hit != 'true'
       with:
         name: spidermonkey-${{ matrix.build }}
         path: spidermonkey-dist-${{ matrix.build }}/*
@@ -154,12 +174,32 @@ jobs:
         key: ${{ needs.test.outputs.SM_CACHE_KEY_weval }}
         fail-on-cache-miss: true
 
+    - name: Restore SpiderMonkey Intl Cache
+      uses: actions/cache/restore@v4
+      id: sm-cache-release-intl
+      with:
+        path: |
+          spidermonkey-dist-release_intl
+        key: ${{ needs.test.outputs.SM_CACHE_KEY_release_intl }}
+        fail-on-cache-miss: true
+
+    - name: Restore SpiderMonkey Weval Intl Cache
+      uses: actions/cache/restore@v4
+      id: sm-cache-weval-intl
+      with:
+        path: |
+          spidermonkey-dist-weval_intl
+        key: ${{ needs.test.outputs.SM_CACHE_KEY_weval_intl }}
+        fail-on-cache-miss: true
+
     - name: Create SpiderMonkey Tar Balls
       run: |
         mkdir -p release-artifacts
         tar -a -cf release-artifacts/spidermonkey-static-debug.tar.gz spidermonkey-dist-debug/*
         tar -a -cf release-artifacts/spidermonkey-static-release.tar.gz spidermonkey-dist-release/*
         tar -a -cf release-artifacts/spidermonkey-static-release_weval.tar.gz spidermonkey-dist-weval/*
+        tar -a -cf release-artifacts/spidermonkey-static-release_intl.tar.gz spidermonkey-dist-release_intl/*
+        tar -a -cf release-artifacts/spidermonkey-static-release_weval_intl.tar.gz spidermonkey-dist-weval_intl/*
         tree release-artifacts
 
     - name: Do the Release

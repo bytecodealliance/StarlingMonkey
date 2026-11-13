@@ -14,6 +14,16 @@ if (WEVAL)
     set(SM_BUILD_TYPE "${SM_BUILD_TYPE}_weval")
 endif()
 
+option(ENABLE_INTL "Build with the ECMAScript Internationalization API (Intl, ICU)" OFF)
+
+if (ENABLE_INTL)
+    # With WEVAL this is `release_weval_intl`.
+    set(SM_BUILD_TYPE "${SM_BUILD_TYPE}_intl")
+    set(SM_INTL_API_OPTION "--with-intl-api")
+else()
+    set(SM_INTL_API_OPTION "--without-intl-api")
+endif()
+
 # If the developer has specified an alternate local set of SpiderMonkey
 # artifacts, use them. This allows for local/in-tree development without
 # requiring a roundtrip through GitHub CI.
@@ -108,7 +118,7 @@ else()
 ac_add_options --disable-js-shell
 ac_add_options --target=wasm32-unknown-wasi
 ac_add_options --without-system-zlib
-ac_add_options --without-intl-api
+ac_add_options ${SM_INTL_API_OPTION}
 ac_add_options --disable-jit
 ac_add_options --disable-shared-js
 ac_add_options --disable-shared-memory
@@ -192,6 +202,20 @@ mk_add_options AUTOCLOBBER=1
     add_dependencies(spidermonkey spidermonkey_build)
     target_include_directories(spidermonkey INTERFACE ${SM_INCLUDE_DIR})
     target_link_libraries(spidermonkey INTERFACE ${LIB_SM})
+endif()
+
+# SpiderMonkey's Intl code calls ICU4X through its C API, which is built as part of our Rust
+# staticlib (see build-crates.cmake) from Firefox's copies of the ICU4X crates. Source builds use
+# the Firefox tree; prebuilt artifacts ship the crates in an `intl` directory.
+if (ENABLE_INTL)
+    if (DEFINED SM_SOURCE_DIR)
+        set(ICU4X_CRATES_DIR ${SM_SOURCE_DIR}/intl)
+    else()
+        set(ICU4X_CRATES_DIR ${SM_LIB_DIR}/intl)
+    endif()
+    if (NOT EXISTS ${ICU4X_CRATES_DIR}/icu_capi/Cargo.toml OR NOT EXISTS ${ICU4X_CRATES_DIR}/icu_segmenter_data/Cargo.toml)
+        message(FATAL_ERROR "ICU4X crates (icu_capi, icu_segmenter_data) not found in ${ICU4X_CRATES_DIR}")
+    endif()
 endif()
 
 # SpiderMonkey's builds include a header that defines some configuration options that need to be set

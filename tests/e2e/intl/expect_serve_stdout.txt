@@ -1,0 +1,6 @@
+stdout [0] :: Log: true
+stdout [0] :: Log: aß1
+stdout [0] :: Log: fi
+stdout [0] :: Log: true
+stdout [0] :: Log: object
+stdout [0] :: Log: 1.234,5
