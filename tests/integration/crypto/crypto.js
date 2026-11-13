@@ -2659,7 +2659,7 @@ export const handler = serveTest(async (t) => {
         },
       );
     }
-    // incorrect-signature
+
     {
       for (const hashCase of ["unknown", "missing"]) {
         await t.test(`subtle.verify.rsa-${hashCase}-hash`, async () => {
@@ -2670,25 +2670,39 @@ export const handler = serveTest(async (t) => {
             false,
             ["verify"],
           );
+          const signingKey = await crypto.subtle.importKey(
+            "jwk",
+            createPrivateRsaJsonWebKeyData(),
+            createRsaJsonWebKeyAlgorithm(),
+            false,
+            ["sign"],
+          );
+          const message = new Uint8Array([0x61]);
+          const signature = await crypto.subtle.sign(
+            "RSASSA-PKCS1-v1_5",
+            signingKey,
+            message,
+          );
           if (hashCase === "unknown") {
             key.algorithm.hash.name = "NOT-A-HASH";
           } else {
             delete key.algorithm.hash;
           }
-          await rejects(
-            () => crypto.subtle.verify(
-              "RSASSA-PKCS1-v1_5",
-              key,
-              new Uint8Array(256),
-              new Uint8Array([0x61]),
-            ),
-            DOMException,
-            null,
-            "OperationError",
+          const result = await crypto.subtle.verify(
+            "RSASSA-PKCS1-v1_5",
+            key,
+            signature,
+            message,
+          );
+          strictEqual(
+            result,
+            true,
+            "verifies with the key's internal SHA-256 algorithm",
           );
         });
       }
 
+      // incorrect-signature
       await t.test("subtle.verify.incorrect-signature-jwk", async () => {
         const publicRsaJsonWebKeyData = createPublicRsaJsonWebKeyData();
         const key = await crypto.subtle.importKey(
