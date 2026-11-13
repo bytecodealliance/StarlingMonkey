@@ -385,8 +385,8 @@ size_t curveSize(JS::HandleObject key) {
     return 521;
   }
 
-  DOMException::raise(cx, "Unsupported ECDSA named curve", "OperationError");
-  return JS::Result<size_t>(JS::Error());
+  MOZ_ASSERT_UNREACHABLE();
+  return 0;
 }
 
 // https://webidl.spec.whatwg.org/#abstract-opdef-converttoint with bitLength 32, "unsigned" and
