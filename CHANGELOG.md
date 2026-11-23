@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.1](https://github.com/bytecodealliance/StarlingMonkey/compare/starlingmonkey-v0.5.0...starlingmonkey-v0.5.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* Internalize CryptoKey metadata on creation ([#367](https://github.com/bytecodealliance/StarlingMonkey/issues/367)) ([3a94a50](https://github.com/bytecodealliance/StarlingMonkey/commit/3a94a5012536b9e7c184ee4fe8b3b630bcd9dfc3))
+* Throw on createDigestAlgorithm returning null in RSA verification ([#364](https://github.com/bytecodealliance/StarlingMonkey/issues/364)) ([9aba354](https://github.com/bytecodealliance/StarlingMonkey/commit/9aba354ec34fa6ed800e03fb431a5982105ace63))
+* Update normalization and copy order in crypto algorithms ([#366](https://github.com/bytecodealliance/StarlingMonkey/issues/366)) ([82eafe4](https://github.com/bytecodealliance/StarlingMonkey/commit/82eafe4e514da62651c1ccf639d25b65e15ef837))
+
 ## [0.5.0](https://github.com/bytecodealliance/StarlingMonkey/compare/starlingmonkey-v0.4.0...starlingmonkey-v0.5.0) (2026-11-09)
 
 
