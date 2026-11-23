@@ -1785,16 +1785,16 @@
     "status": "FAIL"
   },
   "Parsing: <..> against <file://x/C:/>": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file://example.net/C:/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file://1.2.3.4/C:/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <file://[1::8]/C:/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <C|/> against <file://host/>": {
     "status": "FAIL"
@@ -2244,10 +2244,10 @@
     "status": "PASS"
   },
   "Parsing: <foo://host/ !\"$%&'()*+,-./:;<=>@[\\]^_`{|}~> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <wss://host/ !\"$%&'()*+,-./:;<=>@[\\]^_`{|}~> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Parsing: <foo://host/dir/? !\"$%&'()*+,-./:;<=>?@[\\]^_`{|}~> without base": {
     "status": "PASS"
