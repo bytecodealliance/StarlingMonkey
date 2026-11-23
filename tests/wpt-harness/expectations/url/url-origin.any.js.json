@@ -1035,19 +1035,19 @@
     "status": "PASS"
   },
   "Origin parsing: <blob:blob:https://example.org/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Origin parsing: <blob:about:blank> without base": {
     "status": "PASS"
   },
   "Origin parsing: <blob:ftp://host/path> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Origin parsing: <blob:ws://example.org/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Origin parsing: <blob:wss://example.org/> without base": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "Origin parsing: <blob:http%3a//example.org/> without base": {
     "status": "PASS"

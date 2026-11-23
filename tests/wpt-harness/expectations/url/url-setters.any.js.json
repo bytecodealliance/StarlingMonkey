@@ -435,10 +435,10 @@
     "status": "PASS"
   },
   "URL: Setting <http://example.net/path>.hostname = 'example.com:8080' : delimiter invalidates entire value": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URL: Setting <http://example.net:8080/path>.hostname = 'example.com:' : delimiter invalidates entire value": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URL: Setting <http://example.net/path>.hostname = 'example.com/stuff' Stuff after a / delimiter is ignored": {
     "status": "PASS"
@@ -648,7 +648,7 @@
     "status": "PASS"
   },
   "URL: Setting <a:/>.pathname = '\u0000\u0001\t\n\r\u001f !\"#$%&'()*+,-./09:;<=>?@AZ[\\]^_`az{|}~Éé' UTF-8 percent encoding with the default encode set. Tabs and newlines are removed.": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "URL: Setting <http://example.net>.pathname = '%2e%2E%c3%89té' Bytes already percent-encoded are left as-is, including %2E outside dotted segments.": {
     "status": "PASS"
