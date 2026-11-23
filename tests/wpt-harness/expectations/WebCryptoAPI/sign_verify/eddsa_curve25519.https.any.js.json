@@ -9,7 +9,7 @@
     "status": "PASS"
   },
   "EdDSA Ed25519 verification with transferred signature during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "EdDSA Ed25519 verification with transferred signature after call": {
     "status": "PASS"
@@ -21,7 +21,7 @@
     "status": "PASS"
   },
   "EdDSA Ed25519 with transferred data during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "EdDSA Ed25519 with transferred data after call": {
     "status": "PASS"

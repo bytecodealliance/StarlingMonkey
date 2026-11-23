@@ -9,7 +9,7 @@
     "status": "PASS"
   },
   "ECDSA P-256 with SHA-1 verification with transferred signature during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-256 with SHA-1 verification with transferred signature after call": {
     "status": "PASS"
@@ -21,7 +21,7 @@
     "status": "PASS"
   },
   "ECDSA P-256 with SHA-1 with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-256 with SHA-1 with transferred plaintext after call": {
     "status": "PASS"
@@ -63,7 +63,7 @@
     "status": "PASS"
   },
   "ECDSA P-256 with SHA-256 verification with transferred signature during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-256 with SHA-256 verification with transferred signature after call": {
     "status": "PASS"
@@ -75,7 +75,7 @@
     "status": "PASS"
   },
   "ECDSA P-256 with SHA-256 with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-256 with SHA-256 with transferred plaintext after call": {
     "status": "PASS"
@@ -117,7 +117,7 @@
     "status": "PASS"
   },
   "ECDSA P-256 with SHA-384 verification with transferred signature during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-256 with SHA-384 verification with transferred signature after call": {
     "status": "PASS"
@@ -129,7 +129,7 @@
     "status": "PASS"
   },
   "ECDSA P-256 with SHA-384 with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-256 with SHA-384 with transferred plaintext after call": {
     "status": "PASS"
@@ -171,7 +171,7 @@
     "status": "PASS"
   },
   "ECDSA P-256 with SHA-512 verification with transferred signature during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-256 with SHA-512 verification with transferred signature after call": {
     "status": "PASS"
@@ -183,7 +183,7 @@
     "status": "PASS"
   },
   "ECDSA P-256 with SHA-512 with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-256 with SHA-512 with transferred plaintext after call": {
     "status": "PASS"
@@ -225,7 +225,7 @@
     "status": "PASS"
   },
   "ECDSA P-384 with SHA-1 verification with transferred signature during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-384 with SHA-1 verification with transferred signature after call": {
     "status": "PASS"
@@ -237,7 +237,7 @@
     "status": "PASS"
   },
   "ECDSA P-384 with SHA-1 with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-384 with SHA-1 with transferred plaintext after call": {
     "status": "PASS"
@@ -279,7 +279,7 @@
     "status": "PASS"
   },
   "ECDSA P-384 with SHA-256 verification with transferred signature during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-384 with SHA-256 verification with transferred signature after call": {
     "status": "PASS"
@@ -291,7 +291,7 @@
     "status": "PASS"
   },
   "ECDSA P-384 with SHA-256 with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-384 with SHA-256 with transferred plaintext after call": {
     "status": "PASS"
@@ -333,7 +333,7 @@
     "status": "PASS"
   },
   "ECDSA P-384 with SHA-384 verification with transferred signature during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-384 with SHA-384 verification with transferred signature after call": {
     "status": "PASS"
@@ -345,7 +345,7 @@
     "status": "PASS"
   },
   "ECDSA P-384 with SHA-384 with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-384 with SHA-384 with transferred plaintext after call": {
     "status": "PASS"
@@ -387,7 +387,7 @@
     "status": "PASS"
   },
   "ECDSA P-384 with SHA-512 verification with transferred signature during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-384 with SHA-512 verification with transferred signature after call": {
     "status": "PASS"
@@ -399,7 +399,7 @@
     "status": "PASS"
   },
   "ECDSA P-384 with SHA-512 with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-384 with SHA-512 with transferred plaintext after call": {
     "status": "PASS"
@@ -441,7 +441,7 @@
     "status": "PASS"
   },
   "ECDSA P-521 with SHA-1 verification with transferred signature during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-521 with SHA-1 verification with transferred signature after call": {
     "status": "PASS"
@@ -453,7 +453,7 @@
     "status": "PASS"
   },
   "ECDSA P-521 with SHA-1 with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-521 with SHA-1 with transferred plaintext after call": {
     "status": "PASS"
@@ -495,7 +495,7 @@
     "status": "PASS"
   },
   "ECDSA P-521 with SHA-256 verification with transferred signature during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-521 with SHA-256 verification with transferred signature after call": {
     "status": "PASS"
@@ -507,7 +507,7 @@
     "status": "PASS"
   },
   "ECDSA P-521 with SHA-256 with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-521 with SHA-256 with transferred plaintext after call": {
     "status": "PASS"
@@ -549,7 +549,7 @@
     "status": "PASS"
   },
   "ECDSA P-521 with SHA-384 verification with transferred signature during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-521 with SHA-384 verification with transferred signature after call": {
     "status": "PASS"
@@ -561,7 +561,7 @@
     "status": "PASS"
   },
   "ECDSA P-521 with SHA-384 with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-521 with SHA-384 with transferred plaintext after call": {
     "status": "PASS"
@@ -603,7 +603,7 @@
     "status": "PASS"
   },
   "ECDSA P-521 with SHA-512 verification with transferred signature during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-521 with SHA-512 verification with transferred signature after call": {
     "status": "PASS"
@@ -615,7 +615,7 @@
     "status": "PASS"
   },
   "ECDSA P-521 with SHA-512 with transferred plaintext during call": {
-    "status": "FAIL"
+    "status": "PASS"
   },
   "ECDSA P-521 with SHA-512 with transferred plaintext after call": {
     "status": "PASS"

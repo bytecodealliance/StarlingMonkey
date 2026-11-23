@@ -7,11 +7,13 @@
 #include "crypto-key-rsa-components.h"
 #include "crypto-raii.h"
 #include "openssl/evp.h"
+#include <optional>
 
 
 
 namespace builtins::web::crypto {
 enum class CryptoAlgorithmIdentifier : uint8_t;
+enum class NamedCurve : uint8_t;
 class CryptoAlgorithmRSASSA_PKCS1_v1_5_Import;
 class CryptoAlgorithmHMAC_Import;
 class CryptoAlgorithmECDSA_Import;
@@ -113,6 +115,11 @@ public:
     // We store a JS::ObjectValue within this slot which contains a JS Object representation of the
     // algorithm.
     Algorithm,
+    // Native algorithm metadata used by cryptographic operations. The cached JS object above is
+    // exposed to script and may be mutated.
+    AlgorithmIdentifier,
+    HashIdentifier,
+    NamedCurve,
     // The type of the underlying key.
     // We store a JS::Int32Value representation of the CryptoKeyType variant in this slot
     Type,
@@ -146,6 +153,8 @@ public:
   // byte string (e.g. HMAC and PBKDF2 keys). `algorithm_object` is the already-materialized
   // KeyAlgorithm object to store in the [[algorithm]] internal slot.
   static JSObject *createSymmetric(JSContext *cx, JS::HandleObject algorithm_object,
+                                   CryptoAlgorithmIdentifier algorithm_identifier,
+                                   std::optional<CryptoAlgorithmIdentifier> hash_identifier,
                                    std::unique_ptr<std::vector<uint8_t>> data, bool extractable,
                                    CryptoKeyUsages usages);
   static JSObject *createRSA(JSContext *cx, CryptoAlgorithmRSASSA_PKCS1_v1_5_Import *algorithm,
@@ -158,7 +167,9 @@ public:
                                  EvpPkeyPtr pkey, CryptoKeyType keyType, bool extractable,
                                  CryptoKeyUsages usages);
   static CryptoKeyType type(JSObject *self);
-  static JSObject *get_algorithm(JS::HandleObject self);
+  static CryptoAlgorithmIdentifier algorithm_identifier(JS::HandleObject self);
+  static CryptoAlgorithmIdentifier hash_identifier(JS::HandleObject self);
+  static NamedCurve named_curve(JS::HandleObject self);
   static EVP_PKEY *key(JSObject *self);
   static std::span<uint8_t> keyData(JSObject *self);
   static bool canSign(JS::HandleObject self);
