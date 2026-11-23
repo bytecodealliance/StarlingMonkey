@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/bytecodealliance/StarlingMonkey/compare/starlingmonkey-v0.5.1...starlingmonkey-v0.5.2) (2026-11-23)
+
+
+### Bug Fixes
+
+* Bump URL crate version ([#371](https://github.com/bytecodealliance/StarlingMonkey/issues/371)) ([057cec6](https://github.com/bytecodealliance/StarlingMonkey/commit/057cec668b2c864cccc0ced91ba860ce7ebca562))
+
 ## [0.5.1](https://github.com/bytecodealliance/StarlingMonkey/compare/starlingmonkey-v0.5.0...starlingmonkey-v0.5.1) (2026-11-13)
 
 
