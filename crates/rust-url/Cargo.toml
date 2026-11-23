@@ -6,4 +6,4 @@ edition = "2018"
 [lib]
 
 [dependencies]
-url = "2.5.2"
+url = "2.5.9"
