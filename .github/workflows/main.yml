@@ -205,7 +205,7 @@ jobs:
           - os: ubuntu-24.04-arm
             artifact: nightmonkey-aarch64-linux
             binary: nightmonkey
-          - os: macos-14
+          - os: macos-15
             artifact: nightmonkey-aarch64-macos
             binary: nightmonkey
           - os: windows-2022
