@@ -19,7 +19,7 @@
 # SpiderMonkey pin in cmake/spidermonkey.cmake move together. The compiler
 # carries a checked-in opcode table per engine version, and the build checks
 # the selected one against the engine's Opcodes.h (below).
-set(NIGHTMONKEY_TAG 751695b96cb77becbd8be5d2a5497f7ba1d54fe2)
+set(NIGHTMONKEY_TAG bfb2bb3dccf727a2fa2fa7d7afcc4d8f6a75de99)
 set(NIGHTMONKEY_REPO_URL https://github.com/bytecodealliance/nightmonkey.git)
 set(NIGHTMONKEY_ENGINE_VERSION "ff147" CACHE STRING
     "Engine version NightMonkey is built for (compiler/src/opcodes/<version>.rs in its tree)")

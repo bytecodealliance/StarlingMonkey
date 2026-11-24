@@ -1,7 +1,7 @@
 # A tag or full commit hash in SM_REPO_URL. The NightMonkey build needs a
 # revision that carries `--enable-external-compiler-hooks` (the `wasi-ff147`
 # branch).
-set(SM_TAG f0c060c52260d41fc631a14cda05372ad1c2cbe1)
+set(SM_TAG bb93a54a5cfce0401bade5dd3fa2b6e27e9bc63b)
 set(SM_REPO_URL https://github.com/bytecodealliance/firefox.git)
 
 include("manage-git-source")
