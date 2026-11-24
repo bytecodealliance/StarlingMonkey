@@ -497,7 +497,8 @@ static void dispatch_fetch_event(HandleObject event, double *total_compute) {
 
 bool handle_incoming_request(host_api::HttpIncomingRequest *request) {
 #ifdef ENABLE_JS_NIGHTMONKEY
-  if (!JS::NightActivate(ENGINE->cx())) {
+  // Not an error if the module was not transformed: it then runs interpreted.
+  if (js::night::gNightRegistration.compiled && !JS::NightActivate(ENGINE->cx())) {
     return false;
   }
 #endif

@@ -90,7 +90,8 @@ WIZER_INIT(wizen);
  */
 extern "C" bool exports_wasi_cli_run_run() {
 #ifdef ENABLE_JS_NIGHTMONKEY
-  if (ENGINE && !JS::NightActivate(ENGINE->cx())) {
+  // Not an error if the module was not transformed: it then runs interpreted.
+  if (ENGINE && js::night::gNightRegistration.compiled && !JS::NightActivate(ENGINE->cx())) {
     return false;
   }
 #endif
